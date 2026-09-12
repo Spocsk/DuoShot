@@ -54,8 +54,12 @@ export function ToolApp({ locale }: Props) {
     [],
   );
 
+  function isAllowedImage(file: File) {
+    return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
+  }
+
   function onFiles(list: FileList | File[]) {
-    const incoming = Array.from(list).filter((file) => /image\/(png|jpeg)/.test(file.type));
+    const incoming = Array.from(list).filter(isAllowedImage);
     const next = incoming.slice(0, MAX_IMAGES);
     setFiles(next);
     setZipUrl(null);
@@ -119,12 +123,19 @@ export function ToolApp({ locale }: Props) {
       <section>
         <h1 className="font-[family-name:var(--font-display)] text-4xl">{t(locale, "tool_title")}</h1>
         <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "hero_lead")}</p>
-        <label className="mt-8 flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed border-[var(--accent)]/40 bg-[#141821] text-center">
+        <label
+          className="relative mt-8 flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed border-[var(--accent)]/40 bg-[#141821] text-center"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            onFiles(event.dataTransfer.files);
+          }}
+        >
           <input
             type="file"
             accept="image/png,image/jpeg"
             multiple
-            className="hidden"
+            className="absolute inset-0 cursor-pointer opacity-0"
             onChange={(event) => event.target.files && onFiles(event.target.files)}
           />
           <span>{t(locale, "tool_drop")}</span>

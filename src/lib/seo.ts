@@ -12,7 +12,7 @@ export function pageMetadata(options: {
   const fr = options.path;
   const en = localizedPath("en", options.path);
   return {
-    title: `${options.title} · ${SITE_NAME}`,
+    title: options.title,
     description: options.description,
     alternates: {
       canonical: absoluteUrl(canonicalPath),
