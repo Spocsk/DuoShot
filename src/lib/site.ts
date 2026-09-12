@@ -5,7 +5,12 @@ export const SITE_PITCH_FR = "Tes screenshots Duo, justes, en 3 minutes. Sans de
 export const SITE_PITCH_EN = "Accurate Duo screenshots in 3 minutes. No device.";
 
 export function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (explicit) return explicit;
+  const vercel =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
+  return "http://localhost:3000";
 }
 
 export function localizedPath(locale: Locale, path: string): string {

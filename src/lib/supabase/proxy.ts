@@ -4,6 +4,9 @@ import { getSupabasePublicKey, getSupabaseUrl } from "./env";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  if (!getSupabaseUrl() || !getSupabasePublicKey()) {
+    return supabaseResponse;
+  }
   const supabase = createServerClient(getSupabaseUrl(), getSupabasePublicKey(), {
     cookies: {
       getAll() {
