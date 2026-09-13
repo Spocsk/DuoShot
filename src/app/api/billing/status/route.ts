@@ -19,11 +19,22 @@ export async function GET() {
     .limit(1)
     .maybeSingle();
   if (!membership) {
-    return NextResponse.json({ plan: "free", source: "none" });
+    return NextResponse.json({
+      plan: "free",
+      source: "none",
+      remainingFreeExports: 2,
+      canUse69: false,
+    });
   }
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("free_exports_used")
+    .eq("id", membership.workspace_id)
+    .maybeSingle();
   const entitlements = await resolveEntitlements({
     email: user.email,
     workspaceId: membership.workspace_id,
+    freeExportsUsed: workspace?.free_exports_used ?? 0,
   });
   return NextResponse.json(entitlements);
 }

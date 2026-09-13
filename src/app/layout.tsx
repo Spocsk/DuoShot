@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Figtree, IBM_Plex_Mono, Syne } from "next/font/google";
+import { headers } from "next/headers";
+import { Figtree, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import { LOCALE_HEADER } from "@/lib/locale";
 import { SITE_NAME, SITE_PITCH_FR, getSiteUrl } from "@/lib/site";
 
-const display = Syne({
+const display = Instrument_Serif({
   subsets: ["latin"],
+  weight: "400",
   variable: "--font-display",
 });
 
@@ -29,10 +32,11 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const lang = (await headers()).get(LOCALE_HEADER) === "en" ? "en" : "fr";
   return (
     <html
-      lang="fr"
+      lang={lang}
       className={`${display.variable} ${sans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

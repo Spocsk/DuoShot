@@ -1,0 +1,48 @@
+"use client";
+
+import { t } from "@/lib/i18n";
+import type { Locale } from "@/lib/specs";
+import { Overlay } from "@/components/overlay";
+import type { CheckoutKind } from "@/lib/plans";
+
+export function PaywallModal({
+  locale,
+  reason,
+  busy,
+  onClose,
+  onCheckout,
+}: {
+  locale: Locale;
+  reason: "trial" | "69";
+  busy: boolean;
+  onClose: () => void;
+  onCheckout: (kind: CheckoutKind) => void;
+}) {
+  return (
+    <Overlay onClose={onClose} labelledBy="paywall-title">
+      <h2 id="paywall-title" className="font-display text-3xl">
+        {reason === "69" ? t(locale, "paywall_69") : t(locale, "paywall_title")}
+      </h2>
+      <p className="mt-3 text-[var(--muted)]">{t(locale, "paywall_lead")}</p>
+      <button
+        type="button"
+        className="ds-cta mt-6 w-full"
+        disabled={busy}
+        onClick={() => onCheckout("indie_monthly")}
+      >
+        {t(locale, "paywall_cta_indie")}
+      </button>
+      <button
+        type="button"
+        className="ds-cta-ghost mt-3 w-full"
+        disabled={busy}
+        onClick={() => onCheckout("studio_monthly")}
+      >
+        {t(locale, "paywall_cta_studio")}
+      </button>
+      <button type="button" className="mt-3 w-full text-sm text-[var(--muted)] underline" onClick={onClose}>
+        {t(locale, "paywall_later")}
+      </button>
+    </Overlay>
+  );
+}

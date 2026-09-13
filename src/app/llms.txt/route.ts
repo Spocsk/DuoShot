@@ -19,7 +19,8 @@ ${sizes}
 ## Notes
 - Separate shelf (one file per display), not boxed window
 - Guideline 2.3.3: screenshots must accurately represent the app
-- Optional 6.9" sizes are Indie/Studio only
+- Optional 6.9" sizes are Indie / Studio
+- Trial: 2 HD ZIP exports, then Indie at 12 EUR/month or Studio at 49 EUR/month
 `;
   return new Response(body, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },

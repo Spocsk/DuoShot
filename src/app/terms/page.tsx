@@ -4,13 +4,13 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   locale: "fr",
   path: "/terms",
-  title: "Conditions",
-  description: "Conditions d’utilisation DuoShot.",
+  title: "CGU",
+  description: "Conditions générales d’utilisation et de vente DuoShot.",
 });
 
 export default function Page() {
   return (
-    <LegalPage locale="fr" path="/terms" title="Conditions d’utilisation">
+    <LegalPage locale="fr" path="/terms" title="Conditions générales">
       <TermsContent locale="fr" />
     </LegalPage>
   );

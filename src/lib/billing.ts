@@ -1,4 +1,4 @@
-import { CHECKOUT_CATALOG, type CheckoutKind } from "./plans";
+import { CHECKOUT_CATALOG, isProPlan, remainingFreeExports, type CheckoutKind } from "./plans";
 import type { PlanId } from "./specs";
 import { getStripe } from "./stripe";
 
@@ -7,15 +7,40 @@ export type Entitlements = {
   extraAppPacks: number;
   launchUntil: string | null;
   source: "stripe" | "free" | "mock";
+  remainingFreeExports: number | null;
+  canUse69: boolean;
 };
+
+export function entitlementsFromPlan(
+  plan: PlanId,
+  extra: Pick<Entitlements, "extraAppPacks" | "launchUntil" | "source"> & {
+    freeExportsUsed?: number;
+  },
+): Entitlements {
+  return {
+    plan,
+    extraAppPacks: extra.extraAppPacks,
+    launchUntil: extra.launchUntil,
+    source: extra.source,
+    remainingFreeExports: remainingFreeExports(extra.freeExportsUsed ?? 0, plan),
+    canUse69: isProPlan(plan),
+  };
+}
 
 export async function resolveEntitlements(options: {
   email: string | null | undefined;
   workspaceId: string;
+  freeExportsUsed?: number;
 }): Promise<Entitlements> {
   const stripe = getStripe();
+  const used = options.freeExportsUsed ?? 0;
   if (!stripe || !options.email) {
-    return { plan: "free", extraAppPacks: 0, launchUntil: null, source: stripe ? "free" : "mock" };
+    return entitlementsFromPlan("free", {
+      extraAppPacks: 0,
+      launchUntil: null,
+      source: stripe ? "free" : "mock",
+      freeExportsUsed: used,
+    });
   }
 
   const customers = await stripe.customers.list({ email: options.email, limit: 10 });
@@ -23,7 +48,12 @@ export async function resolveEntitlements(options: {
     (customer) => customer.metadata.workspace_id === options.workspaceId || !customer.metadata.workspace_id,
   );
   if (matched.length === 0) {
-    return { plan: "free", extraAppPacks: 0, launchUntil: null, source: "stripe" };
+    return entitlementsFromPlan("free", {
+      extraAppPacks: 0,
+      launchUntil: null,
+      source: "stripe",
+      freeExportsUsed: used,
+    });
   }
 
   let plan: PlanId = "free";
@@ -40,7 +70,7 @@ export async function resolveEntitlements(options: {
       if (!["active", "trialing"].includes(subscription.status)) continue;
       const kind = subscription.metadata.kind as CheckoutKind | undefined;
       if (kind === "studio_monthly") plan = "studio";
-      if (kind === "indie_monthly" && plan !== "studio") plan = "indie";
+      else if (plan !== "studio") plan = "indie";
     }
 
     const sessions = await stripe.checkout.sessions.list({
@@ -64,5 +94,10 @@ export async function resolveEntitlements(options: {
     }
   }
 
-  return { plan, extraAppPacks, launchUntil, source: "stripe" };
+  return entitlementsFromPlan(plan, {
+    extraAppPacks,
+    launchUntil,
+    source: "stripe",
+    freeExportsUsed: used,
+  });
 }

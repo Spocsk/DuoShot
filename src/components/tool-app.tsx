@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   DEFAULT_RENDER_OPTIONS,
   MAX_IMAGES,
@@ -13,18 +14,39 @@ import {
   type OutputFormat,
   type RenderOptions,
 } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { t, tf } from "@/lib/i18n";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { containRect, coverRect } from "@/lib/pipeline/geometry";
+import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
+import type { CheckoutKind } from "@/lib/plans";
+import { Overlay } from "@/components/overlay";
+import { PaywallModal } from "@/components/paywall-modal";
+import { AuthForm } from "@/components/auth-form";
+import { localePrefix } from "@/lib/site";
 
 type Props = { locale: Locale };
+
+type BillingStatus = {
+  plan?: string;
+  remainingFreeExports?: number | null;
+  canUse69?: boolean;
+};
 
 const outerPreview = SIZE_SPECS.find((spec) => spec.id === "outer-p")!;
 const innerPreview = SIZE_SPECS.find((spec) => spec.id === "inner-p")!;
 
 export function ToolApp({ locale }: Props) {
-  const prefix = locale === "en" ? "/en" : "";
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
+      <ToolAppInner locale={locale} />
+    </Suspense>
+  );
+}
+
+function ToolAppInner({ locale }: Props) {
+  const prefix = localePrefix(locale);
+  const searchParams = useSearchParams();
   const [files, setFiles] = useState<File[]>([]);
   const [options, setOptions] = useState<RenderOptions>(DEFAULT_RENDER_OPTIONS);
   const [appName, setAppName] = useState("MyApp");
@@ -32,7 +54,25 @@ export function ToolApp({ locale }: Props) {
   const [status, setStatus] = useState<string | null>(null);
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
   const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [session, setSession] = useState<"out" | "in">("out");
+  const [showAuth, setShowAuth] = useState(false);
+  const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
+  const [upgradeDismissed, setUpgradeDismissed] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const signedIn = session === "in";
+  const checkoutFlag = searchParams.get("checkout");
+  const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
+  const urlStatus =
+    checkoutFlag === "success"
+      ? t(locale, "checkout_success")
+      : checkoutFlag === "cancel"
+        ? t(locale, "checkout_cancel")
+        : checkoutFlag === "mock"
+          ? t(locale, "checkout_mock")
+          : null;
 
   const warning = useMemo(() => {
     if (files.length === 0) return null;
@@ -43,16 +83,44 @@ export function ToolApp({ locale }: Props) {
     }
   }, [files.length]);
 
-  const drawPreviews = useCallback(
-    async (file: File, next: RenderOptions) => {
-      const bitmap = await createImageBitmap(file);
-      const outer = drawTarget(bitmap, next, next.orientation === "portrait" ? outerPreview : SIZE_SPECS.find((s) => s.id === "outer-l")!);
-      const inner = drawTarget(bitmap, next, next.orientation === "portrait" ? innerPreview : SIZE_SPECS.find((s) => s.id === "inner-l")!);
-      setPreviews({ outer, inner });
-      bitmap.close();
-    },
-    [],
-  );
+  const refreshBilling = useCallback(async () => {
+    const supabase = createBrowserSupabase();
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      setSession("out");
+      setBilling(null);
+      return;
+    }
+    setSession("in");
+    const response = await fetch("/api/billing/status");
+    if (!response.ok) return;
+    const payload = (await response.json()) as BillingStatus;
+    setBilling(payload);
+  }, []);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabase();
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      void refreshBilling();
+    });
+    return () => listener.subscription.unsubscribe();
+  }, [refreshBilling]);
+
+  const drawPreviews = useCallback(async (file: File, next: RenderOptions) => {
+    const bitmap = await createImageBitmap(file);
+    const outer = drawTarget(
+      bitmap,
+      next,
+      next.orientation === "portrait" ? outerPreview : SIZE_SPECS.find((s) => s.id === "outer-l")!,
+    );
+    const inner = drawTarget(
+      bitmap,
+      next,
+      next.orientation === "portrait" ? innerPreview : SIZE_SPECS.find((s) => s.id === "inner-l")!,
+    );
+    setPreviews({ outer, inner });
+    bitmap.close();
+  }, []);
 
   function isAllowedImage(file: File) {
     return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
@@ -73,6 +141,14 @@ export function ToolApp({ locale }: Props) {
     if (files[0]) void drawPreviews(files[0], next);
   }
 
+  function explainError(code: string) {
+    if (code === "AUTH_REQUIRED") return t(locale, "error_auth");
+    if (code === "TRIAL_EXHAUSTED") return t(locale, "error_trial");
+    if (code === "DAILY_LIMIT") return t(locale, "error_daily");
+    if (code === "IPHONE_69_GATED") return t(locale, "error_69");
+    return t(locale, "error_export");
+  }
+
   async function onExport() {
     setBusy(true);
     setStatus(null);
@@ -81,7 +157,16 @@ export function ToolApp({ locale }: Props) {
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
-        setStatus(t(locale, "tool_need_account"));
+        setShowAuth(true);
+        setStatus(t(locale, "error_auth"));
+        return;
+      }
+      if (include69 && billing && billing.canUse69 === false) {
+        setPaywall("69");
+        return;
+      }
+      if (billing?.plan === "free" && billing.remainingFreeExports === 0) {
+        setPaywall("trial");
         return;
       }
       const paths: string[] = [];
@@ -106,28 +191,78 @@ export function ToolApp({ locale }: Props) {
         }),
       });
       const payload = (await response.json()) as { url?: string; error?: string; warning?: string };
+      if (payload.error === "TRIAL_EXHAUSTED") {
+        setPaywall("trial");
+        setStatus(t(locale, "error_trial"));
+        return;
+      }
+      if (payload.error === "IPHONE_69_GATED") {
+        setPaywall("69");
+        setStatus(t(locale, "error_69"));
+        return;
+      }
       if (!response.ok) throw new Error(payload.error || "Export impossible");
       if (payload.url) {
         setZipUrl(payload.url);
-        setStatus(payload.warning || (locale === "fr" ? "ZIP prêt." : "ZIP ready."));
+        setStatus(payload.warning === "TOO_FEW" ? t(locale, "tool_warn") : t(locale, "tool_zip_ready"));
+        void refreshBilling();
       }
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Erreur");
+      setStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_export"));
     } finally {
       setBusy(false);
     }
   }
 
+  async function onCheckout(kind: CheckoutKind) {
+    if (!signedIn) {
+      setPaywall(null);
+      setShowAuth(true);
+      return;
+    }
+    setCheckoutBusy(true);
+    try {
+      await startCheckout(kind, checkoutReturnPath(locale));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t(locale, "error_export"));
+      setCheckoutBusy(false);
+    }
+  }
+
+  const remaining = billing?.remainingFreeExports;
+  const remainingLabel =
+    billing?.plan === "studio"
+      ? t(locale, "tool_plan_studio")
+      : billing?.plan === "indie"
+        ? t(locale, "tool_plan_indie")
+        : remaining === 1
+          ? t(locale, "tool_remaining_one")
+          : remaining === 0
+            ? t(locale, "tool_remaining_none")
+            : remaining != null
+              ? tf(locale, "tool_remaining", { n: remaining })
+              : t(locale, "tool_guest_quota");
+  const pillMute = remaining === 0 && billing?.plan === "free";
+
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
       <section>
-        <h1 className="font-[family-name:var(--font-display)] text-4xl">{t(locale, "tool_title")}</h1>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="font-display text-4xl">{t(locale, "tool_title")}</h1>
+          <p className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`}>{remainingLabel}</p>
+        </div>
         <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "hero_lead")}</p>
         <label
-          className="relative mt-8 flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed border-[var(--accent)]/40 bg-[#141821] text-center"
-          onDragOver={(event) => event.preventDefault()}
+          className={`ds-drop mt-8 ${over ? "is-over" : ""}`}
+          onDragEnter={() => setOver(true)}
+          onDragLeave={() => setOver(false)}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setOver(true);
+          }}
           onDrop={(event) => {
             event.preventDefault();
+            setOver(false);
             onFiles(event.dataTransfer.files);
           }}
         >
@@ -144,170 +279,206 @@ export function ToolApp({ locale }: Props) {
           </span>
         </label>
         {warning === "TOO_FEW" ? (
-          <p className="mt-3 text-sm text-amber-300">
+          <p className="mt-3 text-sm text-amber-800">
             {t(locale, "tool_warn")} ({WARN_MIN_IMAGES}+)
           </p>
         ) : null}
-        {files.length >= MAX_IMAGES ? (
-          <p className="mt-3 text-sm text-amber-300">{t(locale, "tool_cap")}</p>
-        ) : null}
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <PreviewCard
-            label="Outer 5.4″"
-            src={previews?.outer}
-            orientation={options.orientation}
-            kind="outer"
-          />
-          <PreviewCard
-            label="Inner 7.6″"
-            src={previews?.inner}
-            orientation={options.orientation}
-            kind="inner"
-          />
+        {files.length >= MAX_IMAGES ? <p className="mt-3 text-sm text-amber-800">{t(locale, "tool_cap")}</p> : null}
+        <div className="preview-duo mt-8">
+          <PreviewCard label={t(locale, "tool_preview_outer")} src={previews?.outer} kind="outer" />
+          <PreviewCard label={t(locale, "tool_preview_inner")} src={previews?.inner} kind="inner" />
         </div>
       </section>
-      <aside className="h-fit rounded-3xl border border-white/10 bg-[#141821] p-5">
-        <label className="grid gap-1 text-sm">
-          App
-          <input
-            value={appName}
-            onChange={(event) => setAppName(event.target.value)}
-            className="rounded-xl border border-white/10 bg-[#0B0D12] px-3 py-2"
-          />
-        </label>
-        <fieldset className="mt-4 grid gap-2 text-sm">
-          <legend>Orientation</legend>
-          {(["portrait", "landscape"] as Orientation[]).map((value) => (
-            <label key={value} className="flex gap-2">
-              <input
-                type="radio"
-                checked={options.orientation === value}
-                onChange={() => updateOptions({ orientation: value })}
-              />
-              {value}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset className="mt-4 grid gap-2 text-sm">
-          <legend>Fit</legend>
-          {(["contain", "cover", "smart"] as FitMode[]).map((value) => (
-            <label key={value} className="flex gap-2">
-              <input
-                type="radio"
-                checked={options.fit === value}
-                onChange={() => updateOptions({ fit: value })}
-              />
-              {value}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset className="mt-4 grid gap-2 text-sm">
-          <legend>Fond</legend>
-          {(["solid", "gradient", "blur"] as RenderOptions["background"][]).map((value) => (
-            <label key={value} className="flex gap-2">
-              <input
-                type="radio"
-                checked={options.background === value}
-                onChange={() => updateOptions({ background: value })}
-              />
-              {value}
-            </label>
-          ))}
-          <input
-            type="color"
-            value={options.solidColor}
-            onChange={(event) => updateOptions({ solidColor: event.target.value })}
-          />
-        </fieldset>
-        <label className="mt-4 grid gap-1 text-sm">
-          Titre
+      <aside className="h-fit border-t border-[var(--line)] pt-5 lg:border-t-0 lg:pt-0">
+        <div className="ds-field">
+          <p className="ds-label">{t(locale, "tool_label_app")}</p>
+          <input value={appName} onChange={(event) => setAppName(event.target.value)} className="ds-input w-full" />
+        </div>
+        <Seg
+          label={t(locale, "tool_label_orientation")}
+          value={options.orientation}
+          options={[
+            { value: "portrait", label: t(locale, "tool_orient_portrait") },
+            { value: "landscape", label: t(locale, "tool_orient_landscape") },
+          ]}
+          onChange={(value) => updateOptions({ orientation: value as Orientation })}
+        />
+        <Seg
+          label={t(locale, "tool_label_fit")}
+          value={options.fit}
+          options={[
+            { value: "contain", label: t(locale, "tool_fit_contain") },
+            { value: "cover", label: t(locale, "tool_fit_cover") },
+            { value: "smart", label: t(locale, "tool_fit_smart") },
+          ]}
+          onChange={(value) => updateOptions({ fit: value as FitMode })}
+        />
+        <Seg
+          label={t(locale, "tool_label_bg")}
+          value={options.background}
+          options={[
+            { value: "solid", label: t(locale, "tool_bg_solid") },
+            { value: "gradient", label: t(locale, "tool_bg_gradient") },
+            { value: "blur", label: t(locale, "tool_bg_blur") },
+          ]}
+          onChange={(value) => updateOptions({ background: value as RenderOptions["background"] })}
+        />
+        <div className="ds-field">
+          <span className="ds-swatch" style={{ background: options.solidColor }}>
+            <input
+              type="color"
+              value={options.solidColor}
+              aria-label={t(locale, "tool_label_bg")}
+              onChange={(event) => updateOptions({ solidColor: event.target.value })}
+            />
+          </span>
+        </div>
+        <div className="ds-field">
+          <p className="ds-label">{t(locale, "tool_label_title")}</p>
           <input
             value={options.title}
             onChange={(event) => updateOptions({ title: event.target.value })}
-            className="rounded-xl border border-white/10 bg-[#0B0D12] px-3 py-2"
+            className="ds-input w-full"
           />
-        </label>
-        <label className="mt-3 grid gap-1 text-sm">
-          Sous-titre
+        </div>
+        <div className="ds-field">
+          <p className="ds-label">{t(locale, "tool_label_subtitle")}</p>
           <input
             value={options.subtitle}
             onChange={(event) => updateOptions({ subtitle: event.target.value })}
-            className="rounded-xl border border-white/10 bg-[#0B0D12] px-3 py-2"
+            className="ds-input w-full"
           />
-        </label>
-        <div className="mt-3 flex gap-3 text-sm">
-          <label>
-            <input
-              type="radio"
-              checked={options.titlePosition === "top"}
-              onChange={() => updateOptions({ titlePosition: "top" })}
-            />{" "}
-            haut
-          </label>
-          <label>
-            <input
-              type="radio"
-              checked={options.titlePosition === "bottom"}
-              onChange={() => updateOptions({ titlePosition: "bottom" })}
-            />{" "}
-            bas
-          </label>
         </div>
-        <div className="mt-2 flex gap-3 text-sm">
-          <label>
-            <input
-              type="radio"
-              checked={options.titleFont === "sans"}
-              onChange={() => updateOptions({ titleFont: "sans" })}
-            />{" "}
-            sans
-          </label>
-          <label>
-            <input
-              type="radio"
-              checked={options.titleFont === "serif"}
-              onChange={() => updateOptions({ titleFont: "serif" })}
-            />{" "}
-            serif
-          </label>
+        <Seg
+          label={t(locale, "tool_label_position")}
+          value={options.titlePosition}
+          options={[
+            { value: "top", label: t(locale, "tool_pos_top") },
+            { value: "bottom", label: t(locale, "tool_pos_bottom") },
+          ]}
+          onChange={(value) => updateOptions({ titlePosition: value as RenderOptions["titlePosition"] })}
+        />
+        <Seg
+          label={t(locale, "tool_label_font")}
+          value={options.titleFont}
+          options={[
+            { value: "sans", label: t(locale, "tool_font_sans") },
+            { value: "serif", label: t(locale, "tool_font_serif") },
+          ]}
+          onChange={(value) => updateOptions({ titleFont: value as RenderOptions["titleFont"] })}
+        />
+        <Seg
+          label={t(locale, "tool_label_format")}
+          value={options.format}
+          options={[
+            { value: "png", label: "PNG-24" },
+            { value: "jpeg", label: "JPEG q90" },
+          ]}
+          onChange={(value) => updateOptions({ format: value as OutputFormat })}
+        />
+        <div className="ds-field">
+          <button
+            type="button"
+            className="ds-toggle"
+            aria-pressed={include69}
+            onClick={() => {
+              const next = !include69;
+              setInclude69(next);
+              if (next && (!billing || billing.canUse69 === false)) setPaywall("69");
+            }}
+          >
+            <span className="text-sm">{t(locale, "tool_label_69")}</span>
+            <span className="ds-toggle-track">
+              <span className="ds-toggle-thumb" />
+            </span>
+          </button>
         </div>
-        <div className="mt-3 flex gap-3 text-sm">
-          {(["png", "jpeg"] as OutputFormat[]).map((value) => (
-            <label key={value}>
-              <input
-                type="radio"
-                checked={options.format === value}
-                onChange={() => updateOptions({ format: value })}
-              />{" "}
-              {value === "png" ? "PNG-24" : "JPEG q90"}
-            </label>
-          ))}
-        </div>
-        <label className="mt-4 flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={include69} onChange={(event) => setInclude69(event.target.checked)} />
-          6.9″ (Indie/Studio)
-        </label>
         <button
           type="button"
           disabled={busy || files.length === 0}
-          onClick={onExport}
-          className="mt-6 w-full rounded-full bg-[var(--accent)] py-3 font-medium text-[#111]"
+          onClick={() => void onExport()}
+          className="ds-cta mt-6 w-full"
         >
           {t(locale, "tool_download")}
         </button>
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          {t(locale, "tool_need_account")}{" "}
-          <Link href={`${prefix}/signup`} className="underline">
-            {t(locale, "nav_signup")}
-          </Link>
-        </p>
-        {status ? <p className="mt-3 text-sm">{status}</p> : null}
+        {!signedIn ? (
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            {t(locale, "tool_need_account")}{" "}
+            <Link href={`${prefix}/signup`} className="ds-link">
+              {t(locale, "nav_signup")}
+            </Link>
+          </p>
+        ) : null}
+        {status ?? urlStatus ? <p className="mt-3 text-sm">{status ?? urlStatus}</p> : null}
         {zipUrl ? (
-          <a href={zipUrl} className="mt-3 inline-block text-sm text-[var(--accent)] underline">
-            Ouvrir l’URL signée
+          <a href={zipUrl} className="mt-3 inline-block text-sm underline">
+            {t(locale, "tool_open_zip")}
           </a>
         ) : null}
       </aside>
+      {showAuth || (upgradeRequested && session === "out") ? (
+        <Overlay
+          onClose={() => {
+            setShowAuth(false);
+            setUpgradeDismissed(true);
+          }}
+          labelledBy="auth-modal-title"
+        >
+          <AuthForm
+            locale={locale}
+            mode="signup"
+            variant="modal"
+            nextPath={`${prefix}/tool`}
+            onSuccess={() => {
+              setShowAuth(false);
+              void refreshBilling();
+            }}
+          />
+        </Overlay>
+      ) : null}
+      {paywall || (upgradeRequested && session === "in") ? (
+        <PaywallModal
+          locale={locale}
+          reason={paywall ?? "trial"}
+          busy={checkoutBusy}
+          onClose={() => {
+            setPaywall(null);
+            setUpgradeDismissed(true);
+          }}
+          onCheckout={(kind) => void onCheckout(kind)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function Seg({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="ds-field">
+      <p className="ds-label">{label}</p>
+      <div className="ds-seg" role="radiogroup" aria-label={label}>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={value === option.value ? "is-on" : ""}
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -315,29 +486,22 @@ export function ToolApp({ locale }: Props) {
 function PreviewCard({
   label,
   src,
-  orientation,
   kind,
 }: {
   label: string;
   src?: string;
-  orientation: Orientation;
   kind: "outer" | "inner";
 }) {
-  const portrait = orientation === "portrait";
-  const aspect = kind === "outer" ? (portrait ? "1398/2034" : "2034/1398") : portrait ? "2007/2853" : "2853/2007";
   return (
-    <figure className="rounded-[24px] border border-white/10 bg-[#0B0D12] p-4">
-      <figcaption className="mb-3 text-sm text-[var(--muted)]">{label}</figcaption>
-      <div
-        className="overflow-hidden rounded-[18px] bg-[#1a2030]"
-        style={{ aspectRatio: aspect }}
-      >
+    <figure>
+      <figcaption className="duo-caption mb-3 text-left">{label}</figcaption>
+      <div className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"}`}>
         {src ? (
           // User-generated preview from canvas.toDataURL
           // eslint-disable-next-line @next/next/no-img-element
           <img src={src} alt={label} className="h-full w-full object-contain" />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">—</div>
+          <span>—</span>
         )}
       </div>
     </figure>

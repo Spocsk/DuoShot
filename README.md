@@ -27,7 +27,22 @@ Renseigne uniquement les **noms** de variables dans `.env.example`. Les secrets 
 
 Google OAuth, e-mail + mot de passe, magic link OTP. **Pas** de Sign in with Apple en v1.
 
-Dans le dashboard Supabase : activer Google, autoriser les redirect URLs (`http://localhost:3000/auth/callback`, domaine prod), SMTP Resend si le quota mail Free sature.
+Projet Supabase : [DuoShot](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq) (`jvhqcmqwrihbtwrggwuq`).
+
+### Activer Google
+
+1. [Google Cloud Console → Identifiants](https://console.cloud.google.com/apis/credentials) : écran de consentement OAuth (External, app DuoShot), puis **ID client OAuth 2.0** type Application Web.
+2. URI de redirection autorisée (côté Google) — uniquement le callback Supabase :
+
+   `https://jvhqcmqwrihbtwrggwuq.supabase.co/auth/v1/callback`
+
+3. [Supabase → Authentication → Providers → Google](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/providers) : activer, coller Client ID + secret. Aucun secret dans git.
+4. [URL Configuration](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/url-configuration) : Site URL + Redirect URLs
+
+   - `http://localhost:3000/auth/callback`
+   - origine prod (`NEXT_PUBLIC_SITE_URL` / domaine Vercel), même chemin `/auth/callback`
+
+Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de JSON brut GoTrue). SMTP Resend si le quota mail Free sature.
 
 ## Plans
 

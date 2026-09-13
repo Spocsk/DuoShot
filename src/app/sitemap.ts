@@ -3,7 +3,17 @@ import { getSiteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getSiteUrl();
-  const paths = ["/", "/specs", "/signup", "/login", "/privacy", "/terms", "/cookies", "/legal/subprocessors"];
+  const paths = [
+    "/",
+    "/specs",
+    "/signup",
+    "/login",
+    "/privacy",
+    "/terms",
+    "/cookies",
+    "/legal",
+    "/legal/subprocessors",
+  ];
   return paths.flatMap((path) => [
     {
       url: `${base}${path}`,

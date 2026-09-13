@@ -222,7 +222,7 @@ $$;
 create or replace function public.increment_daily_export(p_workspace_id uuid)
 returns integer
 language sql
-security invoker
+security definer
 set search_path = public
 as $$
   select private.increment_daily_export(p_workspace_id);
@@ -265,7 +265,7 @@ $$;
 create or replace function public.erase_current_user()
 returns void
 language sql
-security invoker
+security definer
 set search_path = public
 as $$
   select private.erase_current_user();

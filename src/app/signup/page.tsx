@@ -6,7 +6,7 @@ export const metadata = pageMetadata({
   locale: "fr",
   path: "/signup",
   title: "Créer un compte",
-  description: "Inscription DuoShot : Google, e-mail ou lien magique. 16 ans ou plus.",
+  description: "Inscription DuoShot : Google, e-mail ou lien magique.",
 });
 
 export default function Page() {

@@ -1,5 +1,5 @@
 import { FAQ } from "./i18n";
-import { SITE_NAME, SITE_PITCH_FR, getSiteUrl } from "./site";
+import { SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, getSiteUrl } from "./site";
 import type { Locale } from "./specs";
 
 export function jsonLdGraph(locale: Locale) {
@@ -25,7 +25,7 @@ export function jsonLdGraph(locale: Locale) {
           highPrice: "49",
           priceCurrency: "EUR",
         },
-        description: locale === "fr" ? SITE_PITCH_FR : "Accurate Duo screenshots in 3 minutes. No device.",
+        description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
         url,
       },
       {

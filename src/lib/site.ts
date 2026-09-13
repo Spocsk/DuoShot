@@ -1,8 +1,8 @@
 import type { Locale } from "./specs";
 
 export const SITE_NAME = "DuoShot";
-export const SITE_PITCH_FR = "Tes screenshots Duo, justes, en 3 minutes. Sans device.";
-export const SITE_PITCH_EN = "Accurate Duo screenshots in 3 minutes. No device.";
+export const SITE_PITCH_FR = "Tes captures Duo, prêtes pour l’App Store.";
+export const SITE_PITCH_EN = "Duo screenshots, ready for the App Store.";
 
 export function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
@@ -23,4 +23,12 @@ export function localizedPath(locale: Locale, path: string): string {
 
 export function absoluteUrl(pathname: string): string {
   return `${getSiteUrl()}${pathname}`;
+}
+
+export function localePrefix(locale: Locale): string {
+  return locale === "en" ? "/en" : "";
+}
+
+export function toolPath(locale: Locale): string {
+  return `${localePrefix(locale)}/tool`;
 }
