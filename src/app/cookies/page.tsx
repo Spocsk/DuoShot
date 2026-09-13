@@ -5,7 +5,7 @@ export const metadata = pageMetadata({
   locale: "fr",
   path: "/cookies",
   title: "Cookies",
-  description: "Cookies DuoShot : session Auth uniquement, pas de bandeau CMP en v1.",
+  description: "Cookies DuoShot : session Auth, Web Analytics Vercel sans cookie.",
 });
 
 export default function Page() {

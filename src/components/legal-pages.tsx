@@ -119,7 +119,8 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         <Block title="Data we process">
           <p>
             Account data (email, auth identifiers), consent logs, workspace membership, export metadata, and the
-            screenshot files you upload. No marketing in v1.
+            screenshot files you upload. Vercel Web Analytics records aggregated page views without cookies. No
+            marketing or ads in v1.
           </p>
         </Block>
         <Block title="Legal bases">
@@ -167,7 +168,8 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       <Block title="Données traitées">
         <p>
           E-mail et identifiants Auth, journaux de consentement, membership workspace, métadonnées d’export, fichiers de
-          captures que vous déposez. Pas de marketing en v1.
+          captures que vous déposez. Vercel Web Analytics compte les pages vues de façon agrégée, sans cookie. Pas de
+          marketing ni pubs en v1.
         </p>
       </Block>
       <Block title="Bases légales">
@@ -358,8 +360,8 @@ export function CookiesContent({ locale }: { locale: Locale }) {
           <p>
             Auth session cookies only (Supabase PKCE). They are required to keep you signed in and to download a ZIP. The
             functional <code>duoshot_locale</code> cookie is set only if you click FR/EN; without it, the language follows
-            the browser <code>Accept-Language</code> header. No analytics, ads or CMP banner in v1 (ePrivacy / CNIL).
-            Stripe may set its own cookies on Stripe Checkout, off this site.
+            the browser <code>Accept-Language</code> header. Vercel Web Analytics measures traffic without cookies, so
+            there is no CMP banner for ads or trackers. Stripe may set its own cookies on Stripe Checkout, off this site.
           </p>
         </Block>
         <Block title="Later">
@@ -381,8 +383,9 @@ export function CookiesContent({ locale }: { locale: Locale }) {
         <p>
           Cookies de session Auth seulement (Supabase PKCE). Ils servent à rester connecté et à télécharger un ZIP. Le
           cookie fonctionnel <code>duoshot_locale</code> n’est posé que si tu cliques FR/EN ; sans lui, la langue suit
-          l’en-tête <code>Accept-Language</code> du navigateur. Pas d’analytics, pubs ni bandeau CMP en v1 (ePrivacy /
-          CNIL). Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de ce site.
+          l’en-tête <code>Accept-Language</code> du navigateur. Vercel Web Analytics mesure le trafic sans cookie, donc
+          pas de bandeau CMP pour pubs ou trackers. Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de
+          ce site.
         </p>
       </Block>
       <Block title="Plus tard">
@@ -404,7 +407,7 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
       <p>{locale === "fr" ? `Liste datée : ${POLICY_VERSION}.` : `Dated list: ${POLICY_VERSION}.`}</p>
       <ul className="list-disc pl-5">
         <li>Supabase — Postgres, Auth, Storage — eu-west-3 (Paris)</li>
-        <li>Vercel — hosting / functions — US/EU</li>
+        <li>Vercel — hosting, functions, Web Analytics — US/EU</li>
         <li>Stripe — payments — US/EU</li>
         <li>Resend — transactional email — US</li>
         <li>Google — OAuth sign-in — US</li>

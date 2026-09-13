@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Figtree, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { LOCALE_HEADER } from "@/lib/locale";
 import { SITE_NAME, SITE_PITCH_FR, getSiteUrl } from "@/lib/site";
@@ -39,7 +40,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang={lang}
       className={`${display.variable} ${sans.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
