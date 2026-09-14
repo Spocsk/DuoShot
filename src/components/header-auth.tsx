@@ -36,6 +36,7 @@ export function HeaderAuth({
     return (
       <Link
         href={`${prefix}/account`}
+        data-testid={variant === "menu" ? "nav-account-menu" : "nav-account"}
         className={variant === "menu" ? "ds-menu-link" : "ds-cta !px-3 !py-1.5 text-sm"}
       >
         {t(locale, "nav_account")}
@@ -46,10 +47,10 @@ export function HeaderAuth({
   if (variant === "menu") {
     return (
       <>
-        <Link href={`${prefix}/login`} className="ds-menu-link">
+        <Link href={`${prefix}/login`} data-testid="nav-login-menu" className="ds-menu-link">
           {t(locale, "nav_login")}
         </Link>
-        <Link href={`${prefix}/signup`} className="ds-menu-link">
+        <Link href={`${prefix}/signup`} data-testid="nav-signup-menu" className="ds-menu-link">
           {t(locale, "nav_signup")}
         </Link>
       </>
@@ -58,10 +59,10 @@ export function HeaderAuth({
 
   return (
     <>
-      <Link href={`${prefix}/login`} className="hover:text-[var(--foreground)]">
+      <Link href={`${prefix}/login`} data-testid="nav-login" className="hover:text-[var(--foreground)]">
         {t(locale, "nav_login")}
       </Link>
-      <Link href={`${prefix}/signup`} className="ds-cta !px-3 !py-1.5 text-sm">
+      <Link href={`${prefix}/signup`} data-testid="nav-signup" className="ds-cta !px-3 !py-1.5 text-sm">
         {t(locale, "nav_signup")}
       </Link>
     </>

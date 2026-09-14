@@ -94,4 +94,17 @@ describe("pipeline", () => {
       }),
     ).toBe("acme-studio/mon-app/iphone-69-portrait/1320x2868/01.png");
   });
+
+  it("prefixes Indie client folders without requiring Studio", () => {
+    const spec = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;
+    expect(
+      zipEntryPath({
+        appName: "Weather",
+        clientSlug: "north",
+        spec,
+        index: 1,
+        format: "png",
+      }),
+    ).toBe("north/weather/duo-outer-portrait/02.png");
+  });
 });

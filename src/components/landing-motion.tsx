@@ -47,6 +47,9 @@ export function LandingMotion({ children }: { children: ReactNode }) {
               trigger: el,
               start: "top 86%",
             },
+            onComplete: () => {
+              gsap.set(el, { clipPath: "none" });
+            },
           },
         );
       });

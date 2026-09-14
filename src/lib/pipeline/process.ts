@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { parseHexColor } from "./geometry";
 import type { RenderOptions, SizeSpec, TitleFont } from "../specs";
-import { JPEG_QUALITY } from "../specs";
+import { hingeBand, JPEG_QUALITY } from "../specs";
 
 const FONT_SANS = path.join(process.cwd(), "src/lib/pipeline/fonts/sans-bold.ttf");
 const FONT_SERIF = path.join(process.cwd(), "src/lib/pipeline/fonts/serif-bold.ttf");
@@ -124,10 +124,19 @@ export async function renderScreenshot(
     .png()
     .toBuffer();
 
-  const composites: { input: Buffer; gravity: "centre" }[] = [{ input: foreground, gravity: "centre" }];
+  const composites: { input: Buffer; top?: number; left?: number; gravity?: "centre" }[] = [
+    { input: foreground, gravity: "centre" },
+  ];
   const overlay = titleSvg(spec, options);
   if (overlay) {
     composites.push({ input: await rasterizeSvg(overlay, spec.width, spec.height), gravity: "centre" });
+  }
+  if (options.burnHinge && spec.slot === "duo-inner") {
+    const band = hingeBand(spec);
+    const mask = `<svg width="${spec.width}" height="${spec.height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${band.x}" y="${band.y}" width="${band.width}" height="${band.height}" fill="rgb(8 10 12 / 0.32)"/>
+    </svg>`;
+    composites.push({ input: await rasterizeSvg(mask, spec.width, spec.height), gravity: "centre" });
   }
 
   const { r, g, b } = parseHexColor(options.solidColor);

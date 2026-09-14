@@ -729,7 +729,8 @@ a {
 }
 
 .shelf-inner {
-  aspect-ratio: 164.6 / 117.8;
+  container-type: inline-size;
+  aspect-ratio: 2853 / 2007;
 }
 
 .shelf-strip.is-outer .shelf-frame {
@@ -738,6 +739,23 @@ a {
 
 .shelf-strip.is-inner .shelf-frame {
   border-radius: 7.3% / 10%;
+}
+
+.shelf-strip.is-inner {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1.25rem;
+  gap: 1rem;
+  margin-inline: -1.25rem;
+  padding-inline: 1.25rem;
+  padding-bottom: 0.4rem;
+  scrollbar-width: thin;
+}
+
+.shelf-strip.is-inner figure {
+  flex: 0 0 min(36rem, 78vw);
+  scroll-snap-align: start;
 }
 
 .shelf-book {
@@ -750,10 +768,51 @@ a {
 }
 
 .shelf-book-pane {
+  container-type: size;
   min-width: 0;
   min-height: 0;
   height: 100%;
-  overflow: clip;
+  overflow: hidden;
+}
+
+.shelf-book .harbor-inner-main,
+.shelf-book .harbor-inner-side {
+  padding: 7% 8%;
+  overflow: hidden;
+}
+
+.shelf-book .harbor-place {
+  font-size: clamp(0.8rem, 11cqi, 1.35rem);
+}
+
+.shelf-book .harbor-metric,
+.shelf-book .harbor-kicker,
+.shelf-book .harbor-status-solo {
+  font-size: clamp(0.42rem, 3.4cqi, 0.62rem);
+}
+
+.shelf-book .harbor-glass-title {
+  font-size: clamp(0.7rem, 6.5cqi, 1.05rem);
+}
+
+.shelf-book .harbor-spot {
+  font-size: clamp(0.4rem, 3.6cqi, 0.62rem);
+}
+
+.shelf-book .harbor-hours {
+  height: 14%;
+  margin-top: 4%;
+}
+
+.shelf-book .harbor-spark {
+  height: 12%;
+  min-height: 0;
+  flex-shrink: 1;
+}
+
+.shelf-book .harbor-spots {
+  margin-top: 5%;
+  gap: 5%;
 }
 
 .shelf-book-crease {
@@ -794,7 +853,7 @@ a {
   }
 
   .shelf-strip.is-inner figure {
-    flex: 0 0 88vw;
+    flex: 0 0 min(36rem, 88vw);
   }
 }
 
@@ -925,9 +984,89 @@ a {
     linear-gradient(160deg, #7f8f88 0%, #4e5d63 100%);
 }
 
+.pricing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .pricing-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 12 tracks: kicker, title, price, intro, 6 feats, foot, cta */
+.pricing-col {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 12;
+  min-width: 0;
+  min-height: 0;
+  padding: 1.25rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--line);
+}
+
+.pricing-col.is-featured {
+  border-top-color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 5.5%, var(--background));
+}
+
+.pricing-kicker {
+  min-height: 1.05rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pricing-col.is-featured .pricing-kicker {
+  color: var(--foreground);
+}
+
+.pricing-intro {
+  margin-top: 0.7rem;
+  padding-bottom: 1.35rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.pricing-col.is-featured .pricing-intro {
+  color: var(--foreground);
+}
+
+.pricing-feats {
+  display: contents;
+}
+
+.pricing-foot {
+  margin-top: 0.85rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.pricing-cta-slot {
+  padding-top: 1.35rem;
+}
+
+.pricing-cta-slot .ds-cta,
+.pricing-cta-slot .ds-cta-ghost {
+  width: 100%;
+}
+
 .pricing-feat {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(4.5rem, auto);
+  align-items: start;
   gap: 0.75rem;
   border-top: 1px solid var(--line);
   padding: 0.72rem 0;
@@ -1052,6 +1191,152 @@ a {
   box-shadow: none;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.preview-inner.hinge-off::after {
+  display: none;
+}
+
+.preview-inner.is-hinge::after {
+  width: 6%;
+  opacity: 0.72;
+}
+
+.compare-pair {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.compare-shot {
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+  aspect-ratio: 1398 / 2034;
+  border-radius: 5% 16% 16% 5% / 3.5% 11% 11% 3.5%;
+  color: #f7f3ec;
+  background:
+    radial-gradient(80% 70% at 18% 78%, #e8d4b8 0%, transparent 55%),
+    linear-gradient(165deg, #d4c3ae 0%, #9aa8a4 42%, #3e4d54 100%);
+}
+
+.compare-shot.is-open {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  aspect-ratio: 164.6 / 117.8;
+  border-radius: 7.3% / 10%;
+}
+
+.compare-shot.is-clone.is-rejected,
+.compare-shot.is-zip.is-rejected {
+  filter: grayscale(0.35) contrast(0.92);
+}
+
+.compare-shot.is-ok {
+  box-shadow: 0 16px 36px rgb(20 20 20 / 0.12);
+}
+
+.compare-alpha {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(45deg, #bbb 25%, transparent 25%),
+    linear-gradient(-45deg, #bbb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #bbb 75%),
+    linear-gradient(-45deg, transparent 75%, #bbb 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+}
+
+.compare-hinge {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 auto 0 50%;
+  z-index: 2;
+  width: 7%;
+  translate: -50% 0;
+  background: rgb(8 10 12 / 0.28);
+}
+
+.compare-shot.is-open .compare-hinge {
+  width: 5%;
+}
+
+.compare-hinge.is-hot {
+  width: 8%;
+  background: rgb(180 40 30 / 0.55);
+}
+
+.compare-shot.is-open .compare-hinge.is-hot {
+  width: 8%;
+}
+
+.compare-pane {
+  min-width: 0;
+  padding: 11% 9% 0;
+}
+
+.compare-shot.is-open.is-rejected .compare-pane:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-right: 8%;
+  text-align: right;
+}
+
+.compare-label,
+.compare-metric,
+.compare-path,
+.compare-path-file {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.28);
+}
+
+.compare-label,
+.compare-metric {
+  padding: 12% 10% 0;
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+.compare-pane .compare-label,
+.compare-pane .compare-metric {
+  padding: 0;
+}
+
+.compare-label {
+  font-size: clamp(1.35rem, 13cqi, 2.15rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+.compare-metric {
+  padding-top: 0.25rem;
+  font-size: clamp(0.95rem, 7.5cqi, 1.3rem);
+  opacity: 0.92;
+}
+
+.compare-path,
+.compare-path-file {
+  padding: 12% 9% 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: clamp(1rem, 9cqi, 1.35rem);
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.compare-path-file {
+  padding-top: 0.35rem;
+  opacity: 0.92;
+}
+
+.review-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 84fr) minmax(0, 165fr);
+  gap: 1rem;
+  align-items: end;
 }
 
 @media (prefers-reduced-motion: reduce) {

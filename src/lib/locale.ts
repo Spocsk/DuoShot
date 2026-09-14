@@ -35,7 +35,13 @@ export function isCrawler(userAgent: string | null): boolean {
 }
 
 export function shouldSkipLocaleRewrite(pathname: string): boolean {
-  return pathname.startsWith("/api/") || pathname.startsWith("/auth/") || pathname.startsWith("/llms");
+  return (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/llms") ||
+    pathname === "/r" ||
+    pathname.startsWith("/r/")
+  );
 }
 
 export function cookieLocale(value: string | undefined): Locale | null {

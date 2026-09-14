@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import gsap from "gsap";
@@ -19,15 +19,12 @@ type Props = {
 
 const CLIP_OPEN = "circle(150% at calc(100% - 2.1rem) 1.85rem)";
 const CLIP_CLOSED = "circle(0% at calc(100% - 2.1rem) 1.85rem)";
+const subscribeNever = () => () => {};
 
 export function SiteNav({ locale, home, prefix, otherHref }: Props) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
   const panel = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");

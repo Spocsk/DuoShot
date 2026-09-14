@@ -140,13 +140,13 @@ export function AuthForm({
 
   return (
     <div className={variant === "page" ? "mx-auto w-full max-w-md border-t border-[var(--line)] pt-8" : ""}>
-      <h1 id={variant === "modal" ? "auth-modal-title" : undefined} className="font-display text-3xl">
+      <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
         {variant === "modal" ? t(locale, "auth_modal_title") : t(locale, mode === "signup" ? "signup_title" : "login_title")}
       </h1>
       {variant === "modal" ? (
         <p className="mt-2 text-sm text-[var(--muted)]">{t(locale, "auth_modal_lead")}</p>
       ) : null}
-      <button type="button" onClick={onGoogle} className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>
+      <button type="button" onClick={onGoogle} data-testid="auth-google" className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>
         <GoogleMark />
         {t(locale, "google")}
       </button>
@@ -185,6 +185,7 @@ export function AuthForm({
           <input
             type="email"
             required
+            data-testid="auth-email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="ds-input"
@@ -196,6 +197,7 @@ export function AuthForm({
             type="password"
             minLength={8}
             required={mode === "signup"}
+            data-testid="auth-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="ds-input"
@@ -205,6 +207,7 @@ export function AuthForm({
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
+              data-testid="auth-privacy"
               checked={privacy}
               onChange={(event) => setPrivacy(event.target.checked)}
             />
@@ -237,14 +240,14 @@ export function AuthForm({
             </span>
           </label>
         ) : null}
-        <button type="submit" disabled={busy} className="ds-cta">
+        <button type="submit" disabled={busy} data-testid="auth-submit" className="ds-cta">
           {mode === "signup" ? t(locale, "nav_signup") : t(locale, "nav_login")}
         </button>
-        <button type="button" onClick={onMagic} disabled={busy || !email} className="text-sm underline">
+        <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="text-sm underline">
           {t(locale, "magic")}
         </button>
       </form>
-      {message ? <p className="mt-4 text-sm">{message}</p> : null}
+      {message ? <p className="mt-4 text-sm" data-testid="auth-message">{message}</p> : null}
       {variant === "page" ? (
         <p className="mt-6 text-sm text-[var(--muted)]">
           {mode === "signup" ? (

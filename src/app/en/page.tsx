@@ -5,7 +5,7 @@ import { SITE_PITCH_EN } from "@/lib/site";
 export const metadata = pageMetadata({
   locale: "en",
   path: "/",
-  title: "iPhone Duo screenshots",
+  title: "App Store Connect ZIP for iPhone Duo",
   description: SITE_PITCH_EN,
 });
 

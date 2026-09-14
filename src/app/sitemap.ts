@@ -6,6 +6,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [
     "/",
     "/specs",
+    "/pourquoi-pas-ia",
+    "/why-not-ai",
+    "/rejet",
+    "/rejection",
     "/signup",
     "/login",
     "/privacy",

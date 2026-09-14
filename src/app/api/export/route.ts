@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { resolveEntitlements } from "@/lib/billing";
 import { FREE_EXPORTS, PRO_DAILY_CAP, isProPlan } from "@/lib/plans";
+import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
+import { scorePair, worstCloneLabel, type CloneResult } from "@/lib/pipeline/clone-score";
 import { renderScreenshot } from "@/lib/pipeline/process";
+import { inspectSource } from "@/lib/pipeline/source-inspect";
 import { buildZip, type ZipImage } from "@/lib/pipeline/zip";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import {
@@ -9,7 +12,9 @@ import {
   SIGNED_URL_SECONDS,
   canUse69,
   targetsFor,
+  type DeviceSlot,
   type RenderOptions,
+  type SizeSpec,
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -18,10 +23,34 @@ export const maxDuration = 60;
 
 type Body = {
   paths?: string[];
+  outerPaths?: string[];
+  innerPaths?: string[];
   appName?: string;
+  clientName?: string;
   include69?: boolean;
+  assumeCloneRisk?: boolean;
+  sameSet?: boolean;
   options?: Partial<RenderOptions>;
 };
+
+async function downloadOwned(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  userId: string,
+  storagePath: string,
+) {
+  if (!storagePath.startsWith(`${userId}/`)) {
+    throw new Error("PATH_FORBIDDEN");
+  }
+  const { data: file, error } = await supabase.storage.from("uploads").download(storagePath);
+  if (error || !file) {
+    throw new Error("UPLOAD_MISSING");
+  }
+  return Buffer.from(await file.arrayBuffer());
+}
+
+function slotTargets(targets: SizeSpec[], slot: DeviceSlot) {
+  return targets.filter((spec) => spec.slot === slot);
+}
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabase();
@@ -33,10 +62,13 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as Body;
-  const paths = body.paths ?? [];
+  const sameSet = Boolean(body.sameSet);
+  const outerPaths = body.outerPaths ?? body.paths ?? [];
+  const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? body.paths ?? []);
+  const count = Math.max(outerPaths.length, innerPaths.length);
   let countWarning: string | undefined;
   try {
-    const checked = checkSourceCount(paths.length);
+    const checked = checkSourceCount(count);
     if (checked.warning === "TOO_FEW") countWarning = "TOO_FEW";
   } catch (error) {
     return NextResponse.json(
@@ -44,6 +76,10 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  if (outerPaths.length === 0 && innerPaths.length === 0) {
+    return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
+  }
+  const unpaired = outerPaths.length !== innerPaths.length && !sameSet;
 
   const { data: membership, error: memberError } = await supabase
     .from("workspace_members")
@@ -66,7 +102,7 @@ export async function POST(request: Request) {
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
   });
-  const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options };
+  const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
   const include69 = Boolean(body.include69);
   const pro = isProPlan(entitlements.plan);
 
@@ -106,7 +142,7 @@ export async function POST(request: Request) {
     reservedFree = true;
   }
 
-  let targets;
+  let targets: SizeSpec[] = [];
   try {
     targets = targetsFor({
       orientation: options.orientation,
@@ -124,30 +160,63 @@ export async function POST(request: Request) {
   }
 
   try {
+    const outerBuffers: Buffer[] = [];
+    const innerBuffers: Buffer[] = [];
+    for (const storagePath of outerPaths) {
+      outerBuffers.push(await downloadOwned(supabase, user.id, storagePath));
+    }
+    for (const storagePath of innerPaths) {
+      innerBuffers.push(await downloadOwned(supabase, user.id, storagePath));
+    }
+
+    const pairCount = Math.min(outerBuffers.length, innerBuffers.length);
+    const cloneScores: CloneResult[] = [];
+    for (let index = 0; index < pairCount; index += 1) {
+      cloneScores.push(
+        scorePair(await hashFromBuffer(outerBuffers[index]!), await hashFromBuffer(innerBuffers[index]!), index, sameSet),
+      );
+    }
+    if (pro && worstCloneLabel(cloneScores) === "risk" && !body.assumeCloneRisk) {
+      if (reservedFree) {
+        await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
+      }
+      return NextResponse.json({ error: "CLONE_RISK", cloneScores }, { status: 403 });
+    }
+
+    let flattenAlpha = false;
     const zipImages: ZipImage[] = [];
-    for (const [index, storagePath] of paths.entries()) {
-      if (!storagePath.startsWith(`${user.id}/`)) {
-        throw new Error("PATH_FORBIDDEN");
-      }
-      const { data: file, error } = await supabase.storage.from("uploads").download(storagePath);
-      if (error || !file) {
-        throw new Error("UPLOAD_MISSING");
-      }
-      const input = Buffer.from(await file.arrayBuffer());
-      for (const spec of targets) {
-        const buffer = await renderScreenshot(input, spec, options);
-        zipImages.push({ spec, index, buffer });
+    async function renderSide(buffers: Buffer[], slot: DeviceSlot) {
+      const specs = slotTargets(targets, slot);
+      for (const [index, input] of buffers.entries()) {
+        const inspected = inspectSource(input);
+        if (inspected.hasAlpha) flattenAlpha = true;
+        for (const spec of specs) {
+          zipImages.push({ spec, index, buffer: await renderScreenshot(input, spec, options) });
+        }
       }
     }
+    await renderSide(outerBuffers, "duo-outer");
+    await renderSide(innerBuffers, "duo-inner");
+    if (include69) {
+      const phone = innerBuffers.length ? innerBuffers : outerBuffers;
+      await renderSide(phone, "iphone-69");
+    }
+
+    const clientSlug = pro
+      ? body.clientName?.trim() || (entitlements.plan === "studio" ? workspace?.client_slug : null) || null
+      : null;
 
     const zip = await buildZip({
       appName: body.appName || "App",
-      clientSlug: entitlements.plan === "studio" ? workspace?.client_slug : null,
+      clientSlug,
       orientation: options.orientation,
       branded: !pro,
       include69,
       format: options.format,
       images: zipImages,
+      cloneScores,
+      unpaired,
+      flattenAlpha,
     });
 
     const zipPath = `${user.id}/${crypto.randomUUID()}.zip`;
@@ -173,7 +242,7 @@ export async function POST(request: Request) {
       fit_mode: options.fit,
       background_mode: options.background,
       format: options.format,
-      image_count: paths.length,
+      image_count: count,
       storage_path: zipPath,
       created_by: user.id,
     });
@@ -183,7 +252,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       url: signed.signedUrl,
-      warning: countWarning,
+      warning: unpaired ? "UNPAIRED" : countWarning,
+      cloneScores,
       expiresIn: SIGNED_URL_SECONDS,
     });
   } catch (error) {
@@ -191,8 +261,7 @@ export async function POST(request: Request) {
       await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
     }
     const code = error instanceof Error ? error.message : "EXPORT_FAILED";
-    const status =
-      code === "PATH_FORBIDDEN" ? 403 : code.endsWith("_FAILED") ? 500 : 400;
+    const status = code === "PATH_FORBIDDEN" ? 403 : code.endsWith("_FAILED") ? 500 : 400;
     return NextResponse.json({ error: code }, { status });
   }
 }

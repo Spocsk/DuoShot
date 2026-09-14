@@ -84,23 +84,33 @@ export function AccountApp({ locale }: { locale: Locale }) {
         : t(locale, "account_plan_free");
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-12">
+    <div className="mx-auto max-w-2xl px-5 py-12" data-testid="account">
       <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
-      <p className="mt-3 text-[var(--muted)]">{email}</p>
+      <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
       <p className="mt-6 text-sm uppercase tracking-[0.16em] text-[var(--muted)]">
         {t(locale, "account_plan_label")}
       </p>
-      <p className="font-display mt-1 text-3xl">{planLabel}</p>
+      <p className="font-display mt-1 text-3xl" data-testid="account-plan">{planLabel}</p>
       {plan === "free" && remaining != null ? (
-        <p className="mt-2 text-[var(--muted)]">{tf(locale, "account_remaining", { n: remaining })}</p>
+        <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
       ) : null}
       {plan === "free" ? (
         <div className="mt-8 flex flex-wrap gap-3">
           <button
             type="button"
+            onClick={() => void checkout("indie_launch")}
+            disabled={busy}
+            data-testid="account-upgrade-launch"
+            className="ds-cta"
+          >
+            {t(locale, "account_upgrade_launch")}
+          </button>
+          <button
+            type="button"
             onClick={() => void checkout("indie_monthly")}
             disabled={busy}
-            className="ds-cta"
+            data-testid="account-upgrade-indie"
+            className="ds-cta-ghost"
           >
             {t(locale, "pricing_indie_cta")}
           </button>
@@ -108,6 +118,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
             type="button"
             onClick={() => void checkout("studio_monthly")}
             disabled={busy}
+            data-testid="account-upgrade-studio"
             className="ds-cta-ghost"
           >
             {t(locale, "pricing_studio_cta")}
@@ -119,6 +130,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
           type="button"
           onClick={() => void checkout("studio_monthly")}
           disabled={busy}
+          data-testid="account-upgrade-studio"
           className="ds-cta mt-8"
         >
           {t(locale, "account_upgrade_studio")}
@@ -130,17 +142,22 @@ export function AccountApp({ locale }: { locale: Locale }) {
         </Link>
       ) : null}
       <div className="mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
-        <button type="button" onClick={() => void exportJson()} className="ds-cta-ghost">
+        <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
           {t(locale, "export_data")}
         </button>
-        <button type="button" onClick={() => void erase()} className="rounded-full border border-red-800/30 px-4 py-2">
+        <button
+          type="button"
+          onClick={() => void erase()}
+          data-testid="account-delete"
+          className="rounded-full border border-red-800/30 px-4 py-2"
+        >
           {t(locale, "delete_account")}
         </button>
         <Link href={`${prefix}/privacy`} className="px-4 py-2 underline">
           Do Not Sell
         </Link>
       </div>
-      {message ? <p className="mt-4 text-sm">{message}</p> : null}
+      {message ? <p className="mt-4 text-sm" data-testid="account-message">{message}</p> : null}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import type { DeviceSlot, Orientation, RenderOptions, SizeSpec } from "../specs";
 import { zipFolderName } from "../specs";
 import { slugify } from "./geometry";
+import type { CloneResult } from "./clone-score";
 
 export type ZipImage = {
   spec: SizeSpec;
@@ -27,25 +28,54 @@ export function zipEntryPath(options: {
   return `${prefix}${app}/${folder}/${seq}.${ext}`;
 }
 
+function cloneLine(result: CloneResult): string {
+  const seq = String(result.index + 1).padStart(2, "0");
+  const label =
+    result.label === "risk" ? "RISK 2.3.3" : result.label === "review" ? "CHECK 2.3.3" : "OK 2.3.3";
+  return `${seq}: ${label}`;
+}
+
 export function buildReadme(options: {
   appName: string;
-  orientation: Orientation;
+  orientation: string;
   branded: boolean;
   include69: boolean;
   locale?: "fr" | "en";
+  cloneScores?: CloneResult[];
+  unpaired?: boolean;
+  flattenAlpha?: boolean;
+  folders?: string[];
 }): string {
   const slots: DeviceSlot[] = ["duo-outer", "duo-inner"];
   if (options.include69) slots.push("iphone-69");
+  const fallbackOrientation: Orientation =
+    options.orientation === "landscape" ? "landscape" : "portrait";
+  const folders =
+    options.folders?.length
+      ? options.folders
+      : slots.map((slot) => zipFolderName(slot, fallbackOrientation));
   const lines = [
     `DuoShot export — ${options.appName}`,
     `Orientation: ${options.orientation}`,
-    `Folders: ${slots.map((slot) => zipFolderName(slot, options.orientation)).join(", ")}`,
+    `Folders: ${folders.join(", ")}`,
+    "",
+    "Checks:",
+    "- Pixels: App Store Connect shelf sizes",
+    `- Alpha: flattened${options.flattenAlpha ? " (source had transparency)" : ""}`,
+    "- Color: sRGB RGB, no alpha",
+    options.unpaired ? "- Slides: outer/inner counts differ" : "- Slides: paired by index",
     "",
     "PNG-24 (default) or JPEG q90. RGB, no alpha, exact App Store pixels.",
     "Sources and ZIP are retained at most 24 hours.",
   ];
+  if (options.cloneScores?.length) {
+    lines.push("", "Guideline 2.3.3 clone score (outer[i] vs inner[i]):");
+    for (const result of options.cloneScores) {
+      lines.push(`- ${cloneLine(result)}`);
+    }
+  }
   if (options.branded) {
-    lines.push("", "Généré avec DuoShot — Tes screenshots Duo, justes, en 3 minutes. Sans device.");
+    lines.push("", "Généré avec DuoShot — On ne vend pas un resize. On vend un build qui passe.");
   }
   return `${lines.join("\n")}\n`;
 }
@@ -58,17 +88,28 @@ export async function buildZip(options: {
   include69: boolean;
   format: RenderOptions["format"];
   images: ZipImage[];
+  cloneScores?: CloneResult[];
+  unpaired?: boolean;
+  flattenAlpha?: boolean;
 }): Promise<Buffer> {
   const zip = new JSZip();
   const app = slugify(options.appName);
   const prefix = options.clientSlug ? `${slugify(options.clientSlug)}/` : "";
+  const folders = [
+    ...new Set(options.images.map((image) => zipFolderName(image.spec.slot, image.spec.orientation))),
+  ];
+  const orientations = [...new Set(options.images.map((image) => image.spec.orientation))];
   zip.file(
     `${prefix}${app}/README.txt`,
     buildReadme({
       appName: options.appName,
-      orientation: options.orientation,
+      orientation: orientations.join(" + "),
       branded: options.branded,
       include69: options.include69,
+      cloneScores: options.cloneScores,
+      unpaired: options.unpaired,
+      flattenAlpha: options.flattenAlpha,
+      folders,
     }),
   );
   for (const image of options.images) {

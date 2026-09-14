@@ -28,7 +28,7 @@ export function SiteHeader({ locale, path }: Props) {
           <Link href={`${prefix}/specs`} className="hover:text-[var(--foreground)]">
             {t(locale, "nav_specs")}
           </Link>
-          <Link href={`${prefix}/tool`} className="hover:text-[var(--foreground)]">
+          <Link href={`${prefix}/tool`} data-testid="nav-tool" className="hover:text-[var(--foreground)]">
             {t(locale, "nav_tool")}
           </Link>
           <HeaderAuth locale={locale} />
@@ -51,6 +51,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={`${prefix}/privacy`}>{t(locale, "footer_privacy")}</Link>
         <Link href={`${prefix}/cookies`}>{t(locale, "footer_cookies")}</Link>
         <Link href={`${prefix}/legal/subprocessors`}>{t(locale, "footer_subprocessors")}</Link>
+        <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t(locale, "footer_why")}</Link>
+        <Link href={locale === "en" ? "/en/rejection" : "/rejet"} data-testid="footer-reject">{t(locale, "footer_reject")}</Link>
         <Link href="/llms.txt">llms.txt</Link>
       </div>
     </footer>

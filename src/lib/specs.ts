@@ -106,6 +106,7 @@ export type RenderOptions = {
   titlePosition: TitlePosition;
   titleFont: TitleFont;
   format: OutputFormat;
+  burnHinge?: boolean;
 };
 
 export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
@@ -120,4 +121,22 @@ export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
   titlePosition: "bottom",
   titleFont: "sans",
   format: "png",
+  burnHinge: false,
 };
+
+/** Reserved inner fold region. UI mask only — not an Apple pixel spec. */
+export const INNER_DIVISION_RATIO = 0.06;
+
+export function hingeBand(spec: Pick<SizeSpec, "width" | "height" | "orientation">): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  if (spec.orientation === "portrait") {
+    const width = Math.max(1, Math.round(spec.width * INNER_DIVISION_RATIO));
+    return { x: Math.round((spec.width - width) / 2), y: 0, width, height: spec.height };
+  }
+  const height = Math.max(1, Math.round(spec.height * INNER_DIVISION_RATIO));
+  return { x: 0, y: Math.round((spec.height - height) / 2), width: spec.width, height };
+}

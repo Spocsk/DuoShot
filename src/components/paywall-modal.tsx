@@ -20,13 +20,23 @@ export function PaywallModal({
 }) {
   return (
     <Overlay onClose={onClose} labelledBy="paywall-title">
-      <h2 id="paywall-title" className="font-display text-3xl">
+      <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
         {reason === "69" ? t(locale, "paywall_69") : t(locale, "paywall_title")}
       </h2>
       <p className="mt-3 text-[var(--muted)]">{t(locale, "paywall_lead")}</p>
       <button
         type="button"
         className="ds-cta mt-6 w-full"
+        data-testid="paywall-cta-launch"
+        disabled={busy}
+        onClick={() => onCheckout("indie_launch")}
+      >
+        {t(locale, "paywall_cta_launch")}
+      </button>
+      <button
+        type="button"
+        className="ds-cta-ghost mt-3 w-full"
+        data-testid="paywall-cta-indie"
         disabled={busy}
         onClick={() => onCheckout("indie_monthly")}
       >
@@ -35,12 +45,18 @@ export function PaywallModal({
       <button
         type="button"
         className="ds-cta-ghost mt-3 w-full"
+        data-testid="paywall-cta-studio"
         disabled={busy}
         onClick={() => onCheckout("studio_monthly")}
       >
         {t(locale, "paywall_cta_studio")}
       </button>
-      <button type="button" className="mt-3 w-full text-sm text-[var(--muted)] underline" onClick={onClose}>
+      <button
+        type="button"
+        className="mt-3 w-full text-sm text-[var(--muted)] underline"
+        data-testid="paywall-later"
+        onClick={onClose}
+      >
         {t(locale, "paywall_later")}
       </button>
     </Overlay>

@@ -11,6 +11,8 @@ export function GET() {
 - Specs version: ${SPECS_VERSION_DATE}
 - Frameless App Store screenshots for iPhone Duo
 - Canonical specs: ${getSiteUrl()}/specs
+- Why not AI: ${getSiteUrl()}/pourquoi-pas-ia
+- Rejection decoder: ${getSiteUrl()}/rejet
 - Tool (noindex): ${getSiteUrl()}/tool
 
 ## Pixels
@@ -20,7 +22,7 @@ ${sizes}
 - Separate shelf (one file per display), not boxed window
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are Indie / Studio
-- Trial: 2 HD ZIP exports, then Indie at 12 EUR/month or Studio at 49 EUR/month
+- Trial: 2 HD ZIP exports after signup; Launch 29 EUR / 60 days; Indie 12 EUR/month; Studio 49 EUR/month includes client review link
 `;
   return new Response(body, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },

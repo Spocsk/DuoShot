@@ -11,7 +11,7 @@ export function PricingCta({
   locale,
   kind,
   label,
-  className = "ds-cta mt-6",
+  className = "ds-cta",
 }: {
   locale: Locale;
   kind: CheckoutKind;
@@ -36,7 +36,7 @@ export function PricingCta({
   }
 
   return (
-    <button type="button" onClick={() => void onUpgrade()} className={className}>
+    <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className}>
       {label}
     </button>
   );

@@ -1,8 +1,10 @@
 import type { Locale } from "./specs";
 
 export const SITE_NAME = "DuoShot";
-export const SITE_PITCH_FR = "Tes captures Duo, prêtes pour l’App Store.";
-export const SITE_PITCH_EN = "Duo screenshots, ready for the App Store.";
+export const SITE_PITCH_FR =
+  "Ton IA resize. Nous on te sort le ZIP que Connect accepte du premier coup — sans alpha, sans clone outer/inner, sans rejet.";
+export const SITE_PITCH_EN =
+  "Your AI resizes. We hand you the ZIP Connect accepts first try — no alpha, no outer/inner clone, no rejection.";
 
 export function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");

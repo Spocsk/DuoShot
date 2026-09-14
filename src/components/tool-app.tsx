@@ -16,10 +16,24 @@ import {
 } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
 import { checkSourceCount } from "@/lib/pipeline/validate";
+import { hashFromFile } from "@/lib/pipeline/clone-hash-browser";
+import { inspectFile, type SourceInspect } from "@/lib/pipeline/source-inspect";
+import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { containRect, coverRect } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
 import type { CheckoutKind } from "@/lib/plans";
+import {
+  defaultSet,
+  deleteSetFiles,
+  loadActiveId,
+  loadSetFiles,
+  loadSetMetas,
+  saveActiveId,
+  saveSetFiles,
+  saveSetMetas,
+  type SetMeta,
+} from "@/lib/sets-store";
 import { Overlay } from "@/components/overlay";
 import { PaywallModal } from "@/components/paywall-modal";
 import { AuthForm } from "@/components/auth-form";
@@ -47,21 +61,30 @@ export function ToolApp({ locale }: Props) {
 function ToolAppInner({ locale }: Props) {
   const prefix = localePrefix(locale);
   const searchParams = useSearchParams();
-  const [files, setFiles] = useState<File[]>([]);
+  const [sets, setSets] = useState<SetMeta[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
+  const active = sets.find((item) => item.id === activeId) ?? sets[0];
+  const [outerFiles, setOuterFiles] = useState<File[]>([]);
+  const [innerFiles, setInnerFiles] = useState<File[]>([]);
   const [options, setOptions] = useState<RenderOptions>(DEFAULT_RENDER_OPTIONS);
-  const [appName, setAppName] = useState("MyApp");
   const [include69, setInclude69] = useState(false);
+  const [showHinge, setShowHinge] = useState(true);
+  const [assumeClone, setAssumeClone] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [over, setOver] = useState(false);
   const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
+  const [outerInspect, setOuterInspect] = useState<SourceInspect | null>(null);
+  const [innerInspect, setInnerInspect] = useState<SourceInspect | null>(null);
+  const [clones, setClones] = useState<CloneResult[]>([]);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [session, setSession] = useState<"out" | "in">("out");
   const [showAuth, setShowAuth] = useState(false);
   const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [reviewUrl, setReviewUrl] = useState<string | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<string | null>(null);
   const signedIn = session === "in";
   const checkoutFlag = searchParams.get("checkout");
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
@@ -74,14 +97,20 @@ function ToolAppInner({ locale }: Props) {
           ? t(locale, "checkout_mock")
           : null;
 
+  const sameSet = active?.sameSet ?? false;
+  const effectiveInner = sameSet || innerFiles.length === 0 ? outerFiles : innerFiles;
+  const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
+  const cloneForced = sameSet || (outerFiles.length > 0 && innerFiles.length === 0);
+
   const warning = useMemo(() => {
-    if (files.length === 0) return null;
+    const count = Math.max(outerFiles.length, effectiveInner.length);
+    if (count === 0) return null;
     try {
-      return checkSourceCount(files.length).warning ?? null;
+      return checkSourceCount(count).warning ?? null;
     } catch (error) {
       return error instanceof Error ? error.message : "error";
     }
-  }, [files.length]);
+  }, [outerFiles.length, effectiveInner.length]);
 
   const refreshBilling = useCallback(async () => {
     const supabase = createBrowserSupabase();
@@ -94,8 +123,7 @@ function ToolAppInner({ locale }: Props) {
     setSession("in");
     const response = await fetch("/api/billing/status");
     if (!response.ok) return;
-    const payload = (await response.json()) as BillingStatus;
-    setBilling(payload);
+    setBilling((await response.json()) as BillingStatus);
   }, []);
 
   useEffect(() => {
@@ -106,39 +134,127 @@ function ToolAppInner({ locale }: Props) {
     return () => listener.subscription.unsubscribe();
   }, [refreshBilling]);
 
-  const drawPreviews = useCallback(async (file: File, next: RenderOptions) => {
-    const bitmap = await createImageBitmap(file);
-    const outer = drawTarget(
-      bitmap,
-      next,
-      next.orientation === "portrait" ? outerPreview : SIZE_SPECS.find((s) => s.id === "outer-l")!,
-    );
-    const inner = drawTarget(
-      bitmap,
-      next,
-      next.orientation === "portrait" ? innerPreview : SIZE_SPECS.find((s) => s.id === "inner-l")!,
-    );
-    setPreviews({ outer, inner });
-    bitmap.close();
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const existing = loadSetMetas();
+      if (existing.length === 0) {
+        const first = defaultSet();
+        saveSetMetas([first]);
+        saveActiveId(first.id);
+        setSets([first]);
+        setActiveId(first.id);
+        return;
+      }
+      const current = loadActiveId() ?? existing[0]!.id;
+      setSets(existing);
+      setActiveId(current);
+      void (async () => {
+        setOuterFiles(await loadSetFiles(current, "outer"));
+        setInnerFiles(await loadSetFiles(current, "inner"));
+      })();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  const patchActive = useCallback(
+    (patch: Partial<SetMeta>) => {
+      if (!active) return;
+      const next = sets.map((item) => (item.id === active.id ? { ...item, ...patch } : item));
+      setSets(next);
+      saveSetMetas(next);
+      if (session === "in") {
+        const current = next.find((item) => item.id === active.id);
+        if (current) {
+          void fetch("/api/apps", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: current.name,
+              clientName: current.clientName,
+              orientation: current.orientation,
+            }),
+          });
+        }
+      }
+    },
+    [active, sets, session],
+  );
+
+  const drawPreviews = useCallback(
+    async (outer: File | undefined, inner: File | undefined, next: RenderOptions) => {
+      const outerFile = outer ?? inner;
+      const innerFile = inner ?? outer;
+      if (!outerFile || !innerFile) return;
+      const [outerBit, innerBit] = await Promise.all([createImageBitmap(outerFile), createImageBitmap(innerFile)]);
+      const outerSpec = next.orientation === "portrait" ? outerPreview : SIZE_SPECS.find((s) => s.id === "outer-l")!;
+      const innerSpec = next.orientation === "portrait" ? innerPreview : SIZE_SPECS.find((s) => s.id === "inner-l")!;
+      setPreviews({
+        outer: drawTarget(outerBit, next, outerSpec),
+        inner: drawTarget(innerBit, next, innerSpec),
+      });
+      outerBit.close();
+      innerBit.close();
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!outerFiles[0] && !effectiveInner[0]) {
+        setPreviews(null);
+        return;
+      }
+      void drawPreviews(outerFiles[0], effectiveInner[0], options);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [drawPreviews, outerFiles, effectiveInner, options]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const o = outerFiles[0] ? await inspectFile(outerFiles[0]) : null;
+      const i = effectiveInner[0] ? await inspectFile(effectiveInner[0]) : null;
+      if (!cancelled) {
+        setOuterInspect(o);
+        setInnerInspect(i);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [outerFiles, effectiveInner]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const count = Math.min(outerFiles.length, effectiveInner.length);
+      const next: CloneResult[] = [];
+      for (let index = 0; index < count; index += 1) {
+        const outerHash = await hashFromFile(outerFiles[index]!);
+        const innerHash = await hashFromFile(effectiveInner[index]!);
+        next.push(scorePair(outerHash, innerHash, index, cloneForced));
+      }
+      if (!cancelled) setClones(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [outerFiles, effectiveInner, cloneForced]);
 
   function isAllowedImage(file: File) {
     return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
   }
 
-  function onFiles(list: FileList | File[]) {
-    const incoming = Array.from(list).filter(isAllowedImage);
-    const next = incoming.slice(0, MAX_IMAGES);
-    setFiles(next);
+  async function onSideFiles(side: "outer" | "inner", list: FileList | File[]) {
+    const incoming = Array.from(list).filter(isAllowedImage).slice(0, MAX_IMAGES);
+    if (side === "outer") setOuterFiles(incoming);
+    else setInnerFiles(incoming);
     setZipUrl(null);
-    if (next[0]) void drawPreviews(next[0], options);
-    else setPreviews(null);
+    if (active) await saveSetFiles(active.id, side, incoming);
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
-    const next = { ...options, ...patch };
-    setOptions(next);
-    if (files[0]) void drawPreviews(files[0], next);
+    setOptions({ ...options, ...patch });
   }
 
   function explainError(code: string) {
@@ -146,7 +262,25 @@ function ToolAppInner({ locale }: Props) {
     if (code === "TRIAL_EXHAUSTED") return t(locale, "error_trial");
     if (code === "DAILY_LIMIT") return t(locale, "error_daily");
     if (code === "IPHONE_69_GATED") return t(locale, "error_69");
+    if (code === "CLONE_RISK") return t(locale, "error_clone");
+    if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
     return t(locale, "error_export");
+  }
+
+  async function uploadSide(userId: string, files: File[]) {
+    const supabase = createBrowserSupabase();
+    const paths: string[] = [];
+    for (const file of files) {
+      const ext = file.type === "image/png" ? "png" : "jpg";
+      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("uploads").upload(path, file, {
+        contentType: file.type,
+        upsert: true,
+      });
+      if (error) throw error;
+      paths.push(path);
+    }
+    return paths;
   }
 
   async function onExport() {
@@ -169,25 +303,20 @@ function ToolAppInner({ locale }: Props) {
         setPaywall("trial");
         return;
       }
-      const paths: string[] = [];
-      for (const file of files) {
-        const ext = file.type === "image/png" ? "png" : "jpg";
-        const path = `${sessionData.user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("uploads").upload(path, file, {
-          contentType: file.type,
-          upsert: true,
-        });
-        if (error) throw error;
-        paths.push(path);
-      }
+      const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
+      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles.length ? innerFiles : outerFiles);
       const response = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          paths,
-          appName,
+          outerPaths,
+          innerPaths,
+          sameSet: cloneForced,
+          appName: active?.name || "App",
+          clientName: active?.clientName || "",
           include69,
-          options,
+          assumeCloneRisk: assumeClone,
+          options: { ...options, orientation: active?.orientation ?? options.orientation, burnHinge: options.burnHinge },
         }),
       });
       const payload = (await response.json()) as { url?: string; error?: string; warning?: string };
@@ -201,14 +330,62 @@ function ToolAppInner({ locale }: Props) {
         setStatus(t(locale, "error_69"));
         return;
       }
+      if (payload.error === "CLONE_RISK") {
+        setStatus(t(locale, "error_clone"));
+        return;
+      }
       if (!response.ok) throw new Error(payload.error || "Export impossible");
       if (payload.url) {
         setZipUrl(payload.url);
-        setStatus(payload.warning === "TOO_FEW" ? t(locale, "tool_warn") : t(locale, "tool_zip_ready"));
+        setStatus(
+          payload.warning === "TOO_FEW"
+            ? t(locale, "tool_warn")
+            : payload.warning === "UNPAIRED"
+              ? t(locale, "tool_warn_unpaired")
+              : t(locale, "tool_zip_ready"),
+        );
         void refreshBilling();
       }
     } catch (error) {
       setStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_export"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onReview() {
+    setBusy(true);
+    try {
+      const supabase = createBrowserSupabase();
+      const { data: sessionData } = await supabase.auth.getUser();
+      if (!sessionData.user) {
+        setShowAuth(true);
+        return;
+      }
+      const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
+      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles.length ? innerFiles : outerFiles);
+      const response = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outerPaths,
+          innerPaths,
+          sameSet: cloneForced,
+          appName: active?.name || "App",
+          clientName: active?.clientName || "",
+          orientation: active?.orientation ?? options.orientation,
+        }),
+      });
+      const payload = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok) throw new Error(payload.error || "STUDIO_REQUIRED");
+      if (payload.url) {
+        const absolute = `${window.location.origin}${payload.url}`;
+        setReviewUrl(absolute);
+        await navigator.clipboard.writeText(absolute);
+        setReviewStatus(t(locale, "tool_review_copied"));
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_studio"));
     } finally {
       setBusy(false);
     }
@@ -229,6 +406,36 @@ function ToolAppInner({ locale }: Props) {
     }
   }
 
+  async function switchSet(id: string) {
+    if (active) {
+      await saveSetFiles(active.id, "outer", outerFiles);
+      await saveSetFiles(active.id, "inner", innerFiles);
+    }
+    saveActiveId(id);
+    setActiveId(id);
+    setOuterFiles(await loadSetFiles(id, "outer"));
+    setInnerFiles(await loadSetFiles(id, "inner"));
+    setZipUrl(null);
+  }
+
+  function addSet() {
+    const next = defaultSet();
+    const list = [...sets, next];
+    setSets(list);
+    saveSetMetas(list);
+    void switchSet(next.id);
+  }
+
+  async function removeSet(id: string) {
+    const list = sets.filter((item) => item.id !== id);
+    const fallback = list[0] ?? defaultSet();
+    const nextList = list.length ? list : [fallback];
+    setSets(nextList);
+    saveSetMetas(nextList);
+    await deleteSetFiles(id);
+    await switchSet(nextList[0]!.id);
+  }
+
   const remaining = billing?.remainingFreeExports;
   const remainingLabel =
     billing?.plan === "studio"
@@ -243,6 +450,8 @@ function ToolAppInner({ locale }: Props) {
               ? tf(locale, "tool_remaining", { n: remaining })
               : t(locale, "tool_guest_quota");
   const pillMute = remaining === 0 && billing?.plan === "free";
+  const hasFiles = outerFiles.length > 0 || innerFiles.length > 0;
+  const cloneLabel = clones[0]?.label ?? (cloneForced && hasFiles ? "risk" : null);
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
@@ -252,56 +461,130 @@ function ToolAppInner({ locale }: Props) {
           <p className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`}>{remainingLabel}</p>
         </div>
         <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "hero_lead")}</p>
-        <label
-          className={`ds-drop mt-8 ${over ? "is-over" : ""}`}
-          onDragEnter={() => setOver(true)}
-          onDragLeave={() => setOver(false)}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setOver(true);
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            setOver(false);
-            onFiles(event.dataTransfer.files);
-          }}
-        >
-          <input
-            type="file"
-            accept="image/png,image/jpeg"
-            multiple
-            className="absolute inset-0 cursor-pointer opacity-0"
-            onChange={(event) => event.target.files && onFiles(event.target.files)}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <label className="ds-field !mt-0 min-w-[10rem] flex-1">
+            <p className="ds-label">{t(locale, "tool_sets")}</p>
+            <select
+              className="ds-input w-full"
+              data-testid="tool-sets"
+              value={active?.id ?? ""}
+              onChange={(event) => void switchSet(event.target.value)}
+            >
+              {sets.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className="ds-cta-ghost mt-6" data-testid="tool-set-new" onClick={addSet}>
+            {t(locale, "tool_set_new")}
+          </button>
+          {sets.length > 1 ? (
+            <button type="button" className="mt-6 text-sm underline" onClick={() => active && void removeSet(active.id)}>
+              ×
+            </button>
+          ) : null}
+        </div>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <DropZone
+            testId="drop-outer"
+            label={t(locale, "tool_drop_outer")}
+            count={outerFiles.length}
+            onFiles={(list) => void onSideFiles("outer", list)}
           />
-          <span>{t(locale, "tool_drop")}</span>
-          <span className="mt-2 text-sm text-[var(--muted)]">
-            {files.length} / {MAX_IMAGES}
-          </span>
-        </label>
+          <DropZone
+            testId="drop-inner"
+            label={t(locale, "tool_drop_inner")}
+            count={sameSet ? outerFiles.length : innerFiles.length}
+            onFiles={(list) => void onSideFiles("inner", list)}
+          />
+        </div>
+        <div className="mt-4">
+          <button
+            type="button"
+            className="ds-toggle"
+            data-testid="toggle-same-set"
+            aria-pressed={sameSet}
+            onClick={() => patchActive({ sameSet: !sameSet })}
+          >
+            <span className="text-sm">{t(locale, "tool_same_set")}</span>
+            <span className="ds-toggle-track">
+              <span className="ds-toggle-thumb" />
+            </span>
+          </button>
+        </div>
+        {cloneForced ? <p className="mt-3 text-sm text-amber-800" data-testid="warn-clone">{t(locale, "tool_warn_clone")}</p> : null}
+        {unpaired ? <p className="mt-3 text-sm text-amber-800" data-testid="warn-unpaired">{t(locale, "tool_warn_unpaired")}</p> : null}
         {warning === "TOO_FEW" ? (
-          <p className="mt-3 text-sm text-amber-800">
+          <p className="mt-3 text-sm text-amber-800" data-testid="warn-too-few">
             {t(locale, "tool_warn")} ({WARN_MIN_IMAGES}+)
           </p>
         ) : null}
-        {files.length >= MAX_IMAGES ? <p className="mt-3 text-sm text-amber-800">{t(locale, "tool_cap")}</p> : null}
+        {Math.max(outerFiles.length, effectiveInner.length) >= MAX_IMAGES ? (
+          <p className="mt-3 text-sm text-amber-800">{t(locale, "tool_cap")}</p>
+        ) : null}
         <div className="preview-duo mt-8">
-          <PreviewCard label={t(locale, "tool_preview_outer")} src={previews?.outer} kind="outer" />
-          <PreviewCard label={t(locale, "tool_preview_inner")} src={previews?.inner} kind="inner" />
+          <PreviewCard
+            testId="preview-outer"
+            label={t(locale, "tool_preview_outer")}
+            src={previews?.outer}
+            kind="outer"
+            inspect={outerInspect}
+            specLabel="1398×2034"
+            locale={locale}
+            clone={cloneLabel}
+          />
+          <PreviewCard
+            testId="preview-inner"
+            label={t(locale, "tool_preview_inner")}
+            src={previews?.inner}
+            kind="inner"
+            inspect={innerInspect}
+            specLabel="2007×2853"
+            locale={locale}
+            hinge={showHinge}
+            clone={cloneLabel}
+          />
         </div>
+        {clones.length > 1 ? (
+          <ol className="mt-4 font-mono text-xs text-[var(--muted)]">
+            {clones.map((item) => (
+              <li key={item.index}>
+                {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)}
+              </li>
+            ))}
+          </ol>
+        ) : null}
       </section>
       <aside className="h-fit border-t border-[var(--line)] pt-5 lg:border-t-0 lg:pt-0">
         <div className="ds-field">
           <p className="ds-label">{t(locale, "tool_label_app")}</p>
-          <input value={appName} onChange={(event) => setAppName(event.target.value)} className="ds-input w-full" />
+          <input
+            value={active?.name ?? ""}
+            onChange={(event) => patchActive({ name: event.target.value })}
+            className="ds-input w-full"
+          />
+        </div>
+        <div className="ds-field">
+          <p className="ds-label">{t(locale, "tool_client")}</p>
+          <input
+            value={active?.clientName ?? ""}
+            onChange={(event) => patchActive({ clientName: event.target.value })}
+            className="ds-input w-full"
+          />
         </div>
         <Seg
           label={t(locale, "tool_label_orientation")}
-          value={options.orientation}
+          value={active?.orientation ?? options.orientation}
           options={[
             { value: "portrait", label: t(locale, "tool_orient_portrait") },
             { value: "landscape", label: t(locale, "tool_orient_landscape") },
           ]}
-          onChange={(value) => updateOptions({ orientation: value as Orientation })}
+          onChange={(value) => {
+            patchActive({ orientation: value as Orientation });
+            updateOptions({ orientation: value as Orientation });
+          }}
         />
         <Seg
           label={t(locale, "tool_label_fit")}
@@ -380,6 +663,35 @@ function ToolAppInner({ locale }: Props) {
           <button
             type="button"
             className="ds-toggle"
+            data-testid="toggle-hinge"
+            aria-pressed={showHinge}
+            onClick={() => setShowHinge((value) => !value)}
+          >
+            <span className="text-sm">{t(locale, "tool_hinge_toggle")}</span>
+            <span className="ds-toggle-track">
+              <span className="ds-toggle-thumb" />
+            </span>
+          </button>
+        </div>
+        <div className="ds-field">
+          <button
+            type="button"
+            className="ds-toggle"
+            aria-pressed={Boolean(options.burnHinge)}
+            onClick={() => updateOptions({ burnHinge: !options.burnHinge })}
+          >
+            <span className="text-sm">{t(locale, "tool_burn_hinge")}</span>
+            <span className="ds-toggle-track">
+              <span className="ds-toggle-thumb" />
+            </span>
+          </button>
+          <p className="mt-2 text-xs text-[var(--muted)]">{t(locale, "tool_burn_hinge_hint")}</p>
+        </div>
+        <div className="ds-field">
+          <button
+            type="button"
+            className="ds-toggle"
+            data-testid="toggle-69"
             aria-pressed={include69}
             onClick={() => {
               const next = !include69;
@@ -393,14 +705,43 @@ function ToolAppInner({ locale }: Props) {
             </span>
           </button>
         </div>
+        {cloneLabel === "risk" ? (
+          <div className="ds-field">
+            <button
+              type="button"
+              className="ds-toggle"
+              data-testid="toggle-assume-clone"
+              aria-pressed={assumeClone}
+              onClick={() => setAssumeClone((value) => !value)}
+            >
+              <span className="text-sm">{t(locale, "tool_assume_clone")}</span>
+              <span className="ds-toggle-track">
+                <span className="ds-toggle-thumb" />
+              </span>
+            </button>
+          </div>
+        ) : null}
         <button
           type="button"
-          disabled={busy || files.length === 0}
+          disabled={busy || !hasFiles}
+          data-testid="tool-download"
           onClick={() => void onExport()}
           className="ds-cta mt-6 w-full"
         >
           {t(locale, "tool_download")}
         </button>
+        <button
+          type="button"
+          disabled={busy || !hasFiles}
+          data-testid="tool-review"
+          onClick={() => void onReview()}
+          className="ds-cta-ghost mt-3 w-full"
+        >
+          {t(locale, "tool_review_share")}
+        </button>
+        <a href="/api/example-zip?v=2" data-testid="tool-example" className="mt-3 inline-block text-sm underline">
+          {t(locale, "tool_example")}
+        </a>
         {!signedIn ? (
           <p className="mt-3 text-xs text-[var(--muted)]">
             {t(locale, "tool_need_account")}{" "}
@@ -409,10 +750,16 @@ function ToolAppInner({ locale }: Props) {
             </Link>
           </p>
         ) : null}
-        {status ?? urlStatus ? <p className="mt-3 text-sm">{status ?? urlStatus}</p> : null}
+        {status ?? urlStatus ? <p className="mt-3 text-sm" data-testid="tool-status">{status ?? urlStatus}</p> : null}
+        {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
         {zipUrl ? (
-          <a href={zipUrl} className="mt-3 inline-block text-sm underline">
+          <a href={zipUrl} data-testid="tool-zip-link" className="mt-3 inline-block text-sm underline">
             {t(locale, "tool_open_zip")}
+          </a>
+        ) : null}
+        {reviewUrl ? (
+          <a href={reviewUrl} data-testid="review-url" className="mt-2 inline-block text-sm underline">
+            {reviewUrl}
           </a>
         ) : null}
       </aside>
@@ -452,6 +799,50 @@ function ToolAppInner({ locale }: Props) {
   );
 }
 
+function DropZone({
+  testId,
+  label,
+  count,
+  onFiles,
+}: {
+  testId: string;
+  label: string;
+  count: number;
+  onFiles: (list: FileList | File[]) => void;
+}) {
+  const [over, setOver] = useState(false);
+  return (
+    <label
+      className={`ds-drop ${over ? "is-over" : ""}`}
+      data-testid={testId}
+      onDragEnter={() => setOver(true)}
+      onDragLeave={() => setOver(false)}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setOver(true);
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        setOver(false);
+        onFiles(event.dataTransfer.files);
+      }}
+    >
+      <input
+        type="file"
+        accept="image/png,image/jpeg"
+        multiple
+        data-testid={`${testId}-input`}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        onChange={(event) => event.target.files && onFiles(event.target.files)}
+      />
+      <span>{label}</span>
+      <span className="mt-2 text-sm text-[var(--muted)]">
+        {count} / {MAX_IMAGES}
+      </span>
+    </label>
+  );
+}
+
 function Seg({
   label,
   value,
@@ -484,18 +875,32 @@ function Seg({
 }
 
 function PreviewCard({
+  testId,
   label,
   src,
   kind,
+  inspect,
+  specLabel,
+  locale,
+  hinge = false,
+  clone,
 }: {
+  testId: string;
   label: string;
   src?: string;
   kind: "outer" | "inner";
+  inspect: SourceInspect | null;
+  specLabel: string;
+  locale: Locale;
+  hinge?: boolean;
+  clone: CloneResult["label"] | null;
 }) {
   return (
-    <figure>
+    <figure data-testid={testId}>
       <figcaption className="duo-caption mb-3 text-left">{label}</figcaption>
-      <div className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"}`}>
+      <div
+        className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"} ${hinge ? "is-hinge" : "hinge-off"}`}
+      >
         {src ? (
           // User-generated preview from canvas.toDataURL
           // eslint-disable-next-line @next/next/no-img-element
@@ -504,6 +909,18 @@ function PreviewCard({
           <span>—</span>
         )}
       </div>
+      <ul className="mt-3 space-y-1 text-xs text-[var(--muted)]">
+        <li>
+          {inspect?.hasAlpha ? t(locale, "tool_check_alpha_flat") : t(locale, "tool_check_alpha_ok")}
+        </li>
+        <li>
+          {t(locale, "tool_label_orientation")}: {specLabel}
+        </li>
+        <li>{inspect?.colorSpace === "other" ? t(locale, "tool_check_rgb_bad") : t(locale, "tool_check_rgb_ok")}</li>
+        {kind === "inner" ? <li>{t(locale, "tool_check_hinge")}</li> : null}
+        {clone ? <li>{t(locale, `clone_${clone}`)}</li> : null}
+        <li>{t(locale, "tool_check_zip")}</li>
+      </ul>
     </figure>
   );
 }

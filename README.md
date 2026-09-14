@@ -21,6 +21,8 @@ npm test
 npm run dev
 ```
 
+Quality gate : `npm test` (Vitest) puis, après `npm run build`, `npm run test:e2e` (Cypress). GitHub Actions lance les deux sur chaque PR ; Vercel reste le déploiement.
+
 Renseigne uniquement les **noms** de variables dans `.env.example`. Les secrets vont dans `.env.local` / Vercel Sensitive / Runtime Secrets — jamais dans git.
 
 ## Auth
@@ -48,10 +50,10 @@ Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de
 
 | Offre | Prix | Notes |
 | --- | --- | --- |
-| Free | 0 | 1 set HD / jour, Duo only, README marqué DuoShot |
-| Indie | 12 €/mo ou 29 € lancement 60 j | + tailles 6,9″ |
-| Studio | 49 €/mo | 3 sièges, préfixe `client-slug/` |
-| Pack app | 19 € | App supplémentaire |
+| Free | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
+| Launch | 29 € / 60 j | Tout Indie pendant le pic Duo |
+| Indie | 12 €/mo | ZIP illimités, 6,9″, multi-sets, préfixe Client/App |
+| Studio | 49 €/mo | + lien review client. Sièges = bientôt |
 
 Ne pas passer Stripe **live** ni Vercel Pro tant que le checkout n’est pas validé.
 
