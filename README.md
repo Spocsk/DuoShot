@@ -39,10 +39,17 @@ Projet Supabase : [DuoShot](https://supabase.com/dashboard/project/jvhqcmqwrihbt
    `https://jvhqcmqwrihbtwrggwuq.supabase.co/auth/v1/callback`
 
 3. [Supabase → Authentication → Providers → Google](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/providers) : activer, coller Client ID + secret. Aucun secret dans git.
-4. [URL Configuration](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/url-configuration) : Site URL + Redirect URLs
+4. [URL Configuration](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/url-configuration) :
 
-   - `http://localhost:3000/auth/callback`
-   - origine prod (`NEXT_PUBLIC_SITE_URL` / domaine Vercel), même chemin `/auth/callback`
+   - **Site URL** : `https://duoshot.vercel.app`
+   - **Redirect URLs** :
+     - `https://duoshot.vercel.app/auth/callback`
+     - `https://duoshot.vercel.app/**`
+     - `http://localhost:3000/auth/callback`
+     - `http://localhost:3000/**`
+     - `https://duoshot-*-spocsks-projects.vercel.app/**`
+
+   Sans ces URLs prod, GoTrue ignore `redirectTo` et renvoie le SSO vers `http://localhost:3000`.
 
 Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de JSON brut GoTrue). SMTP Resend si le quota mail Free sature.
 
