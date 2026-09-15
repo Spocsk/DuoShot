@@ -19,8 +19,8 @@ export function LegalPage({
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader locale={locale} path={path} />
-      <main className="mx-auto w-full max-w-3xl px-5 py-12">
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{POLICY_VERSION}</p>
+      <main id="main" className="mx-auto w-full max-w-3xl px-5 py-12">
+        <p className="ds-label">{POLICY_VERSION}</p>
         <h1 className="font-display mt-3 text-4xl">{title}</h1>
         <div className="mt-8 grid gap-8 text-[var(--muted)] leading-relaxed">{children}</div>
       </main>

@@ -17,7 +17,7 @@ export function RejectionPage({ locale }: { locale: Locale }) {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader locale={locale} path={locale === "en" ? "/en/rejection" : "/rejet"} />
-      <main className="mx-auto w-full max-w-3xl px-5 py-12">
+      <main id="main" className="mx-auto w-full max-w-3xl px-5 py-12">
         <h1 className="font-display text-5xl">{t(locale, "reject_page_title")}</h1>
         <p className="mt-4 text-lg text-[var(--muted)]">{t(locale, "reject_page_lead")}</p>
         <div className="mt-12">

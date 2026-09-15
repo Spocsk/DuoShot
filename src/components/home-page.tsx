@@ -108,7 +108,7 @@ export function HomePage({ locale }: { locale: Locale }) {
       <JsonLd locale={locale} />
       <SiteHeader locale={locale} path="/" />
       <LandingMotion>
-        <main>
+        <main id="main">
           <section className="mx-auto grid min-h-[calc(100svh-var(--header-h))] w-full max-w-6xl items-center gap-10 px-5 py-10 lg:grid-cols-[minmax(0,32rem)_minmax(0,1fr)] lg:gap-16">
             <div>
               <h1 className="font-display max-w-xl text-5xl leading-[0.96] tracking-tight md:text-6xl">
@@ -173,7 +173,9 @@ export function HomePage({ locale }: { locale: Locale }) {
                 const plan = plans[id];
                 return (
                   <article key={id} className={`pricing-col${plan.featured ? " is-featured" : ""}`}>
-                    <p className="pricing-kicker">{plan.featured ? t(locale, "pricing_featured") : "\u00a0"}</p>
+                    <p className="pricing-stamp">
+                      {plan.featured ? <span className="ds-pill ds-pill-ink">{t(locale, "pricing_featured")}</span> : null}
+                    </p>
                     <p className="font-display text-3xl">{plan.title}</p>
                     <p className="mt-2 text-2xl">{plan.price}</p>
                     <p className="pricing-intro">{plan.intro || "\u00a0"}</p>

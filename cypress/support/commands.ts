@@ -102,6 +102,8 @@ function visitLocalized(path: string, locale: "fr" | "en", options?: Partial<Cyp
       } else {
         win.localStorage.removeItem(AUTH_COOKIE);
       }
+      win.localStorage.removeItem("duoshot.sets.v1");
+      win.localStorage.removeItem("duoshot.sets.active");
     },
   });
 }
@@ -133,9 +135,14 @@ Cypress.Commands.add("loginAs", (plan: Plan = "free", remaining: number | null =
 Cypress.Commands.add("dropScreens", (sides?: { outer?: string | string[]; inner?: string | string[] }) => {
   const outer = sides?.outer ?? "cypress/fixtures/outer.png";
   const inner = sides?.inner;
+  const outerCount = Array.isArray(outer) ? outer.length : 1;
+  cy.get('[data-testid="tool-sets"][data-ready="true"]');
   cy.get('[data-testid="drop-outer-input"]').selectFile(outer, { force: true });
+  cy.get('[data-testid="drop-outer"]').should("have.attr", "data-count", String(outerCount));
   if (inner) {
+    const innerCount = Array.isArray(inner) ? inner.length : 1;
     cy.get('[data-testid="drop-inner-input"]').selectFile(inner, { force: true });
+    cy.get('[data-testid="drop-inner"]').should("have.attr", "data-count", String(innerCount));
   }
 });
 

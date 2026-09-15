@@ -53,11 +53,11 @@ export function ReviewPage({ id, locale }: { id: string; locale: Locale }) {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader locale={locale} path={`/r/${id}`} />
-      <main className="mx-auto w-full max-w-6xl px-5 py-12">
+      <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
         {error ? (
           <p className="text-[var(--muted)]" data-testid="review-missing">{t(locale, "review_missing")}</p>
         ) : !data ? (
-          <p className="text-[var(--muted)]">…</p>
+          <p className="text-[var(--muted)]" aria-busy="true">…</p>
         ) : (
           <>
             <h1 className="font-display text-5xl" data-testid="review-title">{data.set_name}</h1>
@@ -84,21 +84,27 @@ export function ReviewPage({ id, locale }: { id: string; locale: Locale }) {
                   </p>
                   <div className="review-pair">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={slide.outer} alt="outer" className="preview-glass preview-outer" />
+                    <img src={slide.outer} alt={t(locale, "review_alt_outer")} className="preview-glass preview-outer" />
                     <div className={`preview-glass preview-inner ${hinge ? "is-hinge" : "hinge-off"}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.inner} alt="inner" className="h-full w-full object-contain" />
+                      <img src={slide.inner} alt={t(locale, "review_alt_inner")} className="h-full w-full object-contain" />
                     </div>
                   </div>
                 </section>
               ))}
             </div>
-            <textarea
-              className="ds-input mt-10 min-h-28 w-full max-w-xl p-3"
-              data-testid="review-comment"
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-            />
+            <div className="ds-field mt-10 max-w-xl">
+              <label className="ds-label" htmlFor="review-comment">
+                {t(locale, "review_comment")}
+              </label>
+              <textarea
+                id="review-comment"
+                className="ds-input min-h-28 w-full"
+                data-testid="review-comment"
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+              />
+            </div>
             <div className="mt-4 flex flex-wrap gap-3">
               <button type="button" className="ds-cta" data-testid="review-approve" disabled={busy} onClick={() => void decide("approve")}>
                 {locale === "fr" ? "Approuver" : "Approve"}

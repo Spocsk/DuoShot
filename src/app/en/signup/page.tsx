@@ -13,7 +13,7 @@ export default function Page() {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader locale="en" path="/signup" />
-      <main className="px-5 py-16">
+      <main id="main" className="px-5 py-16">
         <AuthForm locale="en" mode="signup" />
       </main>
       <SiteFooter locale="en" />

@@ -9,19 +9,19 @@ export function SpecsPage({ locale }: { locale: Locale }) {
     <div className="flex min-h-full flex-col">
       <JsonLd locale={locale} />
       <SiteHeader locale={locale} path="/specs" />
-      <main className="mx-auto w-full max-w-6xl px-5 py-12">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--muted)]">{SPECS_VERSION_DATE}</p>
+      <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
+        <p className="ds-label">{SPECS_VERSION_DATE}</p>
         <h1 className="font-display mt-3 text-5xl">{t(locale, "specs_title")}</h1>
         <p className="mt-4 max-w-2xl text-[var(--muted)]">{t(locale, "specs_intro")}</p>
         <div className="mt-8 overflow-x-auto border-t border-[var(--line)]">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="font-mono text-xs uppercase tracking-wider text-[var(--muted)]">
+          <table className="w-full min-w-[640px] text-left text-sm tabular-nums">
+            <thead className="ds-spec-head">
               <tr>
-                <th className="px-0 py-3 pr-4">Slot</th>
-                <th className="px-4 py-3">Pouces</th>
-                <th className="px-4 py-3">Orientation</th>
-                <th className="px-4 py-3">Pixels</th>
-                <th className="px-4 py-3">Plan</th>
+                <th scope="col" className="px-0 py-3 pr-4 font-medium">Slot</th>
+                <th scope="col" className="px-4 py-3 font-medium">Pouces</th>
+                <th scope="col" className="px-4 py-3 font-medium">Orientation</th>
+                <th scope="col" className="px-4 py-3 font-medium">Pixels</th>
+                <th scope="col" className="px-4 py-3 font-medium">Plan</th>
               </tr>
             </thead>
             <tbody>

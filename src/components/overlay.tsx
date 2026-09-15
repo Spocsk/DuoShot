@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 export function Overlay({
   children,
@@ -11,19 +11,22 @@ export function Overlay({
   onClose: () => void;
   labelledBy: string;
 }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[#141414]/40 p-4 sm:items-center"
-      role="presentation"
-      data-testid="overlay"
-      onClick={onClose}
-    >
+    <div className="ds-overlay" role="presentation" data-testid="overlay" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
         data-testid="dialog"
-        className="w-full max-w-md rounded-2xl bg-[var(--background)] p-6 shadow-[0_30px_80px_rgb(20_20_20_/_0.28)]"
+        className="ds-dialog"
         onClick={(event) => event.stopPropagation()}
       >
         {children}

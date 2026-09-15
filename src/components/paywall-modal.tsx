@@ -53,7 +53,7 @@ export function PaywallModal({
       </button>
       <button
         type="button"
-        className="mt-3 w-full text-sm text-[var(--muted)] underline"
+        className="ds-text-btn mt-3 w-full justify-center"
         data-testid="paywall-later"
         onClick={onClose}
       >

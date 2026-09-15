@@ -17,7 +17,7 @@ export function LocaleSwitch({ locale, href }: { locale: Locale; href: string })
       href={href}
       hrefLang={other}
       data-testid="locale-switch"
-      className="uppercase tracking-wider hover:text-[var(--foreground)]"
+      className="ds-nav-link font-mono text-xs tracking-[0.16em] uppercase"
       onClick={persist}
     >
       {t(locale, "lang_switch")}

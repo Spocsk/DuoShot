@@ -18,9 +18,11 @@ describe("tool guest", () => {
 
   it("creates another local set", () => {
     cy.visitFr("/tool");
-    cy.get('[data-testid="tool-sets"] option').should("have.length", 1);
+    cy.get('[data-testid="tool-sets"][data-ready="true"]').click();
+    cy.get('[data-testid="tool-sets-menu"] [role="option"]').should("have.length", 1);
     cy.get('[data-testid="tool-set-new"]').click();
-    cy.get('[data-testid="tool-sets"] option').should("have.length", 2);
+    cy.get('[data-testid="tool-sets"][data-ready="true"]').click();
+    cy.get('[data-testid="tool-sets-menu"] [role="option"]').should("have.length", 2);
   });
 
   it("asks for an account when downloading a ZIP", () => {
@@ -32,6 +34,7 @@ describe("tool guest", () => {
 
   it("opens the 6.9 paywall for guests", () => {
     cy.visitFr("/tool");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]');
     cy.get('[data-testid="toggle-69"]').click();
     cy.get('[data-testid="paywall"]').should("contain", "6,9");
   });

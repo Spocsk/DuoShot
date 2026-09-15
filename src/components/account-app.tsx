@@ -84,12 +84,11 @@ export function AccountApp({ locale }: { locale: Locale }) {
         : t(locale, "account_plan_free");
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-12" data-testid="account">
+    <main id="main" className="flex-1">
+      <div className="mx-auto max-w-2xl px-5 py-12" data-testid="account">
       <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
       <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
-      <p className="mt-6 text-sm uppercase tracking-[0.16em] text-[var(--muted)]">
-        {t(locale, "account_plan_label")}
-      </p>
+      <p className="ds-label mt-6">{t(locale, "account_plan_label")}</p>
       <p className="font-display mt-1 text-3xl" data-testid="account-plan">{planLabel}</p>
       {plan === "free" && remaining != null ? (
         <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
@@ -149,15 +148,16 @@ export function AccountApp({ locale }: { locale: Locale }) {
           type="button"
           onClick={() => void erase()}
           data-testid="account-delete"
-          className="rounded-full border border-red-800/30 px-4 py-2"
+          className="ds-danger"
         >
           {t(locale, "delete_account")}
         </button>
-        <Link href={`${prefix}/privacy`} className="px-4 py-2 underline">
+        <Link href={`${prefix}/privacy`} className="ds-text-btn">
           Do Not Sell
         </Link>
       </div>
-      {message ? <p className="mt-4 text-sm" data-testid="account-message">{message}</p> : null}
-    </div>
+      {message ? <p className="ds-warn" data-testid="account-message">{message}</p> : null}
+      </div>
+    </main>
   );
 }

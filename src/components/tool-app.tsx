@@ -1,6 +1,15 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -47,22 +56,33 @@ type BillingStatus = {
   canUse69?: boolean;
 };
 
+const BOOT_SET: SetMeta = {
+  id: "boot",
+  name: "MyApp",
+  clientName: "",
+  orientation: "portrait",
+  sameSet: false,
+};
+
 const outerPreview = SIZE_SPECS.find((spec) => spec.id === "outer-p")!;
 const innerPreview = SIZE_SPECS.find((spec) => spec.id === "inner-p")!;
 
 export function ToolApp({ locale }: Props) {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
-      <ToolAppInner locale={locale} />
-    </Suspense>
+    <main id="main" className="flex-1">
+      <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
+        <ToolAppInner locale={locale} />
+      </Suspense>
+    </main>
   );
 }
 
 function ToolAppInner({ locale }: Props) {
   const prefix = localePrefix(locale);
   const searchParams = useSearchParams();
-  const [sets, setSets] = useState<SetMeta[]>([]);
-  const [activeId, setActiveId] = useState<string>("");
+  const [sets, setSets] = useState<SetMeta[]>([BOOT_SET]);
+  const [activeId, setActiveId] = useState<string>(BOOT_SET.id);
+  const [hydrated, setHydrated] = useState(false);
   const active = sets.find((item) => item.id === activeId) ?? sets[0];
   const [outerFiles, setOuterFiles] = useState<File[]>([]);
   const [innerFiles, setInnerFiles] = useState<File[]>([]);
@@ -85,6 +105,9 @@ function ToolAppInner({ locale }: Props) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [reviewUrl, setReviewUrl] = useState<string | null>(null);
   const [reviewStatus, setReviewStatus] = useState<string | null>(null);
+  const [reviewUpgrade, setReviewUpgrade] = useState(false);
+  const setsRef = useRef<HTMLDetailsElement>(null);
+  const [setsOpen, setSetsOpen] = useState(false);
   const signedIn = session === "in";
   const checkoutFlag = searchParams.get("checkout");
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
@@ -135,25 +158,54 @@ function ToolAppInner({ locale }: Props) {
   }, [refreshBilling]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const existing = loadSetMetas();
-      if (existing.length === 0) {
-        const first = defaultSet();
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    const existing = loadSetMetas();
+    if (existing.length === 0) {
+      const first = defaultSet();
+      try {
         saveSetMetas([first]);
         saveActiveId(first.id);
-        setSets([first]);
-        setActiveId(first.id);
-        return;
+      } catch {
+        /* private mode */
       }
-      const current = loadActiveId() ?? existing[0]!.id;
-      setSets(existing);
-      setActiveId(current);
-      void (async () => {
-        setOuterFiles(await loadSetFiles(current, "outer"));
-        setInnerFiles(await loadSetFiles(current, "inner"));
-      })();
-    }, 0);
-    return () => window.clearTimeout(timer);
+      setSets([first]);
+      setActiveId(first.id);
+      return;
+    }
+    const current = loadActiveId() ?? existing[0]!.id;
+    setSets(existing);
+    setActiveId(current);
+    let cancelled = false;
+    void (async () => {
+      const outer = await loadSetFiles(current, "outer");
+      const inner = await loadSetFiles(current, "inner");
+      if (cancelled) return;
+      setOuterFiles((prev) => (prev.length > 0 ? prev : outer));
+      setInnerFiles((prev) => (prev.length > 0 ? prev : inner));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    function onPointer(event: PointerEvent) {
+      const root = setsRef.current;
+      if (!root?.open) return;
+      if (!root.contains(event.target as Node)) root.removeAttribute("open");
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setsRef.current?.removeAttribute("open");
+    }
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
   const patchActive = useCallback(
@@ -245,12 +297,12 @@ function ToolAppInner({ locale }: Props) {
     return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
   }
 
-  async function onSideFiles(side: "outer" | "inner", list: FileList | File[]) {
-    const incoming = Array.from(list).filter(isAllowedImage).slice(0, MAX_IMAGES);
+  function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+    const incoming = takeFiles(list).filter(isAllowedImage).slice(0, MAX_IMAGES);
     if (side === "outer") setOuterFiles(incoming);
     else setInnerFiles(incoming);
     setZipUrl(null);
-    if (active) await saveSetFiles(active.id, side, incoming);
+    if (active) void saveSetFiles(active.id, side, incoming).catch(() => {});
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
@@ -264,6 +316,8 @@ function ToolAppInner({ locale }: Props) {
     if (code === "IPHONE_69_GATED") return t(locale, "error_69");
     if (code === "CLONE_RISK") return t(locale, "error_clone");
     if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
+    if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
+    if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
     return t(locale, "error_export");
   }
 
@@ -277,7 +331,7 @@ function ToolAppInner({ locale }: Props) {
         contentType: file.type,
         upsert: true,
       });
-      if (error) throw error;
+      if (error) throw new Error("UPLOAD_FAILED");
       paths.push(path);
     }
     return paths;
@@ -334,9 +388,13 @@ function ToolAppInner({ locale }: Props) {
         setStatus(t(locale, "error_clone"));
         return;
       }
-      if (!response.ok) throw new Error(payload.error || "Export impossible");
+      if (!response.ok) {
+        setStatus(explainError(payload.error || "EXPORT_FAILED"));
+        return;
+      }
       if (payload.url) {
         setZipUrl(payload.url);
+        startZipDownload(payload.url);
         setStatus(
           payload.warning === "TOO_FEW"
             ? t(locale, "tool_warn")
@@ -355,11 +413,13 @@ function ToolAppInner({ locale }: Props) {
 
   async function onReview() {
     setBusy(true);
+    setReviewUpgrade(false);
     try {
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
         setShowAuth(true);
+        setStatus(t(locale, "error_auth"));
         return;
       }
       const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
@@ -377,7 +437,11 @@ function ToolAppInner({ locale }: Props) {
         }),
       });
       const payload = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok) throw new Error(payload.error || "STUDIO_REQUIRED");
+      if (!response.ok) {
+        if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
+        setStatus(explainError(payload.error || "STUDIO_REQUIRED"));
+        return;
+      }
       if (payload.url) {
         const absolute = `${window.location.origin}${payload.url}`;
         setReviewUrl(absolute);
@@ -385,7 +449,9 @@ function ToolAppInner({ locale }: Props) {
         setReviewStatus(t(locale, "tool_review_copied"));
       }
     } catch (error) {
-      setStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_studio"));
+      const code = error instanceof Error ? error.message : "STUDIO_REQUIRED";
+      if (code === "STUDIO_REQUIRED") setReviewUpgrade(true);
+      setStatus(explainError(code));
     } finally {
       setBusy(false);
     }
@@ -418,7 +484,48 @@ function ToolAppInner({ locale }: Props) {
     setZipUrl(null);
   }
 
+  function closeSets() {
+    setsRef.current?.removeAttribute("open");
+    setSetsOpen(false);
+  }
+
+  function onSetsTriggerKey(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    const root = setsRef.current;
+    if (!root) return;
+    root.setAttribute("open", "");
+    setSetsOpen(true);
+    const options = root.querySelectorAll<HTMLButtonElement>('[role="option"]');
+    const target = event.key === "ArrowUp" ? options[options.length - 1] : options[0];
+    queueMicrotask(() => target?.focus());
+  }
+
+  function onSetsMenuKey(event: ReactKeyboardEvent<HTMLUListElement>) {
+    const options = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+    if (!options.length) return;
+    const index = options.findIndex((el) => el === document.activeElement);
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      options[(index + 1 + options.length) % options.length]?.focus();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      options[(index - 1 + options.length) % options.length]?.focus();
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      options[0]?.focus();
+    } else if (event.key === "End") {
+      event.preventDefault();
+      options[options.length - 1]?.focus();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      closeSets();
+      (setsRef.current?.querySelector("summary") as HTMLElement | null)?.focus();
+    }
+  }
+
   function addSet() {
+    closeSets();
     const next = defaultSet();
     const list = [...sets, next];
     setSets(list);
@@ -460,44 +567,87 @@ function ToolAppInner({ locale }: Props) {
           <h1 className="font-display text-4xl">{t(locale, "tool_title")}</h1>
           <p className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`}>{remainingLabel}</p>
         </div>
-        <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "hero_lead")}</p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <label className="ds-field !mt-0 min-w-[10rem] flex-1">
-            <p className="ds-label">{t(locale, "tool_sets")}</p>
-            <select
-              className="ds-input w-full"
-              data-testid="tool-sets"
-              value={active?.id ?? ""}
-              onChange={(event) => void switchSet(event.target.value)}
+        <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "tool_lead")}</p>
+        <div className="ds-set-bar mt-6">
+          <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
+            <p className="ds-label" id="tool-sets-label">
+              {t(locale, "tool_sets")}
+            </p>
+            <details
+              className="ds-listbox"
+              ref={setsRef}
+              onToggle={(event) => setSetsOpen(event.currentTarget.open)}
             >
-              {sets.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="button" className="ds-cta-ghost mt-6" data-testid="tool-set-new" onClick={addSet}>
-            {t(locale, "tool_set_new")}
-          </button>
-          {sets.length > 1 ? (
-            <button type="button" className="mt-6 text-sm underline" onClick={() => active && void removeSet(active.id)}>
-              ×
+              <summary
+                id="tool-sets-trigger"
+                className="ds-listbox-trigger"
+                data-testid="tool-sets"
+                data-ready={hydrated ? "true" : "false"}
+                aria-haspopup="listbox"
+                aria-expanded={setsOpen}
+                aria-controls="tool-sets-menu"
+                aria-labelledby="tool-sets-label"
+                onKeyDown={onSetsTriggerKey}
+              >
+                <span>{active?.name?.trim() ? active.name : t(locale, "tool_label_app")}</span>
+                <span className="ds-listbox-caret" aria-hidden="true" />
+              </summary>
+              <ul
+                id="tool-sets-menu"
+                className="ds-listbox-menu"
+                role="listbox"
+                aria-labelledby="tool-sets-label"
+                data-testid="tool-sets-menu"
+                onKeyDown={onSetsMenuKey}
+              >
+                {sets.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={item.id === active?.id}
+                      className={`ds-listbox-option ${item.id === active?.id ? "is-on" : ""}`}
+                      onClick={() => {
+                        closeSets();
+                        void switchSet(item.id);
+                      }}
+                    >
+                      {item.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>
+          <div className="ds-set-actions">
+            <button type="button" className="ds-cta-ghost" data-testid="tool-set-new" onClick={addSet}>
+              {t(locale, "tool_set_new")}
             </button>
-          ) : null}
+            {sets.length > 1 ? (
+              <button
+                type="button"
+                className="ds-text-btn"
+                data-testid="tool-set-delete"
+                aria-label={tf(locale, "tool_set_delete", { name: active?.name?.trim() || t(locale, "tool_label_app") })}
+                onClick={() => active && void removeSet(active.id)}
+              >
+                {t(locale, "tool_set_delete_short")}
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <DropZone
             testId="drop-outer"
             label={t(locale, "tool_drop_outer")}
             count={outerFiles.length}
-            onFiles={(list) => void onSideFiles("outer", list)}
+            onFiles={(list) => onSideFiles("outer", list)}
           />
           <DropZone
             testId="drop-inner"
             label={t(locale, "tool_drop_inner")}
             count={sameSet ? outerFiles.length : innerFiles.length}
-            onFiles={(list) => void onSideFiles("inner", list)}
+            onFiles={(list) => onSideFiles("inner", list)}
           />
         </div>
         <div className="mt-4">
@@ -514,15 +664,25 @@ function ToolAppInner({ locale }: Props) {
             </span>
           </button>
         </div>
-        {cloneForced ? <p className="mt-3 text-sm text-amber-800" data-testid="warn-clone">{t(locale, "tool_warn_clone")}</p> : null}
-        {unpaired ? <p className="mt-3 text-sm text-amber-800" data-testid="warn-unpaired">{t(locale, "tool_warn_unpaired")}</p> : null}
+        {cloneForced ? (
+          <p className="ds-warn" role="status" data-testid="warn-clone">
+            {t(locale, "tool_warn_clone")}
+          </p>
+        ) : null}
+        {unpaired ? (
+          <p className="ds-warn" role="status" data-testid="warn-unpaired">
+            {t(locale, "tool_warn_unpaired")}
+          </p>
+        ) : null}
         {warning === "TOO_FEW" ? (
-          <p className="mt-3 text-sm text-amber-800" data-testid="warn-too-few">
+          <p className="ds-warn" role="status" data-testid="warn-too-few">
             {t(locale, "tool_warn")} ({WARN_MIN_IMAGES}+)
           </p>
         ) : null}
         {Math.max(outerFiles.length, effectiveInner.length) >= MAX_IMAGES ? (
-          <p className="mt-3 text-sm text-amber-800">{t(locale, "tool_cap")}</p>
+          <p className="ds-warn" role="status">
+            {t(locale, "tool_cap")}
+          </p>
         ) : null}
         <div className="preview-duo mt-8">
           <PreviewCard
@@ -559,16 +719,22 @@ function ToolAppInner({ locale }: Props) {
       </section>
       <aside className="h-fit border-t border-[var(--line)] pt-5 lg:border-t-0 lg:pt-0">
         <div className="ds-field">
-          <p className="ds-label">{t(locale, "tool_label_app")}</p>
+          <label className="ds-label" htmlFor="tool-input-app">
+            {t(locale, "tool_label_app")}
+          </label>
           <input
+            id="tool-input-app"
             value={active?.name ?? ""}
             onChange={(event) => patchActive({ name: event.target.value })}
             className="ds-input w-full"
           />
         </div>
         <div className="ds-field">
-          <p className="ds-label">{t(locale, "tool_client")}</p>
+          <label className="ds-label" htmlFor="tool-input-client">
+            {t(locale, "tool_client")}
+          </label>
           <input
+            id="tool-input-client"
             value={active?.clientName ?? ""}
             onChange={(event) => patchActive({ clientName: event.target.value })}
             className="ds-input w-full"
@@ -617,16 +783,22 @@ function ToolAppInner({ locale }: Props) {
           </span>
         </div>
         <div className="ds-field">
-          <p className="ds-label">{t(locale, "tool_label_title")}</p>
+          <label className="ds-label" htmlFor="tool-input-title">
+            {t(locale, "tool_label_title")}
+          </label>
           <input
+            id="tool-input-title"
             value={options.title}
             onChange={(event) => updateOptions({ title: event.target.value })}
             className="ds-input w-full"
           />
         </div>
         <div className="ds-field">
-          <p className="ds-label">{t(locale, "tool_label_subtitle")}</p>
+          <label className="ds-label" htmlFor="tool-input-subtitle">
+            {t(locale, "tool_label_subtitle")}
+          </label>
           <input
+            id="tool-input-subtitle"
             value={options.subtitle}
             onChange={(event) => updateOptions({ subtitle: event.target.value })}
             className="ds-input w-full"
@@ -677,6 +849,7 @@ function ToolAppInner({ locale }: Props) {
           <button
             type="button"
             className="ds-toggle"
+            data-testid="toggle-burn-hinge"
             aria-pressed={Boolean(options.burnHinge)}
             onClick={() => updateOptions({ burnHinge: !options.burnHinge })}
           >
@@ -685,7 +858,7 @@ function ToolAppInner({ locale }: Props) {
               <span className="ds-toggle-thumb" />
             </span>
           </button>
-          <p className="mt-2 text-xs text-[var(--muted)]">{t(locale, "tool_burn_hinge_hint")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t(locale, "tool_burn_hinge_hint")}</p>
         </div>
         <div className="ds-field">
           <button
@@ -719,6 +892,7 @@ function ToolAppInner({ locale }: Props) {
                 <span className="ds-toggle-thumb" />
               </span>
             </button>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t(locale, "tool_assume_clone_hint")}</p>
           </div>
         ) : null}
         <button
@@ -728,7 +902,7 @@ function ToolAppInner({ locale }: Props) {
           onClick={() => void onExport()}
           className="ds-cta mt-6 w-full"
         >
-          {t(locale, "tool_download")}
+          {busy ? t(locale, "tool_preparing") : t(locale, "tool_download")}
         </button>
         <button
           type="button"
@@ -739,7 +913,7 @@ function ToolAppInner({ locale }: Props) {
         >
           {t(locale, "tool_review_share")}
         </button>
-        <a href="/api/example-zip?v=2" data-testid="tool-example" className="mt-3 inline-block text-sm underline">
+          <a href="/api/example-zip?v=2" data-testid="tool-example" className="ds-text-btn mt-3">
           {t(locale, "tool_example")}
         </a>
         {!signedIn ? (
@@ -753,14 +927,25 @@ function ToolAppInner({ locale }: Props) {
         {status ?? urlStatus ? <p className="mt-3 text-sm" data-testid="tool-status">{status ?? urlStatus}</p> : null}
         {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
         {zipUrl ? (
-          <a href={zipUrl} data-testid="tool-zip-link" className="mt-3 inline-block text-sm underline">
+          <a href={zipUrl} data-testid="tool-zip-link" className="ds-text-btn mt-3">
             {t(locale, "tool_open_zip")}
           </a>
         ) : null}
         {reviewUrl ? (
-          <a href={reviewUrl} data-testid="review-url" className="mt-2 inline-block text-sm underline">
+          <a href={reviewUrl} data-testid="review-url" className="ds-text-btn mt-2">
             {reviewUrl}
           </a>
+        ) : null}
+        {reviewUpgrade ? (
+          <button
+            type="button"
+            data-testid="tool-review-upgrade"
+            disabled={checkoutBusy}
+            onClick={() => void onCheckout("studio_monthly")}
+            className="ds-cta-ghost mt-3 w-full"
+          >
+            {t(locale, "pricing_studio_cta")}
+          </button>
         ) : null}
       </aside>
       {showAuth || (upgradeRequested && session === "out") ? (
@@ -799,6 +984,23 @@ function ToolAppInner({ locale }: Props) {
   );
 }
 
+function takeFiles(list: FileList | File[] | DataTransfer | null | undefined): File[] {
+  if (!list) return [];
+  if (typeof DataTransfer !== "undefined" && list instanceof DataTransfer) {
+    const fromFiles = Array.from(list.files);
+    if (fromFiles.length) return fromFiles;
+    const fromItems: File[] = [];
+    for (const item of Array.from(list.items)) {
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) fromItems.push(file);
+      }
+    }
+    return fromItems;
+  }
+  return Array.from(list as FileList | File[]);
+}
+
 function DropZone({
   testId,
   label,
@@ -808,13 +1010,28 @@ function DropZone({
   testId: string;
   label: string;
   count: number;
-  onFiles: (list: FileList | File[]) => void;
+  onFiles: (list: FileList | File[] | DataTransfer | null) => void;
 }) {
   const [over, setOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const onFilesRef = useRef(onFiles);
+  onFilesRef.current = onFiles;
+  useEffect(() => {
+    const node = inputRef.current;
+    if (!node) return;
+    const handler = () => {
+      const files = takeFiles(node.files);
+      if (files.length) onFilesRef.current(files);
+      node.value = "";
+    };
+    node.addEventListener("change", handler);
+    return () => node.removeEventListener("change", handler);
+  }, []);
   return (
     <label
       className={`ds-drop ${over ? "is-over" : ""}`}
       data-testid={testId}
+      data-count={count}
       onDragEnter={() => setOver(true)}
       onDragLeave={() => setOver(false)}
       onDragOver={(event) => {
@@ -824,16 +1041,18 @@ function DropZone({
       onDrop={(event) => {
         event.preventDefault();
         setOver(false);
-        onFiles(event.dataTransfer.files);
+        const files = takeFiles(event.dataTransfer);
+        if (files.length) onFiles(files);
       }}
     >
       <input
+        ref={inputRef}
         type="file"
         accept="image/png,image/jpeg"
         multiple
+        aria-label={label}
         data-testid={`${testId}-input`}
         className="absolute inset-0 cursor-pointer opacity-0"
-        onChange={(event) => event.target.files && onFiles(event.target.files)}
       />
       <span>{label}</span>
       <span className="mt-2 text-sm text-[var(--muted)]">
@@ -854,16 +1073,44 @@ function Seg({
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }) {
+  const labelId = useId();
   return (
     <div className="ds-field">
-      <p className="ds-label">{label}</p>
-      <div className="ds-seg" role="radiogroup" aria-label={label}>
+      <p className="ds-label" id={labelId}>
+        {label}
+      </p>
+      <div
+        className="ds-seg"
+        role="radiogroup"
+        aria-labelledby={labelId}
+        onKeyDown={(event) => {
+          const dir =
+            event.key === "ArrowRight" || event.key === "ArrowDown"
+              ? 1
+              : event.key === "ArrowLeft" || event.key === "ArrowUp"
+                ? -1
+                : 0;
+          if (!dir) return;
+          event.preventDefault();
+          const group = event.currentTarget;
+          const index = options.findIndex((option) => option.value === value);
+          const next = options[(index + dir + options.length) % options.length];
+          if (!next) return;
+          onChange(next.value);
+          queueMicrotask(() => {
+            (group.querySelector(`[data-seg="${next.value}"]`) as HTMLButtonElement | null)?.focus();
+          });
+        }}
+      >
         {options.map((option) => (
           <button
             key={option.value}
             type="button"
+            role="radio"
+            data-seg={option.value}
             className={value === option.value ? "is-on" : ""}
-            aria-pressed={value === option.value}
+            aria-checked={value === option.value}
+            tabIndex={value === option.value ? 0 : -1}
             onClick={() => onChange(option.value)}
           >
             {option.label}
@@ -897,19 +1144,21 @@ function PreviewCard({
 }) {
   return (
     <figure data-testid={testId}>
-      <figcaption className="duo-caption mb-3 text-left">{label}</figcaption>
-      <div
-        className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"} ${hinge ? "is-hinge" : "hinge-off"}`}
-      >
-        {src ? (
-          // User-generated preview from canvas.toDataURL
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={label} className="h-full w-full object-contain" />
-        ) : (
-          <span>—</span>
-        )}
+      <figcaption className="duo-caption text-left">{label}</figcaption>
+      <div className="preview-stage">
+        <div
+          className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"} ${hinge ? "is-hinge" : "hinge-off"}`}
+        >
+          {src ? (
+            // User-generated preview from canvas.toDataURL
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt={label} className="h-full w-full object-cover" />
+          ) : (
+            <span>—</span>
+          )}
+        </div>
       </div>
-      <ul className="mt-3 space-y-1 text-xs text-[var(--muted)]">
+      <ul className="space-y-1 text-xs text-[var(--muted)]">
         <li>
           {inspect?.hasAlpha ? t(locale, "tool_check_alpha_flat") : t(locale, "tool_check_alpha_ok")}
         </li>
@@ -963,4 +1212,9 @@ function drawTarget(
     ctx.fillText(options.title, spec.width / 2, y);
   }
   return canvas.toDataURL("image/jpeg", 0.7);
+}
+
+function startZipDownload(url: string) {
+  if (typeof window === "undefined" || "Cypress" in window) return;
+  window.location.assign(url);
 }

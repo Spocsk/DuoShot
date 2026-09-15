@@ -20,6 +20,7 @@ describe("review", () => {
     cy.get('[data-testid="tool-review"]').click();
     cy.wait("@reviews");
     cy.get('[data-testid="tool-status"]').should("contain", "réservé à Studio");
+    cy.get('[data-testid="tool-review-upgrade"]').should("contain", "Studio");
   });
 
   it("creates a Studio review link and records a decision", () => {

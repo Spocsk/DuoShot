@@ -29,7 +29,7 @@ export function HeaderAuth({
   }, []);
 
   if (signedIn === null) {
-    return <span className="inline-block h-8 w-20" />;
+    return <span className="inline-block h-[var(--target)] w-20" />;
   }
 
   if (signedIn) {
@@ -37,7 +37,7 @@ export function HeaderAuth({
       <Link
         href={`${prefix}/account`}
         data-testid={variant === "menu" ? "nav-account-menu" : "nav-account"}
-        className={variant === "menu" ? "ds-menu-link" : "ds-cta !px-3 !py-1.5 text-sm"}
+        className={variant === "menu" ? "ds-menu-link" : "ds-cta-ghost"}
       >
         {t(locale, "nav_account")}
       </Link>
@@ -59,10 +59,10 @@ export function HeaderAuth({
 
   return (
     <>
-      <Link href={`${prefix}/login`} data-testid="nav-login" className="hover:text-[var(--foreground)]">
+      <Link href={`${prefix}/login`} data-testid="nav-login" className="ds-nav-link">
         {t(locale, "nav_login")}
       </Link>
-      <Link href={`${prefix}/signup`} data-testid="nav-signup" className="ds-cta !px-3 !py-1.5 text-sm">
+      <Link href={`${prefix}/signup`} data-testid="nav-signup" className="ds-cta">
         {t(locale, "nav_signup")}
       </Link>
     </>

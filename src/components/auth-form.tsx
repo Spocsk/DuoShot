@@ -31,7 +31,13 @@ export function AuthForm({
   const [password, setPassword] = useState("");
   const [privacy, setPrivacy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageOk, setMessageOk] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  function fail(text: string) {
+    setMessageOk(false);
+    setMessage(text);
+  }
 
   async function persistConsent(userId: string) {
     const supabase = createBrowserSupabase();
@@ -44,6 +50,7 @@ export function AuthForm({
   async function onGoogle() {
     setBusy(true);
     setMessage(null);
+    setMessageOk(false);
     try {
       const supabase = createBrowserSupabase();
       const origin = window.location.origin;
@@ -57,7 +64,7 @@ export function AuthForm({
       if (error || !data.url) {
         const raw = error?.message ?? "";
         const providerOff = /provider is not enabled|unsupported provider/i.test(raw);
-        setMessage(providerOff ? t(locale, "google_error") : raw || t(locale, "google_error"));
+        fail(providerOff ? t(locale, "google_error") : raw || t(locale, "google_error"));
         return;
       }
       const check = await fetch("/api/auth/oauth-check", {
@@ -67,12 +74,12 @@ export function AuthForm({
       });
       const result = (await check.json().catch(() => null)) as { ok?: boolean } | null;
       if (!result?.ok) {
-        setMessage(t(locale, "google_error"));
+        fail(t(locale, "google_error"));
         return;
       }
       window.location.assign(data.url);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t(locale, "google_error"));
+      fail(error instanceof Error ? error.message : t(locale, "google_error"));
     } finally {
       setBusy(false);
     }
@@ -82,11 +89,12 @@ export function AuthForm({
     event.preventDefault();
     setBusy(true);
     setMessage(null);
+    setMessageOk(false);
     const supabase = createBrowserSupabase();
     try {
       if (mode === "signup") {
         if (!privacy) {
-          setMessage(locale === "fr" ? "Accepte les conditions générales et la confidentialité." : "Please accept the terms and privacy policy.");
+          fail(locale === "fr" ? "Accepte les conditions générales et la confidentialité." : "Please accept the terms and privacy policy.");
           return;
         }
         const { data, error } = await supabase.auth.signUp({ email, password });
@@ -98,6 +106,7 @@ export function AuthForm({
             // Consent is retried from the account page once the session exists.
           }
         }
+        setMessageOk(true);
         setMessage(
           locale === "fr"
             ? "Compte créé. Vérifie tes e-mails si une confirmation est demandée."
@@ -114,7 +123,7 @@ export function AuthForm({
         if (variant === "page") router.push(afterAuth);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Erreur");
+      fail(error instanceof Error ? error.message : "Erreur");
     } finally {
       setBusy(false);
     }
@@ -122,19 +131,20 @@ export function AuthForm({
 
   async function onMagic() {
     setBusy(true);
+    setMessage(null);
+    setMessageOk(false);
     const supabase = createBrowserSupabase();
     const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${origin}/auth/callback?next=${afterAuth}` },
     });
-    setMessage(
-      error
-        ? error.message
-        : locale === "fr"
-          ? "Lien magique envoyé."
-          : "Magic link sent.",
-    );
+    if (error) {
+      fail(error.message);
+    } else {
+      setMessageOk(true);
+      setMessage(locale === "fr" ? "Lien magique envoyé." : "Magic link sent.");
+    }
     setBusy(false);
   }
 
@@ -180,31 +190,37 @@ export function AuthForm({
         </p>
       ) : null}
       <form onSubmit={onPassword} className="mt-6 grid gap-3">
-        <label className="grid gap-1 text-sm">
-          {t(locale, "email")}
+        <div>
+          <label className="ds-label" htmlFor="auth-email">
+            {t(locale, "email")}
+          </label>
           <input
+            id="auth-email"
             type="email"
             required
             data-testid="auth-email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="ds-input"
+            className="ds-input w-full"
           />
-        </label>
-        <label className="grid gap-1 text-sm">
-          {t(locale, "password")}
+        </div>
+        <div>
+          <label className="ds-label" htmlFor="auth-password">
+            {t(locale, "password")}
+          </label>
           <input
+            id="auth-password"
             type="password"
             minLength={8}
             required={mode === "signup"}
             data-testid="auth-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="ds-input"
+            className="ds-input w-full"
           />
-        </label>
+        </div>
         {mode === "signup" ? (
-          <label className="flex items-start gap-2 text-sm">
+          <label className="ds-check text-sm">
             <input
               type="checkbox"
               data-testid="auth-privacy"
@@ -243,11 +259,15 @@ export function AuthForm({
         <button type="submit" disabled={busy} data-testid="auth-submit" className="ds-cta">
           {mode === "signup" ? t(locale, "nav_signup") : t(locale, "nav_login")}
         </button>
-        <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="text-sm underline">
+        <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="ds-text-btn">
           {t(locale, "magic")}
         </button>
       </form>
-      {message ? <p className="mt-4 text-sm" data-testid="auth-message">{message}</p> : null}
+      {message ? (
+        <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message">
+          {message}
+        </p>
+      ) : null}
       {variant === "page" ? (
         <p className="mt-6 text-sm text-[var(--muted)]">
           {mode === "signup" ? (

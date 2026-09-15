@@ -17,18 +17,21 @@ export function SiteHeader({ locale, path }: Props) {
   const home = prefix || "/";
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] backdrop-blur-md">
-      <div className="mx-auto flex min-h-[var(--header-h)] max-w-6xl items-center justify-between gap-x-4 px-5 py-3">
+      <a className="ds-skip" href="#main">
+        {t(locale, "skip_main")}
+      </a>
+      <div className="mx-auto flex min-h-[var(--header-h)] max-w-6xl items-center justify-between gap-x-4 px-5">
         <Link href={home} className="relative z-[60] font-display text-xl tracking-tight">
           DuoShot
         </Link>
-        <nav className="hidden items-center justify-end gap-x-4 text-sm text-[var(--muted)] md:flex">
-          <a href={`${home}#pricing`} className="hover:text-[var(--foreground)]">
+        <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
+          <a href={`${home}#pricing`} className="ds-nav-link">
             {t(locale, "nav_pricing")}
           </a>
-          <Link href={`${prefix}/specs`} className="hover:text-[var(--foreground)]">
+          <Link href={`${prefix}/specs`} className="ds-nav-link">
             {t(locale, "nav_specs")}
           </Link>
-          <Link href={`${prefix}/tool`} data-testid="nav-tool" className="hover:text-[var(--foreground)]">
+          <Link href={`${prefix}/tool`} data-testid="nav-tool" className="ds-nav-link">
             {t(locale, "nav_tool")}
           </Link>
           <HeaderAuth locale={locale} />
@@ -43,8 +46,8 @@ export function SiteHeader({ locale, path }: Props) {
 export function SiteFooter({ locale }: { locale: Locale }) {
   const prefix = localePrefix(locale);
   return (
-    <footer className="mt-auto border-t border-[var(--line)]">
-      <div className="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-5 py-8 text-sm text-[var(--muted)]">
+    <footer className="ds-footer mt-auto border-t border-[var(--line)]">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-5 py-6 text-sm text-[var(--muted)]">
         <span>© {new Date().getFullYear()} DuoShot</span>
         <Link href={`${prefix}/legal`}>{t(locale, "footer_legal")}</Link>
         <Link href={`${prefix}/terms`}>{t(locale, "footer_terms")}</Link>
