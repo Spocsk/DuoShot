@@ -13,14 +13,15 @@ describe("review", () => {
     cy.loginAs("indie");
     cy.intercept("POST", "**/api/reviews", { statusCode: 403, body: { error: "STUDIO_REQUIRED" } }).as("reviews");
     cy.visitFr("/tool");
+    cy.wait("@billing");
     cy.dropScreens({
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
     cy.get('[data-testid="tool-review"]').click();
-    cy.wait("@reviews");
     cy.get('[data-testid="tool-status"]').should("contain", "réservé à Studio");
     cy.get('[data-testid="tool-review-upgrade"]').should("contain", "Studio");
+    cy.get("@reviews.all").should("have.length", 0);
   });
 
   it("creates a Studio review link and records a decision", () => {
@@ -34,6 +35,7 @@ describe("review", () => {
         });
       },
     });
+    cy.wait("@billing");
     cy.dropScreens({
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
@@ -70,6 +72,13 @@ describe("review", () => {
     cy.get('[data-testid="review-approve"]').click();
     cy.wait("@decide");
     cy.get('[data-testid="review-status"]').should("contain", "approved");
+  });
+
+  it("shows the Harbor demo review without Studio", () => {
+    cy.visitFr("/r/harbor");
+    cy.get('[data-testid="review-title"]').should("contain", "Harbor");
+    cy.get('[data-testid="review-demo"]').should("be.visible");
+    cy.get('[data-testid="review-approve"]').should("not.exist");
   });
 
   it("shows a missing state for unknown review ids", () => {

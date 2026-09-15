@@ -4,7 +4,18 @@ describe("tool guest", () => {
     cy.dropScreens();
     cy.get('[data-testid="preview-outer"] img').should("exist");
     cy.get('[data-testid="warn-too-few"]').should("be.visible");
+    cy.get('[data-testid="warn-clone"]').should("not.exist");
+    cy.get('[data-testid="preview-outer-clone"]').should("contain", "dépose les deux");
+    cy.get('[data-testid="tool-download"]').should("be.disabled");
+  });
+
+  it("warns on clone only when the same-set toggle is on", () => {
+    cy.visitFr("/tool");
+    cy.dropScreens();
+    cy.get('[data-testid="toggle-same-set"]').click();
     cy.get('[data-testid="warn-clone"]').should("be.visible");
+    cy.get('[data-testid="preview-outer-clone"]').should("contain", "Risque");
+    cy.get('[data-testid="tool-download"]').should("not.be.disabled");
   });
 
   it("warns when outer and inner counts differ", () => {
@@ -25,9 +36,18 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-sets-menu"] [role="option"]').should("have.length", 2);
   });
 
+  it("asks for an account from the quota pill", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-quota"]').click();
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+  });
+
   it("asks for an account when downloading a ZIP", () => {
     cy.visitFr("/tool");
-    cy.dropScreens();
+    cy.dropScreens({
+      outer: "cypress/fixtures/outer.png",
+      inner: "cypress/fixtures/inner.png",
+    });
     cy.get('[data-testid="tool-download"]').click();
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });

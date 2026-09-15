@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import sharp from "sharp";
 import { resolveEntitlements } from "@/lib/billing";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
+import { reviewPairJpegs } from "@/lib/pipeline/compose";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { DEFAULT_RENDER_OPTIONS, type RenderOptions } from "@/lib/specs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,15 +17,8 @@ type Body = {
   appName?: string;
   clientName?: string;
   orientation?: "portrait" | "landscape";
+  options?: Partial<RenderOptions>;
 };
-
-async function previewJpeg(input: Buffer) {
-  return sharp(input, { failOn: "none" })
-    .rotate()
-    .resize({ width: 720, withoutEnlargement: true })
-    .jpeg({ quality: 72 })
-    .toBuffer();
-}
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabase();
@@ -65,6 +59,14 @@ export async function POST(request: Request) {
   if (outerPaths.length === 0 || innerPaths.length === 0) {
     return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
   }
+  const orientation = body.options?.orientation ?? body.orientation;
+  const options: RenderOptions = {
+    ...DEFAULT_RENDER_OPTIONS,
+    ...body.options,
+    orientation: orientation === "landscape" ? "landscape" : "portrait",
+    format: "jpeg",
+    burnHinge: Boolean(body.options?.burnHinge),
+  };
 
   const publicId = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
   const setName = body.appName?.trim() || "App";
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
       workspace_id: membership.workspace_id,
       set_name: setName,
       client_name: body.clientName?.trim() || null,
-      orientation: body.orientation === "landscape" ? "landscape" : "portrait",
+      orientation: options.orientation,
       created_by: user.id,
     })
     .select("id, public_id")
@@ -104,12 +106,17 @@ export async function POST(request: Request) {
     const seq = String(index + 1).padStart(2, "0");
     const outKey = `${publicId}/${seq}-outer.jpg`;
     const inKey = `${publicId}/${seq}-inner.jpg`;
-    const [outerJpeg, innerJpeg] = await Promise.all([previewJpeg(outerBuf), previewJpeg(innerBuf)]);
-    const upOuter = await admin.storage.from("reviews").upload(outKey, outerJpeg, {
+    const composed = await reviewPairJpegs({
+      outer: outerBuf,
+      inner: innerBuf,
+      options,
+      plan: entitlements.plan,
+    });
+    const upOuter = await admin.storage.from("reviews").upload(outKey, composed.outer, {
       contentType: "image/jpeg",
       upsert: true,
     });
-    const upInner = await admin.storage.from("reviews").upload(inKey, innerJpeg, {
+    const upInner = await admin.storage.from("reviews").upload(inKey, composed.inner, {
       contentType: "image/jpeg",
       upsert: true,
     });

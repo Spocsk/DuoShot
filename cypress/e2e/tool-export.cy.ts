@@ -33,6 +33,7 @@ describe("tool export", () => {
     cy.visitFr("/tool");
     cy.wait("@billing");
     cy.dropScreens();
+    cy.get('[data-testid="toggle-same-set"]').click();
     cy.get('[data-testid="toggle-assume-clone"]').click();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@cloneRisk");
@@ -41,5 +42,26 @@ describe("tool export", () => {
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@exportOk");
     cy.get('[data-testid="tool-zip-link"]').should("be.visible");
+  });
+
+  it("sends the set orientation to export", () => {
+    cy.loginAs("free");
+    cy.intercept("POST", "**/api/export", (req) => {
+      const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      expect(body.options.orientation).to.eq("landscape");
+      req.reply({ url: "https://cdn.example/duoshot.zip" });
+    }).as("export");
+    cy.visitFr("/tool");
+    cy.wait("@billing");
+    cy.get('[data-seg="landscape"]').click();
+    cy.get('[data-testid="preview-outer"]').should("contain", "2034×1398");
+    cy.get('[data-testid="preview-inner"]').should("contain", "2853×2007");
+    cy.dropScreens({
+      outer: "cypress/fixtures/outer.png",
+      inner: "cypress/fixtures/inner.png",
+    });
+    cy.get('[data-testid="tool-download"]').click();
+    cy.wait("@export");
+    cy.get('[data-testid="tool-status"]').should("contain", "ZIP prêt");
   });
 });

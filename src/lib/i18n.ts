@@ -15,6 +15,11 @@ const fr: Dict = {
   cta_tool: "Composer un set",
   cta_specs: "Voir les pixels",
   cta_example: "Télécharger le ZIP exemple",
+  cta_review_demo: "Voir un lien review",
+  example_listing: "Listing exemple · Harbor",
+  zip_tree_caption: "Ce que Connect reçoit",
+  trust_retention: "Sources effacées en 24 h.",
+  trust_no_guarantee: "Aucune garantie d’acceptation Apple.",
   hero_kicker: "iPhone Duo · App Store",
   hero_lead:
     "Dépose tes visuels. DuoShot compose l’écran fermé et l’écran ouvert, puis te sort le fichier qu’Apple attend.",
@@ -81,10 +86,10 @@ const fr: Dict = {
   tool_title: "Étagère Duo",
   tool_lead:
     "Deux dépôts : l’écran compact (fermé) et le grand écran (ouvert). On te montre le pli, on signale si tu copies le même visuel, on pack le ZIP pour Connect.",
-  tool_drop: "Dépose tes captures ici, ou clique pour choisir.",
-  tool_drop_outer: "Écran fermé · 5,4″",
-  tool_drop_inner: "Écran ouvert · 7,6″",
-  tool_same_set: "Même set sur les deux",
+  tool_drop: "PNG ou JPEG. Clique ou dépose.",
+  tool_drop_outer: "Déposer fermé · 5,4″",
+  tool_drop_inner: "Déposer ouvert · 7,6″",
+  tool_same_set: "Mêmes fichiers des deux côtés — Apple peut refuser (2.3.3)",
   tool_warn: "Moins de 3 visuels : l’App Store aime les sets complets.",
   tool_warn_clone:
     "Tu utilises le même screenshot pour outer et inner. Outer = compact, inner = regular. Apple peut refuser (2.3.3). Recommandé : deux sources distinctes.",
@@ -148,7 +153,7 @@ const fr: Dict = {
   account_upgrade_studio: "Passer à Studio — 49 €/mois",
   export_data: "Exporter mes données (JSON)",
   delete_account: "Supprimer mon compte",
-  lang_switch: "EN",
+  lang_switch: "English",
   paywall_title: "Tes 2 sets gratuits sont utilisés",
   paywall_lead: "Launch, Indie ou Studio : ZIP illimités et tailles 6,9″. Tes fichiers restent prêts.",
   paywall_cta: "Indie — 12 €/mois",
@@ -208,6 +213,10 @@ const fr: Dict = {
   tool_check_rgb_ok: "RGB : sRGB",
   tool_check_rgb_bad: "RGB : hors gamme",
   tool_check_zip: "Structure ZIP : conforme Connect",
+  tool_check_zip_wait: "Structure ZIP : après export",
+  tool_check_await: "En attente de source",
+  tool_check_clone_wait: "Clone 2.3.3 · dépose les deux étagères",
+  tool_check_clone: "Clone 2.3.3 · {label}",
   tool_check_hinge: "Overlay charnière",
   clone_ok: "OK",
   clone_review: "À vérifier",
@@ -225,6 +234,7 @@ const fr: Dict = {
   tool_assume_clone_hint:
     "Apple veut que l’écran fermé et l’écran ouvert montrent vraiment l’app. La même image des deux côtés, c’est un listing faux — risque de refus.",
   tool_review_share: "Lien review client",
+  tool_review_hint: "Studio — le client voit les pixels Connect.",
   tool_review_copied: "Lien copié",
   tool_example: "ZIP exemple",
   footer_why: "Pourquoi pas l’IA",
@@ -248,6 +258,7 @@ const fr: Dict = {
   review_comment: "Commentaire",
   review_alt_outer: "Capture écran fermé",
   review_alt_inner: "Capture écran ouvert",
+  review_demo_banner: "Listing démo — Harbor. Studio génère un vrai /r/xxx.",
 };
 
 const en: Dict = {
@@ -265,6 +276,11 @@ const en: Dict = {
   cta_tool: "Compose a set",
   cta_specs: "See the pixels",
   cta_example: "Download example ZIP",
+  cta_review_demo: "See a client review",
+  example_listing: "Example listing · Harbor",
+  zip_tree_caption: "What Connect receives",
+  trust_retention: "Sources deleted within 24 hours.",
+  trust_no_guarantee: "We do not guarantee Apple will accept a set.",
   hero_kicker: "iPhone Duo · App Store",
   hero_lead:
     "Drop your shots. DuoShot composes the closed and open displays, then hands you the file Apple expects.",
@@ -328,10 +344,10 @@ const en: Dict = {
   tool_title: "Duo shelf",
   tool_lead:
     "Two drops: the compact screen (closed) and the large screen (open). We show the fold, we flag a copied visual, we pack the ZIP for Connect.",
-  tool_drop: "Drop captures here, or click to choose.",
-  tool_drop_outer: "Closed screen · 5.4″",
-  tool_drop_inner: "Open screen · 7.6″",
-  tool_same_set: "Same set on both",
+  tool_drop: "PNG or JPEG. Click or drop.",
+  tool_drop_outer: "Drop closed · 5.4″",
+  tool_drop_inner: "Drop open · 7.6″",
+  tool_same_set: "Same files on both — Apple may reject (2.3.3)",
   tool_warn: "Fewer than 3 visuals: the App Store prefers complete sets.",
   tool_warn_clone:
     "You're using the same screenshot for outer and inner. Outer = compact, inner = regular. Apple may reject (2.3.3). Recommended: two distinct sources.",
@@ -395,7 +411,7 @@ const en: Dict = {
   account_upgrade_studio: "Upgrade to Studio — €49/month",
   export_data: "Export my data (JSON)",
   delete_account: "Delete my account",
-  lang_switch: "FR",
+  lang_switch: "Français",
   paywall_title: "Your 2 free sets are used",
   paywall_lead: "Launch, Indie or Studio: unlimited ZIPs and 6.9″ sizes. Your files stay ready.",
   paywall_cta: "Indie — €12/month",
@@ -455,6 +471,10 @@ const en: Dict = {
   tool_check_rgb_ok: "RGB: sRGB",
   tool_check_rgb_bad: "RGB: out of gamut",
   tool_check_zip: "ZIP structure: Connect-ready",
+  tool_check_zip_wait: "ZIP structure: after export",
+  tool_check_await: "Awaiting source",
+  tool_check_clone_wait: "Clone 2.3.3 · drop both shelves",
+  tool_check_clone: "Clone 2.3.3 · {label}",
   tool_check_hinge: "Hinge overlay",
   clone_ok: "OK",
   clone_review: "Check",
@@ -472,6 +492,7 @@ const en: Dict = {
   tool_assume_clone_hint:
     "Apple wants the closed and open screens to actually show the app. The same image on both sides is a fake listing — rejection risk.",
   tool_review_share: "Client review link",
+  tool_review_hint: "Studio — the client sees Connect pixels.",
   tool_review_copied: "Link copied",
   tool_example: "Example ZIP",
   footer_why: "Why not AI",
@@ -495,6 +516,7 @@ const en: Dict = {
   review_comment: "Comment",
   review_alt_outer: "Closed-screen capture",
   review_alt_inner: "Open-screen capture",
+  review_demo_banner: "Demo listing — Harbor. Studio generates a live /r/xxx.",
 };
 
 export function t(locale: Locale, key: keyof typeof fr): string {
@@ -525,7 +547,7 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
     {
       q: "Comment ça se paie ?",
-      a: "Preview et ZIP exemple sans compte. Deux ZIP HD après signup. Launch 29 € / 60 j, Indie 12 €/mois, Studio 49 €/mois avec lien review client. Pas de sièges en v1.1.",
+      a: "Preview et ZIP exemple sans compte. Deux ZIP HD après signup. Launch 29 € / 60 j, Indie 12 €/mois, Studio 49 €/mois avec lien review client.",
     },
     {
       q: "PNG ou JPEG ?",
@@ -551,7 +573,7 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
     {
       q: "How does payment work?",
-      a: "Preview and example ZIP with no account. Two HD ZIPs after signup. Launch €29 / 60 days, Indie €12/month, Studio €49/month with a client review link. No seats in v1.1.",
+      a: "Preview and example ZIP with no account. Two HD ZIPs after signup. Launch €29 / 60 days, Indie €12/month, Studio €49/month with a client review link.",
     },
     {
       q: "PNG or JPEG?",

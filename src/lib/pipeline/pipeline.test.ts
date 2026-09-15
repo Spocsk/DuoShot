@@ -42,6 +42,20 @@ describe("pipeline", () => {
     expect(meta.format).toBe("png");
   });
 
+  it("renders landscape outer dimensions", async () => {
+    const input = await rgbaFixture();
+    const spec = SIZE_SPECS.find((item) => item.id === "outer-l") as SizeSpec;
+    const output = await renderScreenshot(input, spec, {
+      ...DEFAULT_RENDER_OPTIONS,
+      orientation: "landscape",
+      fit: "contain",
+    });
+    const meta = await sharp(output).metadata();
+    expect(meta.width).toBe(2034);
+    expect(meta.height).toBe(1398);
+    expect(meta.hasAlpha).toBe(false);
+  });
+
   it("renders landscape inner dimensions", async () => {
     const input = await rgbaFixture();
     const spec = SIZE_SPECS.find((item) => item.id === "inner-l") as SizeSpec;

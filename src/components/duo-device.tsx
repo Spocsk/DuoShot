@@ -4,8 +4,12 @@ import { HarborCover, HarborInnerMain, HarborInnerSide } from "@/components/harb
 
 export function DuoDevice({ locale }: { locale: Locale }) {
   return (
-    <div className="duo-stage" aria-hidden="true">
-      <div className="duo-cluster">
+    <div className="duo-stage">
+      <p className="ds-label">{t(locale, "example_listing")}</p>
+      <p className="mt-1 mb-4 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+        {t(locale, "hero_kicker")}
+      </p>
+      <div className="duo-cluster" aria-hidden="true">
         <figure className="duo-closed">
           <div className="duo-chassis">
             <div className="duo-screen">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Locale } from "@/lib/specs";
 import { t } from "@/lib/i18n";
-import { localePrefix, localizedPath } from "@/lib/site";
+import { localePrefix, localizedPath, pricingPath, rejectionPath } from "@/lib/site";
 import { HeaderAuth } from "@/components/header-auth";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { SiteNav } from "@/components/site-nav";
@@ -24,20 +24,25 @@ export function SiteHeader({ locale, path }: Props) {
         <Link href={home} className="relative z-[60] font-display text-xl tracking-tight">
           DuoShot
         </Link>
-        <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
-          <a href={`${home}#pricing`} className="ds-nav-link">
-            {t(locale, "nav_pricing")}
-          </a>
-          <Link href={`${prefix}/specs`} className="ds-nav-link">
-            {t(locale, "nav_specs")}
-          </Link>
-          <Link href={`${prefix}/tool`} data-testid="nav-tool" className="ds-nav-link">
-            {t(locale, "nav_tool")}
-          </Link>
-          <HeaderAuth locale={locale} />
+        <div className="flex min-w-0 items-center justify-end gap-x-2">
+          <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
+            <Link href={pricingPath(locale)} data-testid="nav-pricing" className="ds-nav-link">
+              {t(locale, "nav_pricing")}
+            </Link>
+            <Link href={`${prefix}/specs`} className="ds-nav-link">
+              {t(locale, "nav_specs")}
+            </Link>
+            <Link href={rejectionPath(locale)} data-testid="nav-reject" className="ds-nav-link">
+              {t(locale, "footer_reject")}
+            </Link>
+            <Link href={`${prefix}/tool`} data-testid="nav-tool" className="ds-nav-link">
+              {t(locale, "nav_tool")}
+            </Link>
+            <HeaderAuth locale={locale} />
+          </nav>
           <LocaleSwitch locale={locale} href={otherHref} />
-        </nav>
-        <SiteNav locale={locale} home={home} prefix={prefix} otherHref={otherHref} />
+          <SiteNav locale={locale} prefix={prefix} />
+        </div>
       </div>
     </header>
   );
@@ -55,7 +60,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={`${prefix}/cookies`}>{t(locale, "footer_cookies")}</Link>
         <Link href={`${prefix}/legal/subprocessors`}>{t(locale, "footer_subprocessors")}</Link>
         <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t(locale, "footer_why")}</Link>
-        <Link href={locale === "en" ? "/en/rejection" : "/rejet"} data-testid="footer-reject">{t(locale, "footer_reject")}</Link>
+        <Link href={rejectionPath(locale)} data-testid="footer-reject">{t(locale, "footer_reject")}</Link>
         <Link href="/llms.txt">llms.txt</Link>
       </div>
     </footer>

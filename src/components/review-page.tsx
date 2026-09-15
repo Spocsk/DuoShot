@@ -15,7 +15,7 @@ type Payload = {
   slides: Slide[];
 };
 
-export function ReviewPage({ id, locale }: { id: string; locale: Locale }) {
+export function ReviewPage({ id, locale, demo = false }: { id: string; locale: Locale; demo?: boolean }) {
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -61,6 +61,11 @@ export function ReviewPage({ id, locale }: { id: string; locale: Locale }) {
         ) : (
           <>
             <h1 className="font-display text-5xl" data-testid="review-title">{data.set_name}</h1>
+            {demo ? (
+              <p className="mt-3 max-w-2xl text-[var(--muted)]" data-testid="review-demo">
+                {t(locale, "review_demo_banner")}
+              </p>
+            ) : null}
             <p className="mt-3 text-[var(--muted)]" data-testid="review-status">
               {data.client_name ? `${data.client_name} · ` : ""}
               {data.orientation} · {data.status}
@@ -87,12 +92,14 @@ export function ReviewPage({ id, locale }: { id: string; locale: Locale }) {
                     <img src={slide.outer} alt={t(locale, "review_alt_outer")} className="preview-glass preview-outer" />
                     <div className={`preview-glass preview-inner ${hinge ? "is-hinge" : "hinge-off"}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.inner} alt={t(locale, "review_alt_inner")} className="h-full w-full object-contain" />
+                      <img src={slide.inner} alt={t(locale, "review_alt_inner")} className="w-full object-contain" />
                     </div>
                   </div>
                 </section>
               ))}
             </div>
+            {demo ? null : (
+              <>
             <div className="ds-field mt-10 max-w-xl">
               <label className="ds-label" htmlFor="review-comment">
                 {t(locale, "review_comment")}
@@ -114,6 +121,8 @@ export function ReviewPage({ id, locale }: { id: string; locale: Locale }) {
               </button>
             </div>
             {data.comment ? <p className="mt-4 text-sm text-[var(--muted)]">{data.comment}</p> : null}
+              </>
+            )}
           </>
         )}
       </main>

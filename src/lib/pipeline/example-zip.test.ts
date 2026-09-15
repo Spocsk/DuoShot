@@ -26,5 +26,7 @@ describe("example-zip", () => {
     const readme = await zip.file("exampleapp/README.txt")!.async("string");
     expect(readme).toContain("duo-inner-landscape");
     expect(readme).toContain("duo-outer-portrait");
+    expect(readme).toContain("duo-outer-portrait: 1398x2034");
+    expect(readme).toContain("duo-inner-landscape: 2853x2007");
   });
 }, 30_000);

@@ -17,6 +17,7 @@ export function getSiteUrl(): string {
 
 export function localizedPath(locale: Locale, path: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
+  if (clean === "/r" || clean.startsWith("/r/")) return clean;
   if (locale === "fr") return clean === "/en" ? "/" : clean.replace(/^\/en/, "") || "/";
   if (clean === "/") return "/en";
   if (clean.startsWith("/en")) return clean;
@@ -33,4 +34,12 @@ export function localePrefix(locale: Locale): string {
 
 export function toolPath(locale: Locale): string {
   return `${localePrefix(locale)}/tool`;
+}
+
+export function pricingPath(locale: Locale): string {
+  return `${localePrefix(locale)}/pricing`;
+}
+
+export function rejectionPath(locale: Locale): string {
+  return locale === "en" ? "/en/rejection" : "/rejet";
 }

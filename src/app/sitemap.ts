@@ -5,6 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = getSiteUrl();
   const paths = [
     "/",
+    "/pricing",
     "/specs",
     "/pourquoi-pas-ia",
     "/why-not-ai",
