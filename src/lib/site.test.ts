@@ -15,5 +15,9 @@ describe("site", () => {
     expect(localizedPath("fr", "/en")).toBe("/");
     expect(localizedPath("fr", "/en/tool")).toBe("/tool");
     expect(localizedPath("en", "/en/specs")).toBe("/en/specs");
+    expect(localizedPath("en", "/pricing")).toBe("/en/pricing");
+    expect(localizedPath("fr", "/en/pricing")).toBe("/pricing");
+    expect(localizedPath("en", "/r/harbor")).toBe("/r/harbor");
+    expect(localizedPath("fr", "/r/harbor")).toBe("/r/harbor");
   });
 });

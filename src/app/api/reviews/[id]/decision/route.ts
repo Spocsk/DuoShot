@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { isDemoReview } from "@/lib/pipeline/harbor";
 
 export const runtime = "nodejs";
 
@@ -7,6 +8,9 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
+  if (isDemoReview(id)) {
+    return NextResponse.json({ error: "DEMO_READONLY" }, { status: 403 });
+  }
   const body = (await request.json()) as { action?: string; comment?: string };
   const status = body.action === "approve" ? "approved" : body.action === "redo" ? "changes_requested" : null;
   if (!status) return NextResponse.json({ error: "INVALID_ACTION" }, { status: 400 });

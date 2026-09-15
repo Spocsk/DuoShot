@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { harborReviewJpeg, isDemoReview } from "@/lib/pipeline/harbor";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -10,6 +12,16 @@ export async function GET(request: Request, { params }: Params) {
   const url = new URL(request.url);
   const slide = Number(url.searchParams.get("slide") ?? "0");
   const side = url.searchParams.get("side") === "inner" ? "inner" : "outer";
+  if (isDemoReview(id)) {
+    const jpeg = await harborReviewJpeg(slide, side);
+    if (!jpeg) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    return new NextResponse(new Uint8Array(jpeg), {
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  }
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
   const seq = String(slide + 1).padStart(2, "0");

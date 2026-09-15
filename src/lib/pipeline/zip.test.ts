@@ -53,4 +53,16 @@ describe("zip", () => {
     expect(readme).toContain("source had transparency");
     expect(readme).toContain("Généré avec DuoShot");
   });
+
+  it("lists exact Connect pixels per folder", () => {
+    const readme = buildReadme({
+      appName: "Harbor",
+      orientation: "portrait",
+      branded: false,
+      include69: false,
+      pixels: ["duo-outer-portrait: 1398x2034", "duo-inner-portrait: 2007x2853"],
+    });
+    expect(readme).toContain("duo-outer-portrait: 1398x2034");
+    expect(readme).toContain("duo-inner-portrait: 2007x2853");
+  });
 });

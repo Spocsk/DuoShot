@@ -300,6 +300,12 @@ a {
   color: var(--muted);
 }
 
+button.ds-pill {
+  cursor: pointer;
+  border: 0;
+  min-height: var(--target);
+}
+
 .ds-label {
   display: block;
   margin-bottom: 0.45rem;
@@ -429,6 +435,25 @@ a {
   border-color: var(--foreground);
   border-style: dashed;
   background: var(--surface);
+}
+
+.ds-drop.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.zip-tree {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.zip-tree li {
+  font-variant-numeric: tabular-nums;
 }
 
 .ds-link {
@@ -1435,7 +1460,7 @@ a {
 
 .preview-duo {
   display: grid;
-  grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, auto) auto;
   align-items: stretch;
   column-gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -1499,12 +1524,12 @@ a {
 
 @media (min-width: 640px) {
   .preview-stage {
-    align-self: stretch;
+    align-self: start;
   }
 
   .preview-stage .preview-glass {
-    height: 100%;
-    width: auto;
+    height: auto;
+    width: 100%;
     max-width: 100%;
   }
 }
@@ -1513,19 +1538,17 @@ a {
   display: block;
   height: 100%;
   width: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .preview-outer {
   overflow: hidden;
-  aspect-ratio: 84.1 / 117.8;
   border-radius: 5% 16% 16% 5% / 3.5% 11% 11% 3.5%;
 }
 
 .preview-inner {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 164.6 / 117.8;
   border-radius: 7.3% / 10%;
 }
 
@@ -1725,7 +1748,7 @@ a {
 
 .review-pair {
   display: grid;
-  grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }
@@ -1733,6 +1756,14 @@ a {
 .review-pair .preview-outer,
 .review-pair .preview-inner {
   width: 100%;
+  height: auto;
+}
+
+.review-pair .preview-inner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 @media (max-width: 639px) {

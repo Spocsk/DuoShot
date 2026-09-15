@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import type { DeviceSlot, Orientation, RenderOptions, SizeSpec } from "../specs";
-import { zipFolderName } from "../specs";
+import { specPixels, zipFolderName } from "../specs";
 import { slugify } from "./geometry";
 import type { CloneResult } from "./clone-score";
 
@@ -45,6 +45,7 @@ export function buildReadme(options: {
   unpaired?: boolean;
   flattenAlpha?: boolean;
   folders?: string[];
+  pixels?: string[];
 }): string {
   const slots: DeviceSlot[] = ["duo-outer", "duo-inner"];
   if (options.include69) slots.push("iphone-69");
@@ -59,15 +60,22 @@ export function buildReadme(options: {
     `Orientation: ${options.orientation}`,
     `Folders: ${folders.join(", ")}`,
     "",
+  ];
+  if (options.pixels?.length) {
+    lines.push("Pixels:");
+    for (const line of options.pixels) lines.push(`- ${line}`);
+    lines.push("");
+  }
+  lines.push(
     "Checks:",
-    "- Pixels: App Store Connect shelf sizes",
+    options.pixels?.length ? `- Pixels: ${options.pixels.join(", ")}` : "- Pixels: App Store Connect shelf sizes",
     `- Alpha: flattened${options.flattenAlpha ? " (source had transparency)" : ""}`,
     "- Color: sRGB RGB, no alpha",
     options.unpaired ? "- Slides: outer/inner counts differ" : "- Slides: paired by index",
     "",
     "PNG-24 (default) or JPEG q90. RGB, no alpha, exact App Store pixels.",
     "Sources and ZIP are retained at most 24 hours.",
-  ];
+  );
   if (options.cloneScores?.length) {
     lines.push("", "Guideline 2.3.3 clone score (outer[i] vs inner[i]):");
     for (const result of options.cloneScores) {
@@ -98,6 +106,14 @@ export async function buildZip(options: {
   const folders = [
     ...new Set(options.images.map((image) => zipFolderName(image.spec.slot, image.spec.orientation))),
   ];
+  const pixels = [
+    ...new Set(
+      options.images.map(
+        (image) =>
+          `${zipFolderName(image.spec.slot, image.spec.orientation)}: ${specPixels(image.spec)}`,
+      ),
+    ),
+  ];
   const orientations = [...new Set(options.images.map((image) => image.spec.orientation))];
   zip.file(
     `${prefix}${app}/README.txt`,
@@ -110,6 +126,7 @@ export async function buildZip(options: {
       unpaired: options.unpaired,
       flattenAlpha: options.flattenAlpha,
       folders,
+      pixels,
     }),
   );
   for (const image of options.images) {

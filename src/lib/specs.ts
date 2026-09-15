@@ -79,6 +79,16 @@ export function zipFolderName(slot: DeviceSlot, orientation: Orientation): strin
   return `${slot}-${orientation}`;
 }
 
+export function duoSpec(slot: "duo-outer" | "duo-inner", orientation: Orientation): SizeSpec {
+  const spec = SIZE_SPECS.find((item) => item.slot === slot && item.orientation === orientation);
+  if (!spec) throw new Error("SPEC_MISSING");
+  return spec;
+}
+
+export function specPixels(spec: Pick<SizeSpec, "width" | "height">): string {
+  return `${spec.width}x${spec.height}`;
+}
+
 export function targetsFor(options: {
   orientation: Orientation;
   include69: boolean;

@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "/api/export": ["./src/lib/pipeline/fonts/**/*"],
     "/api/example-zip": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews": ["./src/lib/pipeline/fonts/**/*"],
+    "/api/reviews/[id]/media": ["./src/lib/pipeline/fonts/**/*"],
     "/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
     "/en/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
   },

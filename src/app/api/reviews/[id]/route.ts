@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { harborReviewPayload, isDemoReview } from "@/lib/pipeline/harbor";
 
 export const runtime = "nodejs";
 
@@ -7,6 +8,11 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
+  if (isDemoReview(id)) {
+    return NextResponse.json(harborReviewPayload(), {
+      headers: { "Cache-Control": "public, max-age=300" },
+    });
+  }
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
   const { data: review } = await admin

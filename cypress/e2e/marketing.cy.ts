@@ -3,6 +3,10 @@ describe("marketing", () => {
     cy.visitFr("/");
     cy.contains("h1", "ZIP anti-rejet.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
+    cy.get('[data-testid="cta-example"]').should("have.attr", "href").and("include", "/api/example-zip");
+    cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
+    cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/r/harbor");
+    cy.get('[data-testid="trust-line"]').should("be.visible");
     cy.get('[data-testid="pricing"]').scrollIntoView().should("be.visible");
     cy.get('[data-testid="pricing-cta-indie_launch"]').should("be.visible");
     cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
@@ -13,6 +17,15 @@ describe("marketing", () => {
     cy.visitEn("/en");
     cy.contains("h1", "Anti-rejection ZIP.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
+    cy.contains("Example listing").should("be.visible");
+  });
+
+  it("serves a dedicated pricing page", () => {
+    cy.visitFr("/pricing");
+    cy.contains("h1", "Free, Launch, Indie, Studio.").should("be.visible");
+    cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
+    cy.visitEn("/en/pricing");
+    cy.contains("h1", "Free, Launch, Indie, Studio.").should("be.visible");
   });
 
   it("serves content and legal pages", () => {
@@ -49,6 +62,7 @@ describe("marketing", () => {
     cy.request("/sitemap.xml").then((response) => {
       expect(response.status).to.eq(200);
       expect(response.body).to.include("/specs");
+      expect(response.body).to.include("/pricing");
       expect(response.body).to.include("/en");
     });
   });

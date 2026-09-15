@@ -1,107 +1,20 @@
 import Link from "next/link";
 import { FAQ, t } from "@/lib/i18n";
-import type { CheckoutKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { DuoDevice } from "@/components/duo-device";
 import { ShelfSet } from "@/components/shelf-set";
-import { PricingCta } from "@/components/pricing-cta";
 import { LandingMotion } from "@/components/landing-motion";
 import { AiGap } from "@/components/ai-gap";
+import { PricingSection } from "@/components/pricing-section";
+import { TrustLine } from "@/components/trust-line";
 import { localePrefix } from "@/lib/site";
-
-const PLAN_ORDER = ["free", "launch", "indie", "studio"] as const;
-
-function pricingRows(locale: Locale) {
-  return [
-    {
-      label: t(locale, "pricing_feat_zip"),
-      free: t(locale, "pricing_val_preview"),
-      launch: t(locale, "pricing_val_yes"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_quota"),
-      free: t(locale, "pricing_val_quota_free"),
-      launch: t(locale, "pricing_val_unlimited"),
-      indie: t(locale, "pricing_val_unlimited"),
-      studio: t(locale, "pricing_val_unlimited"),
-    },
-    {
-      label: t(locale, "pricing_feat_69"),
-      free: t(locale, "pricing_val_no"),
-      launch: t(locale, "pricing_val_yes"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_sets"),
-      free: t(locale, "pricing_val_yes"),
-      launch: t(locale, "pricing_val_yes"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_prefix"),
-      free: t(locale, "pricing_val_no"),
-      launch: t(locale, "pricing_val_yes"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_review"),
-      free: t(locale, "pricing_val_no"),
-      launch: t(locale, "pricing_val_no"),
-      indie: t(locale, "pricing_val_no"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-  ];
-}
-
-function pricingPlans(locale: Locale) {
-  return {
-    free: {
-      featured: false,
-      title: t(locale, "pricing_free_title"),
-      price: t(locale, "pricing_free_price"),
-      intro: t(locale, "pricing_free_body"),
-      foot: "",
-      cta: null as { kind: CheckoutKind; label: string; ghost?: boolean } | null,
-    },
-    launch: {
-      featured: true,
-      title: t(locale, "pricing_launch_title"),
-      price: t(locale, "pricing_launch_price"),
-      intro: t(locale, "pricing_launch_badge"),
-      foot: "",
-      cta: { kind: "indie_launch" as const, label: t(locale, "pricing_launch_cta"), ghost: false },
-    },
-    indie: {
-      featured: false,
-      title: t(locale, "pricing_indie_title"),
-      price: t(locale, "pricing_indie_price"),
-      intro: t(locale, "pricing_indie_body"),
-      foot: "",
-      cta: { kind: "indie_monthly" as const, label: t(locale, "pricing_indie_cta"), ghost: true },
-    },
-    studio: {
-      featured: false,
-      title: t(locale, "pricing_studio_title"),
-      price: t(locale, "pricing_studio_price"),
-      intro: t(locale, "pricing_seats_soon"),
-      foot: t(locale, "pricing_note"),
-      cta: { kind: "studio_monthly" as const, label: t(locale, "pricing_studio_cta"), ghost: true },
-    },
-  };
-}
+import { DEMO_REVIEW_ID, EXAMPLE_ZIP_TREE } from "@/lib/pipeline/harbor";
 
 export function HomePage({ locale }: { locale: Locale }) {
   const prefix = localePrefix(locale);
   const faq = FAQ[locale];
-  const rows = pricingRows(locale);
-  const plans = pricingPlans(locale);
   const rejects = [1, 2, 3, 4, 5] as const;
   return (
     <div className="flex min-h-full flex-col">
@@ -124,6 +37,18 @@ export function HomePage({ locale }: { locale: Locale }) {
                 <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">
                   {t(locale, "cta_example")}
                 </a>
+              </div>
+              <p className="ds-label mt-8">{t(locale, "zip_tree_caption")}</p>
+              <ol className="zip-tree" data-testid="zip-tree">
+                {EXAMPLE_ZIP_TREE.map((entry) => (
+                  <li key={entry}>{entry}</li>
+                ))}
+              </ol>
+              <Link href={`/r/${DEMO_REVIEW_ID}`} data-testid="cta-review-demo" className="ds-text-btn mt-4">
+                {t(locale, "cta_review_demo")}
+              </Link>
+              <div className="mt-5">
+                <TrustLine locale={locale} />
               </div>
             </div>
             <DuoDevice locale={locale} />
@@ -165,44 +90,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             <ShelfSet locale={locale} />
           </section>
 
-          <section id="pricing" data-testid="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-16" data-reveal>
-            <h2 className="font-display text-4xl">{t(locale, "pricing_title")}</h2>
-            <p className="mt-4 max-w-xl text-[var(--muted)]">{t(locale, "pricing_lead")}</p>
-            <div className="pricing-grid mt-12">
-              {PLAN_ORDER.map((id) => {
-                const plan = plans[id];
-                return (
-                  <article key={id} className={`pricing-col${plan.featured ? " is-featured" : ""}`}>
-                    <p className="pricing-stamp">
-                      {plan.featured ? <span className="ds-pill ds-pill-ink">{t(locale, "pricing_featured")}</span> : null}
-                    </p>
-                    <p className="font-display text-3xl">{plan.title}</p>
-                    <p className="mt-2 text-2xl">{plan.price}</p>
-                    <p className="pricing-intro">{plan.intro || "\u00a0"}</p>
-                    <dl className="pricing-feats">
-                      {rows.map((row) => (
-                        <div key={row.label} className="pricing-feat">
-                          <dt>{row.label}</dt>
-                          <dd>{row[id]}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                    <p className="pricing-foot">{plan.foot || "\u00a0"}</p>
-                    <div className="pricing-cta-slot">
-                      {plan.cta ? (
-                        <PricingCta
-                          locale={locale}
-                          kind={plan.cta.kind}
-                          label={plan.cta.label}
-                          className={plan.cta.ghost ? "ds-cta-ghost" : "ds-cta"}
-                        />
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
+          <PricingSection locale={locale} />
 
           <section className="mx-auto max-w-6xl px-5 py-16" data-reveal>
             <h2 className="font-display text-4xl">{t(locale, "faq_title")}</h2>

@@ -3,18 +3,15 @@ import { resolveEntitlements } from "@/lib/billing";
 import { FREE_EXPORTS, PRO_DAILY_CAP, isProPlan } from "@/lib/plans";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, worstCloneLabel, type CloneResult } from "@/lib/pipeline/clone-score";
-import { renderScreenshot } from "@/lib/pipeline/process";
-import { inspectSource } from "@/lib/pipeline/source-inspect";
-import { buildZip, type ZipImage } from "@/lib/pipeline/zip";
+import { composeZipImages } from "@/lib/pipeline/compose";
+import { buildZip } from "@/lib/pipeline/zip";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import {
   DEFAULT_RENDER_OPTIONS,
   SIGNED_URL_SECONDS,
   canUse69,
   targetsFor,
-  type DeviceSlot,
   type RenderOptions,
-  type SizeSpec,
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -46,10 +43,6 @@ async function downloadOwned(
     throw new Error("UPLOAD_MISSING");
   }
   return Buffer.from(await file.arrayBuffer());
-}
-
-function slotTargets(targets: SizeSpec[], slot: DeviceSlot) {
-  return targets.filter((spec) => spec.slot === slot);
 }
 
 export async function POST(request: Request) {
@@ -142,9 +135,8 @@ export async function POST(request: Request) {
     reservedFree = true;
   }
 
-  let targets: SizeSpec[] = [];
   try {
-    targets = targetsFor({
+    targetsFor({
       orientation: options.orientation,
       include69,
       plan: entitlements.plan,
@@ -183,24 +175,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "CLONE_RISK", cloneScores }, { status: 403 });
     }
 
-    let flattenAlpha = false;
-    const zipImages: ZipImage[] = [];
-    async function renderSide(buffers: Buffer[], slot: DeviceSlot) {
-      const specs = slotTargets(targets, slot);
-      for (const [index, input] of buffers.entries()) {
-        const inspected = inspectSource(input);
-        if (inspected.hasAlpha) flattenAlpha = true;
-        for (const spec of specs) {
-          zipImages.push({ spec, index, buffer: await renderScreenshot(input, spec, options) });
-        }
-      }
-    }
-    await renderSide(outerBuffers, "duo-outer");
-    await renderSide(innerBuffers, "duo-inner");
-    if (include69) {
-      const phone = innerBuffers.length ? innerBuffers : outerBuffers;
-      await renderSide(phone, "iphone-69");
-    }
+    const { images, flattenAlpha } = await composeZipImages({
+      outerBuffers,
+      innerBuffers,
+      options,
+      include69,
+      plan: entitlements.plan,
+    });
 
     const clientSlug = pro
       ? body.clientName?.trim() || (entitlements.plan === "studio" ? workspace?.client_slug : null) || null
@@ -213,7 +194,7 @@ export async function POST(request: Request) {
       branded: !pro,
       include69,
       format: options.format,
-      images: zipImages,
+      images,
       cloneScores,
       unpaired,
       flattenAlpha,

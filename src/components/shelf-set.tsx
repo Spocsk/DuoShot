@@ -33,8 +33,9 @@ export function ShelfSet({ locale }: { locale: Locale }) {
 
   return (
     <div className="shelf-set">
+      <p className="ds-label">{t(locale, "example_listing")}</p>
       <div
-        className="ds-seg shelf-tabs"
+        className="ds-seg shelf-tabs mt-4"
         role="tablist"
         aria-label={t(locale, "shelf_size")}
         onKeyDown={(event) => {

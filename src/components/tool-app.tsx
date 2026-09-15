@@ -15,8 +15,8 @@ import { useSearchParams } from "next/navigation";
 import {
   DEFAULT_RENDER_OPTIONS,
   MAX_IMAGES,
-  SIZE_SPECS,
   WARN_MIN_IMAGES,
+  duoSpec,
   type FitMode,
   type Locale,
   type Orientation,
@@ -46,6 +46,7 @@ import {
 import { Overlay } from "@/components/overlay";
 import { PaywallModal } from "@/components/paywall-modal";
 import { AuthForm } from "@/components/auth-form";
+import { TrustLine } from "@/components/trust-line";
 import { localePrefix } from "@/lib/site";
 
 type Props = { locale: Locale };
@@ -63,9 +64,6 @@ const BOOT_SET: SetMeta = {
   orientation: "portrait",
   sameSet: false,
 };
-
-const outerPreview = SIZE_SPECS.find((spec) => spec.id === "outer-p")!;
-const innerPreview = SIZE_SPECS.find((spec) => spec.id === "inner-p")!;
 
 export function ToolApp({ locale }: Props) {
   return (
@@ -121,9 +119,17 @@ function ToolAppInner({ locale }: Props) {
           : null;
 
   const sameSet = active?.sameSet ?? false;
-  const effectiveInner = sameSet || innerFiles.length === 0 ? outerFiles : innerFiles;
+  const effectiveInner = sameSet ? outerFiles : innerFiles;
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
-  const cloneForced = sameSet || (outerFiles.length > 0 && innerFiles.length === 0);
+  const cloneForced = sameSet;
+  const hasExportable = outerFiles.length > 0 && (sameSet || innerFiles.length > 0);
+  const orientation: Orientation = active?.orientation ?? "portrait";
+  const renderOptions = useMemo(
+    () => ({ ...options, orientation }),
+    [options, orientation],
+  );
+  const outerSpec = duoSpec("duo-outer", orientation);
+  const innerSpec = duoSpec("duo-inner", orientation);
 
   const warning = useMemo(() => {
     const count = Math.max(outerFiles.length, effectiveInner.length);
@@ -234,18 +240,24 @@ function ToolAppInner({ locale }: Props) {
 
   const drawPreviews = useCallback(
     async (outer: File | undefined, inner: File | undefined, next: RenderOptions) => {
-      const outerFile = outer ?? inner;
-      const innerFile = inner ?? outer;
-      if (!outerFile || !innerFile) return;
-      const [outerBit, innerBit] = await Promise.all([createImageBitmap(outerFile), createImageBitmap(innerFile)]);
-      const outerSpec = next.orientation === "portrait" ? outerPreview : SIZE_SPECS.find((s) => s.id === "outer-l")!;
-      const innerSpec = next.orientation === "portrait" ? innerPreview : SIZE_SPECS.find((s) => s.id === "inner-l")!;
-      setPreviews({
-        outer: drawTarget(outerBit, next, outerSpec),
-        inner: drawTarget(innerBit, next, innerSpec),
-      });
-      outerBit.close();
-      innerBit.close();
+      if (!outer && !inner) {
+        setPreviews(null);
+        return;
+      }
+      const outerSpec = duoSpec("duo-outer", next.orientation);
+      const innerSpec = duoSpec("duo-inner", next.orientation);
+      const nextPreviews = { outer: "", inner: "" };
+      if (outer) {
+        const bitmap = await createImageBitmap(outer);
+        nextPreviews.outer = drawTarget(bitmap, next, outerSpec);
+        bitmap.close();
+      }
+      if (inner) {
+        const bitmap = await createImageBitmap(inner);
+        nextPreviews.inner = drawTarget(bitmap, next, innerSpec);
+        bitmap.close();
+      }
+      setPreviews(nextPreviews);
     },
     [],
   );
@@ -256,10 +268,10 @@ function ToolAppInner({ locale }: Props) {
         setPreviews(null);
         return;
       }
-      void drawPreviews(outerFiles[0], effectiveInner[0], options);
+      void drawPreviews(outerFiles[0], effectiveInner[0], renderOptions);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [drawPreviews, outerFiles, effectiveInner, options]);
+  }, [drawPreviews, outerFiles, effectiveInner, renderOptions]);
 
   useEffect(() => {
     let cancelled = false;
@@ -358,7 +370,7 @@ function ToolAppInner({ locale }: Props) {
         return;
       }
       const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
-      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles.length ? innerFiles : outerFiles);
+      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles);
       const response = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -370,7 +382,7 @@ function ToolAppInner({ locale }: Props) {
           clientName: active?.clientName || "",
           include69,
           assumeCloneRisk: assumeClone,
-          options: { ...options, orientation: active?.orientation ?? options.orientation, burnHinge: options.burnHinge },
+          options: renderOptions,
         }),
       });
       const payload = (await response.json()) as { url?: string; error?: string; warning?: string };
@@ -412,18 +424,35 @@ function ToolAppInner({ locale }: Props) {
   }
 
   async function onReview() {
-    setBusy(true);
     setReviewUpgrade(false);
-    try {
-      const supabase = createBrowserSupabase();
-      const { data: sessionData } = await supabase.auth.getUser();
-      if (!sessionData.user) {
+    const supabase = createBrowserSupabase();
+    const { data: sessionData } = await supabase.auth.getUser();
+    if (!sessionData.user) {
+      setShowAuth(true);
+      setStatus(t(locale, "error_auth"));
+      return;
+    }
+    let plan = billing?.plan;
+    if (!plan) {
+      const response = await fetch("/api/billing/status");
+      if (!response.ok) {
         setShowAuth(true);
         setStatus(t(locale, "error_auth"));
         return;
       }
+      const status = (await response.json()) as BillingStatus;
+      setBilling(status);
+      plan = status.plan;
+    }
+    if (plan !== "studio") {
+      setReviewUpgrade(true);
+      setStatus(t(locale, "error_studio"));
+      return;
+    }
+    setBusy(true);
+    try {
       const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
-      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles.length ? innerFiles : outerFiles);
+      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles);
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -433,7 +462,8 @@ function ToolAppInner({ locale }: Props) {
           sameSet: cloneForced,
           appName: active?.name || "App",
           clientName: active?.clientName || "",
-          orientation: active?.orientation ?? options.orientation,
+          orientation,
+          options: renderOptions,
         }),
       });
       const payload = (await response.json()) as { url?: string; error?: string };
@@ -557,17 +587,32 @@ function ToolAppInner({ locale }: Props) {
               ? tf(locale, "tool_remaining", { n: remaining })
               : t(locale, "tool_guest_quota");
   const pillMute = remaining === 0 && billing?.plan === "free";
-  const hasFiles = outerFiles.length > 0 || innerFiles.length > 0;
-  const cloneLabel = clones[0]?.label ?? (cloneForced && hasFiles ? "risk" : null);
+  const cloneLabel = clones[0]?.label ?? (cloneForced && hasExportable ? "risk" : null);
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h1 className="font-display text-4xl">{t(locale, "tool_title")}</h1>
-          <p className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`}>{remainingLabel}</p>
+          {!signedIn ? (
+            <button
+              type="button"
+              className="ds-pill ds-pill-ink"
+              data-testid="tool-quota"
+              onClick={() => setShowAuth(true)}
+            >
+              {t(locale, "tool_guest_quota")}
+            </button>
+          ) : (
+            <p className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">
+              {remainingLabel}
+            </p>
+          )}
         </div>
         <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "tool_lead")}</p>
+        <div className="mt-4">
+          <TrustLine locale={locale} />
+        </div>
         <div className="ds-set-bar mt-6">
           <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
             <p className="ds-label" id="tool-sets-label">
@@ -640,29 +685,18 @@ function ToolAppInner({ locale }: Props) {
           <DropZone
             testId="drop-outer"
             label={t(locale, "tool_drop_outer")}
+            hint={t(locale, "tool_drop")}
             count={outerFiles.length}
             onFiles={(list) => onSideFiles("outer", list)}
           />
           <DropZone
             testId="drop-inner"
             label={t(locale, "tool_drop_inner")}
+            hint={t(locale, "tool_drop")}
             count={sameSet ? outerFiles.length : innerFiles.length}
+            disabled={sameSet}
             onFiles={(list) => onSideFiles("inner", list)}
           />
-        </div>
-        <div className="mt-4">
-          <button
-            type="button"
-            className="ds-toggle"
-            data-testid="toggle-same-set"
-            aria-pressed={sameSet}
-            onClick={() => patchActive({ sameSet: !sameSet })}
-          >
-            <span className="text-sm">{t(locale, "tool_same_set")}</span>
-            <span className="ds-toggle-track">
-              <span className="ds-toggle-thumb" />
-            </span>
-          </button>
         </div>
         {cloneForced ? (
           <p className="ds-warn" role="status" data-testid="warn-clone">
@@ -691,7 +725,7 @@ function ToolAppInner({ locale }: Props) {
             src={previews?.outer}
             kind="outer"
             inspect={outerInspect}
-            specLabel="1398×2034"
+            spec={outerSpec}
             locale={locale}
             clone={cloneLabel}
           />
@@ -701,7 +735,7 @@ function ToolAppInner({ locale }: Props) {
             src={previews?.inner}
             kind="inner"
             inspect={innerInspect}
-            specLabel="2007×2853"
+            spec={innerSpec}
             locale={locale}
             hinge={showHinge}
             clone={cloneLabel}
@@ -716,6 +750,20 @@ function ToolAppInner({ locale }: Props) {
             ))}
           </ol>
         ) : null}
+        <div className="mt-6">
+          <button
+            type="button"
+            className="ds-toggle"
+            data-testid="toggle-same-set"
+            aria-pressed={sameSet}
+            onClick={() => patchActive({ sameSet: !sameSet })}
+          >
+            <span className="text-sm">{t(locale, "tool_same_set")}</span>
+            <span className="ds-toggle-track">
+              <span className="ds-toggle-thumb" />
+            </span>
+          </button>
+        </div>
       </section>
       <aside className="h-fit border-t border-[var(--line)] pt-5 lg:border-t-0 lg:pt-0">
         <div className="ds-field">
@@ -742,7 +790,7 @@ function ToolAppInner({ locale }: Props) {
         </div>
         <Seg
           label={t(locale, "tool_label_orientation")}
-          value={active?.orientation ?? options.orientation}
+          value={orientation}
           options={[
             { value: "portrait", label: t(locale, "tool_orient_portrait") },
             { value: "landscape", label: t(locale, "tool_orient_landscape") },
@@ -897,7 +945,7 @@ function ToolAppInner({ locale }: Props) {
         ) : null}
         <button
           type="button"
-          disabled={busy || !hasFiles}
+          disabled={busy || !hasExportable}
           data-testid="tool-download"
           onClick={() => void onExport()}
           className="ds-cta mt-6 w-full"
@@ -906,13 +954,16 @@ function ToolAppInner({ locale }: Props) {
         </button>
         <button
           type="button"
-          disabled={busy || !hasFiles}
+          disabled={busy || !hasExportable}
           data-testid="tool-review"
           onClick={() => void onReview()}
           className="ds-cta-ghost mt-3 w-full"
         >
-          {t(locale, "tool_review_share")}
+          {busy ? t(locale, "tool_preparing") : t(locale, "tool_review_share")}
         </button>
+        <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-review-hint">
+          {t(locale, "tool_review_hint")}
+        </p>
           <a href="/api/example-zip?v=2" data-testid="tool-example" className="ds-text-btn mt-3">
           {t(locale, "tool_example")}
         </a>
@@ -1004,12 +1055,16 @@ function takeFiles(list: FileList | File[] | DataTransfer | null | undefined): F
 function DropZone({
   testId,
   label,
+  hint,
   count,
+  disabled = false,
   onFiles,
 }: {
   testId: string;
   label: string;
+  hint: string;
   count: number;
+  disabled?: boolean;
   onFiles: (list: FileList | File[] | DataTransfer | null) => void;
 }) {
   const [over, setOver] = useState(false);
@@ -1029,18 +1084,21 @@ function DropZone({
   }, []);
   return (
     <label
-      className={`ds-drop ${over ? "is-over" : ""}`}
+      className={`ds-drop ${over ? "is-over" : ""} ${disabled ? "is-disabled" : ""}`}
       data-testid={testId}
       data-count={count}
-      onDragEnter={() => setOver(true)}
+      onDragEnter={() => {
+        if (!disabled) setOver(true);
+      }}
       onDragLeave={() => setOver(false)}
       onDragOver={(event) => {
         event.preventDefault();
-        setOver(true);
+        if (!disabled) setOver(true);
       }}
       onDrop={(event) => {
         event.preventDefault();
         setOver(false);
+        if (disabled) return;
         const files = takeFiles(event.dataTransfer);
         if (files.length) onFiles(files);
       }}
@@ -1050,11 +1108,13 @@ function DropZone({
         type="file"
         accept="image/png,image/jpeg"
         multiple
+        disabled={disabled}
         aria-label={label}
         data-testid={`${testId}-input`}
         className="absolute inset-0 cursor-pointer opacity-0"
       />
       <span>{label}</span>
+      <span className="mt-2 text-sm text-[var(--muted)]">{hint}</span>
       <span className="mt-2 text-sm text-[var(--muted)]">
         {count} / {MAX_IMAGES}
       </span>
@@ -1127,7 +1187,7 @@ function PreviewCard({
   src,
   kind,
   inspect,
-  specLabel,
+  spec,
   locale,
   hinge = false,
   clone,
@@ -1137,22 +1197,24 @@ function PreviewCard({
   src?: string;
   kind: "outer" | "inner";
   inspect: SourceInspect | null;
-  specLabel: string;
+  spec: { width: number; height: number };
   locale: Locale;
   hinge?: boolean;
   clone: CloneResult["label"] | null;
 }) {
+  const specLabel = `${spec.width}×${spec.height}`;
   return (
     <figure data-testid={testId}>
       <figcaption className="duo-caption text-left">{label}</figcaption>
       <div className="preview-stage">
         <div
           className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"} ${hinge ? "is-hinge" : "hinge-off"}`}
+          style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
         >
           {src ? (
             // User-generated preview from canvas.toDataURL
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt={label} className="h-full w-full object-cover" />
+            <img src={src} alt={label} className="h-full w-full object-contain" />
           ) : (
             <span>—</span>
           )}
@@ -1160,15 +1222,27 @@ function PreviewCard({
       </div>
       <ul className="space-y-1 text-xs text-[var(--muted)]">
         <li>
-          {inspect?.hasAlpha ? t(locale, "tool_check_alpha_flat") : t(locale, "tool_check_alpha_ok")}
+          {inspect
+            ? inspect.hasAlpha
+              ? t(locale, "tool_check_alpha_flat")
+              : t(locale, "tool_check_alpha_ok")
+            : t(locale, "tool_check_await")}
         </li>
         <li>
           {t(locale, "tool_label_orientation")}: {specLabel}
         </li>
-        <li>{inspect?.colorSpace === "other" ? t(locale, "tool_check_rgb_bad") : t(locale, "tool_check_rgb_ok")}</li>
+        <li>
+          {inspect
+            ? inspect.colorSpace === "other"
+              ? t(locale, "tool_check_rgb_bad")
+              : t(locale, "tool_check_rgb_ok")
+            : t(locale, "tool_check_await")}
+        </li>
         {kind === "inner" ? <li>{t(locale, "tool_check_hinge")}</li> : null}
-        {clone ? <li>{t(locale, `clone_${clone}`)}</li> : null}
-        <li>{t(locale, "tool_check_zip")}</li>
+        <li data-testid={`${testId}-clone`}>
+          {clone ? tf(locale, "tool_check_clone", { label: t(locale, `clone_${clone}`) }) : t(locale, "tool_check_clone_wait")}
+        </li>
+        <li>{inspect ? t(locale, "tool_check_zip") : t(locale, "tool_check_zip_wait")}</li>
       </ul>
     </figure>
   );
