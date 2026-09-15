@@ -1460,7 +1460,7 @@ button.ds-pill {
 
 .preview-duo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
   grid-template-rows: auto minmax(0, auto) auto;
   align-items: stretch;
   column-gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -1487,14 +1487,16 @@ button.ds-pill {
 
 .preview-stage {
   display: flex;
-  align-items: flex-start;
-  align-self: start;
+  align-items: flex-end;
+  align-self: end;
   min-height: 0;
   width: 100%;
 }
 
 .preview-stage .preview-glass {
   width: 100%;
+  height: auto;
+  max-width: 100%;
 }
 
 @media (max-width: 639px) {
@@ -1512,6 +1514,7 @@ button.ds-pill {
 
   .preview-stage {
     align-self: start;
+    align-items: flex-start;
   }
 
   .preview-outer,
@@ -1524,7 +1527,8 @@ button.ds-pill {
 
 @media (min-width: 640px) {
   .preview-stage {
-    align-self: start;
+    align-self: end;
+    align-items: flex-end;
   }
 
   .preview-stage .preview-glass {
@@ -1542,11 +1546,13 @@ button.ds-pill {
 }
 
 .preview-outer {
+  aspect-ratio: 84.1 / 117.8;
   overflow: hidden;
   border-radius: 5% 16% 16% 5% / 3.5% 11% 11% 3.5%;
 }
 
 .preview-inner {
+  aspect-ratio: 164.6 / 117.8;
   position: relative;
   overflow: hidden;
   border-radius: 7.3% / 10%;

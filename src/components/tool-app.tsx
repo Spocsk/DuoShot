@@ -1209,7 +1209,6 @@ function PreviewCard({
       <div className="preview-stage">
         <div
           className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"} ${hinge ? "is-hinge" : "hinge-off"}`}
-          style={{ aspectRatio: `${spec.width} / ${spec.height}` }}
         >
           {src ? (
             // User-generated preview from canvas.toDataURL
