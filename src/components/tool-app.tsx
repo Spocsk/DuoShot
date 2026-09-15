@@ -1213,7 +1213,7 @@ function PreviewCard({
           {src ? (
             // User-generated preview from canvas.toDataURL
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt={label} className="h-full w-full object-contain" />
+            <img src={src} alt={label} />
           ) : (
             <span>—</span>
           )}
