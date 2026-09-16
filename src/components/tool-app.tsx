@@ -19,11 +19,13 @@ import {
   MAX_IMAGES,
   WARN_MIN_IMAGES,
   duoSpec,
+  textOverlayLayout,
   type FitMode,
   type Locale,
   type Orientation,
   type OutputFormat,
   type RenderOptions,
+  type SizeSpec,
 } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
 import { checkSourceCount } from "@/lib/pipeline/validate";
@@ -1737,7 +1739,7 @@ function StatusLine({
 function drawTarget(
   bitmap: ImageBitmap,
   options: RenderOptions,
-  spec: { width: number; height: number },
+  spec: Pick<SizeSpec, "slot" | "orientation" | "width" | "height">,
 ): string {
   const canvas = document.createElement("canvas");
   canvas.width = spec.width;
@@ -1764,12 +1766,21 @@ function drawTarget(
       ? containRect(bitmap.width, bitmap.height, spec.width, spec.height)
       : coverRect(bitmap.width, bitmap.height, spec.width, spec.height);
   ctx.drawImage(bitmap, rect.left, rect.top, rect.width, rect.height);
-  if (options.title) {
+  const layout = textOverlayLayout(spec, options.titlePosition);
+  if (options.title || options.subtitle) {
     ctx.fillStyle = "#F4F1EA";
     ctx.textAlign = "center";
-    ctx.font = `700 ${Math.round(spec.width * 0.046)}px system-ui`;
-    const y = options.titlePosition === "top" ? spec.height * 0.08 : spec.height * 0.88;
-    ctx.fillText(options.title, spec.width / 2, y);
+    const family = options.titleFont === "serif" ? "Georgia, serif" : "system-ui";
+    if (options.title) {
+      ctx.font = `700 ${layout.titleSize}px ${family}`;
+      ctx.fillText(options.title, layout.x, layout.yTitle, layout.maxWidth);
+    }
+    if (options.subtitle) {
+      ctx.globalAlpha = 0.82;
+      ctx.font = `700 ${layout.subtitleSize}px ${family}`;
+      ctx.fillText(options.subtitle, layout.x, layout.ySubtitle, layout.maxWidth);
+      ctx.globalAlpha = 1;
+    }
   }
   return canvas.toDataURL("image/jpeg", 0.7);
 }

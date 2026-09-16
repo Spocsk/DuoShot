@@ -122,9 +122,11 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                     {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}`)}
                   </p>
                   <div className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={slide.outer} alt={t(locale, "review_alt_outer")} className="preview-glass preview-outer t-resize" />
-                    <div className={`preview-glass preview-inner t-resize ${hinge ? "is-hinge" : "hinge-off"}`}>
+                    <div className="preview-glass preview-outer device-bezel t-resize">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={slide.outer} alt={t(locale, "review_alt_outer")} />
+                    </div>
+                    <div className={`preview-glass preview-inner device-bezel t-resize ${hinge ? "is-hinge" : "hinge-off"}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.inner} alt={t(locale, "review_alt_inner")} />
                       <span className="division" aria-hidden="true" />

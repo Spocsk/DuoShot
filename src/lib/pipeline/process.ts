@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { parseHexColor } from "./geometry";
 import type { RenderOptions, SizeSpec, TitleFont } from "../specs";
-import { hingeBand, JPEG_QUALITY } from "../specs";
+import { hingeBand, JPEG_QUALITY, textOverlayLayout } from "../specs";
 
 const FONT_SANS = path.join(process.cwd(), "src/lib/pipeline/fonts/sans-bold.ttf");
 const FONT_SERIF = path.join(process.cwd(), "src/lib/pipeline/fonts/serif-bold.ttf");
@@ -77,16 +77,17 @@ function titleSvg(spec: SizeSpec, options: RenderOptions): string | null {
   const subtitle = options.subtitle?.trim();
   if (!title && !subtitle) return null;
   const family = `DuoShot ${options.titleFont}`;
-  const yTitle = options.titlePosition === "top" ? Math.round(spec.height * 0.08) : Math.round(spec.height * 0.88);
-  const ySub = options.titlePosition === "top" ? yTitle + Math.round(spec.height * 0.045) : yTitle + Math.round(spec.height * 0.04);
-  const titleSize = Math.round(spec.width * 0.046);
-  const subSize = Math.round(spec.width * 0.026);
+  const layout = textOverlayLayout(spec, options.titlePosition);
+  const fitted = (value: string, size: number) =>
+    Array.from(value).length * size * 0.68 > layout.maxWidth
+      ? ` textLength="${layout.maxWidth}" lengthAdjust="spacingAndGlyphs"`
+      : "";
   return `<svg width="${spec.width}" height="${spec.height}" xmlns="http://www.w3.org/2000/svg">
     <style>${fontFaceCss(options.titleFont)}
       .t{font-family:'${family}';fill:#F4F1EA;text-anchor:middle;}
     </style>
-    ${title ? `<text class="t" x="50%" y="${yTitle}" font-size="${titleSize}" font-weight="700">${escapeXml(title)}</text>` : ""}
-    ${subtitle ? `<text class="t" x="50%" y="${ySub}" font-size="${subSize}" opacity="0.82">${escapeXml(subtitle)}</text>` : ""}
+    ${title ? `<text class="t" x="${layout.x}" y="${layout.yTitle}" font-size="${layout.titleSize}" font-weight="700"${fitted(title, layout.titleSize)}>${escapeXml(title)}</text>` : ""}
+    ${subtitle ? `<text class="t" x="${layout.x}" y="${layout.ySubtitle}" font-size="${layout.subtitleSize}" opacity="0.82"${fitted(subtitle, layout.subtitleSize)}>${escapeXml(subtitle)}</text>` : ""}
   </svg>`;
 }
 

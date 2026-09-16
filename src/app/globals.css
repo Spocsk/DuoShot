@@ -1619,7 +1619,8 @@ img.preview-glass {
   object-position: center top;
 }
 
-.preview-glass.t-skel.is-revealed::after {
+.preview-glass.t-skel.is-revealed::after,
+.preview-glass.device-bezel::after {
   content: "";
   pointer-events: none;
   position: absolute;

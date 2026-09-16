@@ -12,16 +12,19 @@ describe("example-zip", () => {
     expect(names).not.toContain("exampleapp/duo-inner-landscape/03.png");
     expect(names).toContain("exampleapp/README.txt");
 
-    const outer = await zip.file("exampleapp/duo-outer-portrait/01.png")!.async("nodebuffer");
-    const inner = await zip.file("exampleapp/duo-inner-portrait/01.png")!.async("nodebuffer");
-    const outerMeta = await sharp(outer).metadata();
-    const innerMeta = await sharp(inner).metadata();
-    expect(outerMeta.width).toBe(1398);
-    expect(outerMeta.height).toBe(2034);
-    expect(outerMeta.hasAlpha).toBe(false);
-    expect(innerMeta.width).toBe(2007);
-    expect(innerMeta.height).toBe(2853);
-    expect(innerMeta.hasAlpha).toBe(false);
+    const images = names.filter((name) => name.endsWith(".png"));
+    expect(images).toHaveLength(6);
+    for (const name of images) {
+      const image = await zip.file(name)!.async("nodebuffer");
+      const meta = await sharp(image).metadata();
+      const isOuter = name.includes("/duo-outer-");
+      expect(meta.width).toBe(isOuter ? 1398 : 2007);
+      expect(meta.height).toBe(isOuter ? 2034 : 2853);
+      expect(meta.format).toBe("png");
+      expect(meta.hasAlpha).toBe(false);
+      expect(meta.channels).toBe(3);
+      expect(meta.space).toBe("srgb");
+    }
 
     const readme = await zip.file("exampleapp/README.txt")!.async("string");
     expect(readme).toContain("duo-inner-portrait");

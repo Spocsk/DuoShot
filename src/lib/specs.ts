@@ -140,6 +140,31 @@ export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
 /** Reserved inner fold region. UI mask only — not an Apple pixel spec. */
 export const INNER_DIVISION_RATIO = 0.06;
 
+export type TextOverlayLayout = {
+  x: number;
+  yTitle: number;
+  ySubtitle: number;
+  titleSize: number;
+  subtitleSize: number;
+  maxWidth: number;
+};
+
+/** Keeps generated copy clear of the simulated bezel and, on the open portrait display, the fold. */
+export function textOverlayLayout(
+  spec: Pick<SizeSpec, "slot" | "orientation" | "width" | "height">,
+  position: TitlePosition,
+): TextOverlayLayout {
+  const avoidsVerticalHinge = spec.slot === "duo-inner" && spec.orientation === "portrait";
+  return {
+    x: Math.round(spec.width * (avoidsVerticalHinge ? 0.25 : 0.5)),
+    yTitle: Math.round(spec.height * (position === "top" ? 0.08 : 0.88)),
+    ySubtitle: Math.round(spec.height * (position === "top" ? 0.125 : 0.92)),
+    titleSize: Math.round(spec.width * 0.046),
+    subtitleSize: Math.round(spec.width * 0.026),
+    maxWidth: Math.round(spec.width * (avoidsVerticalHinge ? 0.38 : 0.84)),
+  };
+}
+
 export function hingeBand(spec: Pick<SizeSpec, "width" | "height" | "orientation">): {
   x: number;
   y: number;
