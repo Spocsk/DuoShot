@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { resolveEntitlements } from "@/lib/billing";
+import { mapLimit } from "@/lib/map-limit";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
 import { reviewPairJpegs } from "@/lib/pipeline/compose";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { DEFAULT_RENDER_OPTIONS, type RenderOptions } from "@/lib/specs";
+import { reviewPath } from "@/lib/site";
+import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +19,7 @@ type Body = {
   appName?: string;
   clientName?: string;
   orientation?: "portrait" | "landscape";
+  locale?: Locale;
   options?: Partial<RenderOptions>;
 };
 
@@ -37,13 +40,14 @@ export async function POST(request: Request) {
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("free_exports_used")
+    .select("plan, free_exports_used")
     .eq("id", membership.workspace_id)
     .maybeSingle();
   const entitlements = await resolveEntitlements({
     email: user.email,
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
+    workspacePlan: workspace?.plan,
   });
   if (entitlements.plan !== "studio") {
     return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
@@ -87,18 +91,23 @@ export async function POST(request: Request) {
   }
 
   const pairCount = Math.min(outerPaths.length, innerPaths.length);
-  for (let index = 0; index < pairCount; index += 1) {
+  if (pairCount === 0) {
+    return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
+  }
+
+  const locale: Locale = body.locale === "en" ? "en" : "fr";
+  const slides = await mapLimit(Array.from({ length: pairCount }, (_, index) => index), 3, async (index) => {
     const outerPath = outerPaths[index]!;
     const innerPath = innerPaths[index]!;
     if (!outerPath.startsWith(`${user.id}/`) || !innerPath.startsWith(`${user.id}/`)) {
-      return NextResponse.json({ error: "PATH_FORBIDDEN" }, { status: 403 });
+      throw new Error("PATH_FORBIDDEN");
     }
     const [outerFile, innerFile] = await Promise.all([
       supabase.storage.from("uploads").download(outerPath),
       supabase.storage.from("uploads").download(innerPath),
     ]);
     if (outerFile.error || innerFile.error || !outerFile.data || !innerFile.data) {
-      return NextResponse.json({ error: "UPLOAD_MISSING" }, { status: 400 });
+      throw new Error("UPLOAD_MISSING");
     }
     const outerBuf = Buffer.from(await outerFile.data.arrayBuffer());
     const innerBuf = Buffer.from(await innerFile.data.arrayBuffer());
@@ -112,27 +121,40 @@ export async function POST(request: Request) {
       options,
       plan: entitlements.plan,
     });
-    const upOuter = await admin.storage.from("reviews").upload(outKey, composed.outer, {
-      contentType: "image/jpeg",
-      upsert: true,
-    });
-    const upInner = await admin.storage.from("reviews").upload(inKey, composed.inner, {
-      contentType: "image/jpeg",
-      upsert: true,
-    });
+    const [upOuter, upInner] = await Promise.all([
+      admin.storage.from("reviews").upload(outKey, composed.outer, {
+        contentType: "image/jpeg",
+        upsert: true,
+      }),
+      admin.storage.from("reviews").upload(inKey, composed.inner, {
+        contentType: "image/jpeg",
+        upsert: true,
+      }),
+    ]);
     if (upOuter.error || upInner.error) {
-      return NextResponse.json({ error: "REVIEW_UPLOAD_FAILED" }, { status: 500 });
+      throw new Error("REVIEW_UPLOAD_FAILED");
     }
-    await admin.from("review_slides").insert({
+    return {
       review_id: review.id,
       slide_index: index,
       outer_path: outKey,
       inner_path: inKey,
       clone_label: clone.label as CloneLabel,
-    });
+    };
+  }).catch((error: unknown) => {
+    const code = error instanceof Error ? error.message : "REVIEW_UPLOAD_FAILED";
+    return code;
+  });
+  if (typeof slides === "string") {
+    const status = slides === "PATH_FORBIDDEN" ? 403 : slides === "UPLOAD_MISSING" ? 400 : 500;
+    return NextResponse.json({ error: slides }, { status });
+  }
+  const { error: slideError } = await admin.from("review_slides").insert(slides);
+  if (slideError) {
+    return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
   }
 
-  return NextResponse.json({ id: publicId, url: `/r/${publicId}` });
+  return NextResponse.json({ id: publicId, url: reviewPath(locale, publicId) });
 }
 
 export async function GET() {

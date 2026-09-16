@@ -6,10 +6,21 @@ export type Entitlements = {
   plan: PlanId;
   extraAppPacks: number;
   launchUntil: string | null;
-  source: "stripe" | "free" | "mock";
+  source: "stripe" | "free" | "mock" | "workspace";
   remainingFreeExports: number | null;
   canUse69: boolean;
 };
+
+export function planFromWorkspace(value: string | null | undefined): PlanId {
+  if (value === "indie" || value === "studio") return value;
+  return "free";
+}
+
+export function mergePlanSources(stripePlan: PlanId, workspacePlan: PlanId): PlanId {
+  if (stripePlan === "studio" || workspacePlan === "studio") return "studio";
+  if (stripePlan === "indie" || workspacePlan === "indie") return "indie";
+  return "free";
+}
 
 export function entitlementsFromPlan(
   plan: PlanId,
@@ -31,14 +42,16 @@ export async function resolveEntitlements(options: {
   email: string | null | undefined;
   workspaceId: string;
   freeExportsUsed?: number;
+  workspacePlan?: string | null;
 }): Promise<Entitlements> {
   const stripe = getStripe();
   const used = options.freeExportsUsed ?? 0;
+  const workspacePlan = planFromWorkspace(options.workspacePlan);
   if (!stripe || !options.email) {
-    return entitlementsFromPlan("free", {
+    return entitlementsFromPlan(workspacePlan, {
       extraAppPacks: 0,
       launchUntil: null,
-      source: stripe ? "free" : "mock",
+      source: workspacePlan === "free" ? (stripe ? "free" : "mock") : "workspace",
       freeExportsUsed: used,
     });
   }
@@ -48,10 +61,10 @@ export async function resolveEntitlements(options: {
     (customer) => customer.metadata.workspace_id === options.workspaceId || !customer.metadata.workspace_id,
   );
   if (matched.length === 0) {
-    return entitlementsFromPlan("free", {
+    return entitlementsFromPlan(workspacePlan, {
       extraAppPacks: 0,
       launchUntil: null,
-      source: "stripe",
+      source: workspacePlan === "free" ? "stripe" : "workspace",
       freeExportsUsed: used,
     });
   }
@@ -94,10 +107,11 @@ export async function resolveEntitlements(options: {
     }
   }
 
-  return entitlementsFromPlan(plan, {
+  const resolved = mergePlanSources(plan, workspacePlan);
+  return entitlementsFromPlan(resolved, {
     extraAppPacks,
     launchUntil,
-    source: "stripe",
+    source: resolved === plan ? "stripe" : "workspace",
     freeExportsUsed: used,
   });
 }

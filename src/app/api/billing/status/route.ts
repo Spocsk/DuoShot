@@ -28,13 +28,14 @@ export async function GET() {
   }
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("free_exports_used")
+    .select("plan, free_exports_used")
     .eq("id", membership.workspace_id)
     .maybeSingle();
   const entitlements = await resolveEntitlements({
     email: user.email,
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
+    workspacePlan: workspace?.plan,
   });
   return NextResponse.json(entitlements);
 }

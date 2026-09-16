@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: Params) {
     });
   }
   const admin = createAdminSupabase();
-  if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
+  if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
   const seq = String(slide + 1).padStart(2, "0");
   const path = `${id}/${seq}-${side}.jpg`;
   const { data, error } = await admin.storage.from("reviews").download(path);

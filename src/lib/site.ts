@@ -15,9 +15,24 @@ export function getSiteUrl(): string {
   return "http://localhost:3000";
 }
 
+function reviewIdFromPath(path: string): string | null {
+  const match = path.match(/^\/(?:en\/)?r\/([^/]+)/);
+  if (match?.[1]) return match[1];
+  if (path === "/r" || path === "/en/r") return "";
+  return null;
+}
+
+export function reviewPath(locale: Locale, id: string): string {
+  return locale === "en" ? `/en/r/${id}` : `/r/${id}`;
+}
+
 export function localizedPath(locale: Locale, path: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
-  if (clean === "/r" || clean.startsWith("/r/")) return clean;
+  const reviewId = reviewIdFromPath(clean);
+  if (reviewId !== null) {
+    if (!reviewId) return locale === "en" ? "/en/r" : "/r";
+    return reviewPath(locale, reviewId);
+  }
   if (locale === "fr") return clean === "/en" ? "/" : clean.replace(/^\/en/, "") || "/";
   if (clean === "/") return "/en";
   if (clean.startsWith("/en")) return clean;

@@ -1,5 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { entitlementsFromPlan } from "./billing";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { entitlementsFromPlan, mergePlanSources, planFromWorkspace, resolveEntitlements } from "./billing";
+import { getStripe } from "./stripe";
+
+vi.mock("./stripe", () => ({
+  getStripe: vi.fn(),
+}));
+
+afterEach(() => {
+  vi.mocked(getStripe).mockReset();
+});
 
 describe("billing", () => {
   it("keeps free plans gated and counted", () => {
@@ -22,5 +31,104 @@ describe("billing", () => {
     });
     expect(indie.canUse69).toBe(true);
     expect(indie.remainingFreeExports).toBeNull();
+  });
+
+  it("honors a workspace studio grant over a free Stripe result", () => {
+    expect(planFromWorkspace("studio")).toBe("studio");
+    expect(planFromWorkspace("free")).toBe("free");
+    expect(mergePlanSources("free", "studio")).toBe("studio");
+    expect(mergePlanSources("indie", "studio")).toBe("studio");
+    expect(mergePlanSources("studio", "free")).toBe("studio");
+  });
+});
+
+function stripeClient(options: {
+  customers?: Array<{ id: string; metadata: Record<string, string> }>;
+  subscriptions?: Array<{ status: string; metadata: Record<string, string> }>;
+  sessions?: Array<{
+    payment_status: string;
+    status: string;
+    created: number;
+    metadata: Record<string, string>;
+  }>;
+}) {
+  return {
+    customers: { list: async () => ({ data: options.customers ?? [] }) },
+    subscriptions: { list: async () => ({ data: options.subscriptions ?? [] }) },
+    checkout: { sessions: { list: async () => ({ data: options.sessions ?? [] }) } },
+  };
+}
+
+describe("resolveEntitlements", () => {
+  it("uses the workspace plan when Stripe is missing", async () => {
+    vi.mocked(getStripe).mockReturnValue(null);
+    const studio = await resolveEntitlements({
+      email: "a@example.com",
+      workspaceId: "ws-1",
+      workspacePlan: "studio",
+    });
+    expect(studio.plan).toBe("studio");
+    expect(studio.source).toBe("workspace");
+    expect(studio.canUse69).toBe(true);
+
+    const free = await resolveEntitlements({
+      email: null,
+      workspaceId: "ws-1",
+      workspacePlan: "free",
+    });
+    expect(free.plan).toBe("free");
+    expect(free.source).toBe("mock");
+  });
+
+  it("keeps a workspace grant when Stripe has no matching customer", async () => {
+    vi.mocked(getStripe).mockReturnValue(stripeClient({ customers: [] }) as never);
+    const entitlements = await resolveEntitlements({
+      email: "a@example.com",
+      workspaceId: "ws-1",
+      workspacePlan: "studio",
+    });
+    expect(entitlements.plan).toBe("studio");
+    expect(entitlements.source).toBe("workspace");
+  });
+
+  it("unlocks Studio from an active studio_monthly subscription", async () => {
+    vi.mocked(getStripe).mockReturnValue(
+      stripeClient({
+        customers: [{ id: "cus_1", metadata: { workspace_id: "ws-1" } }],
+        subscriptions: [{ status: "active", metadata: { kind: "studio_monthly" } }],
+      }) as never,
+    );
+    const entitlements = await resolveEntitlements({
+      email: "a@example.com",
+      workspaceId: "ws-1",
+      workspacePlan: "free",
+    });
+    expect(entitlements.plan).toBe("studio");
+    expect(entitlements.source).toBe("stripe");
+  });
+
+  it("applies a paid Launch window when Stripe plan is still free", async () => {
+    const paidAt = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+    vi.mocked(getStripe).mockReturnValue(
+      stripeClient({
+        customers: [{ id: "cus_1", metadata: {} }],
+        sessions: [
+          {
+            payment_status: "paid",
+            status: "complete",
+            created: paidAt,
+            metadata: { kind: "indie_launch" },
+          },
+        ],
+      }) as never,
+    );
+    const entitlements = await resolveEntitlements({
+      email: "a@example.com",
+      workspaceId: "ws-1",
+      workspacePlan: "free",
+    });
+    expect(entitlements.plan).toBe("indie");
+    expect(entitlements.launchUntil).toBeTruthy();
+    expect(entitlements.source).toBe("stripe");
   });
 });

@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: Params) {
     });
   }
   const admin = createAdminSupabase();
-  if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
+  if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
   const { data: review } = await admin
     .from("review_links")
     .select("public_id, set_name, client_name, orientation, status, comment")
