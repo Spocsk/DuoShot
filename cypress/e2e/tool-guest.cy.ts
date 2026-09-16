@@ -96,4 +96,36 @@ describe("tool guest", () => {
     cy.get('[data-testid="clone-badge-2"]').should("be.visible").click();
     cy.get('[data-testid="preview-inner"]').should("have.attr", "data-slide", "2");
   });
+
+  it("removes an uploaded image from either filmstrip", () => {
+    cy.visitFr("/tool");
+    cy.dropScreens({
+      outer: ["cypress/fixtures/outer.png", "cypress/fixtures/outer.png", "cypress/fixtures/outer.png"],
+      inner: ["cypress/fixtures/inner.png", "cypress/fixtures/inner.png", "cypress/fixtures/inner.png"],
+    });
+
+    cy.get('[data-testid="filmstrip-outer-remove-02"]')
+      .should("have.attr", "aria-label", "Retirer 02")
+      .click();
+
+    cy.get('[data-testid="drop-outer"]').should("have.attr", "data-count", "2");
+    cy.get('[data-testid="filmstrip-outer-03"]').should("not.exist");
+    cy.get('[data-testid="filmstrip-inner-03"]').should("exist");
+    cy.get('[data-testid="warn-unpaired"]').should("be.visible");
+  });
+
+  it("removes the shared source from both shelves in same-set mode", () => {
+    cy.visitFr("/tool");
+    cy.dropScreens({
+      outer: ["cypress/fixtures/outer.png", "cypress/fixtures/outer.png", "cypress/fixtures/outer.png"],
+    });
+    cy.get('[data-testid="same-set-details"] .t-acc-head').click();
+    cy.get('[data-testid="toggle-same-set"]').click();
+    cy.get('[data-testid="filmstrip-inner-remove-02"]').click();
+
+    cy.get('[data-testid="drop-outer"]').should("have.attr", "data-count", "2");
+    cy.get('[data-testid="drop-inner"]').should("have.attr", "data-count", "2");
+    cy.get('[data-testid="filmstrip-outer-03"]').should("not.exist");
+    cy.get('[data-testid="filmstrip-inner-03"]').should("not.exist");
+  });
 });

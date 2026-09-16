@@ -9,12 +9,48 @@ export const STORAGE_RETENTION_HOURS = 24;
 export type Locale = "fr" | "en";
 export type Orientation = "portrait" | "landscape";
 export type FitMode = "contain" | "cover" | "smart";
+export type SlideFitMode = "contain" | "cover";
 export type BackgroundMode = "solid" | "gradient" | "blur";
 export type TitlePosition = "top" | "bottom";
 export type TitleFont = "sans" | "serif";
 export type OutputFormat = "png" | "jpeg";
 export type DeviceSlot = "duo-outer" | "duo-inner" | "iphone-69";
 export type PlanId = "free" | "indie" | "studio";
+
+export type CropTransform = {
+  fit: SlideFitMode;
+  /** Horizontal focal point, normalized from 0 (left) to 1 (right). */
+  x: number;
+  /** Vertical focal point, normalized from 0 (top) to 1 (bottom). */
+  y: number;
+};
+
+export type CropTransforms = {
+  outer: CropTransform[];
+  inner: CropTransform[];
+};
+
+export const DEFAULT_CROP_TRANSFORM: CropTransform = {
+  fit: "cover",
+  x: 0.5,
+  y: 0.5,
+};
+
+export function normalizeCropTransform(
+  transform: Partial<CropTransform> | null | undefined,
+  fallbackFit: FitMode = "cover",
+): CropTransform {
+  const clamp = (value: number | undefined) => Math.min(1, Math.max(0, Number.isFinite(value) ? value! : 0.5));
+  return {
+    fit: transform?.fit === "contain" || transform?.fit === "cover"
+      ? transform.fit
+      : fallbackFit === "contain"
+        ? "contain"
+        : "cover",
+    x: clamp(transform?.x),
+    y: clamp(transform?.y),
+  };
+}
 
 export type SizeSpec = {
   id: string;

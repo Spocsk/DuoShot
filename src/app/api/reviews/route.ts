@@ -7,7 +7,7 @@ import { reviewPairJpegs } from "@/lib/pipeline/compose";
 import { createReviewWriter } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { reviewPath } from "@/lib/site";
-import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
+import { DEFAULT_RENDER_OPTIONS, type CropTransforms, type Locale, type RenderOptions } from "@/lib/specs";
 import { reviewExpiresAt, reviewState } from "@/lib/reviews";
 
 export const runtime = "nodejs";
@@ -22,6 +22,7 @@ type Body = {
   orientation?: "portrait" | "landscape";
   locale?: Locale;
   options?: Partial<RenderOptions>;
+  transforms?: Partial<CropTransforms>;
 };
 
 export async function POST(request: Request) {
@@ -123,6 +124,10 @@ export async function POST(request: Request) {
       inner: innerBuf,
       options,
       plan: entitlements.plan,
+      transforms: {
+        outer: body.transforms?.outer?.[index],
+        inner: body.transforms?.inner?.[index],
+      },
     });
     const [upOuter, upInner] = await Promise.all([
       writer.storage.from("reviews").upload(outKey, composed.outer, {

@@ -80,7 +80,7 @@ describe("compose", () => {
       subtitle: "Client approved",
       format: "png" as const,
     };
-    const { images, flattenAlpha } = await composeZipImages({
+    const { images, flattenAlpha, compositionWarnings } = await composeZipImages({
       outerBuffers: [input],
       innerBuffers: [input],
       options,
@@ -97,6 +97,7 @@ describe("compose", () => {
         format: "png",
         images,
         flattenAlpha,
+        compositionWarnings,
       }),
     );
 
@@ -129,5 +130,7 @@ describe("compose", () => {
     expect(readme).toContain("Alpha: flattened (source had transparency)");
     expect(readme).toContain("duo-outer-portrait: 1398x2034");
     expect(readme).toContain("duo-inner-portrait: 2007x2853");
+    expect(readme).toContain("Composition warnings:");
+    expect(readme).toContain("upscale");
   }, 30_000);
 });

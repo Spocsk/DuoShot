@@ -46,6 +46,7 @@ export function buildReadme(options: {
   flattenAlpha?: boolean;
   folders?: string[];
   pixels?: string[];
+  compositionWarnings?: string[];
 }): string {
   const slots: DeviceSlot[] = ["duo-outer", "duo-inner"];
   if (options.include69) slots.push("iphone-69");
@@ -82,6 +83,10 @@ export function buildReadme(options: {
       lines.push(`- ${cloneLine(result)}`);
     }
   }
+  if (options.compositionWarnings?.length) {
+    lines.push("", "Composition warnings:");
+    for (const warning of options.compositionWarnings) lines.push(`- ${warning}`);
+  }
   if (options.branded) {
     lines.push("", "Généré avec DuoShot — On ne vend pas un resize. On vend un build qui passe.");
   }
@@ -99,6 +104,7 @@ export async function buildZip(options: {
   cloneScores?: CloneResult[];
   unpaired?: boolean;
   flattenAlpha?: boolean;
+  compositionWarnings?: string[];
 }): Promise<Buffer> {
   const zip = new JSZip();
   const app = slugify(options.appName);
@@ -127,6 +133,7 @@ export async function buildZip(options: {
       flattenAlpha: options.flattenAlpha,
       folders,
       pixels,
+      compositionWarnings: options.compositionWarnings,
     }),
   );
   for (const image of options.images) {

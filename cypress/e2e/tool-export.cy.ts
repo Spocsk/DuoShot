@@ -8,6 +8,7 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@export");
     cy.get('[data-testid="tool-status"]').should("contain", "ZIP prêt");
@@ -37,6 +38,7 @@ describe("tool export", () => {
     cy.get('[data-testid="toggle-same-set"]').click();
     cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-assume-clone"]').click();
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@cloneRisk");
     cy.get('[data-testid="tool-status"]').should("contain", "Risque 2.3.3");
@@ -69,8 +71,37 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@export");
     cy.get('[data-testid="tool-status"]').should("contain", "ZIP prêt");
+  });
+
+  it("persists and sends the per-slide crop chosen in the preview", () => {
+    cy.loginAs("free");
+    cy.intercept("POST", "**/api/export", (req) => {
+      const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      expect(body.transforms.outer[0]).to.deep.equal({ fit: "cover", x: 0.82, y: 0.5 });
+      expect(body.transforms.inner[0].fit).to.eq("contain");
+      req.reply({
+        statusCode: 200,
+        headers: { "content-type": "application/zip", "x-duoshot-filename": "app.zip" },
+        body: Uint8Array.from([0x50, 0x4b, 0x03, 0x04]),
+      });
+    }).as("cropExport");
+    cy.visitFr("/tool");
+    cy.wait("@billing");
+    cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
+    cy.get('[data-testid="preview-outer-crop-controls"] input[type="range"]').first().invoke("val", 82).trigger("input", { force: true });
+    cy.get('[data-testid="preview-inner-crop-controls"]').contains("button", "Tout afficher").click();
+    cy.get('[data-testid="preview-inner-metrics"]').should("contain", "Rognage 0.0%");
+    cy.window().then((win) => {
+      const sets = JSON.parse(win.localStorage.getItem("duoshot.sets.v1") || "[]");
+      expect(sets[0].transforms.outer[0].x).to.eq(0.82);
+      expect(sets[0].transforms.inner[0].fit).to.eq("contain");
+    });
+    cy.acknowledgeQuality();
+    cy.get('[data-testid="tool-download"]').click();
+    cy.wait("@cropExport");
   });
 });

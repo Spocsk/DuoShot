@@ -18,8 +18,10 @@ import {
   DEFAULT_RENDER_OPTIONS,
   MAX_IMAGES,
   WARN_MIN_IMAGES,
+  normalizeCropTransform,
   duoSpec,
   textOverlayLayout,
+  type CropTransform,
   type FitMode,
   type Locale,
   type Orientation,
@@ -33,7 +35,7 @@ import { hashFromFile } from "@/lib/pipeline/clone-hash-browser";
 import { inspectFile, type SourceInspect } from "@/lib/pipeline/source-inspect";
 import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { containRect, coverRect } from "@/lib/pipeline/geometry";
+import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
 import type { CheckoutKind } from "@/lib/plans";
 import {
@@ -73,6 +75,8 @@ const BOOT_SET: SetMeta = {
   sameSet: false,
 };
 
+const EMPTY_TRANSFORMS: CropTransform[] = [];
+
 export function ToolApp({ locale }: Props) {
   return (
     <main id="main" className="flex-1">
@@ -105,8 +109,9 @@ function ToolAppInner({ locale }: Props) {
   const [slideIndex, setSlideIndex] = useState(0);
   const [sameSetOpen, setSameSetOpen] = useState(false);
   const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
-  const [outerInspect, setOuterInspect] = useState<SourceInspect | null>(null);
-  const [innerInspect, setInnerInspect] = useState<SourceInspect | null>(null);
+  const [outerInspects, setOuterInspects] = useState<SourceInspect[]>([]);
+  const [innerInspects, setInnerInspects] = useState<SourceInspect[]>([]);
+  const [qualityAcknowledged, setQualityAcknowledged] = useState(false);
   const [clones, setClones] = useState<CloneResult[]>([]);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [session, setSession] = useState<"loading" | "out" | "in">("loading");
@@ -148,6 +153,46 @@ function ToolAppInner({ locale }: Props) {
   );
   const outerSpec = duoSpec("duo-outer", orientation);
   const innerSpec = duoSpec("duo-inner", orientation);
+  const outerTransforms = active?.transforms?.outer ?? EMPTY_TRANSFORMS;
+  const innerTransforms = active?.transforms?.inner ?? EMPTY_TRANSFORMS;
+  const outerTransform = useMemo(
+    () => normalizeCropTransform(outerTransforms[slideIndex], options.fit),
+    [options.fit, outerTransforms, slideIndex],
+  );
+  const innerTransform = useMemo(
+    () => normalizeCropTransform(innerTransforms[slideIndex], options.fit),
+    [innerTransforms, options.fit, slideIndex],
+  );
+  const outerInspect = outerInspects[slideIndex] ?? null;
+  const effectiveInnerInspects = sameSet ? outerInspects : innerInspects;
+  const innerInspect = effectiveInnerInspects[slideIndex] ?? null;
+
+  const qualityItems = useMemo(() => {
+    const outer = outerInspects.map((inspect, index) => ({
+      side: "outer" as const,
+      index,
+      ...compositionMetrics(
+        inspect.width,
+        inspect.height,
+        outerSpec.width,
+        outerSpec.height,
+        normalizeCropTransform(outerTransforms[index], options.fit),
+      ),
+    }));
+    const inner = effectiveInnerInspects.map((inspect, index) => ({
+      side: "inner" as const,
+      index,
+      ...compositionMetrics(
+        inspect.width,
+        inspect.height,
+        innerSpec.width,
+        innerSpec.height,
+        normalizeCropTransform(innerTransforms[index], options.fit),
+      ),
+    }));
+    return [...outer, ...inner];
+  }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, options.fit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
+  const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
 
   const warning = useMemo(() => {
     const count = Math.max(outerFiles.length, effectiveInner.length);
@@ -270,7 +315,12 @@ function ToolAppInner({ locale }: Props) {
   }, [zipUrl]);
 
   const drawPreviews = useCallback(
-    async (outer: File | undefined, inner: File | undefined, next: RenderOptions) => {
+    async (
+      outer: File | undefined,
+      inner: File | undefined,
+      next: RenderOptions,
+      transforms: { outer: CropTransform; inner: CropTransform },
+    ) => {
       if (!outer && !inner) {
         setPreviews(null);
         return;
@@ -280,12 +330,12 @@ function ToolAppInner({ locale }: Props) {
       const nextPreviews = { outer: "", inner: "" };
       if (outer) {
         const bitmap = await createImageBitmap(outer);
-        nextPreviews.outer = drawTarget(bitmap, next, outerSpec);
+        nextPreviews.outer = drawTarget(bitmap, next, outerSpec, transforms.outer);
         bitmap.close();
       }
       if (inner) {
         const bitmap = await createImageBitmap(inner);
-        nextPreviews.inner = drawTarget(bitmap, next, innerSpec);
+        nextPreviews.inner = drawTarget(bitmap, next, innerSpec, transforms.inner);
         bitmap.close();
       }
       setPreviews(nextPreviews);
@@ -299,25 +349,30 @@ function ToolAppInner({ locale }: Props) {
         setPreviews(null);
         return;
       }
-      void drawPreviews(outerSlide, innerSlide, renderOptions);
+      void drawPreviews(outerSlide, innerSlide, renderOptions, {
+        outer: outerTransform,
+        inner: innerTransform,
+      });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [drawPreviews, outerSlide, innerSlide, renderOptions]);
+  }, [drawPreviews, innerSlide, innerTransform, outerSlide, outerTransform, renderOptions]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const o = outerSlide ? await inspectFile(outerSlide) : null;
-      const i = innerSlide ? await inspectFile(innerSlide) : null;
+      const [outer, inner] = await Promise.all([
+        Promise.all(outerFiles.map(inspectFile)),
+        Promise.all(innerFiles.map(inspectFile)),
+      ]);
       if (!cancelled) {
-        setOuterInspect(o);
-        setInnerInspect(i);
+        setOuterInspects(outer);
+        setInnerInspects(inner);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [outerSlide, innerSlide]);
+  }, [outerFiles, innerFiles]);
 
   useEffect(() => {
     let cancelled = false;
@@ -369,12 +424,55 @@ function ToolAppInner({ locale }: Props) {
     const next = mergeSideFiles(current, incoming);
     if (side === "outer") setOuterFiles(next);
     else setInnerFiles(next);
+    setQualityAcknowledged(false);
+    setZipUrl(null);
+    if (active) void saveSetFiles(active.id, side, next).catch(() => {});
+  }
+
+  function removeSideFile(side: "outer" | "inner", index: number) {
+    const current = side === "outer" ? outerFiles : innerFiles;
+    const next = current.filter((_, fileIndex) => fileIndex !== index);
+    if (side === "outer") setOuterFiles(next);
+    else setInnerFiles(next);
+    if (active) {
+      const currentTransforms = active.transforms ?? { outer: [], inner: [] };
+      const nextTransforms = {
+        outer: side === "outer"
+          ? currentTransforms.outer.filter((_, transformIndex) => transformIndex !== index)
+          : currentTransforms.outer,
+        inner: side === "inner" || (side === "outer" && sameSet)
+          ? currentTransforms.inner.filter((_, transformIndex) => transformIndex !== index)
+          : currentTransforms.inner,
+      };
+      const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms: nextTransforms } : item);
+      setSets(nextSets);
+      saveSetMetas(nextSets);
+    }
+    setQualityAcknowledged(false);
     setZipUrl(null);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
     setOptions({ ...options, ...patch });
+    setQualityAcknowledged(false);
+    setZipUrl(null);
+  }
+
+  function updateCropTransform(side: "outer" | "inner", index: number, patch: Partial<CropTransform>) {
+    if (!active) return;
+    const currentTransforms = active.transforms ?? { outer: [], inner: [] };
+    const sideTransforms = [...currentTransforms[side]];
+    sideTransforms[index] = normalizeCropTransform({
+      ...normalizeCropTransform(sideTransforms[index], options.fit),
+      ...patch,
+    });
+    const transforms = { ...currentTransforms, [side]: sideTransforms };
+    const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms } : item);
+    setSets(nextSets);
+    saveSetMetas(nextSets);
+    setQualityAcknowledged(false);
+    setZipUrl(null);
   }
 
   function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
@@ -431,6 +529,11 @@ function ToolAppInner({ locale }: Props) {
         setPaywall("trial");
         return;
       }
+      if (severeQualityCount > 0 && !qualityAcknowledged) {
+        flashStatus(t(locale, "tool_quality_ack_required"), "err");
+        document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
       const extra = sameSet ? [] : innerFiles;
       const total = outerFiles.length + extra.length;
       let done = 0;
@@ -456,6 +559,10 @@ function ToolAppInner({ locale }: Props) {
           include69,
           assumeCloneRisk: assumeClone,
           options: renderOptions,
+          transforms: {
+            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], options.fit)),
+            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], options.fit)),
+          },
         }),
       });
       const contentType = response.headers.get("content-type") ?? "";
@@ -531,6 +638,11 @@ function ToolAppInner({ locale }: Props) {
       flashStatus(t(locale, "error_studio"), "err");
       return;
     }
+    if (severeQualityCount > 0 && !qualityAcknowledged) {
+      flashStatus(t(locale, "tool_quality_ack_required"), "err");
+      document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setBusyReview(true);
     flashStatus(t(locale, "tool_review_preparing"), "busy");
     try {
@@ -558,6 +670,10 @@ function ToolAppInner({ locale }: Props) {
           orientation,
           locale,
           options: renderOptions,
+          transforms: {
+            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], options.fit)),
+            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], options.fit)),
+          },
         }),
       });
       const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
@@ -614,6 +730,7 @@ function ToolAppInner({ locale }: Props) {
     saveActiveId(id);
     setActiveId(id);
     setSlideIndex(0);
+    setQualityAcknowledged(false);
     setOuterFiles(await loadSetFiles(id, "outer"));
     setInnerFiles(await loadSetFiles(id, "inner"));
     setZipUrl(null);
@@ -719,7 +836,7 @@ function ToolAppInner({ locale }: Props) {
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
-      <section>
+      <section className="min-w-0">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h1 className="font-display text-4xl">{t(locale, "tool_title")}</h1>
           {session === "loading" ? (
@@ -877,6 +994,8 @@ function ToolAppInner({ locale }: Props) {
             locale={locale}
             clone={cloneLabel}
             slide={slideIndex}
+            transform={outerTransform}
+            onTransform={(patch) => updateCropTransform("outer", slideIndex, patch)}
           />
           <PreviewCard
             testId="preview-inner"
@@ -889,8 +1008,27 @@ function ToolAppInner({ locale }: Props) {
             hinge={showHinge}
             clone={cloneLabel}
             slide={slideIndex}
+            transform={innerTransform}
+            onTransform={(patch) => updateCropTransform("inner", slideIndex, patch)}
           />
         </div>
+        {severeQualityCount > 0 ? (
+          <div className="quality-gate" data-testid="quality-gate" data-acknowledged={qualityAcknowledged ? "true" : "false"}>
+            <div>
+              <p className="quality-gate-title">{tf(locale, "tool_quality_gate_title", { n: severeQualityCount })}</p>
+              <p className="quality-gate-copy">{t(locale, "tool_quality_gate_copy")}</p>
+            </div>
+            <button
+              type="button"
+              className={qualityAcknowledged ? "ds-pill ds-pill-ink" : "ds-cta-ghost"}
+              data-testid="quality-acknowledge"
+              aria-pressed={qualityAcknowledged}
+              onClick={() => setQualityAcknowledged((value) => !value)}
+            >
+              {qualityAcknowledged ? t(locale, "tool_quality_acknowledged") : t(locale, "tool_quality_ack")}
+            </button>
+          </div>
+        ) : null}
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Filmstrip
             testId="filmstrip-outer"
@@ -898,6 +1036,7 @@ function ToolAppInner({ locale }: Props) {
             active={slideIndex}
             locale={locale}
             onSelect={setSlideIndex}
+            onRemove={(index) => removeSideFile("outer", index)}
           />
           <Filmstrip
             testId="filmstrip-inner"
@@ -905,6 +1044,7 @@ function ToolAppInner({ locale }: Props) {
             active={slideIndex}
             locale={locale}
             onSelect={setSlideIndex}
+            onRemove={(index) => removeSideFile(sameSet ? "outer" : "inner", index)}
           />
         </div>
         {clones.length > 0 ? (
@@ -961,7 +1101,7 @@ function ToolAppInner({ locale }: Props) {
           </div>
         </div>
       </section>
-      <aside className="h-fit border-t border-[var(--line)] pt-5 lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:border-t-0 lg:pt-0">
+      <aside className="min-w-0 h-fit border-t border-[var(--line)] pt-5 lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:border-t-0 lg:pt-0">
         <p className="ds-step-label mb-4"><span>03</span>{locale === "fr" ? "Vérification et export" : "Check and export"}</p>
         <div className="ds-field">
           <label className="ds-label" htmlFor="tool-input-app">
@@ -1434,6 +1574,8 @@ function PreviewCard({
   hinge = false,
   clone,
   slide,
+  transform,
+  onTransform,
 }: {
   testId: string;
   label: string;
@@ -1445,14 +1587,48 @@ function PreviewCard({
   hinge?: boolean;
   clone: CloneResult["label"] | null;
   slide: number;
+  transform: CropTransform;
+  onTransform: (patch: Partial<CropTransform>) => void;
 }) {
   const specLabel = `${spec.width}×${spec.height}`;
+  const dragRef = useRef<{ pointerId: number; x: number; y: number; focusX: number; focusY: number } | null>(null);
+  const metrics = inspect
+    ? compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform)
+    : null;
+  const metricTone = metrics?.severity ?? "ok";
   return (
     <figure data-testid={testId} data-slide={slide}>
       <figcaption className="duo-caption text-left">{label}</figcaption>
       <div className="preview-stage">
         <div
-          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"}`}
+          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && transform.fit === "cover" ? "is-draggable" : ""}`}
+          data-testid={`${testId}-canvas`}
+          onPointerDown={(event) => {
+            if (!src || transform.fit !== "cover") return;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            dragRef.current = {
+              pointerId: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+              focusX: transform.x,
+              focusY: transform.y,
+            };
+          }}
+          onPointerMove={(event) => {
+            const drag = dragRef.current;
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            const rect = event.currentTarget.getBoundingClientRect();
+            onTransform({
+              x: drag.focusX - (event.clientX - drag.x) / Math.max(rect.width, 1),
+              y: drag.focusY - (event.clientY - drag.y) / Math.max(rect.height, 1),
+            });
+          }}
+          onPointerUp={(event) => {
+            if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+          }}
+          onPointerCancel={() => {
+            dragRef.current = null;
+          }}
         >
           {src ? (
             <>
@@ -1471,6 +1647,67 @@ function PreviewCard({
           {kind === "inner" ? <span className="division" aria-hidden="true" /> : null}
         </div>
       </div>
+      {src ? (
+        <div className="crop-controls" data-testid={`${testId}-crop-controls`}>
+          <div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}>
+            <button
+              type="button"
+              className={transform.fit === "cover" ? "is-on" : ""}
+              aria-pressed={transform.fit === "cover"}
+              onClick={() => onTransform({ fit: "cover" })}
+            >
+              {t(locale, "tool_crop_fill")}
+            </button>
+            <button
+              type="button"
+              className={transform.fit === "contain" ? "is-on" : ""}
+              aria-pressed={transform.fit === "contain"}
+              onClick={() => onTransform({ fit: "contain" })}
+            >
+              {t(locale, "tool_crop_show_all")}
+            </button>
+            <button
+              type="button"
+              onClick={() => onTransform({ x: 0.5, y: 0.5 })}
+            >
+              {t(locale, "tool_crop_reset")}
+            </button>
+          </div>
+          {transform.fit === "cover" ? (
+            <div className="crop-axis-controls">
+              <label>
+                <span>{t(locale, "tool_crop_horizontal")}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={Math.round(transform.x * 100)}
+                  onChange={(event) => onTransform({ x: Number(event.target.value) / 100 })}
+                />
+              </label>
+              <label>
+                <span>{t(locale, "tool_crop_vertical")}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={Math.round(transform.y * 100)}
+                  onChange={(event) => onTransform({ y: Number(event.target.value) / 100 })}
+                />
+              </label>
+            </div>
+          ) : null}
+          {metrics ? (
+            <p className={`crop-metrics is-${metricTone}`} data-testid={`${testId}-metrics`}>
+              {tf(locale, "tool_crop_metrics", {
+                crop: metrics.cropPercent.toFixed(1),
+                scale: metrics.scale.toFixed(2),
+              })}
+            </p>
+          ) : null}
+          <p className="crop-hint">{transform.fit === "cover" ? t(locale, "tool_crop_drag_hint") : t(locale, "tool_crop_contain_hint")}</p>
+        </div>
+      ) : null}
       <ul className="space-y-1 text-xs text-[var(--muted)]">
         <li>
           {inspect
@@ -1505,12 +1742,14 @@ function Filmstrip({
   active,
   locale,
   onSelect,
+  onRemove,
 }: {
   testId: string;
   files: File[];
   active: number;
   locale: Locale;
   onSelect: (index: number) => void;
+  onRemove: (index: number) => void;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   if (files.length === 0) return null;
@@ -1549,10 +1788,10 @@ function Filmstrip({
         {files.map((file, index) => {
           const seq = String(index + 1).padStart(2, "0");
           return (
-            <li key={`${file.name}-${index}`}>
+            <li key={`${file.name}-${index}`} className="filmstrip-item t-avatar">
               <button
                 type="button"
-                className={`filmstrip-thumb t-avatar ${index === active ? "is-on" : ""}`}
+                className={`filmstrip-thumb ${index === active ? "is-on" : ""}`}
                 data-testid={`${testId}-${seq}`}
                 aria-current={index === active}
                 aria-label={tf(locale, "tool_slide", { n: seq })}
@@ -1561,6 +1800,15 @@ function Filmstrip({
               >
                 {seq}
                 <span className="filmstrip-name">{file.name}</span>
+              </button>
+              <button
+                type="button"
+                className="filmstrip-remove"
+                data-testid={`${testId}-remove-${seq}`}
+                aria-label={tf(locale, "tool_remove_slide", { n: seq })}
+                onClick={() => onRemove(index)}
+              >
+                <span aria-hidden="true">×</span>
               </button>
             </li>
           );
@@ -1740,6 +1988,7 @@ function drawTarget(
   bitmap: ImageBitmap,
   options: RenderOptions,
   spec: Pick<SizeSpec, "slot" | "orientation" | "width" | "height">,
+  cropTransform?: CropTransform,
 ): string {
   const canvas = document.createElement("canvas");
   canvas.width = spec.width;
@@ -1761,10 +2010,14 @@ function drawTarget(
     ctx.drawImage(bitmap, cover.left, cover.top, cover.width, cover.height);
     ctx.filter = "none";
   }
-  const rect =
-    options.fit === "contain"
-      ? containRect(bitmap.width, bitmap.height, spec.width, spec.height)
-      : coverRect(bitmap.width, bitmap.height, spec.width, spec.height);
+  const transform = normalizeCropTransform(cropTransform, options.fit);
+  const rect = compositionMetrics(
+    bitmap.width,
+    bitmap.height,
+    spec.width,
+    spec.height,
+    transform,
+  ).rect;
   ctx.drawImage(bitmap, rect.left, rect.top, rect.width, rect.height);
   const layout = textOverlayLayout(spec, options.titlePosition);
   if (options.title || options.subtitle) {

@@ -90,6 +90,34 @@ describe("pipeline", () => {
     expect(meta.hasAlpha).toBe(false);
   });
 
+  it("uses the same explicit focal point for deterministic cover crops", async () => {
+    const left = await sharp({ create: { width: 100, height: 100, channels: 3, background: "#ff0000" } }).png().toBuffer();
+    const right = await sharp({ create: { width: 100, height: 100, channels: 3, background: "#0000ff" } }).png().toBuffer();
+    const source = await sharp({
+      create: { width: 200, height: 100, channels: 3, background: "#000000" },
+    })
+      .composite([{ input: left, left: 0, top: 0 }, { input: right, left: 100, top: 0 }])
+      .png()
+      .toBuffer();
+    const spec: SizeSpec = {
+      id: "focus-test",
+      slot: "duo-outer",
+      label: "Focus",
+      inches: "0",
+      width: 100,
+      height: 100,
+      orientation: "portrait",
+    };
+    const leftCrop = await renderScreenshot(source, spec, DEFAULT_RENDER_OPTIONS, { fit: "cover", x: 0, y: 0.5 });
+    const rightCrop = await renderScreenshot(source, spec, DEFAULT_RENDER_OPTIONS, { fit: "cover", x: 1, y: 0.5 });
+    const leftPixel = await sharp(leftCrop).extract({ left: 50, top: 50, width: 1, height: 1 }).raw().toBuffer();
+    const rightPixel = await sharp(rightCrop).extract({ left: 50, top: 50, width: 1, height: 1 }).raw().toBuffer();
+    expect(leftPixel[0]).toBeGreaterThan(240);
+    expect(leftPixel[2]).toBeLessThan(15);
+    expect(rightPixel[2]).toBeGreaterThan(240);
+    expect(rightPixel[0]).toBeLessThan(15);
+  });
+
   it("keeps generated copy clear of the preview bezel safe area", async () => {
     const input = await rgbaFixture();
     const spec = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;

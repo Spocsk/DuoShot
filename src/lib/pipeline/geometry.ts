@@ -1,4 +1,14 @@
+import type { CropTransform, SlideFitMode } from "../specs";
+
 export type Rect = { left: number; top: number; width: number; height: number };
+
+export type CompositionMetrics = {
+  fit: SlideFitMode;
+  cropPercent: number;
+  scale: number;
+  severity: "ok" | "warning" | "severe";
+  rect: Rect;
+};
 
 export function containRect(
   srcW: number,
@@ -31,6 +41,51 @@ export function coverRect(
     top: (dstH - height) / 2,
     width,
     height,
+  };
+}
+
+export function compositionMetrics(
+  srcW: number,
+  srcH: number,
+  dstW: number,
+  dstH: number,
+  transform: CropTransform,
+): CompositionMetrics {
+  if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) {
+    return {
+      fit: transform.fit,
+      cropPercent: 0,
+      scale: 1,
+      severity: "ok",
+      rect: { left: 0, top: 0, width: dstW, height: dstH },
+    };
+  }
+  const scale = transform.fit === "contain"
+    ? Math.min(dstW / srcW, dstH / srcH)
+    : Math.max(dstW / srcW, dstH / srcH);
+  const width = srcW * scale;
+  const height = srcH * scale;
+  const overflowX = Math.max(0, width - dstW);
+  const overflowY = Math.max(0, height - dstH);
+  const cropPercent = transform.fit === "contain"
+    ? 0
+    : Math.max(0, 100 * (1 - (dstW * dstH) / (width * height)));
+  const severity = cropPercent > 25 || scale > 2
+    ? "severe"
+    : cropPercent >= 10 || scale > 1.5
+      ? "warning"
+      : "ok";
+  return {
+    fit: transform.fit,
+    cropPercent,
+    scale,
+    severity,
+    rect: {
+      left: overflowX > 0 ? -overflowX * transform.x : 0,
+      top: overflowY > 0 ? -overflowY * transform.y : 0,
+      width,
+      height,
+    },
   };
 }
 

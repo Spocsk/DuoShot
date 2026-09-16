@@ -161,6 +161,14 @@ Cypress.Commands.add("dropScreens", (sides?: { outer?: string | string[]; inner?
   }
 });
 
+Cypress.Commands.add("acknowledgeQuality", () => {
+  cy.get('[data-testid="preview-outer-metrics"]').should("be.visible");
+  cy.get("body").then(($body) => {
+    const button = $body.find('[data-testid="quality-acknowledge"]');
+    if (button.length && button.attr("aria-pressed") !== "true") cy.wrap(button).click();
+  });
+});
+
 declare global {
   namespace Cypress {
     interface Chainable {
@@ -169,6 +177,7 @@ declare global {
       loginAs(plan?: Plan, remaining?: number | null): Chainable<void>;
       interceptZip(alias?: string): Chainable<null>;
       dropScreens(sides?: { outer?: string | string[]; inner?: string | string[] }): Chainable<void>;
+      acknowledgeQuality(): Chainable<void>;
     }
   }
 }

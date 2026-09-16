@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { parseHexColor } from "./geometry";
-import type { RenderOptions, SizeSpec, TitleFont } from "../specs";
-import { hingeBand, JPEG_QUALITY, textOverlayLayout } from "../specs";
+import type { CropTransform, RenderOptions, SizeSpec, TitleFont } from "../specs";
+import { hingeBand, JPEG_QUALITY, normalizeCropTransform, textOverlayLayout } from "../specs";
+import { compositionMetrics } from "./geometry";
 
 const FONT_SANS = path.join(process.cwd(), "src/lib/pipeline/fonts/sans-bold.ttf");
 const FONT_SERIF = path.join(process.cwd(), "src/lib/pipeline/fonts/serif-bold.ttf");
@@ -103,27 +104,45 @@ export async function renderScreenshot(
   input: Buffer,
   spec: SizeSpec,
   options: RenderOptions,
+  cropTransform?: Partial<CropTransform> | null,
 ): Promise<Buffer> {
   const meta = await sharp(input, { failOn: "none" }).metadata();
   assertPngOrJpeg(meta.format);
 
   const background = await makeBackground(input, spec, options);
-  const position =
-    options.fit === "smart" ? sharp.strategy.attention : options.fit === "cover" ? "centre" : "centre";
-  const fit = options.fit === "contain" ? "contain" : "cover";
-
-  const foreground = await sharp(input, { failOn: "none" })
-    .rotate()
-    .resize({
-      width: spec.width,
-      height: spec.height,
-      fit,
-      position,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .toColourspace("srgb")
-    .png()
-    .toBuffer();
+  const swapDimensions = Boolean(meta.orientation && meta.orientation >= 5 && meta.orientation <= 8);
+  const sourceWidth = swapDimensions ? meta.height : meta.width;
+  const sourceHeight = swapDimensions ? meta.width : meta.height;
+  if (!sourceWidth || !sourceHeight) throw new Error("INPUT_DIMENSIONS");
+  const transform = normalizeCropTransform(cropTransform, options.fit);
+  const metrics = compositionMetrics(sourceWidth, sourceHeight, spec.width, spec.height, transform);
+  let foreground: Buffer;
+  if (transform.fit === "contain") {
+    foreground = await sharp(input, { failOn: "none" })
+      .rotate()
+      .resize({
+        width: spec.width,
+        height: spec.height,
+        fit: "contain",
+        position: "centre",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .toColourspace("srgb")
+      .png()
+      .toBuffer();
+  } else {
+    const width = Math.max(spec.width, Math.ceil(metrics.rect.width));
+    const height = Math.max(spec.height, Math.ceil(metrics.rect.height));
+    const left = Math.min(width - spec.width, Math.max(0, Math.round((width - spec.width) * transform.x)));
+    const top = Math.min(height - spec.height, Math.max(0, Math.round((height - spec.height) * transform.y)));
+    foreground = await sharp(input, { failOn: "none" })
+      .rotate()
+      .resize({ width, height, fit: "fill" })
+      .extract({ left, top, width: spec.width, height: spec.height })
+      .toColourspace("srgb")
+      .png()
+      .toBuffer();
+  }
 
   const composites: { input: Buffer; top?: number; left?: number; gravity?: "centre" }[] = [
     { input: foreground, gravity: "centre" },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containRect, coverRect, parseHexColor, slugify } from "./geometry";
+import { compositionMetrics, containRect, coverRect, parseHexColor, slugify } from "./geometry";
 
 describe("geometry", () => {
   it("fits the source inside the destination", () => {
@@ -18,6 +18,21 @@ describe("geometry", () => {
       width: 200,
       height: 100,
     });
+  });
+
+  it("measures crop, upscale, and focal placement", () => {
+    const metrics = compositionMetrics(200, 100, 100, 100, { fit: "cover", x: 1, y: 0.5 });
+    expect(metrics.cropPercent).toBe(50);
+    expect(metrics.scale).toBe(1);
+    expect(metrics.severity).toBe("severe");
+    expect(metrics.rect).toEqual({ left: -100, top: 0, width: 200, height: 100 });
+  });
+
+  it("flags large upscales even without crop", () => {
+    const metrics = compositionMetrics(200, 200, 1000, 1000, { fit: "contain", x: 0.5, y: 0.5 });
+    expect(metrics.cropPercent).toBe(0);
+    expect(metrics.scale).toBe(5);
+    expect(metrics.severity).toBe("severe");
   });
 
   it("parses hex colors including shorthand", () => {

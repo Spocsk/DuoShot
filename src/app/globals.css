@@ -418,7 +418,10 @@ button.ds-pill {
 .ds-drop {
   position: relative;
   display: flex;
+  width: 100%;
+  min-width: 0;
   min-height: 11.5rem;
+  overflow: hidden;
   cursor: pointer;
   flex-direction: column;
   align-items: center;
@@ -1619,6 +1622,119 @@ img.preview-glass {
   object-position: center top;
 }
 
+.preview-glass.is-draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.preview-glass.is-draggable:active {
+  cursor: grabbing;
+}
+
+.crop-controls {
+  display: grid;
+  gap: 0.55rem;
+  padding-block: 0.1rem 0.25rem;
+}
+
+.crop-fit,
+.review-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.crop-fit button,
+.review-view-switch button {
+  min-height: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  transition:
+    border-color var(--duration-quick) var(--ease-smooth-out),
+    color var(--duration-quick) var(--ease-smooth-out),
+    background var(--duration-quick) var(--ease-smooth-out);
+}
+
+.crop-fit button:hover,
+.crop-fit button.is-on,
+.review-view-switch button:hover,
+.review-view-switch button.is-on {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.crop-axis-controls {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.crop-axis-controls label {
+  display: grid;
+  grid-template-columns: 4.8rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.crop-axis-controls input[type="range"] {
+  width: 100%;
+  accent-color: var(--foreground);
+}
+
+.crop-metrics,
+.crop-hint {
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.crop-hint {
+  color: var(--muted);
+}
+
+.crop-metrics.is-warning {
+  color: #8a5a00;
+}
+
+.crop-metrics.is-severe {
+  color: #9f2d20;
+  font-weight: 650;
+}
+
+.quality-gate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  border-block: 1px solid color-mix(in srgb, #a6402f 45%, var(--line));
+  padding-block: 0.85rem;
+}
+
+.quality-gate-title {
+  color: #9f2d20;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.quality-gate-copy {
+  margin-top: 0.18rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 639px) {
+  .quality-gate {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .preview-glass.t-skel.is-revealed::after,
 .preview-glass.device-bezel::after {
   content: "";
@@ -1877,6 +1993,23 @@ img.preview-glass {
   height: auto;
 }
 
+.review-view-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.review-pair.is-pixels .preview-outer,
+.review-pair.is-pixels .preview-inner {
+  border-radius: 0;
+}
+
+.review-pair.is-pixels .preview-glass::after,
+.review-pair.is-pixels .division {
+  display: none;
+}
+
 @media (max-width: 639px) {
   .review-pair {
     grid-template-columns: minmax(0, 1fr);
@@ -2006,12 +2139,46 @@ img.preview-glass {
   border-radius: 0.7rem;
   border: 1px solid var(--line);
   background: var(--surface);
-  padding: 0.4rem 0.55rem;
+  width: 100%;
+  padding: 0.4rem 1.9rem 0.4rem 0.55rem;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.filmstrip-item {
+  position: relative;
+  min-width: 3.2rem;
+  max-width: 7.5rem;
+}
+
+.filmstrip-remove {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 1;
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.62;
+  transition:
+    color var(--duration-quick) var(--ease-smooth-out),
+    background var(--duration-quick) var(--ease-smooth-out),
+    opacity var(--duration-quick) var(--ease-smooth-out);
+}
+
+.filmstrip-remove:hover,
+.filmstrip-remove:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+  color: var(--foreground);
+  opacity: 1;
 }
 
 .filmstrip-thumb.is-on {
@@ -2031,7 +2198,9 @@ img.preview-glass {
 
 .drop-names {
   margin-top: 0.45rem;
+  width: 100%;
   max-width: 100%;
+  padding-inline: 0.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -41,6 +41,7 @@ describe("review", () => {
       comment: null,
       slides: [],
     }).as("reviewStatus");
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-review"]').click();
     cy.wait("@createReview");
     cy.get('[data-testid="review-url"]').should("contain", "/r/revtest12ab");
@@ -70,6 +71,9 @@ describe("review", () => {
     cy.visitFr("/r/revtest12ab");
     cy.wait("@reviewGet");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
+    cy.get('[data-testid="review-device-view"]').should("have.attr", "aria-pressed", "true");
+    cy.get('[data-testid="review-pixel-view"]').click();
+    cy.get(".review-pair").should("have.class", "is-pixels");
     cy.get('[data-testid="review-comment"]').type("ok");
     cy.get('[data-testid="review-approve"]').click();
     cy.wait("@decide");
@@ -97,6 +101,7 @@ describe("review", () => {
       status: "pending",
       slides: [],
     });
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-review"]').click();
     cy.wait("@createReview");
     cy.get('[data-testid="review-url"]').should("contain", "/r/revclip12ab");

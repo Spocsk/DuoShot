@@ -12,6 +12,7 @@ import {
   DEFAULT_RENDER_OPTIONS,
   canUse69,
   targetsFor,
+  type CropTransforms,
   type RenderOptions,
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -29,6 +30,7 @@ type Body = {
   assumeCloneRisk?: boolean;
   sameSet?: boolean;
   options?: Partial<RenderOptions>;
+  transforms?: Partial<CropTransforms>;
 };
 
 async function downloadOwned(
@@ -174,12 +176,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "CLONE_RISK", cloneScores }, { status: 403 });
     }
 
-    const { images, flattenAlpha } = await composeZipImages({
+    const { images, flattenAlpha, compositionWarnings } = await composeZipImages({
       outerBuffers,
       innerBuffers,
       options,
       include69,
       plan: entitlements.plan,
+      transforms: body.transforms,
     });
 
     const clientSlug = pro
@@ -198,6 +201,7 @@ export async function POST(request: Request) {
       cloneScores,
       unpaired,
       flattenAlpha,
+      compositionWarnings,
     });
 
     if (pro) {
