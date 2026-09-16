@@ -8,6 +8,7 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { reviewPath } from "@/lib/site";
 import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
+import { reviewExpiresAt, reviewState } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     .from("workspace_members")
     .select("workspace_id")
     .eq("user_id", user.id)
+    .eq("active", true)
     .limit(1)
     .maybeSingle();
   if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 400 });
@@ -73,6 +75,7 @@ export async function POST(request: Request) {
   };
 
   const publicId = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
+  const expiresAt = reviewExpiresAt();
   const setName = body.appName?.trim() || "App";
   const { data: review, error: reviewError } = await admin
     .from("review_links")
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
       client_name: body.clientName?.trim() || null,
       orientation: options.orientation,
       created_by: user.id,
+      expires_at: expiresAt,
     })
     .select("id, public_id")
     .single();
@@ -154,7 +158,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
   }
 
-  return NextResponse.json({ id: publicId, url: reviewPath(locale, publicId) });
+  return NextResponse.json({ id: publicId, url: reviewPath(locale, publicId), expiresAt });
 }
 
 export async function GET() {
@@ -167,14 +171,19 @@ export async function GET() {
     .from("workspace_members")
     .select("workspace_id")
     .eq("user_id", user.id)
+    .eq("active", true)
     .limit(1)
     .maybeSingle();
   if (!membership) return NextResponse.json({ reviews: [] });
-  const { data } = await supabase
+  const admin = createAdminSupabase();
+  if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
+  const { data } = await admin
     .from("review_links")
-    .select("public_id, set_name, status, comment, created_at")
+    .select("public_id, set_name, client_name, status, comment, created_at, expires_at, revoked_at")
     .eq("workspace_id", membership.workspace_id)
     .order("created_at", { ascending: false })
     .limit(20);
-  return NextResponse.json({ reviews: data ?? [] });
+  return NextResponse.json({
+    reviews: (data ?? []).map((review) => ({ ...review, ...reviewState(review) })),
+  });
 }

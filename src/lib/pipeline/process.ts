@@ -149,7 +149,7 @@ export async function renderScreenshot(
   const output =
     options.format === "jpeg"
       ? await pipeline.jpeg({ quality: JPEG_QUALITY, chromaSubsampling: "4:4:4" }).toBuffer()
-      : await pipeline.png({ compressionLevel: 9 }).toBuffer();
+      : await pipeline.png({ compressionLevel: 4 }).toBuffer();
 
   await assertExactOutput(output, spec, options.format);
   return output;

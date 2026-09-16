@@ -26,17 +26,17 @@ export function SiteHeader({ locale, path }: Props) {
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-x-2">
           <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
-            <Link href={pricingPath(locale)} data-testid="nav-pricing" className="ds-nav-link">
-              {t(locale, "nav_pricing")}
+            <Link href={`${prefix}/tool`} data-testid="nav-tool" className="ds-nav-link">
+              {t(locale, "nav_tool")}
             </Link>
-            <Link href={`${prefix}/specs`} className="ds-nav-link">
+            <Link href={`${prefix}/specs`} data-testid="nav-specs" className="ds-nav-link">
               {t(locale, "nav_specs")}
             </Link>
             <Link href={rejectionPath(locale)} data-testid="nav-reject" className="ds-nav-link">
-              {t(locale, "footer_reject")}
+              {t(locale, "nav_rejection")}
             </Link>
-            <Link href={`${prefix}/tool`} data-testid="nav-tool" className="ds-nav-link">
-              {t(locale, "nav_tool")}
+            <Link href={pricingPath(locale)} data-testid="nav-pricing" className="ds-nav-link">
+              {t(locale, "nav_pricing")}
             </Link>
             <HeaderAuth locale={locale} />
           </nav>
@@ -54,6 +54,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     <footer className="ds-footer mt-auto border-t border-[var(--line)]">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-5 py-6 text-sm text-[var(--muted)]">
         <span>© {new Date().getFullYear()} DuoShot</span>
+        <span data-testid="footer-privacy-line">{t(locale, "trust_retention")}</span>
+        <span>{t(locale, "footer_stripe")}</span>
+        <Link href={`${prefix}/specs`}>{t(locale, "nav_specs")}</Link>
         <Link href={`${prefix}/legal`}>{t(locale, "footer_legal")}</Link>
         <Link href={`${prefix}/terms`}>{t(locale, "footer_terms")}</Link>
         <Link href={`${prefix}/privacy`}>{t(locale, "footer_privacy")}</Link>

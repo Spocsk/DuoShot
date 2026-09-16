@@ -14,6 +14,7 @@ export async function GET() {
     .from("workspace_members")
     .select("workspace_id")
     .eq("user_id", user.id)
+    .eq("active", true)
     .limit(1)
     .maybeSingle();
   if (!membership) return NextResponse.json({ apps: [] });
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
     .from("workspace_members")
     .select("workspace_id")
     .eq("user_id", user.id)
+    .eq("active", true)
     .limit(1)
     .maybeSingle();
   if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 400 });

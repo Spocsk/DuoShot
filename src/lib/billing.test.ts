@@ -13,8 +13,6 @@ afterEach(() => {
 describe("billing", () => {
   it("keeps free plans gated and counted", () => {
     const free = entitlementsFromPlan("free", {
-      extraAppPacks: 0,
-      launchUntil: null,
       source: "free",
       freeExportsUsed: 1,
     });
@@ -25,8 +23,6 @@ describe("billing", () => {
 
   it("unlocks 6.9-inch sizes for indie", () => {
     const indie = entitlementsFromPlan("indie", {
-      extraAppPacks: 0,
-      launchUntil: null,
       source: "stripe",
     });
     expect(indie.canUse69).toBe(true);
@@ -45,17 +41,10 @@ describe("billing", () => {
 function stripeClient(options: {
   customers?: Array<{ id: string; metadata: Record<string, string> }>;
   subscriptions?: Array<{ status: string; metadata: Record<string, string> }>;
-  sessions?: Array<{
-    payment_status: string;
-    status: string;
-    created: number;
-    metadata: Record<string, string>;
-  }>;
 }) {
   return {
     customers: { list: async () => ({ data: options.customers ?? [] }) },
     subscriptions: { list: async () => ({ data: options.subscriptions ?? [] }) },
-    checkout: { sessions: { list: async () => ({ data: options.sessions ?? [] }) } },
   };
 }
 
@@ -107,28 +96,4 @@ describe("resolveEntitlements", () => {
     expect(entitlements.source).toBe("stripe");
   });
 
-  it("applies a paid Launch window when Stripe plan is still free", async () => {
-    const paidAt = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
-    vi.mocked(getStripe).mockReturnValue(
-      stripeClient({
-        customers: [{ id: "cus_1", metadata: {} }],
-        sessions: [
-          {
-            payment_status: "paid",
-            status: "complete",
-            created: paidAt,
-            metadata: { kind: "indie_launch" },
-          },
-        ],
-      }) as never,
-    );
-    const entitlements = await resolveEntitlements({
-      email: "a@example.com",
-      workspaceId: "ws-1",
-      workspacePlan: "free",
-    });
-    expect(entitlements.plan).toBe("indie");
-    expect(entitlements.launchUntil).toBeTruthy();
-    expect(entitlements.source).toBe("stripe");
-  });
 });

@@ -1,3 +1,4 @@
+import { mapLimit } from "../map-limit";
 import { renderScreenshot } from "./process";
 import { inspectSource } from "./source-inspect";
 import {
@@ -8,6 +9,8 @@ import {
   type SizeSpec,
 } from "../specs";
 import type { ZipImage } from "./zip";
+
+const COMPOSE_CONCURRENCY = 4;
 
 export function slotTargets(targets: SizeSpec[], slot: DeviceSlot) {
   return targets.filter((spec) => spec.slot === slot);
@@ -30,12 +33,16 @@ export async function composeZipImages(input: {
 
   async function renderSide(buffers: Buffer[], slot: DeviceSlot) {
     const specs = slotTargets(targets, slot);
-    for (const [index, buffer] of buffers.entries()) {
-      if (inspectSource(buffer).hasAlpha) flattenAlpha = true;
-      for (const spec of specs) {
-        images.push({ spec, index, buffer: await renderScreenshot(buffer, spec, input.options) });
-      }
-    }
+    const jobs = buffers.flatMap((buffer, index) => specs.map((spec) => ({ buffer, index, spec })));
+    const rendered = await mapLimit(jobs, COMPOSE_CONCURRENCY, async (job) => {
+      if (inspectSource(job.buffer).hasAlpha) flattenAlpha = true;
+      return {
+        spec: job.spec,
+        index: job.index,
+        buffer: await renderScreenshot(job.buffer, job.spec, input.options),
+      };
+    });
+    images.push(...rendered);
   }
 
   await renderSide(input.outerBuffers, "duo-outer");

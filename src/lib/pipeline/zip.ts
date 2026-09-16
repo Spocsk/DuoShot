@@ -141,5 +141,5 @@ export async function buildZip(options: {
       image.buffer,
     );
   }
-  return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+  return zip.generateAsync({ type: "nodebuffer", compression: "STORE" });
 }

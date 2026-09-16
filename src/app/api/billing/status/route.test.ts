@@ -56,8 +56,6 @@ describe("GET /api/billing/status", () => {
     );
     vi.mocked(resolveEntitlements).mockResolvedValue({
       plan: "studio",
-      extraAppPacks: 0,
-      launchUntil: null,
       source: "workspace",
       remainingFreeExports: null,
       canUse69: true,

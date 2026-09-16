@@ -4,6 +4,7 @@ import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { PricingSection } from "@/components/pricing-section";
 import { TrustLine } from "@/components/trust-line";
+import { FaqList } from "@/components/faq-list";
 
 export function PricingPage({ locale }: { locale: Locale }) {
   const faq = FAQ[locale];
@@ -18,14 +19,7 @@ export function PricingPage({ locale }: { locale: Locale }) {
         </div>
         <section className="mx-auto max-w-6xl px-5 pb-16">
           <h2 className="font-display text-4xl">{t(locale, "faq_title")}</h2>
-          <dl className="mt-8">
-            {faq.map((item) => (
-              <div key={item.q} className="border-t border-[var(--line)] py-6">
-                <dt className="text-lg">{item.q}</dt>
-                <dd className="mt-2 max-w-3xl text-[var(--muted)]">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <FaqList items={faq} />
         </section>
       </main>
       <SiteFooter locale={locale} />

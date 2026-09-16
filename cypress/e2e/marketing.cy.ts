@@ -5,10 +5,14 @@ describe("marketing", () => {
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="cta-example"]').should("have.attr", "href").and("include", "/api/example-zip");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
+    cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-inner-portrait/01.png");
+    cy.get('[data-testid="zip-tree"]').should("not.contain", "duo-inner-landscape");
+    cy.contains("Listing exemple — ce n’est pas le produit.").should("be.visible");
+    cy.contains("3 sièges").should("be.visible");
+    cy.contains("Same set").should("not.exist");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.get('[data-testid="trust-line"]').should("be.visible");
     cy.get('[data-testid="pricing"]').scrollIntoView().should("be.visible");
-    cy.get('[data-testid="pricing-cta-indie_launch"]').should("be.visible");
     cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
     cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
   });
@@ -17,15 +21,19 @@ describe("marketing", () => {
     cy.visitEn("/en");
     cy.contains("h1", "Anti-rejection ZIP.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
-    cy.contains("Example listing").should("be.visible");
+    cy.contains("Example listing — not the product.").should("be.visible");
+    cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/en/r/harbor");
   });
 
   it("serves a dedicated pricing page", () => {
     cy.visitFr("/pricing");
-    cy.contains("h1", "Free, Launch, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Essai, Indie, Studio.").should("be.visible");
+    cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/signup");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
+    cy.contains("3 sièges").should("be.visible");
     cy.visitEn("/en/pricing");
-    cy.contains("h1", "Free, Launch, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Trial, Indie, Studio.").should("be.visible");
+    cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/en/r/harbor");
   });
 
   it("serves content and legal pages", () => {
@@ -64,6 +72,8 @@ describe("marketing", () => {
       expect(response.body).to.include("/specs");
       expect(response.body).to.include("/pricing");
       expect(response.body).to.include("/en");
+      expect(response.body).not.to.include("<loc>http://localhost:3000/why-not-ai</loc>");
+      expect(response.body).not.to.include("<loc>http://localhost:3000/rejection</loc>");
     });
   });
 });

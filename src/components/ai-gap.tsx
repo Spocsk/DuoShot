@@ -6,9 +6,10 @@ type MomentKey = (typeof PORTRAIT)[number] | "hinge";
 
 export function AiGap({ locale }: { locale: Locale }) {
   return (
-    <section className="mx-auto max-w-6xl px-5 py-16" data-reveal>
+    <section className="mx-auto max-w-6xl px-5 py-12 md:py-16" data-reveal>
       <h2 className="font-display max-w-3xl text-4xl md:text-5xl">{t(locale, "ai_title")}</h2>
-      <div className="mt-12 grid gap-10 md:grid-cols-2 xl:grid-cols-3">
+      <p className="ds-label mt-4">{t(locale, "example_listing")}</p>
+      <div className="mt-8 grid gap-8 md:mt-12 md:grid-cols-2 md:gap-10 xl:grid-cols-3">
         {PORTRAIT.map((key) => (
           <Moment key={key} locale={locale} kind={key} />
         ))}
@@ -28,12 +29,12 @@ function Moment({
   wide?: boolean;
 }) {
   return (
-    <article className={wide ? "compare-hinge-block mt-14 border-t border-[var(--line)] pt-5" : "border-t border-[var(--line)] pt-5"}>
+    <article className={wide ? "compare-hinge-block mt-10 border-t border-[var(--line)] pt-5 md:mt-14" : "border-t border-[var(--line)] pt-5"}>
       <h3 className="font-display text-2xl">{t(locale, `ai_${kind}_title`)}</h3>
       <p className={`mt-2 text-sm leading-snug text-[var(--muted)] ${wide ? "max-w-2xl" : ""}`}>
         {t(locale, `ai_${kind}_lead`)}
       </p>
-      <div className={`compare-pair mt-5 ${wide ? "compare-pair-hinge" : ""}`}>
+      <div className={`compare-pair mt-4 md:mt-5 ${wide ? "compare-pair-hinge" : ""}`}>
         <div>
           <CompareShot kind={kind} rejected />
           <p className="duo-caption">{t(locale, "ai_before")}</p>

@@ -221,9 +221,15 @@ export function AuthForm({
         </div>
         {mode === "signup" ? (
           <label className="ds-check text-sm">
+            <span className="t-check" aria-hidden="true" aria-checked={privacy ? "true" : "false"}>
+              <svg viewBox="0 0 10.1668 10.1668">
+                <path d="M1 5.52L3.92 9.17L9.17 1" />
+              </svg>
+            </span>
             <input
               type="checkbox"
               data-testid="auth-privacy"
+              className="sr-check"
               checked={privacy}
               onChange={(event) => setPrivacy(event.target.checked)}
             />

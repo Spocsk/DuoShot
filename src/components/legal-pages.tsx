@@ -141,8 +141,8 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Retention">
           <p>
-            Uploads and ZIP files: 24 hours. Account rows until you delete the account. Stripe keeps billing records as
-            required by law.
+            Uploads and ZIP files: 24 hours. Derived Studio review JPEGs: 7 days maximum, or earlier if the owner
+            revokes the link. Account rows remain until you delete the account. Stripe keeps billing records as required by law.
           </p>
         </Block>
         <Block title="Your rights">
@@ -190,7 +190,8 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Durées">
         <p>
-          Uploads et ZIP : 24 h. Lignes de compte jusqu’à suppression. Stripe conserve la facturation selon la loi.
+          Uploads et ZIP : 24 h. JPEG dérivés des reviews Studio : 7 jours maximum, ou moins si le propriétaire
+          révoque le lien. Lignes de compte jusqu’à suppression. Stripe conserve la facturation selon la loi.
         </p>
       </Block>
       <Block title="Vos droits">
@@ -235,9 +236,9 @@ export function TermsContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Trial and plans">
           <p>
-            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Launch: €29 / 60 days. Indie: €12/month,
-            unlimited ZIPs within a fair-use daily cap, 6.9″ sizes and Client/App prefix included. Studio: €49/month,
-            everything in Indie plus a client review link. Team invites: later. Prices include VAT where applicable.
+            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Indie: €12/month, unlimited ZIPs within a
+            fair-use daily cap, 6.9″ sizes and Client/App prefix included. Studio: €49/month, everything in Indie plus
+            three seats and client reviews retained for seven days. Prices include VAT where applicable.
             Billing via Stripe, cancel from Stripe.
           </p>
         </Block>
@@ -303,10 +304,10 @@ export function TermsContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Essai et offres">
         <p>
-          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Launch : 29 € / 60 j. Indie : 12 €/mois,
-          ZIP illimités dans un plafond quotidien anti-abus, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois,
-          tout Indie plus le lien review client. Invites d’équipe : plus tard. Prix TTC le cas échéant. Paiement via
-          Stripe, résiliation depuis Stripe.
+          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Indie : 12 €/mois, ZIP illimités dans
+          un plafond quotidien anti-abus, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois, tout Indie plus trois
+          sièges et des reviews client conservées sept jours. Prix TTC le cas échéant. Paiement via Stripe, résiliation
+          depuis Stripe.
         </p>
       </Block>
       <Block title="Rétractation">

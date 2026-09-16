@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { isDemoReview } from "@/lib/pipeline/harbor";
+import { reviewState } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,16 @@ export async function POST(request: Request, { params }: Params) {
   if (!status) return NextResponse.json({ error: "INVALID_ACTION" }, { status: 400 });
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
+  const { data: review } = await admin
+    .from("review_links")
+    .select("status, expires_at, revoked_at")
+    .eq("public_id", id)
+    .maybeSingle();
+  if (!review) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+  const state = reviewState(review);
+  if (state.expired || state.revoked) {
+    return NextResponse.json({ error: state.status.toUpperCase() }, { status: 410 });
+  }
   const { data, error } = await admin
     .from("review_links")
     .update({

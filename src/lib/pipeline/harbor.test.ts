@@ -11,7 +11,7 @@ import {
 describe("harbor demo review", () => {
   it("exposes the Connect ZIP tree used on the landing", () => {
     expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/duo-outer-portrait/01.png");
-    expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/duo-inner-landscape/01.png");
+    expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/duo-inner-portrait/01.png");
     expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/README.txt");
   });
 
@@ -37,8 +37,8 @@ describe("harbor demo review", () => {
     expect(outerMeta.height).toBe(2034);
     expect(innerMeta.format).toBe("jpeg");
     expect(innerMeta.hasAlpha).toBe(false);
-    expect(innerMeta.width).toBe(2853);
-    expect(innerMeta.height).toBe(2007);
+    expect(innerMeta.width).toBe(2007);
+    expect(innerMeta.height).toBe(2853);
     expect(await harborReviewJpeg(9, "outer")).toBeNull();
   });
 });

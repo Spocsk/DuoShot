@@ -1,11 +1,9 @@
-import { CHECKOUT_CATALOG, isProPlan, remainingFreeExports, type CheckoutKind } from "./plans";
+import { isProPlan, remainingFreeExports, type CheckoutKind } from "./plans";
 import type { PlanId } from "./specs";
 import { getStripe } from "./stripe";
 
 export type Entitlements = {
   plan: PlanId;
-  extraAppPacks: number;
-  launchUntil: string | null;
   source: "stripe" | "free" | "mock" | "workspace";
   remainingFreeExports: number | null;
   canUse69: boolean;
@@ -24,14 +22,12 @@ export function mergePlanSources(stripePlan: PlanId, workspacePlan: PlanId): Pla
 
 export function entitlementsFromPlan(
   plan: PlanId,
-  extra: Pick<Entitlements, "extraAppPacks" | "launchUntil" | "source"> & {
+  extra: Pick<Entitlements, "source"> & {
     freeExportsUsed?: number;
   },
 ): Entitlements {
   return {
     plan,
-    extraAppPacks: extra.extraAppPacks,
-    launchUntil: extra.launchUntil,
     source: extra.source,
     remainingFreeExports: remainingFreeExports(extra.freeExportsUsed ?? 0, plan),
     canUse69: isProPlan(plan),
@@ -49,8 +45,6 @@ export async function resolveEntitlements(options: {
   const workspacePlan = planFromWorkspace(options.workspacePlan);
   if (!stripe || !options.email) {
     return entitlementsFromPlan(workspacePlan, {
-      extraAppPacks: 0,
-      launchUntil: null,
       source: workspacePlan === "free" ? (stripe ? "free" : "mock") : "workspace",
       freeExportsUsed: used,
     });
@@ -62,17 +56,12 @@ export async function resolveEntitlements(options: {
   );
   if (matched.length === 0) {
     return entitlementsFromPlan(workspacePlan, {
-      extraAppPacks: 0,
-      launchUntil: null,
       source: workspacePlan === "free" ? "stripe" : "workspace",
       freeExportsUsed: used,
     });
   }
 
   let plan: PlanId = "free";
-  let extraAppPacks = 0;
-  let launchUntil: string | null = null;
-
   for (const customer of matched) {
     const subscriptions = await stripe.subscriptions.list({
       customer: customer.id,
@@ -86,31 +75,10 @@ export async function resolveEntitlements(options: {
       else if (plan !== "studio") plan = "indie";
     }
 
-    const sessions = await stripe.checkout.sessions.list({
-      customer: customer.id,
-      limit: 30,
-    });
-    for (const session of sessions.data) {
-      if (session.payment_status !== "paid" && session.status !== "complete") continue;
-      const kind = session.metadata?.kind as CheckoutKind | undefined;
-      if (!kind) continue;
-      const catalog = CHECKOUT_CATALOG[kind];
-      if (catalog?.appPack) extraAppPacks += 1;
-      if (catalog?.launchDays && catalog.plan) {
-        const paidAt = session.created * 1000;
-        const until = new Date(paidAt + catalog.launchDays * 24 * 60 * 60 * 1000);
-        if (until.getTime() > Date.now() && plan === "free") {
-          plan = catalog.plan;
-          launchUntil = until.toISOString();
-        }
-      }
-    }
   }
 
   const resolved = mergePlanSources(plan, workspacePlan);
   return entitlementsFromPlan(resolved, {
-    extraAppPacks,
-    launchUntil,
     source: resolved === plan ? "stripe" : "workspace",
     freeExportsUsed: used,
   });

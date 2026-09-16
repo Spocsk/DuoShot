@@ -27,22 +27,24 @@ describe("review", () => {
   it("creates a Studio review link and records a decision", () => {
     cy.loginAs("studio");
     cy.intercept("POST", "**/api/reviews", { id: "revtest12ab", url: "/r/revtest12ab" }).as("createReview");
-    cy.visitFr("/tool", {
-      onBeforeLoad(win) {
-        Object.defineProperty(win.navigator, "clipboard", {
-          configurable: true,
-          value: { writeText: () => Promise.resolve() },
-        });
-      },
-    });
+    cy.visitFr("/tool");
     cy.wait("@billing");
     cy.dropScreens({
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    cy.intercept("GET", "**/api/reviews/revtest12ab", {
+      set_name: "Harbor",
+      client_name: "Acme",
+      orientation: "portrait",
+      status: "pending",
+      comment: null,
+      slides: [],
+    }).as("reviewStatus");
     cy.get('[data-testid="tool-review"]').click();
     cy.wait("@createReview");
     cy.get('[data-testid="review-url"]').should("contain", "/r/revtest12ab");
+    cy.get('[data-testid="tool-review-set-status"]').should("contain", "pending");
 
     cy.intercept("GET", "**/api/reviews/revtest12ab", {
       set_name: "Harbor",
@@ -74,10 +76,41 @@ describe("review", () => {
     cy.get('[data-testid="review-status"]').should("contain", "approved");
   });
 
+  it("shows the review URL even if the clipboard is denied", () => {
+    cy.loginAs("studio");
+    cy.intercept("POST", "**/api/reviews", { id: "revclip12ab", url: "/r/revclip12ab" }).as("createReview");
+    cy.visitFr("/tool", {
+      onBeforeLoad(win) {
+        Object.defineProperty(win.navigator, "clipboard", {
+          configurable: true,
+          value: { writeText: () => Promise.reject(new Error("denied")) },
+        });
+      },
+    });
+    cy.wait("@billing");
+    cy.dropScreens({
+      outer: "cypress/fixtures/outer.png",
+      inner: "cypress/fixtures/inner.png",
+    });
+    cy.intercept("GET", "**/api/reviews/revclip12ab", {
+      set_name: "Harbor",
+      status: "pending",
+      slides: [],
+    });
+    cy.get('[data-testid="tool-review"]').click();
+    cy.wait("@createReview");
+    cy.get('[data-testid="review-url"]').should("contain", "/r/revclip12ab");
+    cy.get('[data-testid="review-copied"]').should("contain", "Lien prêt");
+    cy.get('[data-testid="tool-status"]').should("not.contain", "Export impossible");
+  });
+
   it("shows the Harbor demo review without Studio", () => {
     cy.visitFr("/r/harbor");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
-    cy.get('[data-testid="review-demo"]').should("be.visible");
+    cy.get('[data-testid="review-demo"]').should("be.visible").and("contain", "ce n’est pas le produit");
+    cy.visitEn("/en/r/harbor");
+    cy.get('[data-testid="review-title"]').should("contain", "Harbor");
+    cy.get('[data-testid="review-demo"]').should("contain", "not the product");
     cy.get('[data-testid="review-approve"]').should("not.exist");
   });
 

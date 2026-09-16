@@ -17,6 +17,10 @@ async function sourcePng(): Promise<Buffer> {
 }
 
 describe("compose", () => {
+  it("fills the device canvas by default", () => {
+    expect(DEFAULT_RENDER_OPTIONS.fit).toBe("cover");
+  });
+
   it("renders portrait outer at 1398×2034", async () => {
     const input = await sourcePng();
     const { images } = await composeZipImages({

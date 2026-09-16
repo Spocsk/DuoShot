@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { resolveEntitlements } from "@/lib/billing";
+import { mapLimit } from "@/lib/map-limit";
 import { FREE_EXPORTS, PRO_DAILY_CAP, isProPlan } from "@/lib/plans";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
+import { slugify } from "@/lib/pipeline/geometry";
 import { scorePair, worstCloneLabel, type CloneResult } from "@/lib/pipeline/clone-score";
 import { composeZipImages } from "@/lib/pipeline/compose";
 import { buildZip } from "@/lib/pipeline/zip";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import {
   DEFAULT_RENDER_OPTIONS,
-  SIGNED_URL_SECONDS,
   canUse69,
   targetsFor,
   type RenderOptions,
@@ -78,6 +79,7 @@ export async function POST(request: Request) {
     .from("workspace_members")
     .select("workspace_id, role")
     .eq("user_id", user.id)
+    .eq("active", true)
     .limit(1)
     .maybeSingle();
   if (memberError || !membership) {
@@ -86,7 +88,7 @@ export async function POST(request: Request) {
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("id, client_slug, free_exports_used")
+    .select("id, client_slug, plan, free_exports_used")
     .eq("id", membership.workspace_id)
     .single();
 
@@ -94,6 +96,7 @@ export async function POST(request: Request) {
     email: user.email,
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
+    workspacePlan: workspace?.plan,
   });
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
   const include69 = Boolean(body.include69);
@@ -152,22 +155,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const outerBuffers: Buffer[] = [];
-    const innerBuffers: Buffer[] = [];
-    for (const storagePath of outerPaths) {
-      outerBuffers.push(await downloadOwned(supabase, user.id, storagePath));
-    }
-    for (const storagePath of innerPaths) {
-      innerBuffers.push(await downloadOwned(supabase, user.id, storagePath));
-    }
+    const [outerBuffers, innerBuffers] = await Promise.all([
+      mapLimit(outerPaths, 4, (storagePath) => downloadOwned(supabase, user.id, storagePath)),
+      mapLimit(innerPaths, 4, (storagePath) => downloadOwned(supabase, user.id, storagePath)),
+    ]);
 
     const pairCount = Math.min(outerBuffers.length, innerBuffers.length);
-    const cloneScores: CloneResult[] = [];
-    for (let index = 0; index < pairCount; index += 1) {
-      cloneScores.push(
+    const cloneScores: CloneResult[] = await mapLimit(
+      Array.from({ length: pairCount }, (_, index) => index),
+      4,
+      async (index) =>
         scorePair(await hashFromBuffer(outerBuffers[index]!), await hashFromBuffer(innerBuffers[index]!), index, sameSet),
-      );
-    }
+    );
     if (pro && worstCloneLabel(cloneScores) === "risk" && !body.assumeCloneRisk) {
       if (reservedFree) {
         await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
@@ -187,8 +186,9 @@ export async function POST(request: Request) {
       ? body.clientName?.trim() || (entitlements.plan === "studio" ? workspace?.client_slug : null) || null
       : null;
 
+    const appName = body.appName || "App";
     const zip = await buildZip({
-      appName: body.appName || "App",
+      appName,
       clientSlug,
       orientation: options.orientation,
       branded: !pro,
@@ -200,42 +200,41 @@ export async function POST(request: Request) {
       flattenAlpha,
     });
 
-    const zipPath = `${user.id}/${crypto.randomUUID()}.zip`;
-    const { error: zipError } = await supabase.storage.from("exports").upload(zipPath, zip, {
-      contentType: "application/zip",
-      upsert: true,
-    });
-    if (zipError) {
-      throw new Error("ZIP_UPLOAD_FAILED");
-    }
-
-    const { data: signed, error: signedError } = await supabase.storage
-      .from("exports")
-      .createSignedUrl(zipPath, SIGNED_URL_SECONDS);
-    if (signedError || !signed?.signedUrl) {
-      throw new Error("SIGNED_URL_FAILED");
-    }
-
-    await supabase.from("export_sets").insert({
-      workspace_id: membership.workspace_id,
-      orientation: options.orientation,
-      include_69: include69,
-      fit_mode: options.fit,
-      background_mode: options.background,
-      format: options.format,
-      image_count: count,
-      storage_path: zipPath,
-      created_by: user.id,
-    });
     if (pro) {
       await supabase.rpc("increment_daily_export", { p_workspace_id: membership.workspace_id });
     }
 
-    return NextResponse.json({
-      url: signed.signedUrl,
-      warning: unpaired ? "UNPAIRED" : countWarning,
-      cloneScores,
-      expiresIn: SIGNED_URL_SECONDS,
+    const zipPath = `${user.id}/${crypto.randomUUID()}.zip`;
+    const zipBytes = new Uint8Array(zip);
+    after(() => {
+      void (async () => {
+        await supabase.storage.from("exports").upload(zipPath, zipBytes, {
+          contentType: "application/zip",
+          upsert: true,
+        });
+        await supabase.from("export_sets").insert({
+          workspace_id: membership.workspace_id,
+          orientation: options.orientation,
+          include_69: include69,
+          fit_mode: options.fit,
+          background_mode: options.background,
+          format: options.format,
+          image_count: count,
+          storage_path: zipPath,
+          created_by: user.id,
+        });
+      })();
+    });
+
+    const warning = unpaired ? "UNPAIRED" : countWarning ?? "";
+    const filename = `${slugify(appName) || "app"}.zip`;
+    return new NextResponse(zipBytes, {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "X-Duoshot-Warning": warning,
+        "X-Duoshot-Filename": filename,
+      },
     });
   } catch (error) {
     if (reservedFree) {

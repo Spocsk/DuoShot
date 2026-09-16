@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FREE_EXPORTS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
+import { FREE_EXPORTS, PLANS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
 
 describe("plans", () => {
   it("gives two lifetime free exports", () => {
@@ -18,9 +18,13 @@ describe("plans", () => {
     expect(dailyLimitFor("indie")).toBe(100);
   });
 
+  it("includes three seats in Studio", () => {
+    expect(PLANS.studio.seats).toBe(3);
+  });
+
   it("formats euro amounts per locale", () => {
     expect(formatEurFromCents(1200, "fr")).toBe("12 €");
     expect(formatEurFromCents(1200, "en")).toBe("€12");
-    expect(formatEurFromCents(2900, "fr")).toBe("29 €");
+    expect(formatEurFromCents(4900, "fr")).toBe("49 €");
   });
 });

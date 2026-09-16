@@ -3,74 +3,84 @@ import { t } from "@/lib/i18n";
 import type { CheckoutKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
 import { DEMO_REVIEW_ID } from "@/lib/pipeline/harbor";
+import { localePrefix, reviewPath } from "@/lib/site";
 import { PricingCta } from "@/components/pricing-cta";
 
-const PLAN_ORDER = ["free", "launch", "indie", "studio"] as const;
+const PLAN_ORDER = ["trial", "indie", "studio"] as const;
 
 function pricingRows(locale: Locale) {
   return [
     {
       label: t(locale, "pricing_feat_zip"),
-      free: t(locale, "pricing_val_preview"),
-      launch: t(locale, "pricing_val_yes"),
+      trial: t(locale, "pricing_val_quota_trial"),
       indie: t(locale, "pricing_val_yes"),
       studio: t(locale, "pricing_val_yes"),
     },
     {
       label: t(locale, "pricing_feat_quota"),
-      free: t(locale, "pricing_val_quota_free"),
-      launch: t(locale, "pricing_val_unlimited"),
+      trial: t(locale, "pricing_val_quota_trial"),
       indie: t(locale, "pricing_val_unlimited"),
       studio: t(locale, "pricing_val_unlimited"),
     },
     {
       label: t(locale, "pricing_feat_69"),
-      free: t(locale, "pricing_val_no"),
-      launch: t(locale, "pricing_val_yes"),
+      trial: t(locale, "pricing_val_no"),
       indie: t(locale, "pricing_val_yes"),
       studio: t(locale, "pricing_val_yes"),
     },
     {
       label: t(locale, "pricing_feat_sets"),
-      free: t(locale, "pricing_val_yes"),
-      launch: t(locale, "pricing_val_yes"),
+      trial: t(locale, "pricing_val_yes"),
       indie: t(locale, "pricing_val_yes"),
       studio: t(locale, "pricing_val_yes"),
     },
     {
       label: t(locale, "pricing_feat_prefix"),
-      free: t(locale, "pricing_val_no"),
-      launch: t(locale, "pricing_val_yes"),
+      trial: t(locale, "pricing_val_no"),
       indie: t(locale, "pricing_val_yes"),
       studio: t(locale, "pricing_val_yes"),
     },
     {
       label: t(locale, "pricing_feat_review"),
-      free: t(locale, "pricing_val_no"),
-      launch: t(locale, "pricing_val_no"),
+      trial: t(locale, "pricing_val_no"),
       indie: t(locale, "pricing_val_no"),
       studio: t(locale, "pricing_val_yes"),
     },
   ];
 }
 
-function pricingPlans(locale: Locale) {
+type PlanCta = {
+  kind?: CheckoutKind;
+  href?: string;
+  label: string;
+  ghost?: boolean;
+  testId?: string;
+};
+
+type PlanCard = {
+  featured: boolean;
+  title: string;
+  price: string;
+  intro: string;
+  foot: string;
+  cta: PlanCta | null;
+};
+
+function pricingPlans(locale: Locale): Record<(typeof PLAN_ORDER)[number], PlanCard> {
+  const prefix = localePrefix(locale);
   return {
-    free: {
+    trial: {
       featured: false,
-      title: t(locale, "pricing_free_title"),
-      price: t(locale, "pricing_free_price"),
-      intro: t(locale, "pricing_free_body"),
+      title: t(locale, "pricing_trial_title"),
+      price: t(locale, "pricing_trial_price"),
+      intro: t(locale, "pricing_trial_body"),
       foot: "",
-      cta: null as { kind: CheckoutKind; label: string; ghost?: boolean } | null,
-    },
-    launch: {
-      featured: true,
-      title: t(locale, "pricing_launch_title"),
-      price: t(locale, "pricing_launch_price"),
-      intro: t(locale, "pricing_launch_badge"),
-      foot: "",
-      cta: { kind: "indie_launch" as const, label: t(locale, "pricing_launch_cta"), ghost: false },
+      cta: {
+        href: `${prefix}/signup`,
+        label: t(locale, "pricing_trial_cta"),
+        ghost: true,
+        testId: "pricing-cta-trial",
+      },
     },
     indie: {
       featured: false,
@@ -78,15 +88,15 @@ function pricingPlans(locale: Locale) {
       price: t(locale, "pricing_indie_price"),
       intro: t(locale, "pricing_indie_body"),
       foot: "",
-      cta: { kind: "indie_monthly" as const, label: t(locale, "pricing_indie_cta"), ghost: true },
+      cta: { kind: "indie_monthly", label: t(locale, "pricing_indie_cta"), ghost: true },
     },
     studio: {
-      featured: false,
+      featured: true,
       title: t(locale, "pricing_studio_title"),
       price: t(locale, "pricing_studio_price"),
       intro: t(locale, "pricing_studio_body"),
       foot: `${t(locale, "pricing_seats_soon")} · ${t(locale, "pricing_note")}`,
-      cta: { kind: "studio_monthly" as const, label: t(locale, "pricing_studio_cta"), ghost: true },
+      cta: { kind: "studio_monthly", label: t(locale, "pricing_studio_cta"), ghost: true },
     },
   };
 }
@@ -100,6 +110,9 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
     <section id="pricing" data-testid="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-16" data-reveal>
       <Title className={titleClass}>{t(locale, "pricing_title")}</Title>
       <p className="mt-4 max-w-xl text-[var(--muted)]">{t(locale, "pricing_lead")}</p>
+      <p className="mt-4 max-w-2xl border-l border-[var(--ink)] pl-4 text-sm text-[var(--muted)]">
+        {t(locale, "pricing_free_body")}
+      </p>
       <div className="pricing-grid mt-12">
         {PLAN_ORDER.map((id) => {
           const plan = plans[id];
@@ -121,16 +134,24 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
               </dl>
               <p className="pricing-foot">{plan.foot || "\u00a0"}</p>
               <div className="pricing-cta-slot">
-                {plan.cta ? (
+                {plan.cta?.kind ? (
                   <PricingCta
                     locale={locale}
                     kind={plan.cta.kind}
                     label={plan.cta.label}
                     className={plan.cta.ghost ? "ds-cta-ghost" : "ds-cta"}
                   />
+                ) : plan.cta?.href ? (
+                  <Link
+                    href={plan.cta.href}
+                    data-testid={plan.cta.testId}
+                    className={plan.cta.ghost ? "ds-cta-ghost" : "ds-cta"}
+                  >
+                    {plan.cta.label}
+                  </Link>
                 ) : null}
                 {id === "studio" ? (
-                  <Link href={`/r/${DEMO_REVIEW_ID}`} data-testid="pricing-review-demo" className="ds-text-btn mt-3">
+                  <Link href={reviewPath(locale, DEMO_REVIEW_ID)} data-testid="pricing-review-demo" className="ds-text-btn mt-3">
                     {t(locale, "cta_review_demo")}
                   </Link>
                 ) : null}

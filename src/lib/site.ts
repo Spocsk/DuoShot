@@ -1,6 +1,7 @@
 import type { Locale } from "./specs";
 
 export const SITE_NAME = "DuoShot";
+export const SITE_DESCRIPTOR = "App Store Screenshot QA";
 export const SITE_PITCH_FR =
   "Ton IA resize. Nous on te sort le ZIP que Connect accepte du premier coup — sans alpha, sans clone outer/inner, sans rejet.";
 export const SITE_PITCH_EN =
@@ -58,3 +59,16 @@ export function pricingPath(locale: Locale): string {
 export function rejectionPath(locale: Locale): string {
   return locale === "en" ? "/en/rejection" : "/rejet";
 }
+
+export const MARKETING_ROUTE_PAIRS = [
+  { fr: "/", en: "/en", priority: 1 },
+  { fr: "/pricing", en: "/en/pricing", priority: 0.8 },
+  { fr: "/specs", en: "/en/specs", priority: 1 },
+  { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", priority: 0.7 },
+  { fr: "/rejet", en: "/en/rejection", priority: 0.7 },
+  { fr: "/privacy", en: "/en/privacy", priority: 0.4 },
+  { fr: "/terms", en: "/en/terms", priority: 0.4 },
+  { fr: "/cookies", en: "/en/cookies", priority: 0.4 },
+  { fr: "/legal", en: "/en/legal", priority: 0.4 },
+  { fr: "/legal/subprocessors", en: "/en/legal/subprocessors", priority: 0.4 },
+] as const;

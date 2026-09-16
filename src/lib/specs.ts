@@ -68,8 +68,11 @@ export const SIZE_SPECS: SizeSpec[] = [
   ...pair("69c", "iphone-69", 'iPhone 6.9"', '6.9"', 1260, 2736, "indie-studio"),
 ];
 
-export const APP_STORE_DISCLAIMER_233 =
-  "Apple App Store Review Guideline 2.3.3 : les captures doivent représenter l’app avec précision. DuoShot redimensionne et compose tes visuels ; il ne fabrique pas de fausses fonctionnalités. Vérifie chaque set avant soumission.";
+export function appStoreDisclaimer233(locale: Locale): string {
+  return locale === "fr"
+    ? "Apple App Store Review Guideline 2.3.3 : les captures doivent représenter l’app avec précision. DuoShot redimensionne et compose tes visuels ; il ne fabrique pas de fausses fonctionnalités. Vérifie chaque set avant soumission."
+    : "Apple App Store Review Guideline 2.3.3 requires screenshots to represent the app accurately. DuoShot resizes and composes your visuals; it does not invent features. Check every set before submitting.";
+}
 
 export function canUse69(plan: PlanId): boolean {
   return plan === "indie" || plan === "studio";
@@ -121,7 +124,7 @@ export type RenderOptions = {
 
 export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
   orientation: "portrait",
-  fit: "contain",
+  fit: "cover",
   background: "solid",
   solidColor: "#0B0D12",
   gradientFrom: "#10141C",

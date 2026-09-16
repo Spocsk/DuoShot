@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
     "/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
     "/en/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
   },
+  async redirects() {
+    return [
+      { source: "/why-not-ai", destination: "/pourquoi-pas-ia", permanent: true },
+      { source: "/rejection", destination: "/rejet", permanent: true },
+      { source: "/en/pourquoi-pas-ia", destination: "/en/why-not-ai", permanent: true },
+      { source: "/en/rejet", destination: "/en/rejection", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

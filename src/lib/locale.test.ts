@@ -27,6 +27,7 @@ describe("locale", () => {
     expect(shouldSkipLocaleRewrite("/api/export")).toBe(true);
     expect(shouldSkipLocaleRewrite("/auth/callback")).toBe(true);
     expect(shouldSkipLocaleRewrite("/r/abc123")).toBe(true);
+    expect(shouldSkipLocaleRewrite("/en/r/abc123")).toBe(true);
     expect(shouldSkipLocaleRewrite("/tool")).toBe(false);
     expect(isCrawler("Mozilla/5.0 (compatible; Googlebot/2.1)")).toBe(true);
     expect(isCrawler("Mozilla/5.0 (Macintosh)")).toBe(false);

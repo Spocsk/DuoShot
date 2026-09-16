@@ -83,10 +83,10 @@ export function SiteNav({ locale, prefix }: Props) {
       style={{ pointerEvents: open ? "auto" : "none" }}
     >
       <nav className="flex flex-col text-[var(--foreground)]" onClick={close}>
-        <Link href={pricingPath(locale)}>{t(locale, "nav_pricing")}</Link>
-        <Link href={`${prefix}/specs`}>{t(locale, "nav_specs")}</Link>
-        <Link href={rejectionPath(locale)}>{t(locale, "footer_reject")}</Link>
         <Link href={`${prefix}/tool`}>{t(locale, "nav_tool")}</Link>
+        <Link href={`${prefix}/specs`}>{t(locale, "nav_specs")}</Link>
+        <Link href={rejectionPath(locale)}>{t(locale, "nav_rejection")}</Link>
+        <Link href={pricingPath(locale)}>{t(locale, "nav_pricing")}</Link>
         <div className="mt-6 flex flex-col gap-4 text-base font-sans">
           <HeaderAuth locale={locale} variant="menu" />
         </div>

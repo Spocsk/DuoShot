@@ -21,8 +21,11 @@ async function persistWorkspace(options: {
 }) {
   const admin = createAdminSupabase();
   if (!admin) return;
-  const patch: Record<string, string | null> = {};
-  if (options.plan) patch.plan = options.plan;
+  const patch: Record<string, string | number | null> = {};
+  if (options.plan) {
+    patch.plan = options.plan;
+    patch.seats = options.plan === "studio" ? 3 : 1;
+  }
   if (options.customerId !== undefined) patch.stripe_customer_id = options.customerId;
   if (options.subscriptionId !== undefined) patch.stripe_subscription_id = options.subscriptionId;
   if (options.status !== undefined) patch.subscription_status = options.status;

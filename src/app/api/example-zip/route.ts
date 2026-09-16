@@ -9,7 +9,7 @@ export async function GET() {
   return new NextResponse(new Uint8Array(zip), {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": 'attachment; filename="duoshot-example-inner-landscape.zip"',
+      "Content-Disposition": 'attachment; filename="duoshot-example.zip"',
       "Cache-Control": "public, max-age=300, must-revalidate",
     },
   });

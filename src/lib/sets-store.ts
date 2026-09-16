@@ -6,6 +6,8 @@ export type SetMeta = {
   clientName: string;
   orientation: Orientation;
   sameSet: boolean;
+  lastReviewId?: string | null;
+  lastReviewStatus?: string | null;
 };
 
 const META_KEY = "duoshot.sets.v1";
@@ -20,10 +22,12 @@ export function newSetId() {
 export function defaultSet(): SetMeta {
   return {
     id: newSetId(),
-    name: "MyApp",
+    name: "App",
     clientName: "",
     orientation: "portrait",
     sameSet: false,
+    lastReviewId: null,
+    lastReviewStatus: null,
   };
 }
 

@@ -7,7 +7,7 @@ let cached: Buffer | null = null;
 export async function buildExampleZip(): Promise<Buffer> {
   if (cached) return cached;
   const outer = SIZE_SPECS.find((spec) => spec.id === "outer-p")!;
-  const inner = SIZE_SPECS.find((spec) => spec.id === "inner-l")!;
+  const inner = SIZE_SPECS.find((spec) => spec.id === "inner-p")!;
   const images = [];
   for (const [index, slide] of HARBOR_SLIDES.entries()) {
     images.push({

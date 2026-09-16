@@ -20,16 +20,12 @@ vi.mock("@/lib/pipeline/zip", () => ({
 const USER = { id: "user-1", email: "a@example.com" };
 const FREE = {
   plan: "free" as const,
-  extraAppPacks: 0,
-  launchUntil: null,
   source: "workspace" as const,
   remainingFreeExports: 0,
   canUse69: false,
 };
 const INDIE = {
   plan: "indie" as const,
-  extraAppPacks: 0,
-  launchUntil: null,
   source: "workspace" as const,
   remainingFreeExports: null,
   canUse69: true,

@@ -1,34 +1,18 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/site";
+import { getSiteUrl, MARKETING_ROUTE_PAIRS } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getSiteUrl();
-  const paths = [
-    "/",
-    "/pricing",
-    "/specs",
-    "/pourquoi-pas-ia",
-    "/why-not-ai",
-    "/rejet",
-    "/rejection",
-    "/signup",
-    "/login",
-    "/privacy",
-    "/terms",
-    "/cookies",
-    "/legal",
-    "/legal/subprocessors",
-  ];
-  return paths.flatMap((path) => [
+  return MARKETING_ROUTE_PAIRS.flatMap((route) => [
     {
-      url: `${base}${path}`,
+      url: `${base}${route.fr}`,
       changeFrequency: "weekly",
-      priority: path === "/" || path === "/specs" ? 1 : 0.5,
+      priority: route.priority,
     },
     {
-      url: `${base}/en${path === "/" ? "" : path}`,
+      url: `${base}${route.en}`,
       changeFrequency: "weekly",
-      priority: path === "/" || path === "/specs" ? 0.9 : 0.4,
+      priority: Math.max(0.3, route.priority - 0.1),
     },
   ]);
 }

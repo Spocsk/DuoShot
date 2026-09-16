@@ -12,6 +12,9 @@ type Payload = {
   orientation: string;
   status: string;
   comment: string | null;
+  expiresAt: string | null;
+  expired: boolean;
+  revoked: boolean;
   slides: Slide[];
 };
 
@@ -52,12 +55,35 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
 
   return (
     <div className="flex min-h-full flex-col">
-      <SiteHeader locale={locale} path={`/r/${id}`} />
+      <SiteHeader locale={locale} path={locale === "en" ? `/en/r/${id}` : `/r/${id}`} />
       <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
         {error ? (
           <p className="text-[var(--muted)]" data-testid="review-missing">{t(locale, "review_missing")}</p>
         ) : !data ? (
-          <p className="text-[var(--muted)]" aria-busy="true">…</p>
+          <div className="t-skel max-w-md" aria-busy="true">
+            <div className="t-skel-skeleton is-pulsing">
+              <span className="block h-10 rounded-md bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)]" />
+            </div>
+            <p className="t-skel-content text-[var(--muted)]">…</p>
+          </div>
+        ) : data.expired || data.revoked ? (
+          <section className="max-w-2xl py-12" data-testid="review-unavailable">
+            <p className="ds-label">DuoShot Studio</p>
+            <h1 className="font-display mt-3 text-5xl">
+              {data.revoked
+                ? locale === "fr" ? "Review révoquée" : "Review revoked"
+                : locale === "fr" ? "Review expirée" : "Review expired"}
+            </h1>
+            <p className="mt-5 text-[var(--muted)]">
+              {data.revoked
+                ? locale === "fr"
+                  ? "Le studio a fermé ce lien. Demandez-lui un nouveau partage si nécessaire."
+                  : "The studio closed this link. Ask for a new share if needed."
+                : locale === "fr"
+                  ? "Les médias de review sont conservés sept jours, puis supprimés automatiquement."
+                  : "Review media is kept for seven days, then deleted automatically."}
+            </p>
+          </section>
         ) : (
           <>
             <h1 className="font-display text-5xl" data-testid="review-title">{data.set_name}</h1>
@@ -70,6 +96,12 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
               {data.client_name ? `${data.client_name} · ` : ""}
               {data.orientation} · {data.status}
             </p>
+            {data.expiresAt ? (
+              <p className="mt-2 text-sm text-[var(--muted)]" data-testid="review-expiry">
+                {locale === "fr" ? "Disponible jusqu’au" : "Available until"}{" "}
+                {new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(data.expiresAt))}
+              </p>
+            ) : null}
             <button
               type="button"
               className="ds-toggle mt-6"
@@ -77,26 +109,30 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
               onClick={() => setHinge((value) => !value)}
             >
               <span className="text-sm">{t(locale, "tool_hinge_toggle")}</span>
-              <span className="ds-toggle-track">
-                <span className="ds-toggle-thumb" />
+              <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
+                <span className="ds-toggle-thumb t-toggle-thumb" />
               </span>
             </button>
             <div className="mt-10 space-y-12">
-              {data.slides.map((slide) => (
+              {data.slides.map((slide) => {
+                const landscape = data.orientation === "landscape";
+                return (
                 <section key={slide.index}>
                   <p className="duo-caption mb-3">
                     {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}`)}
                   </p>
-                  <div className="review-pair">
+                  <div className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={slide.outer} alt={t(locale, "review_alt_outer")} className="preview-glass preview-outer" />
-                    <div className={`preview-glass preview-inner ${hinge ? "is-hinge" : "hinge-off"}`}>
+                    <img src={slide.outer} alt={t(locale, "review_alt_outer")} className="preview-glass preview-outer t-resize" />
+                    <div className={`preview-glass preview-inner t-resize ${hinge ? "is-hinge" : "hinge-off"}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.inner} alt={t(locale, "review_alt_inner")} className="w-full object-contain" />
+                      <img src={slide.inner} alt={t(locale, "review_alt_inner")} />
+                      <span className="division" aria-hidden="true" />
                     </div>
                   </div>
                 </section>
-              ))}
+                );
+              })}
             </div>
             {demo ? null : (
               <>

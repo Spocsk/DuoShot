@@ -86,6 +86,7 @@ describe("POST /api/stripe/webhook", () => {
     expect(body.received).toBe(true);
     expect(update).toHaveBeenCalledWith({
       plan: "studio",
+      seats: 3,
       stripe_customer_id: "cus_1",
       stripe_subscription_id: "sub_1",
       subscription_status: "active",
@@ -119,6 +120,7 @@ describe("POST /api/stripe/webhook", () => {
     expect(body.received).toBe(true);
     expect(update).toHaveBeenCalledWith({
       plan: "free",
+      seats: 1,
       stripe_subscription_id: null,
       subscription_status: "canceled",
     });

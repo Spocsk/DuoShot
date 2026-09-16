@@ -1,5 +1,5 @@
 import { FAQ } from "./i18n";
-import { SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, getSiteUrl } from "./site";
+import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, getSiteUrl } from "./site";
 import type { Locale } from "./specs";
 
 export function jsonLdGraph(locale: Locale) {
@@ -10,13 +10,13 @@ export function jsonLdGraph(locale: Locale) {
     "@graph": [
       {
         "@type": "Organization",
-        name: SITE_NAME,
+        name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         url,
-        description: SITE_PITCH_FR,
+        description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
       },
       {
         "@type": "SoftwareApplication",
-        name: SITE_NAME,
+        name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
         offers: {

@@ -59,10 +59,9 @@ Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de
 
 | Offre | Prix | Notes |
 | --- | --- | --- |
-| Free | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
-| Launch | 29 € / 60 j | Tout Indie pendant le pic Duo |
+| Essai | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
 | Indie | 12 €/mo | ZIP illimités, 6,9″, multi-sets, préfixe Client/App |
-| Studio | 49 €/mo | + lien review client. Sièges = bientôt |
+| Studio | 49 €/mo | + 3 sièges et reviews client pendant 7 jours |
 
 Ne pas passer Stripe **live** ni Vercel Pro tant que le checkout n’est pas validé.
 

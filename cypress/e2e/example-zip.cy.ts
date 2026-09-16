@@ -7,6 +7,8 @@ describe("example zip", () => {
     }).then((response) => {
       expect(response.status).to.eq(200);
       expect(String(response.headers["content-type"])).to.include("application/zip");
+      expect(String(response.headers["content-disposition"] ?? "")).to.include("duoshot-example.zip");
+      expect(String(response.headers["content-disposition"] ?? "")).to.not.include("landscape");
       expect(response.body.length).to.be.greaterThan(1000);
     });
   });

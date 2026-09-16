@@ -28,7 +28,7 @@ export function RejectionPage({ locale }: { locale: Locale }) {
               <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, card.body)}</p>
               {card.cta === "tool" ? (
                 <Link href={`${prefix}/tool`} className="ds-link mt-4 inline-block">
-                  {t(locale, "cta_tool")}
+                  {t(locale, "cta_open_tool")}
                 </Link>
               ) : null}
               {card.cta === "specs" ? (

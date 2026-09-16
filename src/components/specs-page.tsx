@@ -1,7 +1,8 @@
 import { FAQ, t } from "@/lib/i18n";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { APP_STORE_DISCLAIMER_233, SIZE_SPECS, SPECS_VERSION_DATE, type Locale } from "@/lib/specs";
+import { appStoreDisclaimer233, SIZE_SPECS, SPECS_VERSION_DATE, type Locale } from "@/lib/specs";
+import { FaqList } from "@/components/faq-list";
 
 export function SpecsPage({ locale }: { locale: Locale }) {
   const faq = FAQ[locale];
@@ -18,7 +19,7 @@ export function SpecsPage({ locale }: { locale: Locale }) {
             <thead className="ds-spec-head">
               <tr>
                 <th scope="col" className="px-0 py-3 pr-4 font-medium">Slot</th>
-                <th scope="col" className="px-4 py-3 font-medium">Pouces</th>
+                <th scope="col" className="px-4 py-3 font-medium">{locale === "fr" ? "Pouces" : "Inches"}</th>
                 <th scope="col" className="px-4 py-3 font-medium">Orientation</th>
                 <th scope="col" className="px-4 py-3 font-medium">Pixels</th>
                 <th scope="col" className="px-4 py-3 font-medium">Plan</th>
@@ -41,17 +42,10 @@ export function SpecsPage({ locale }: { locale: Locale }) {
             </tbody>
           </table>
         </div>
-        <p className="mt-6 max-w-3xl text-sm text-[var(--muted)]">{APP_STORE_DISCLAIMER_233}</p>
+        <p className="mt-6 max-w-3xl text-sm text-[var(--muted)]">{appStoreDisclaimer233(locale)}</p>
         <section className="mt-12">
           <h2 className="font-display text-3xl">{t(locale, "faq_title")}</h2>
-          <dl className="mt-6">
-            {faq.map((item) => (
-              <div key={item.q} className="border-t border-[var(--line)] py-6">
-                <dt className="text-lg">{item.q}</dt>
-                <dd className="mt-2 max-w-3xl text-[var(--muted)]">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <FaqList items={faq} />
         </section>
       </main>
       <SiteFooter locale={locale} />

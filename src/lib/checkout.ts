@@ -26,10 +26,5 @@ export function checkoutReturnPath(locale: Locale): string {
 }
 
 export function isCheckoutKind(value: string | undefined): value is CheckoutKind {
-  return (
-    value === "indie_monthly" ||
-    value === "indie_launch" ||
-    value === "studio_monthly" ||
-    value === "app_pack"
-  );
+  return value === "indie_monthly" || value === "studio_monthly";
 }

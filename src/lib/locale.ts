@@ -40,7 +40,9 @@ export function shouldSkipLocaleRewrite(pathname: string): boolean {
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/llms") ||
     pathname === "/r" ||
-    pathname.startsWith("/r/")
+    pathname.startsWith("/r/") ||
+    pathname === "/en/r" ||
+    pathname.startsWith("/en/r/")
   );
 }
 

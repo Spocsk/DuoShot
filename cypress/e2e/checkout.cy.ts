@@ -1,7 +1,7 @@
 describe("checkout", () => {
   it("sends guests from pricing to the tool upgrade modal", () => {
     cy.visitFr("/");
-    cy.get('[data-testid="pricing-cta-indie_launch"]').click();
+    cy.get('[data-testid="pricing-cta-indie_monthly"]').click();
     cy.location("pathname").should("eq", "/tool");
     cy.location("search").should("include", "upgrade=1");
     cy.get('[data-testid="auth-form"]').should("be.visible");
@@ -26,8 +26,9 @@ describe("checkout", () => {
     cy.loginAs("free");
     cy.intercept("POST", "**/api/stripe/checkout", { url: "/tool?checkout=mock" }).as("checkout");
     cy.visitFr("/tool");
+    cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-69"]').click();
-    cy.get('[data-testid="paywall-cta-launch"]').click();
+    cy.get('[data-testid="paywall-cta-indie"]').click();
     cy.wait("@checkout");
     cy.location("search").should("include", "checkout=mock");
     cy.get('[data-testid="tool-status"]').should("contain", "Checkout mock");

@@ -56,8 +56,6 @@ function cookieValue(next: ReturnType<typeof session>) {
 function billing(plan: Plan, remaining: number | null) {
   return {
     plan,
-    extraAppPacks: 0,
-    launchUntil: null,
     source: "mock",
     remainingFreeExports: plan === "free" ? remaining : null,
     canUse69: plan !== "free",
@@ -132,6 +130,23 @@ Cypress.Commands.add("loginAs", (plan: Plan = "free", remaining: number | null =
   );
 });
 
+function zipReply(headers: Record<string, string> = {}) {
+  return {
+    statusCode: 200,
+    headers: {
+      "content-type": "application/zip",
+      "x-duoshot-filename": "app.zip",
+      "x-duoshot-warning": "",
+      ...headers,
+    },
+    body: Uint8Array.from([0x50, 0x4b, 0x03, 0x04]),
+  };
+}
+
+Cypress.Commands.add("interceptZip", (alias = "export") => {
+  cy.intercept("POST", "**/api/export", zipReply()).as(alias);
+});
+
 Cypress.Commands.add("dropScreens", (sides?: { outer?: string | string[]; inner?: string | string[] }) => {
   const outer = sides?.outer ?? "cypress/fixtures/outer.png";
   const inner = sides?.inner;
@@ -152,6 +167,7 @@ declare global {
       visitFr(path: string, options?: Partial<Cypress.VisitOptions>): Chainable<AUTWindow>;
       visitEn(path: string, options?: Partial<Cypress.VisitOptions>): Chainable<AUTWindow>;
       loginAs(plan?: Plan, remaining?: number | null): Chainable<void>;
+      interceptZip(alias?: string): Chainable<null>;
       dropScreens(sides?: { outer?: string | string[]; inner?: string | string[] }): Chainable<void>;
     }
   }

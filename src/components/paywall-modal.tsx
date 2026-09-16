@@ -27,15 +27,6 @@ export function PaywallModal({
       <button
         type="button"
         className="ds-cta mt-6 w-full"
-        data-testid="paywall-cta-launch"
-        disabled={busy}
-        onClick={() => onCheckout("indie_launch")}
-      >
-        {t(locale, "paywall_cta_launch")}
-      </button>
-      <button
-        type="button"
-        className="ds-cta-ghost mt-3 w-full"
         data-testid="paywall-cta-indie"
         disabled={busy}
         onClick={() => onCheckout("indie_monthly")}

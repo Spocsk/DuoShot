@@ -8,7 +8,9 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -47,7 +49,9 @@ import { Overlay } from "@/components/overlay";
 import { PaywallModal } from "@/components/paywall-modal";
 import { AuthForm } from "@/components/auth-form";
 import { TrustLine } from "@/components/trust-line";
-import { localePrefix } from "@/lib/site";
+import { localePrefix, reviewPath } from "@/lib/site";
+import { mapLimit } from "@/lib/map-limit";
+import { mergeSideFiles } from "@/lib/merge-side-files";
 
 type Props = { locale: Locale };
 
@@ -57,9 +61,11 @@ type BillingStatus = {
   canUse69?: boolean;
 };
 
+const subscribeNever = () => () => {};
+
 const BOOT_SET: SetMeta = {
   id: "boot",
-  name: "MyApp",
+  name: "App",
   clientName: "",
   orientation: "portrait",
   sameSet: false,
@@ -80,7 +86,7 @@ function ToolAppInner({ locale }: Props) {
   const searchParams = useSearchParams();
   const [sets, setSets] = useState<SetMeta[]>([BOOT_SET]);
   const [activeId, setActiveId] = useState<string>(BOOT_SET.id);
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
   const active = sets.find((item) => item.id === activeId) ?? sets[0];
   const [outerFiles, setOuterFiles] = useState<File[]>([]);
   const [innerFiles, setInnerFiles] = useState<File[]>([]);
@@ -89,23 +95,31 @@ function ToolAppInner({ locale }: Props) {
   const [showHinge, setShowHinge] = useState(true);
   const [assumeClone, setAssumeClone] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [statusKind, setStatusKind] = useState<"ok" | "err" | "busy" | "info">("info");
   const [zipUrl, setZipUrl] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [zipName, setZipName] = useState("app.zip");
+  const [busyExport, setBusyExport] = useState(false);
+  const [busyReview, setBusyReview] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [sameSetOpen, setSameSetOpen] = useState(false);
   const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
   const [outerInspect, setOuterInspect] = useState<SourceInspect | null>(null);
   const [innerInspect, setInnerInspect] = useState<SourceInspect | null>(null);
   const [clones, setClones] = useState<CloneResult[]>([]);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
-  const [session, setSession] = useState<"out" | "in">("out");
+  const [session, setSession] = useState<"loading" | "out" | "in">("loading");
   const [showAuth, setShowAuth] = useState(false);
   const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [reviewUrl, setReviewUrl] = useState<string | null>(null);
   const [reviewStatus, setReviewStatus] = useState<string | null>(null);
+  const [reviewSetStatus, setReviewSetStatus] = useState<string | null>(null);
   const [reviewUpgrade, setReviewUpgrade] = useState(false);
   const setsRef = useRef<HTMLDetailsElement>(null);
   const [setsOpen, setSetsOpen] = useState(false);
+  const [setsClosing, setSetsClosing] = useState(false);
+  const zipUrlRef = useRef<string | null>(null);
   const signedIn = session === "in";
   const checkoutFlag = searchParams.get("checkout");
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
@@ -123,6 +137,8 @@ function ToolAppInner({ locale }: Props) {
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
   const cloneForced = sameSet;
   const hasExportable = outerFiles.length > 0 && (sameSet || innerFiles.length > 0);
+  const outerSlide = outerFiles[slideIndex];
+  const innerSlide = effectiveInner[slideIndex];
   const orientation: Orientation = active?.orientation ?? "portrait";
   const renderOptions = useMemo(
     () => ({ ...options, orientation }),
@@ -157,6 +173,7 @@ function ToolAppInner({ locale }: Props) {
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
+    queueMicrotask(() => void refreshBilling());
     const { data: listener } = supabase.auth.onAuthStateChange(() => {
       void refreshBilling();
     });
@@ -164,28 +181,28 @@ function ToolAppInner({ locale }: Props) {
   }, [refreshBilling]);
 
   useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    const existing = loadSetMetas();
-    if (existing.length === 0) {
-      const first = defaultSet();
-      try {
-        saveSetMetas([first]);
-        saveActiveId(first.id);
-      } catch {
-        /* private mode */
-      }
-      setSets([first]);
-      setActiveId(first.id);
-      return;
-    }
-    const current = loadActiveId() ?? existing[0]!.id;
-    setSets(existing);
-    setActiveId(current);
     let cancelled = false;
     void (async () => {
+      const existing = loadSetMetas();
+      if (existing.length === 0) {
+        const first = defaultSet();
+        try {
+          saveSetMetas([first]);
+          saveActiveId(first.id);
+        } catch {
+          /* private mode */
+        }
+        if (!cancelled) {
+          setSets([first]);
+          setActiveId(first.id);
+        }
+        return;
+      }
+      const current = loadActiveId() ?? existing[0]!.id;
+      if (!cancelled) {
+        setSets(existing);
+        setActiveId(current);
+      }
       const outer = await loadSetFiles(current, "outer");
       const inner = await loadSetFiles(current, "inner");
       if (cancelled) return;
@@ -238,6 +255,18 @@ function ToolAppInner({ locale }: Props) {
     [active, sets, session],
   );
 
+  useEffect(() => {
+    const max = Math.max(outerFiles.length, effectiveInner.length, 1) - 1;
+    queueMicrotask(() => setSlideIndex((index) => Math.min(index, max)));
+  }, [outerFiles.length, effectiveInner.length]);
+
+  useEffect(() => {
+    zipUrlRef.current = zipUrl;
+    return () => {
+      if (zipUrl?.startsWith("blob:")) URL.revokeObjectURL(zipUrl);
+    };
+  }, [zipUrl]);
+
   const drawPreviews = useCallback(
     async (outer: File | undefined, inner: File | undefined, next: RenderOptions) => {
       if (!outer && !inner) {
@@ -264,20 +293,20 @@ function ToolAppInner({ locale }: Props) {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      if (!outerFiles[0] && !effectiveInner[0]) {
+      if (!outerSlide && !innerSlide) {
         setPreviews(null);
         return;
       }
-      void drawPreviews(outerFiles[0], effectiveInner[0], renderOptions);
+      void drawPreviews(outerSlide, innerSlide, renderOptions);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [drawPreviews, outerFiles, effectiveInner, renderOptions]);
+  }, [drawPreviews, outerSlide, innerSlide, renderOptions]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const o = outerFiles[0] ? await inspectFile(outerFiles[0]) : null;
-      const i = effectiveInner[0] ? await inspectFile(effectiveInner[0]) : null;
+      const o = outerSlide ? await inspectFile(outerSlide) : null;
+      const i = innerSlide ? await inspectFile(innerSlide) : null;
       if (!cancelled) {
         setOuterInspect(o);
         setInnerInspect(i);
@@ -286,7 +315,7 @@ function ToolAppInner({ locale }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [outerFiles, effectiveInner]);
+  }, [outerSlide, innerSlide]);
 
   useEffect(() => {
     let cancelled = false;
@@ -305,20 +334,50 @@ function ToolAppInner({ locale }: Props) {
     };
   }, [outerFiles, effectiveInner, cloneForced]);
 
+  useEffect(() => {
+    const id = active?.lastReviewId;
+    if (!id) {
+      queueMicrotask(() => {
+        setReviewUrl(null);
+        setReviewSetStatus(active?.lastReviewStatus ?? null);
+      });
+      return;
+    }
+    queueMicrotask(() => setReviewUrl(`${window.location.origin}${reviewPath(locale, id)}`));
+    let cancelled = false;
+    void fetch(`/api/reviews/${id}`)
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = (await response.json()) as { status?: string };
+        if (!cancelled && data.status) setReviewSetStatus(data.status);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [active?.lastReviewId, active?.lastReviewStatus, locale]);
+
   function isAllowedImage(file: File) {
     return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
   }
 
   function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
-    const incoming = takeFiles(list).filter(isAllowedImage).slice(0, MAX_IMAGES);
-    if (side === "outer") setOuterFiles(incoming);
-    else setInnerFiles(incoming);
+    const incoming = takeFiles(list).filter(isAllowedImage);
+    const current = side === "outer" ? outerFiles : innerFiles;
+    const next = mergeSideFiles(current, incoming);
+    if (side === "outer") setOuterFiles(next);
+    else setInnerFiles(next);
     setZipUrl(null);
-    if (active) void saveSetFiles(active.id, side, incoming).catch(() => {});
+    if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
     setOptions({ ...options, ...patch });
+  }
+
+  function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
+    setStatus(message);
+    setStatusKind(kind);
   }
 
   function explainError(code: string) {
@@ -329,14 +388,15 @@ function ToolAppInner({ locale }: Props) {
     if (code === "CLONE_RISK") return t(locale, "error_clone");
     if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
     if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
+    if (code === "NO_IMAGES") return t(locale, "error_no_images");
     if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
+    if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
     return t(locale, "error_export");
   }
 
-  async function uploadSide(userId: string, files: File[]) {
+  async function uploadSide(userId: string, files: File[], onProgress: () => void) {
     const supabase = createBrowserSupabase();
-    const paths: string[] = [];
-    for (const file of files) {
+    return mapLimit(files, 4, async (file) => {
       const ext = file.type === "image/png" ? "png" : "jpg";
       const path = `${userId}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("uploads").upload(path, file, {
@@ -344,21 +404,21 @@ function ToolAppInner({ locale }: Props) {
         upsert: true,
       });
       if (error) throw new Error("UPLOAD_FAILED");
-      paths.push(path);
-    }
-    return paths;
+      onProgress();
+      return path;
+    });
   }
 
   async function onExport() {
-    setBusy(true);
-    setStatus(null);
+    setBusyExport(true);
+    flashStatus(t(locale, "tool_progress_compose"), "busy");
     setZipUrl(null);
     try {
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
         setShowAuth(true);
-        setStatus(t(locale, "error_auth"));
+        flashStatus(t(locale, "error_auth"), "err");
         return;
       }
       if (include69 && billing && billing.canUse69 === false) {
@@ -369,8 +429,19 @@ function ToolAppInner({ locale }: Props) {
         setPaywall("trial");
         return;
       }
-      const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
-      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles);
+      const extra = sameSet ? [] : innerFiles;
+      const total = outerFiles.length + extra.length;
+      let done = 0;
+      const tick = () => {
+        done += 1;
+        flashStatus(tf(locale, "tool_progress_upload", { done, total }), "busy");
+      };
+      const [outerPaths, uploadedInner] = await Promise.all([
+        uploadSide(sessionData.user.id, outerFiles, tick),
+        extra.length ? uploadSide(sessionData.user.id, extra, tick) : Promise.resolve([] as string[]),
+      ]);
+      const innerPaths = sameSet ? outerPaths : uploadedInner;
+      flashStatus(t(locale, "tool_progress_compose"), "busy");
       const response = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -385,41 +456,50 @@ function ToolAppInner({ locale }: Props) {
           options: renderOptions,
         }),
       });
-      const payload = (await response.json()) as { url?: string; error?: string; warning?: string };
-      if (payload.error === "TRIAL_EXHAUSTED") {
-        setPaywall("trial");
-        setStatus(t(locale, "error_trial"));
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!response.ok || contentType.includes("application/json")) {
+        const payload = (await response.json()) as { url?: string; error?: string; warning?: string };
+        if (payload.error === "TRIAL_EXHAUSTED") {
+          setPaywall("trial");
+          flashStatus(t(locale, "error_trial"), "err");
+          return;
+        }
+        if (payload.error === "IPHONE_69_GATED") {
+          setPaywall("69");
+          flashStatus(t(locale, "error_69"), "err");
+          return;
+        }
+        if (payload.error === "CLONE_RISK") {
+          flashStatus(t(locale, "error_clone"), "err");
+          return;
+        }
+        if (!response.ok) {
+          flashStatus(explainError(payload.error || "EXPORT_FAILED"), "err");
+          return;
+        }
         return;
       }
-      if (payload.error === "IPHONE_69_GATED") {
-        setPaywall("69");
-        setStatus(t(locale, "error_69"));
-        return;
-      }
-      if (payload.error === "CLONE_RISK") {
-        setStatus(t(locale, "error_clone"));
-        return;
-      }
-      if (!response.ok) {
-        setStatus(explainError(payload.error || "EXPORT_FAILED"));
-        return;
-      }
-      if (payload.url) {
-        setZipUrl(payload.url);
-        startZipDownload(payload.url);
-        setStatus(
-          payload.warning === "TOO_FEW"
-            ? t(locale, "tool_warn")
-            : payload.warning === "UNPAIRED"
-              ? t(locale, "tool_warn_unpaired")
-              : t(locale, "tool_zip_ready"),
-        );
-        void refreshBilling();
-      }
+      const warning = response.headers.get("X-Duoshot-Warning") ?? "";
+      const filename = response.headers.get("X-Duoshot-Filename") || "app.zip";
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      if (zipUrlRef.current?.startsWith("blob:")) URL.revokeObjectURL(zipUrlRef.current);
+      setZipName(filename);
+      setZipUrl(url);
+      startZipDownload(url, filename);
+      flashStatus(
+        warning === "TOO_FEW"
+          ? t(locale, "tool_warn")
+          : warning === "UNPAIRED"
+            ? t(locale, "tool_warn_unpaired")
+            : t(locale, "tool_zip_ready"),
+        "ok",
+      );
+      void refreshBilling();
     } catch (error) {
-      setStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_export"));
+      flashStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_export"), "err");
     } finally {
-      setBusy(false);
+      setBusyExport(false);
     }
   }
 
@@ -429,7 +509,7 @@ function ToolAppInner({ locale }: Props) {
     const { data: sessionData } = await supabase.auth.getUser();
     if (!sessionData.user) {
       setShowAuth(true);
-      setStatus(t(locale, "error_auth"));
+      flashStatus(t(locale, "error_auth"), "err");
       return;
     }
     let plan = billing?.plan;
@@ -437,22 +517,33 @@ function ToolAppInner({ locale }: Props) {
       const response = await fetch("/api/billing/status");
       if (!response.ok) {
         setShowAuth(true);
-        setStatus(t(locale, "error_auth"));
+        flashStatus(t(locale, "error_auth"), "err");
         return;
       }
-      const status = (await response.json()) as BillingStatus;
-      setBilling(status);
-      plan = status.plan;
+      const nextBilling = (await response.json()) as BillingStatus;
+      setBilling(nextBilling);
+      plan = nextBilling.plan;
     }
     if (plan !== "studio") {
       setReviewUpgrade(true);
-      setStatus(t(locale, "error_studio"));
+      flashStatus(t(locale, "error_studio"), "err");
       return;
     }
-    setBusy(true);
+    setBusyReview(true);
+    flashStatus(t(locale, "tool_review_preparing"), "busy");
     try {
-      const outerPaths = await uploadSide(sessionData.user.id, outerFiles);
-      const innerPaths = sameSet ? outerPaths : await uploadSide(sessionData.user.id, innerFiles);
+      const extra = sameSet ? [] : innerFiles;
+      const total = outerFiles.length + extra.length;
+      let done = 0;
+      const tick = () => {
+        done += 1;
+        flashStatus(tf(locale, "tool_progress_review", { done, total }), "busy");
+      };
+      const [outerPaths, uploadedInner] = await Promise.all([
+        uploadSide(sessionData.user.id, outerFiles, tick),
+        extra.length ? uploadSide(sessionData.user.id, extra, tick) : Promise.resolve([] as string[]),
+      ]);
+      const innerPaths = sameSet ? outerPaths : uploadedInner;
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -463,27 +554,38 @@ function ToolAppInner({ locale }: Props) {
           appName: active?.name || "App",
           clientName: active?.clientName || "",
           orientation,
+          locale,
           options: renderOptions,
         }),
       });
-      const payload = (await response.json()) as { url?: string; error?: string };
+      const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
       if (!response.ok) {
         if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
-        setStatus(explainError(payload.error || "STUDIO_REQUIRED"));
+        flashStatus(explainError(payload.error || "STUDIO_REQUIRED"), "err");
         return;
       }
-      if (payload.url) {
-        const absolute = `${window.location.origin}${payload.url}`;
-        setReviewUrl(absolute);
+      const publicId = payload.id ?? payload.url?.split("/").filter(Boolean).pop();
+      if (publicId) patchActive({ lastReviewId: publicId, lastReviewStatus: "pending" });
+      const path = payload.url || (publicId ? reviewPath(locale, publicId) : "");
+      const absolute = path.startsWith("http") ? path : `${window.location.origin}${path}`;
+      setReviewUrl(absolute);
+      try {
         await navigator.clipboard.writeText(absolute);
-        setReviewStatus(t(locale, "tool_review_copied"));
+        setReviewStatus(
+          payload.expiresAt
+            ? `${t(locale, "tool_review_copied")} · ${locale === "fr" ? "expire le" : "expires"} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payload.expiresAt))}`
+            : t(locale, "tool_review_copied"),
+        );
+      } catch {
+        setReviewStatus(t(locale, "tool_review_ready"));
       }
+      flashStatus(t(locale, "tool_review_ready"), "ok");
     } catch (error) {
       const code = error instanceof Error ? error.message : "STUDIO_REQUIRED";
       if (code === "STUDIO_REQUIRED") setReviewUpgrade(true);
-      setStatus(explainError(code));
+      flashStatus(explainError(code), "err");
     } finally {
-      setBusy(false);
+      setBusyReview(false);
     }
   }
 
@@ -497,7 +599,7 @@ function ToolAppInner({ locale }: Props) {
     try {
       await startCheckout(kind, checkoutReturnPath(locale));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : t(locale, "error_export"));
+      flashStatus(error instanceof Error ? error.message : t(locale, "error_export"), "err");
       setCheckoutBusy(false);
     }
   }
@@ -509,14 +611,33 @@ function ToolAppInner({ locale }: Props) {
     }
     saveActiveId(id);
     setActiveId(id);
+    setSlideIndex(0);
     setOuterFiles(await loadSetFiles(id, "outer"));
     setInnerFiles(await loadSetFiles(id, "inner"));
     setZipUrl(null);
   }
 
   function closeSets() {
-    setsRef.current?.removeAttribute("open");
+    if (!setsRef.current?.open) {
+      setSetsOpen(false);
+      setSetsClosing(false);
+      return;
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setsRef.current.removeAttribute("open");
+      setSetsOpen(false);
+      setSetsClosing(false);
+      return;
+    }
     setSetsOpen(false);
+    setSetsClosing(true);
+    const closeMs =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dropdown-close-dur")) || 150;
+    window.setTimeout(() => {
+      setsRef.current?.removeAttribute("open");
+      setSetsClosing(false);
+    }, closeMs);
   }
 
   function onSetsTriggerKey(event: ReactKeyboardEvent<HTMLElement>) {
@@ -575,7 +696,11 @@ function ToolAppInner({ locale }: Props) {
 
   const remaining = billing?.remainingFreeExports;
   const remainingLabel =
-    billing?.plan === "studio"
+    !billing && session === "in"
+      ? locale === "fr"
+        ? "Chargement du plan…"
+        : "Loading plan…"
+      : billing?.plan === "studio"
       ? t(locale, "tool_plan_studio")
       : billing?.plan === "indie"
         ? t(locale, "tool_plan_indie")
@@ -587,14 +712,19 @@ function ToolAppInner({ locale }: Props) {
               ? tf(locale, "tool_remaining", { n: remaining })
               : t(locale, "tool_guest_quota");
   const pillMute = remaining === 0 && billing?.plan === "free";
-  const cloneLabel = clones[0]?.label ?? (cloneForced && hasExportable ? "risk" : null);
+  const cloneLabel = clones[slideIndex]?.label ?? (cloneForced && hasExportable ? "risk" : null);
+  const visibleReviewUrl = reviewUrl;
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h1 className="font-display text-4xl">{t(locale, "tool_title")}</h1>
-          {!signedIn ? (
+          {session === "loading" ? (
+            <p className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">
+              {locale === "fr" ? "Chargement du plan…" : "Loading plan…"}
+            </p>
+          ) : !signedIn ? (
             <button
               type="button"
               className="ds-pill ds-pill-ink"
@@ -613,6 +743,7 @@ function ToolAppInner({ locale }: Props) {
         <div className="mt-4">
           <TrustLine locale={locale} />
         </div>
+        <p className="ds-step-label mt-8"><span>01</span>{locale === "fr" ? "Sources" : "Sources"}</p>
         <div className="ds-set-bar mt-6">
           <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
             <p className="ds-label" id="tool-sets-label">
@@ -621,7 +752,12 @@ function ToolAppInner({ locale }: Props) {
             <details
               className="ds-listbox"
               ref={setsRef}
-              onToggle={(event) => setSetsOpen(event.currentTarget.open)}
+              onToggle={(event) => {
+                if (event.currentTarget.open) {
+                  setSetsOpen(true);
+                  setSetsClosing(false);
+                }
+              }}
             >
               <summary
                 id="tool-sets-trigger"
@@ -632,6 +768,12 @@ function ToolAppInner({ locale }: Props) {
                 aria-expanded={setsOpen}
                 aria-controls="tool-sets-menu"
                 aria-labelledby="tool-sets-label"
+                onClick={(event) => {
+                  if (setsRef.current?.open) {
+                    event.preventDefault();
+                    closeSets();
+                  }
+                }}
                 onKeyDown={onSetsTriggerKey}
               >
                 <span>{active?.name?.trim() ? active.name : t(locale, "tool_label_app")}</span>
@@ -639,7 +781,8 @@ function ToolAppInner({ locale }: Props) {
               </summary>
               <ul
                 id="tool-sets-menu"
-                className="ds-listbox-menu"
+                className={`ds-listbox-menu t-dropdown ${setsOpen ? "is-open" : ""} ${setsClosing ? "is-closing" : ""}`}
+                data-origin="top-left"
                 role="listbox"
                 aria-labelledby="tool-sets-label"
                 data-testid="tool-sets-menu"
@@ -684,22 +827,24 @@ function ToolAppInner({ locale }: Props) {
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <DropZone
             testId="drop-outer"
-            label={t(locale, "tool_drop_outer")}
+            label={tf(locale, "tool_drop_outer", { w: outerSpec.width, h: outerSpec.height })}
             hint={t(locale, "tool_drop")}
             count={outerFiles.length}
+            names={outerFiles.map((file) => file.name)}
             onFiles={(list) => onSideFiles("outer", list)}
           />
           <DropZone
             testId="drop-inner"
-            label={t(locale, "tool_drop_inner")}
+            label={tf(locale, "tool_drop_inner", { w: innerSpec.width, h: innerSpec.height })}
             hint={t(locale, "tool_drop")}
             count={sameSet ? outerFiles.length : innerFiles.length}
+            names={(sameSet ? outerFiles : innerFiles).map((file) => file.name)}
             disabled={sameSet}
             onFiles={(list) => onSideFiles("inner", list)}
           />
         </div>
         {cloneForced ? (
-          <p className="ds-warn" role="status" data-testid="warn-clone">
+          <p className="ds-warn-clone" role="alert" data-testid="warn-clone">
             {t(locale, "tool_warn_clone")}
           </p>
         ) : null}
@@ -718,7 +863,8 @@ function ToolAppInner({ locale }: Props) {
             {t(locale, "tool_cap")}
           </p>
         ) : null}
-        <div className="preview-duo mt-8">
+        <p className="ds-step-label mt-10"><span>02</span>{locale === "fr" ? "Composition" : "Composition"}</p>
+        <div className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}`}>
           <PreviewCard
             testId="preview-outer"
             label={t(locale, "tool_preview_outer")}
@@ -728,6 +874,7 @@ function ToolAppInner({ locale }: Props) {
             spec={outerSpec}
             locale={locale}
             clone={cloneLabel}
+            slide={slideIndex}
           />
           <PreviewCard
             testId="preview-inner"
@@ -739,33 +886,81 @@ function ToolAppInner({ locale }: Props) {
             locale={locale}
             hinge={showHinge}
             clone={cloneLabel}
+            slide={slideIndex}
           />
         </div>
-        {clones.length > 1 ? (
-          <ol className="mt-4 font-mono text-xs text-[var(--muted)]">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Filmstrip
+            testId="filmstrip-outer"
+            files={outerFiles}
+            active={slideIndex}
+            locale={locale}
+            onSelect={setSlideIndex}
+          />
+          <Filmstrip
+            testId="filmstrip-inner"
+            files={effectiveInner}
+            active={slideIndex}
+            locale={locale}
+            onSelect={setSlideIndex}
+          />
+        </div>
+        {clones.length > 0 ? (
+          <ol className="mt-4 flex flex-wrap gap-2 font-mono text-xs t-avatar-group" data-testid="clone-badges">
             {clones.map((item) => (
               <li key={item.index}>
-                {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)}
+                <CloneTip
+                  label={`${String(item.index + 1).padStart(2, "0")} · ${t(locale, `clone_${item.label}`)}`}
+                  hint={t(locale, `clone_${item.label}`)}
+                >
+                  <button
+                    type="button"
+                    className={`ds-pill ds-pill-ink t-avatar ${item.index === slideIndex ? "is-on" : ""}`}
+                    data-testid={`clone-badge-${item.index}`}
+                    data-clone={item.label}
+                    onClick={() => setSlideIndex(item.index)}
+                  >
+                    {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)}
+                  </button>
+                </CloneTip>
               </li>
             ))}
           </ol>
         ) : null}
-        <div className="mt-6">
+        <div className="t-acc mt-6" data-testid="same-set-details" data-open={sameSet || sameSetOpen ? "true" : "false"}>
           <button
             type="button"
-            className="ds-toggle"
-            data-testid="toggle-same-set"
-            aria-pressed={sameSet}
-            onClick={() => patchActive({ sameSet: !sameSet })}
+            className="t-acc-head flex w-full cursor-pointer items-center justify-between gap-3 text-left text-sm text-[var(--muted)]"
+            aria-expanded={sameSet || sameSetOpen}
+            onClick={() => setSameSetOpen((open) => !open)}
           >
-            <span className="text-sm">{t(locale, "tool_same_set")}</span>
-            <span className="ds-toggle-track">
-              <span className="ds-toggle-thumb" />
+            <span>{t(locale, "tool_same_set")}</span>
+            <span className="t-acc-chevron" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M4 6.5L8 10.5L12 6.5" />
+              </svg>
             </span>
           </button>
+          <div className="t-acc-panel">
+            <div className="t-acc-panel-inner">
+              <div className="mt-3 pb-2">
+                <DsToggle
+                  testId="toggle-same-set"
+                  pressed={sameSet}
+                  onToggle={() => {
+                    setSameSetOpen(true);
+                    patchActive({ sameSet: !sameSet });
+                  }}
+                >
+                  {t(locale, "tool_same_set")}
+                </DsToggle>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-      <aside className="h-fit border-t border-[var(--line)] pt-5 lg:border-t-0 lg:pt-0">
+      <aside className="h-fit border-t border-[var(--line)] pt-5 lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:border-t-0 lg:pt-0">
+        <p className="ds-step-label mb-4"><span>03</span>{locale === "fr" ? "Vérification et export" : "Check and export"}</p>
         <div className="ds-field">
           <label className="ds-label" htmlFor="tool-input-app">
             {t(locale, "tool_label_app")}
@@ -800,6 +995,9 @@ function ToolAppInner({ locale }: Props) {
             updateOptions({ orientation: value as Orientation });
           }}
         />
+        <details className="tool-advanced mt-5">
+          <summary>{locale === "fr" ? "Réglages avancés" : "Advanced settings"}</summary>
+          <div className="pt-2">
         <Seg
           label={t(locale, "tool_label_fit")}
           value={options.fit}
@@ -880,86 +1078,70 @@ function ToolAppInner({ locale }: Props) {
           onChange={(value) => updateOptions({ format: value as OutputFormat })}
         />
         <div className="ds-field">
-          <button
-            type="button"
-            className="ds-toggle"
-            data-testid="toggle-hinge"
-            aria-pressed={showHinge}
-            onClick={() => setShowHinge((value) => !value)}
-          >
-            <span className="text-sm">{t(locale, "tool_hinge_toggle")}</span>
-            <span className="ds-toggle-track">
-              <span className="ds-toggle-thumb" />
-            </span>
-          </button>
+          <DsToggle testId="toggle-hinge" pressed={showHinge} onToggle={() => setShowHinge((value) => !value)}>
+            {t(locale, "tool_hinge_toggle")}
+          </DsToggle>
         </div>
         <div className="ds-field">
-          <button
-            type="button"
-            className="ds-toggle"
-            data-testid="toggle-burn-hinge"
-            aria-pressed={Boolean(options.burnHinge)}
-            onClick={() => updateOptions({ burnHinge: !options.burnHinge })}
+          <DsToggle
+            testId="toggle-burn-hinge"
+            pressed={Boolean(options.burnHinge)}
+            onToggle={() => updateOptions({ burnHinge: !options.burnHinge })}
           >
-            <span className="text-sm">{t(locale, "tool_burn_hinge")}</span>
-            <span className="ds-toggle-track">
-              <span className="ds-toggle-thumb" />
-            </span>
-          </button>
+            {t(locale, "tool_burn_hinge")}
+          </DsToggle>
           <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t(locale, "tool_burn_hinge_hint")}</p>
         </div>
         <div className="ds-field">
-          <button
-            type="button"
-            className="ds-toggle"
-            data-testid="toggle-69"
-            aria-pressed={include69}
-            onClick={() => {
+          <DsToggle
+            testId="toggle-69"
+            pressed={include69}
+            onToggle={() => {
               const next = !include69;
               setInclude69(next);
               if (next && (!billing || billing.canUse69 === false)) setPaywall("69");
             }}
           >
-            <span className="text-sm">{t(locale, "tool_label_69")}</span>
-            <span className="ds-toggle-track">
-              <span className="ds-toggle-thumb" />
-            </span>
-          </button>
+            {t(locale, "tool_label_69")}
+          </DsToggle>
         </div>
         {cloneLabel === "risk" ? (
           <div className="ds-field">
-            <button
-              type="button"
-              className="ds-toggle"
-              data-testid="toggle-assume-clone"
-              aria-pressed={assumeClone}
-              onClick={() => setAssumeClone((value) => !value)}
-            >
-              <span className="text-sm">{t(locale, "tool_assume_clone")}</span>
-              <span className="ds-toggle-track">
-                <span className="ds-toggle-thumb" />
-              </span>
-            </button>
+            <DsToggle testId="toggle-assume-clone" pressed={assumeClone} onToggle={() => setAssumeClone((value) => !value)}>
+              {t(locale, "tool_assume_clone")}
+            </DsToggle>
             <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t(locale, "tool_assume_clone_hint")}</p>
           </div>
         ) : null}
+          </div>
+        </details>
         <button
           type="button"
-          disabled={busy || !hasExportable}
+          disabled={busyExport || !hasExportable}
           data-testid="tool-download"
           onClick={() => void onExport()}
           className="ds-cta mt-6 w-full"
         >
-          {busy ? t(locale, "tool_preparing") : t(locale, "tool_download")}
+          <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
         </button>
+        {session === "out" && hasExportable ? (
+          <button
+            type="button"
+            data-testid="tool-create-account"
+            onClick={() => setShowAuth(true)}
+            className="ds-cta-ghost mt-3 w-full"
+          >
+            {t(locale, "tool_create_account")}
+          </button>
+        ) : null}
         <button
           type="button"
-          disabled={busy || !hasExportable}
+          disabled={busyReview || !hasExportable}
           data-testid="tool-review"
           onClick={() => void onReview()}
           className="ds-cta-ghost mt-3 w-full"
         >
-          {busy ? t(locale, "tool_preparing") : t(locale, "tool_review_share")}
+          <SwapLabel text={busyReview ? t(locale, "tool_review_preparing") : t(locale, "tool_review_share")} />
         </button>
         <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-review-hint">
           {t(locale, "tool_review_hint")}
@@ -967,7 +1149,7 @@ function ToolAppInner({ locale }: Props) {
           <a href="/api/example-zip?v=2" data-testid="tool-example" className="ds-text-btn mt-3">
           {t(locale, "tool_example")}
         </a>
-        {!signedIn ? (
+        {session === "out" ? (
           <p className="mt-3 text-xs text-[var(--muted)]">
             {t(locale, "tool_need_account")}{" "}
             <Link href={`${prefix}/signup`} className="ds-link">
@@ -975,16 +1157,27 @@ function ToolAppInner({ locale }: Props) {
             </Link>
           </p>
         ) : null}
-        {status ?? urlStatus ? <p className="mt-3 text-sm" data-testid="tool-status">{status ?? urlStatus}</p> : null}
+        {status ?? urlStatus ? (
+          <StatusLine
+            text={status ?? urlStatus}
+            kind={status ? statusKind : "info"}
+            testId="tool-status"
+          />
+        ) : null}
+        {reviewSetStatus ? (
+          <p className="mt-2 text-sm" data-testid="tool-review-set-status">
+            {tf(locale, "tool_review_status", { status: reviewSetStatus })}
+          </p>
+        ) : null}
         {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
         {zipUrl ? (
-          <a href={zipUrl} data-testid="tool-zip-link" className="ds-text-btn mt-3">
+          <a href={zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-text-btn mt-3">
             {t(locale, "tool_open_zip")}
           </a>
         ) : null}
-        {reviewUrl ? (
-          <a href={reviewUrl} data-testid="review-url" className="ds-text-btn mt-2">
-            {reviewUrl}
+        {visibleReviewUrl ? (
+          <a href={visibleReviewUrl} data-testid="review-url" className="ds-text-btn mt-2">
+            {visibleReviewUrl}
           </a>
         ) : null}
         {reviewUpgrade ? (
@@ -999,6 +1192,13 @@ function ToolAppInner({ locale }: Props) {
           </button>
         ) : null}
       </aside>
+      {hasExportable ? (
+        <div className="tool-mobile-action lg:hidden" data-testid="tool-mobile-action">
+          <button type="button" disabled={busyExport} onClick={() => void onExport()} className="ds-cta w-full">
+            <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
+          </button>
+        </div>
+      ) : null}
       {showAuth || (upgradeRequested && session === "out") ? (
         <Overlay
           onClose={() => {
@@ -1057,6 +1257,7 @@ function DropZone({
   label,
   hint,
   count,
+  names = [],
   disabled = false,
   onFiles,
 }: {
@@ -1064,13 +1265,16 @@ function DropZone({
   label: string;
   hint: string;
   count: number;
+  names?: string[];
   disabled?: boolean;
   onFiles: (list: FileList | File[] | DataTransfer | null) => void;
 }) {
   const [over, setOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const onFilesRef = useRef(onFiles);
-  onFilesRef.current = onFiles;
+  useEffect(() => {
+    onFilesRef.current = onFiles;
+  }, [onFiles]);
   useEffect(() => {
     const node = inputRef.current;
     if (!node) return;
@@ -1114,10 +1318,17 @@ function DropZone({
         className="absolute inset-0 cursor-pointer opacity-0"
       />
       <span>{label}</span>
-      <span className="mt-2 text-sm text-[var(--muted)]">{hint}</span>
-      <span className="mt-2 text-sm text-[var(--muted)]">
-        {count} / {MAX_IMAGES}
+      <span className="t-shimmer mt-2 text-sm text-[var(--muted)]" data-text={hint}>
+        {hint}
       </span>
+      <span className="mt-2 text-sm text-[var(--muted)]">
+        <DigitCount value={`${count}`} /> / {MAX_IMAGES}
+      </span>
+      {names.length ? (
+        <span className="drop-names" title={names.join(", ")}>
+          {names.join(" · ")}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -1134,13 +1345,41 @@ function Seg({
   onChange: (value: string) => void;
 }) {
   const labelId = useId();
+  const barRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const first = useRef(true);
+
+  const movePill = useCallback((animate: boolean) => {
+    const bar = barRef.current;
+    const pill = pillRef.current;
+    if (!bar || !pill) return;
+    const tab = bar.querySelector<HTMLElement>(`[data-seg="${value}"]`);
+    if (!tab) return;
+    if (!animate) pill.style.transition = "none";
+    pill.style.transform = `translateX(${tab.offsetLeft}px)`;
+    pill.style.width = `${tab.offsetWidth}px`;
+    if (!animate) {
+      void pill.offsetWidth;
+      pill.style.transition = "";
+    }
+  }, [value]);
+
+  useEffect(() => {
+    movePill(!first.current);
+    first.current = false;
+    const onResize = () => movePill(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [movePill, options]);
+
   return (
     <div className="ds-field">
       <p className="ds-label" id={labelId}>
         {label}
       </p>
       <div
-        className="ds-seg"
+        ref={barRef}
+        className="ds-seg t-tabs"
         role="radiogroup"
         aria-labelledby={labelId}
         onKeyDown={(event) => {
@@ -1162,13 +1401,14 @@ function Seg({
           });
         }}
       >
+        <span ref={pillRef} className="t-tabs-pill" aria-hidden="true" />
         {options.map((option) => (
           <button
             key={option.value}
             type="button"
             role="radio"
             data-seg={option.value}
-            className={value === option.value ? "is-on" : ""}
+            className={`t-tab ${value === option.value ? "is-on" : ""}`}
             aria-checked={value === option.value}
             tabIndex={value === option.value ? 0 : -1}
             onClick={() => onChange(option.value)}
@@ -1191,6 +1431,7 @@ function PreviewCard({
   locale,
   hinge = false,
   clone,
+  slide,
 }: {
   testId: string;
   label: string;
@@ -1201,22 +1442,31 @@ function PreviewCard({
   locale: Locale;
   hinge?: boolean;
   clone: CloneResult["label"] | null;
+  slide: number;
 }) {
   const specLabel = `${spec.width}×${spec.height}`;
   return (
-    <figure data-testid={testId}>
+    <figure data-testid={testId} data-slide={slide}>
       <figcaption className="duo-caption text-left">{label}</figcaption>
       <div className="preview-stage">
         <div
-          className={`preview-glass ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "" : "preview-empty"} ${hinge ? "is-hinge" : "hinge-off"}`}
+          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"}`}
         >
           {src ? (
-            // User-generated preview from canvas.toDataURL
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={src} alt={label} />
+            <>
+              <div className="t-skel-skeleton" aria-hidden="true">
+                <span />
+              </div>
+              <div className="t-skel-content">
+                {/* User-generated preview from canvas.toDataURL */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt={label} />
+              </div>
+            </>
           ) : (
-            <span>—</span>
+            <span className="preview-empty-copy">{t(locale, "tool_empty")}</span>
           )}
+          {kind === "inner" ? <span className="division" aria-hidden="true" /> : null}
         </div>
       </div>
       <ul className="space-y-1 text-xs text-[var(--muted)]">
@@ -1244,6 +1494,243 @@ function PreviewCard({
         <li>{inspect ? t(locale, "tool_check_zip") : t(locale, "tool_check_zip_wait")}</li>
       </ul>
     </figure>
+  );
+}
+
+function Filmstrip({
+  testId,
+  files,
+  active,
+  locale,
+  onSelect,
+}: {
+  testId: string;
+  files: File[];
+  active: number;
+  locale: Locale;
+  onSelect: (index: number) => void;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  if (files.length === 0) return null;
+
+  function setShifts(activeIdx: number | null, phase: "in" | "out") {
+    if (!rootRef.current) return;
+    const cs = getComputedStyle(document.documentElement);
+    const num = (name: string, fallback: number) => {
+      const parsed = parseFloat(cs.getPropertyValue(name));
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+    const ease = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
+    const lift = num("--avatar-lift", -4);
+    const falloff = num("--avatar-falloff", 0.45);
+    const scale = num("--avatar-scale", 1.05);
+    const timing =
+      phase === "out"
+        ? ease("--avatar-ease-out", "cubic-bezier(0.34, 3.85, 0.64, 1)")
+        : ease("--avatar-ease-in", "cubic-bezier(0.22, 1, 0.36, 1)");
+    rootRef.current.querySelectorAll<HTMLElement>(".t-avatar").forEach((el, index) => {
+      el.style.transitionTimingFunction = timing;
+      if (activeIdx == null) {
+        el.style.setProperty("--shift", "0px");
+        el.style.setProperty("--scale-active", "1");
+        return;
+      }
+      const distance = Math.abs(index - activeIdx);
+      el.style.setProperty("--shift", `${(lift * Math.pow(falloff, distance)).toFixed(3)}px`);
+      el.style.setProperty("--scale-active", index === activeIdx ? String(scale) : "1");
+    });
+  }
+
+  return (
+    <div ref={rootRef} className="t-avatar-group" onMouseLeave={() => setShifts(null, "out")}>
+      <ol className="filmstrip" data-testid={testId}>
+        {files.map((file, index) => {
+          const seq = String(index + 1).padStart(2, "0");
+          return (
+            <li key={`${file.name}-${index}`}>
+              <button
+                type="button"
+                className={`filmstrip-thumb t-avatar ${index === active ? "is-on" : ""}`}
+                data-testid={`${testId}-${seq}`}
+                aria-current={index === active}
+                aria-label={tf(locale, "tool_slide", { n: seq })}
+                onMouseEnter={() => setShifts(index, "in")}
+                onClick={() => onSelect(index)}
+              >
+                {seq}
+                <span className="filmstrip-name">{file.name}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+function DigitCount({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const group = ref.current;
+    if (!group) return;
+    group.classList.remove("is-animating");
+    group.replaceChildren();
+    value.split("").forEach((ch, index, chars) => {
+      const span = document.createElement("span");
+      span.className = "t-digit";
+      span.textContent = ch;
+      if (index === chars.length - 2) span.dataset.stagger = "1";
+      else if (index === chars.length - 1) span.dataset.stagger = "2";
+      group.appendChild(span);
+    });
+    void group.offsetHeight;
+    group.classList.add("is-animating");
+  }, [value]);
+  return (
+    <>
+      <span className="sr-only">{value}</span>
+      <span ref={ref} className="t-digit-group" aria-hidden="true" />
+    </>
+  );
+}
+
+function SwapLabel({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const prev = useRef(text);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || prev.current === text) {
+      if (el) el.textContent = text;
+      return;
+    }
+    const dur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur")) || 150;
+    el.classList.add("is-exit");
+    const timer = window.setTimeout(() => {
+      el.textContent = text;
+      el.classList.remove("is-exit");
+      el.classList.add("is-enter-start");
+      void el.offsetHeight;
+      el.classList.remove("is-enter-start");
+      prev.current = text;
+    }, dur);
+    return () => window.clearTimeout(timer);
+  }, [text]);
+  return <span ref={ref} className="t-text-swap">{text}</span>;
+}
+
+function DsToggle({
+  pressed,
+  onToggle,
+  testId,
+  children,
+}: {
+  pressed: boolean;
+  onToggle: () => void;
+  testId: string;
+  children: ReactNode;
+}) {
+  const [init, setInit] = useState(false);
+  return (
+    <button
+      type="button"
+      className="ds-toggle"
+      data-testid={testId}
+      aria-pressed={pressed}
+      onClick={() => {
+        setInit(true);
+        onToggle();
+      }}
+    >
+      <span className="text-sm">{children}</span>
+      <span className={`ds-toggle-track t-toggle ${init ? "is-init" : ""}`} data-on={pressed ? "true" : "false"}>
+        <span className="ds-toggle-thumb t-toggle-thumb" />
+      </span>
+    </button>
+  );
+}
+
+function CloneTip({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {
+  const groupRef = useRef<HTMLSpanElement>(null);
+  function hide() {
+    const tip = groupRef.current?.querySelector<HTMLElement>(".t-tt");
+    if (!tip) return;
+    tip.setAttribute("data-show", "false");
+    tip.setAttribute("aria-hidden", "true");
+  }
+  function place() {
+    const group = groupRef.current;
+    const tip = group?.querySelector<HTMLElement>(".t-tt");
+    const text = group?.querySelector<HTMLElement>(".t-tt-text");
+    const trigger = group?.querySelector<HTMLElement>(".t-tt-trigger");
+    if (!group || !tip || !text || !trigger) return;
+    const showing = tip.getAttribute("data-show") === "true";
+    text.textContent = hint;
+    const cs = getComputedStyle(tip);
+    const width = Math.ceil(text.scrollWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight));
+    const g = group.getBoundingClientRect();
+    const r = trigger.getBoundingClientRect();
+    const x = r.left - g.left + r.width / 2 - width / 2;
+    if (!showing) {
+      tip.style.transition = "none";
+      tip.style.width = `${width}px`;
+      tip.style.setProperty("--tt-x", `${x}px`);
+      void tip.offsetWidth;
+      tip.style.transition = "";
+    } else {
+      tip.style.width = `${width}px`;
+      tip.style.setProperty("--tt-x", `${x}px`);
+    }
+    tip.setAttribute("data-show", "true");
+    tip.setAttribute("aria-hidden", "false");
+  }
+  return (
+    <span ref={groupRef} className="t-tt-group" onPointerLeave={hide}>
+      <span className="t-tt-trigger" data-tooltip={hint} onPointerEnter={place} onFocus={place} onBlur={hide}>
+        {children}
+      </span>
+      <span className="t-tt" data-show="false" aria-hidden="true">
+        <span className="t-tt-text">{label}</span>
+      </span>
+    </span>
+  );
+}
+
+function StatusLine({
+  text,
+  kind,
+  testId,
+}: {
+  text: string | null;
+  kind: "ok" | "err" | "busy" | "info";
+  testId: string;
+}) {
+  if (!text) return null;
+  return (
+    <p
+      className={`t-toast is-open mt-3 text-sm ${kind === "err" ? "t-input is-error is-shaking" : ""}`}
+      data-testid={testId}
+      data-kind={kind}
+    >
+      {kind === "busy" ? (
+        <span className="t-think">
+          <span className="t-think-sizer">{text}</span>
+          <span className="t-think-text" data-text={text}>
+            {text}
+          </span>
+        </span>
+      ) : (
+        <>
+          {kind === "ok" ? (
+            <span className="t-success-check mr-2 inline-block align-middle" data-state="in">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M3 8.5L6.2 12L13 4.5" />
+              </svg>
+            </span>
+          ) : null}
+          {text}
+        </>
+      )}
+    </p>
   );
 }
 
@@ -1287,7 +1774,13 @@ function drawTarget(
   return canvas.toDataURL("image/jpeg", 0.7);
 }
 
-function startZipDownload(url: string) {
+function startZipDownload(url: string, filename: string) {
   if (typeof window === "undefined" || "Cypress" in window) return;
-  window.location.assign(url);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
 }

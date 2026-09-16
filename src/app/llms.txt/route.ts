@@ -22,7 +22,9 @@ ${sizes}
 - Separate shelf (one file per display), not boxed window
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are Indie / Studio
-- Trial: 2 HD ZIP exports after signup; Launch 29 EUR / 60 days; Indie 12 EUR/month; Studio 49 EUR/month includes client review link
+- Trial: 2 HD ZIP exports after signup, no card
+- Trial: 2 HD ZIPs without a card; Indie 12 EUR/month
+- Studio 49 EUR/month includes 3 seats and client reviews retained for 7 days
 `;
   return new Response(body, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },

@@ -7,7 +7,7 @@ export const DEMO_REVIEW_ID = "harbor";
 
 export const EXAMPLE_ZIP_TREE = [
   "exampleapp/duo-outer-portrait/01.png",
-  "exampleapp/duo-inner-landscape/01.png",
+  "exampleapp/duo-inner-portrait/01.png",
   "exampleapp/README.txt",
 ] as const;
 
@@ -118,7 +118,7 @@ export async function pngFromSvg(svg: string, width: number, height: number): Pr
 export async function harborSlidePng(index: number, side: "outer" | "inner"): Promise<Buffer | null> {
   const slide = HARBOR_SLIDES[index];
   if (!slide) return null;
-  const spec = SIZE_SPECS.find((item) => item.id === (side === "outer" ? "outer-p" : "inner-l"));
+  const spec = SIZE_SPECS.find((item) => item.id === (side === "outer" ? "outer-p" : "inner-p"));
   if (!spec) return null;
   const svg =
     side === "outer"

@@ -24,8 +24,6 @@ vi.mock("@/lib/pipeline/compose", () => ({
 const USER = { id: "user-1", email: "studio@example.com" };
 const STUDIO = {
   plan: "studio" as const,
-  extraAppPacks: 0,
-  launchUntil: null,
   source: "workspace" as const,
   remainingFreeExports: null,
   canUse69: true,
