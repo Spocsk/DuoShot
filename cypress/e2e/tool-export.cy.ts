@@ -92,7 +92,13 @@ describe("tool export", () => {
     cy.visitFr("/tool");
     cy.wait("@billing");
     cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
-    cy.get('[data-testid="preview-outer-crop-controls"] input[type="range"]').first().invoke("val", 82).trigger("input", { force: true });
+    cy.get('[data-testid="preview-outer-crop-controls"] input[type="range"]').first().then(($input) => {
+      const el = $input[0] as HTMLInputElement;
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+      descriptor?.set?.call(el, "82");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     cy.get('[data-testid="preview-inner-crop-controls"]').contains("button", "Tout afficher").click();
     cy.get('[data-testid="preview-inner-metrics"]').should("contain", "Rognage 0.0%");
     cy.window().then((win) => {

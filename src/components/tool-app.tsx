@@ -1649,25 +1649,28 @@ function PreviewCard({
       </div>
       {src ? (
         <div className="crop-controls" data-testid={`${testId}-crop-controls`}>
-          <div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}>
+          <div className="crop-toolbar">
+            <div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}>
+              <button
+                type="button"
+                className={transform.fit === "cover" ? "is-on" : ""}
+                aria-pressed={transform.fit === "cover"}
+                onClick={() => onTransform({ fit: "cover" })}
+              >
+                {t(locale, "tool_crop_fill")}
+              </button>
+              <button
+                type="button"
+                className={transform.fit === "contain" ? "is-on" : ""}
+                aria-pressed={transform.fit === "contain"}
+                onClick={() => onTransform({ fit: "contain" })}
+              >
+                {t(locale, "tool_crop_show_all")}
+              </button>
+            </div>
             <button
               type="button"
-              className={transform.fit === "cover" ? "is-on" : ""}
-              aria-pressed={transform.fit === "cover"}
-              onClick={() => onTransform({ fit: "cover" })}
-            >
-              {t(locale, "tool_crop_fill")}
-            </button>
-            <button
-              type="button"
-              className={transform.fit === "contain" ? "is-on" : ""}
-              aria-pressed={transform.fit === "contain"}
-              onClick={() => onTransform({ fit: "contain" })}
-            >
-              {t(locale, "tool_crop_show_all")}
-            </button>
-            <button
-              type="button"
+              className="crop-reset"
               onClick={() => onTransform({ x: 0.5, y: 0.5 })}
             >
               {t(locale, "tool_crop_reset")}
@@ -1682,7 +1685,8 @@ function PreviewCard({
                   min="0"
                   max="100"
                   value={Math.round(transform.x * 100)}
-                  onChange={(event) => onTransform({ x: Number(event.target.value) / 100 })}
+                  onInput={(event) => onTransform({ x: Number(event.currentTarget.value) / 100 })}
+                  onChange={(event) => onTransform({ x: Number(event.currentTarget.value) / 100 })}
                 />
               </label>
               <label>
@@ -1692,20 +1696,23 @@ function PreviewCard({
                   min="0"
                   max="100"
                   value={Math.round(transform.y * 100)}
-                  onChange={(event) => onTransform({ y: Number(event.target.value) / 100 })}
+                  onInput={(event) => onTransform({ y: Number(event.currentTarget.value) / 100 })}
+                  onChange={(event) => onTransform({ y: Number(event.currentTarget.value) / 100 })}
                 />
               </label>
             </div>
           ) : null}
-          {metrics ? (
-            <p className={`crop-metrics is-${metricTone}`} data-testid={`${testId}-metrics`}>
-              {tf(locale, "tool_crop_metrics", {
-                crop: metrics.cropPercent.toFixed(1),
-                scale: metrics.scale.toFixed(2),
-              })}
-            </p>
-          ) : null}
-          <p className="crop-hint">{transform.fit === "cover" ? t(locale, "tool_crop_drag_hint") : t(locale, "tool_crop_contain_hint")}</p>
+          <div className="crop-readout">
+            {metrics ? (
+              <p className={`crop-metrics is-${metricTone}`} data-testid={`${testId}-metrics`}>
+                {tf(locale, "tool_crop_metrics", {
+                  crop: metrics.cropPercent.toFixed(1),
+                  scale: metrics.scale.toFixed(2),
+                })}
+              </p>
+            ) : null}
+            <p className="crop-hint">{transform.fit === "cover" ? t(locale, "tool_crop_drag_hint") : t(locale, "tool_crop_contain_hint")}</p>
+          </div>
         </div>
       ) : null}
       <ul className="space-y-1 text-xs text-[var(--muted)]">
