@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createAdminSupabase } from "@/lib/supabase/admin";
+import { createAdminSupabase, createPublicSupabase } from "@/lib/supabase/admin";
 import { createQueryBuilder, createSupabaseMock, readJson } from "@/test/supabase-mock";
 import { POST } from "./route";
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminSupabase: vi.fn(),
+  createPublicSupabase: vi.fn(),
 }));
 
 function params(id: string) {
@@ -36,11 +37,12 @@ describe("POST /api/reviews/[id]/decision", () => {
     expect(body.error).toBe("INVALID_ACTION");
   });
 
-  it("returns 503 without an admin client", async () => {
+  it("returns 404 when the review is missing without an admin client", async () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null);
+    vi.mocked(createPublicSupabase).mockReturnValue(createSupabaseMock({}) as never);
     const { status, body } = await readJson(await POST(jsonRequest({ action: "approve" }), params("abc123")));
-    expect(status).toBe(503);
-    expect(body.error).toBe("STORAGE_UNAVAILABLE");
+    expect(status).toBe(404);
+    expect(body.error).toBe("NOT_FOUND");
   });
 
   it("records an approval", async () => {

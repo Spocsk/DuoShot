@@ -1,12 +1,28 @@
 import { NextResponse } from "next/server";
-import { createAdminSupabase } from "@/lib/supabase/admin";
+import { createAdminSupabase, createPublicSupabase } from "@/lib/supabase/admin";
 import { harborReviewJpeg, isDemoReview } from "@/lib/pipeline/harbor";
-import { reviewState } from "@/lib/reviews";
+import { reviewState, type ReviewLifecycle } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type Params = { params: Promise<{ id: string }> };
+
+async function loadReview(id: string) {
+  const admin = createAdminSupabase();
+  if (admin) {
+    const { data: review } = await admin
+      .from("review_links")
+      .select("status, expires_at, revoked_at")
+      .eq("public_id", id)
+      .maybeSingle();
+    return { review: review as ReviewLifecycle | null, storage: admin };
+  }
+  const pub = createPublicSupabase();
+  const { data } = await pub.rpc("get_review_payload", { pid: id });
+  if (!data || typeof data !== "object") return { review: null, storage: pub };
+  return { review: data as ReviewLifecycle, storage: pub };
+}
 
 export async function GET(request: Request, { params }: Params) {
   const { id } = await params;
@@ -23,13 +39,7 @@ export async function GET(request: Request, { params }: Params) {
       },
     });
   }
-  const admin = createAdminSupabase();
-  if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
-  const { data: review } = await admin
-    .from("review_links")
-    .select("status, expires_at, revoked_at")
-    .eq("public_id", id)
-    .maybeSingle();
+  const { review, storage } = await loadReview(id);
   if (!review) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   const state = reviewState(review);
   if (state.expired || state.revoked) {
@@ -37,7 +47,7 @@ export async function GET(request: Request, { params }: Params) {
   }
   const seq = String(slide + 1).padStart(2, "0");
   const path = `${id}/${seq}-${side}.jpg`;
-  const { data, error } = await admin.storage.from("reviews").download(path);
+  const { data, error } = await storage.storage.from("reviews").download(path);
   if (error || !data) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   return new NextResponse(Buffer.from(await data.arrayBuffer()), {
     headers: {

@@ -509,7 +509,7 @@ function ToolAppInner({ locale }: Props) {
     const { data: sessionData } = await supabase.auth.getUser();
     if (!sessionData.user) {
       setShowAuth(true);
-      flashStatus(t(locale, "error_auth"), "err");
+      flashStatus(t(locale, "error_auth_review"), "err");
       return;
     }
     let plan = billing?.plan;
@@ -517,7 +517,7 @@ function ToolAppInner({ locale }: Props) {
       const response = await fetch("/api/billing/status");
       if (!response.ok) {
         setShowAuth(true);
-        flashStatus(t(locale, "error_auth"), "err");
+        flashStatus(t(locale, "error_auth_review"), "err");
         return;
       }
       const nextBilling = (await response.json()) as BillingStatus;

@@ -4,7 +4,7 @@ import { mapLimit } from "@/lib/map-limit";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
 import { reviewPairJpegs } from "@/lib/pipeline/compose";
-import { createAdminSupabase } from "@/lib/supabase/admin";
+import { createReviewWriter } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { reviewPath } from "@/lib/site";
 import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
@@ -55,8 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
   }
 
-  const admin = createAdminSupabase();
-  if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
+  const writer = createReviewWriter(supabase);
 
   const body = (await request.json()) as Body;
   const sameSet = Boolean(body.sameSet);
@@ -77,7 +76,7 @@ export async function POST(request: Request) {
   const publicId = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
   const expiresAt = reviewExpiresAt();
   const setName = body.appName?.trim() || "App";
-  const { data: review, error: reviewError } = await admin
+  const { data: review, error: reviewError } = await writer
     .from("review_links")
     .insert({
       public_id: publicId,
@@ -126,11 +125,11 @@ export async function POST(request: Request) {
       plan: entitlements.plan,
     });
     const [upOuter, upInner] = await Promise.all([
-      admin.storage.from("reviews").upload(outKey, composed.outer, {
+      writer.storage.from("reviews").upload(outKey, composed.outer, {
         contentType: "image/jpeg",
         upsert: true,
       }),
-      admin.storage.from("reviews").upload(inKey, composed.inner, {
+      writer.storage.from("reviews").upload(inKey, composed.inner, {
         contentType: "image/jpeg",
         upsert: true,
       }),
@@ -153,7 +152,7 @@ export async function POST(request: Request) {
     const status = slides === "PATH_FORBIDDEN" ? 403 : slides === "UPLOAD_MISSING" ? 400 : 500;
     return NextResponse.json({ error: slides }, { status });
   }
-  const { error: slideError } = await admin.from("review_slides").insert(slides);
+  const { error: slideError } = await writer.from("review_slides").insert(slides);
   if (slideError) {
     return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
   }
@@ -175,9 +174,8 @@ export async function GET() {
     .limit(1)
     .maybeSingle();
   if (!membership) return NextResponse.json({ reviews: [] });
-  const admin = createAdminSupabase();
-  if (!admin) return NextResponse.json({ error: "STORAGE_UNAVAILABLE" }, { status: 503 });
-  const { data } = await admin
+  const writer = createReviewWriter(supabase);
+  const { data } = await writer
     .from("review_links")
     .select("public_id, set_name, client_name, status, comment, created_at, expires_at, revoked_at")
     .eq("workspace_id", membership.workspace_id)

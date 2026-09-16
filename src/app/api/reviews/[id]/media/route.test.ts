@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createAdminSupabase } from "@/lib/supabase/admin";
-import { createStorageMock, createSupabaseMock, readJson } from "@/test/supabase-mock";
+import { createAdminSupabase, createPublicSupabase } from "@/lib/supabase/admin";
+import { createQueryBuilder, createStorageMock, createSupabaseMock, readJson } from "@/test/supabase-mock";
 import { GET } from "./route";
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminSupabase: vi.fn(),
+  createPublicSupabase: vi.fn(),
 }));
 
 function params(id: string) {
@@ -28,18 +29,20 @@ describe("GET /api/reviews/[id]/media", () => {
     expect(createAdminSupabase).not.toHaveBeenCalled();
   }, 30_000);
 
-  it("returns 503 without an admin client", async () => {
+  it("returns 404 when the review is missing without an admin client", async () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null);
+    vi.mocked(createPublicSupabase).mockReturnValue(createSupabaseMock({}) as never);
     const { status, body } = await readJson(
       await GET(new Request("http://localhost/api/reviews/abc/media?slide=0&side=outer"), params("abc")),
     );
-    expect(status).toBe(503);
-    expect(body.error).toBe("STORAGE_UNAVAILABLE");
+    expect(status).toBe(404);
+    expect(body.error).toBe("NOT_FOUND");
   });
 
   it("returns 404 when the object is missing", async () => {
     vi.mocked(createAdminSupabase).mockReturnValue(
       createSupabaseMock({
+        from: () => createQueryBuilder({ data: { status: "pending", expires_at: null, revoked_at: null } }),
         storage: createStorageMock({
           download: async () => ({ data: null, error: { message: "missing" } }),
         }),

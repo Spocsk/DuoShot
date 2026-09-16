@@ -11,9 +11,14 @@ import { GET, POST } from "./route";
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: vi.fn(),
 }));
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminSupabase: vi.fn(),
-}));
+vi.mock("@/lib/supabase/admin", () => {
+  const createAdminSupabase = vi.fn();
+  return {
+    createAdminSupabase,
+    createPublicSupabase: vi.fn(),
+    createReviewWriter: (client: unknown) => createAdminSupabase() ?? client,
+  };
+});
 vi.mock("@/lib/billing", () => ({
   resolveEntitlements: vi.fn(),
 }));
@@ -80,7 +85,7 @@ describe("POST /api/reviews", () => {
     expect(body.error).toBe("STUDIO_REQUIRED");
   });
 
-  it("returns 503 without an admin client", async () => {
+  it("falls back to the user client without an admin key", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(
       createSupabaseMock({
         user: USER,
@@ -93,8 +98,8 @@ describe("POST /api/reviews", () => {
     vi.mocked(resolveEntitlements).mockResolvedValue(STUDIO);
     vi.mocked(createAdminSupabase).mockReturnValue(null);
     const { status, body } = await readJson(await POST(jsonRequest({})));
-    expect(status).toBe(503);
-    expect(body.error).toBe("STORAGE_UNAVAILABLE");
+    expect(status).toBe(400);
+    expect(body.error).toBe("NO_IMAGES");
   });
 
   it("returns 400 without images", async () => {
