@@ -49,7 +49,8 @@ describe("prod workflow", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-download"]').click();
+    cy.unlockExport();
+    cy.get('[data-testid="tool-download"]').should("not.be.disabled").click();
     cy.wait("@export");
     cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href").and("match", /^blob:/);
 

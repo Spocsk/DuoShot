@@ -8,8 +8,8 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.acknowledgeQuality();
-    cy.get('[data-testid="tool-download"]').click();
+    cy.unlockExport();
+    cy.get('[data-testid="tool-download"]').should("not.be.disabled").click();
     cy.wait("@export");
     cy.get('[data-testid="tool-status"]').should("contain", "ZIP prêt");
     cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href").and("match", /^blob:/);
@@ -24,7 +24,8 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-download"]').click();
+    cy.unlockExport();
+    cy.get('[data-testid="tool-download"]').should("not.be.disabled").click();
     cy.get('[data-testid="paywall"]').should("contain", "2 sets gratuits");
   });
 
@@ -36,7 +37,6 @@ describe("tool export", () => {
     cy.dropScreens();
     cy.get('[data-testid="same-set-details"] .t-acc-head').click();
     cy.get('[data-testid="toggle-same-set"]').click();
-    cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-assume-clone"]').click();
     cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
@@ -71,8 +71,8 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.acknowledgeQuality();
-    cy.get('[data-testid="tool-download"]').click();
+    cy.unlockExport();
+    cy.get('[data-testid="tool-download"]').should("not.be.disabled").click();
     cy.wait("@export");
     cy.get('[data-testid="tool-status"]').should("contain", "ZIP prêt");
   });
@@ -106,8 +106,8 @@ describe("tool export", () => {
       expect(sets[0].transforms.outer[0].x).to.eq(0.82);
       expect(sets[0].transforms.inner[0].fit).to.eq("contain");
     });
-    cy.acknowledgeQuality();
-    cy.get('[data-testid="tool-download"]').click();
+    cy.unlockExport();
+    cy.get('[data-testid="tool-download"]').should("not.be.disabled").click();
     cy.wait("@cropExport");
   });
 });
