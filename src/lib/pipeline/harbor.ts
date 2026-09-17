@@ -2,12 +2,18 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { JPEG_QUALITY, SIZE_SPECS } from "../specs";
+import { hashFromBuffer } from "./clone-hash";
+import { scorePair, type CloneLabel } from "./clone-score";
 
 export const DEMO_REVIEW_ID = "harbor";
 
 export const EXAMPLE_ZIP_TREE = [
   "exampleapp/duo-outer-portrait/01.png",
+  "exampleapp/duo-outer-portrait/02.png",
+  "exampleapp/duo-outer-portrait/03.png",
   "exampleapp/duo-inner-portrait/01.png",
+  "exampleapp/duo-inner-portrait/02.png",
+  "exampleapp/duo-inner-portrait/03.png",
   "exampleapp/README.txt",
 ] as const;
 
@@ -142,7 +148,23 @@ export async function harborReviewJpeg(index: number, side: "outer" | "inner"): 
   return jpeg;
 }
 
-export function harborReviewPayload() {
+let payloadCache: Awaited<ReturnType<typeof buildHarborReviewPayload>> | null = null;
+
+async function buildHarborReviewPayload() {
+  const slides = [];
+  for (let index = 0; index < HARBOR_SLIDES.length; index += 1) {
+    const [outer, inner] = await Promise.all([harborSlidePng(index, "outer"), harborSlidePng(index, "inner")]);
+    let clone: CloneLabel = "ok";
+    if (outer && inner) {
+      clone = scorePair(await hashFromBuffer(outer), await hashFromBuffer(inner), index).label;
+    }
+    slides.push({
+      index,
+      clone,
+      outer: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=outer`,
+      inner: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=inner`,
+    });
+  }
   return {
     set_name: "Harbor",
     client_name: "Example listing",
@@ -150,11 +172,11 @@ export function harborReviewPayload() {
     status: "pending",
     comment: null as string | null,
     demo: true,
-    slides: HARBOR_SLIDES.map((_, index) => ({
-      index,
-      clone: "ok",
-      outer: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=outer`,
-      inner: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=inner`,
-    })),
+    slides,
   };
+}
+
+export async function harborReviewPayload() {
+  if (!payloadCache) payloadCache = await buildHarborReviewPayload();
+  return payloadCache;
 }

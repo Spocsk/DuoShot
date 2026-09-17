@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CHECKOUT_CATALOG, PRO_CHECKOUT_KIND, type CheckoutKind } from "@/lib/plans";
+import { CHECKOUT_CATALOG, PRO_CHECKOUT_KIND, isLaunchSaleOpen, type CheckoutKind } from "@/lib/plans";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
@@ -23,6 +23,9 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as { kind?: CheckoutKind; next?: string };
   const kind = body.kind && body.kind in CHECKOUT_CATALOG ? body.kind : PRO_CHECKOUT_KIND;
+  if (kind === "indie_launch" && !isLaunchSaleOpen()) {
+    return NextResponse.json({ error: "LAUNCH_CLOSED" }, { status: 410 });
+  }
   const catalog = CHECKOUT_CATALOG[kind];
   const nextPath = safeNextPath(body.next);
 

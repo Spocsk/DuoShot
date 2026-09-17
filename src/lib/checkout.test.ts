@@ -4,7 +4,7 @@ import { checkoutReturnPath, isCheckoutKind } from "./checkout";
 describe("checkout", () => {
   it("accepts catalog kinds only", () => {
     expect(isCheckoutKind("indie_monthly")).toBe(true);
-    expect(isCheckoutKind("indie_launch")).toBe(false);
+    expect(isCheckoutKind("indie_launch")).toBe(true);
     expect(isCheckoutKind("studio_monthly")).toBe(true);
     expect(isCheckoutKind("app_pack")).toBe(false);
     expect(isCheckoutKind("free")).toBe(false);

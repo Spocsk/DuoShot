@@ -90,6 +90,7 @@ describe("POST /api/stripe/webhook", () => {
       stripe_customer_id: "cus_1",
       stripe_subscription_id: "sub_1",
       subscription_status: "active",
+      launch_offer_until: null,
     });
   });
 
@@ -124,5 +125,43 @@ describe("POST /api/stripe/webhook", () => {
       stripe_subscription_id: null,
       subscription_status: "canceled",
     });
+  });
+
+  it("grants Indie Launch on a one-time checkout", async () => {
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test");
+    const update = vi.fn(() => createQueryBuilder({ data: null, error: null }));
+    vi.mocked(createAdminSupabase).mockReturnValue(
+      createSupabaseMock({
+        from: () => ({ ...createQueryBuilder({ data: null }), update }),
+      }) as never,
+    );
+    vi.mocked(getStripe).mockReturnValue({
+      webhooks: {
+        constructEvent: vi.fn(() => ({
+          type: "checkout.session.completed",
+          data: {
+            object: {
+              metadata: { workspace_id: "ws-1", kind: "indie_launch" },
+              subscription: null,
+              customer: "cus_launch",
+            },
+          },
+        })),
+      },
+    } as never);
+    const { status, body } = await readJson(await POST(request("{}", "sig_ok")));
+    expect(status).toBe(200);
+    expect(body.received).toBe(true);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan: "indie",
+        seats: 1,
+        stripe_customer_id: "cus_launch",
+        stripe_subscription_id: null,
+        subscription_status: "launch",
+      }),
+    );
+    const patch = update.mock.calls[0]?.[0] as { launch_offer_until: string };
+    expect(patch.launch_offer_until).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });

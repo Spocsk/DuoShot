@@ -236,10 +236,11 @@ export function TermsContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Trial and plans">
           <p>
-            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Indie: €12/month, unlimited ZIPs within a
+            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Launch: €29 for 60 days until 23 Oct 2026,
+            same as Indie (then €12/month). Indie: €12/month, unlimited ZIPs within a
             fair-use daily cap, 6.9″ sizes and Client/App prefix included. Studio: €49/month, everything in Indie plus
             three seats and client reviews retained for seven days. Prices include VAT where applicable.
-            Billing via Stripe, cancel from Stripe.
+            Billing via Stripe, cancel from Stripe. We do not guarantee Apple will accept a set.
           </p>
         </Block>
         <Block title="Withdrawal">
@@ -304,10 +305,11 @@ export function TermsContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Essai et offres">
         <p>
-          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Indie : 12 €/mois, ZIP illimités dans
+          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Launch : 29 € / 60 jours jusqu’au
+          23 oct. 2026, même filet qu’Indie (puis 12 €/mois). Indie : 12 €/mois, ZIP illimités dans
           un plafond quotidien anti-abus, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois, tout Indie plus trois
           sièges et des reviews client conservées sept jours. Prix TTC le cas échéant. Paiement via Stripe, résiliation
-          depuis Stripe.
+          depuis Stripe. Aucune garantie d’acceptation Apple.
         </p>
       </Block>
       <Block title="Rétractation">

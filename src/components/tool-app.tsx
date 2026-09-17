@@ -37,7 +37,8 @@ import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
-import type { CheckoutKind } from "@/lib/plans";
+import { FREE_EXPORTS, type CheckoutKind } from "@/lib/plans";
+import { collectDroppedFiles, partitionDroppedFiles } from "@/lib/drop-files";
 import {
   defaultSet,
   deleteSetFiles,
@@ -63,6 +64,7 @@ type BillingStatus = {
   plan?: string;
   remainingFreeExports?: number | null;
   canUse69?: boolean;
+  launchExpiresAt?: string | null;
 };
 
 const subscribeNever = () => () => {};
@@ -104,6 +106,7 @@ function ToolAppInner({ locale }: Props) {
   const [statusKind, setStatusKind] = useState<"ok" | "err" | "busy" | "info">("info");
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   const [zipName, setZipName] = useState("app.zip");
+  const [zipExported, setZipExported] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
   const [busyReview, setBusyReview] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
@@ -144,6 +147,9 @@ function ToolAppInner({ locale }: Props) {
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
   const cloneForced = sameSet;
   const hasExportable = outerFiles.length > 0 && (sameSet || innerFiles.length > 0);
+  const oneShelf = (outerFiles.length > 0 && effectiveInner.length === 0) || (outerFiles.length === 0 && innerFiles.length > 0);
+  const guestBlocked = session !== "in";
+  const studioPlan = billing?.plan === "studio";
   const outerSlide = outerFiles[slideIndex];
   const innerSlide = effectiveInner[slideIndex];
   const orientation: Orientation = active?.orientation ?? "portrait";
@@ -414,18 +420,18 @@ function ToolAppInner({ locale }: Props) {
     };
   }, [active?.lastReviewId, active?.lastReviewStatus, locale]);
 
-  function isAllowedImage(file: File) {
-    return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
-  }
-
-  function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
-    const incoming = takeFiles(list).filter(isAllowedImage);
+  async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+    const collected = await collectDroppedFiles(list);
+    const { images, rejected } = partitionDroppedFiles(collected);
+    if (rejected.length) flashStatus(t(locale, "tool_file_type"), "err");
+    if (!images.length) return;
     const current = side === "outer" ? outerFiles : innerFiles;
-    const next = mergeSideFiles(current, incoming);
+    const next = mergeSideFiles(current, images);
     if (side === "outer") setOuterFiles(next);
     else setInnerFiles(next);
     setQualityAcknowledged(false);
     setZipUrl(null);
+    setZipExported(false);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
@@ -450,6 +456,7 @@ function ToolAppInner({ locale }: Props) {
     }
     setQualityAcknowledged(false);
     setZipUrl(null);
+    setZipExported(false);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
@@ -457,6 +464,7 @@ function ToolAppInner({ locale }: Props) {
     setOptions({ ...options, ...patch });
     setQualityAcknowledged(false);
     setZipUrl(null);
+    setZipExported(false);
   }
 
   function updateCropTransform(side: "outer" | "inner", index: number, patch: Partial<CropTransform>) {
@@ -473,6 +481,7 @@ function ToolAppInner({ locale }: Props) {
     saveSetMetas(nextSets);
     setQualityAcknowledged(false);
     setZipUrl(null);
+    setZipExported(false);
   }
 
   function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
@@ -596,6 +605,7 @@ function ToolAppInner({ locale }: Props) {
       setZipName(filename);
       setZipUrl(url);
       startZipDownload(url, filename);
+      setZipExported(true);
       flashStatus(
         warning === "TOO_FEW"
           ? t(locale, "tool_warn")
@@ -814,6 +824,7 @@ function ToolAppInner({ locale }: Props) {
   }
 
   const remaining = billing?.remainingFreeExports;
+  const trialUsed = remaining != null ? Math.max(0, FREE_EXPORTS - remaining) : null;
   const remainingLabel =
     !billing && session === "in"
       ? locale === "fr"
@@ -822,17 +833,38 @@ function ToolAppInner({ locale }: Props) {
       : billing?.plan === "studio"
       ? t(locale, "tool_plan_studio")
       : billing?.plan === "indie"
-        ? t(locale, "tool_plan_indie")
-        : remaining === 1
-          ? t(locale, "tool_remaining_one")
-          : remaining === 0
-            ? t(locale, "tool_remaining_none")
-            : remaining != null
-              ? tf(locale, "tool_remaining", { n: remaining })
-              : t(locale, "tool_guest_quota");
+        ? billing.launchExpiresAt
+          ? t(locale, "account_plan_launch")
+          : t(locale, "tool_plan_indie")
+        : remaining != null && trialUsed != null
+          ? tf(locale, "tool_trial_used", { used: trialUsed, total: FREE_EXPORTS })
+          : t(locale, "tool_guest_quota");
   const pillMute = remaining === 0 && billing?.plan === "free";
   const cloneLabel = clones[slideIndex]?.label ?? (cloneForced && hasExportable ? "risk" : null);
   const visibleReviewUrl = reviewUrl;
+  const canShareReview = signedIn && studioPlan && hasExportable;
+  const downloadDisabled =
+    busyExport || !hasExportable || guestBlocked || (cloneLabel === "risk" && !assumeClone && signedIn);
+  const downloadReason = guestBlocked
+    ? t(locale, "tool_guest_download")
+    : outerFiles.length === 0
+      ? t(locale, "tool_need_outer")
+      : !sameSet && innerFiles.length === 0
+        ? t(locale, "tool_need_inner")
+        : cloneLabel === "risk" && !assumeClone && signedIn
+          ? t(locale, "error_clone")
+          : null;
+
+  useEffect(() => {
+    if (session !== "in" || remaining !== 2) return;
+    try {
+      if (sessionStorage.getItem("duoshot.trial-welcomed")) return;
+      sessionStorage.setItem("duoshot.trial-welcomed", "1");
+      flashStatus(t(locale, "tool_welcome_trial"), "ok");
+    } catch {
+      /* private mode */
+    }
+  }, [locale, remaining, session]);
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
@@ -967,6 +999,11 @@ function ToolAppInner({ locale }: Props) {
             {t(locale, "tool_warn_clone")}
           </p>
         ) : null}
+        {oneShelf ? (
+          <p className="ds-warn-clone" role="alert" data-testid="warn-one-shelf">
+            {t(locale, "tool_one_shelf")}
+          </p>
+        ) : null}
         {unpaired ? (
           <p className="ds-warn" role="status" data-testid="warn-unpaired">
             {t(locale, "tool_warn_unpaired")}
@@ -994,6 +1031,7 @@ function ToolAppInner({ locale }: Props) {
             locale={locale}
             clone={cloneLabel}
             slide={slideIndex}
+            zipReady={zipExported}
             transform={outerTransform}
             onTransform={(patch) => updateCropTransform("outer", slideIndex, patch)}
           />
@@ -1008,9 +1046,15 @@ function ToolAppInner({ locale }: Props) {
             hinge={showHinge}
             clone={cloneLabel}
             slide={slideIndex}
+            zipReady={zipExported}
             transform={innerTransform}
             onTransform={(patch) => updateCropTransform("inner", slideIndex, patch)}
           />
+        </div>
+        <div className="mt-4">
+          <DsToggle testId="toggle-hinge" pressed={showHinge} onToggle={() => setShowHinge((value) => !value)}>
+            {t(locale, "tool_hinge_toggle")}
+          </DsToggle>
         </div>
         {severeQualityCount > 0 ? (
           <div className="quality-gate" data-testid="quality-gate" data-acknowledged={qualityAcknowledged ? "true" : "false"}>
@@ -1133,6 +1177,9 @@ function ToolAppInner({ locale }: Props) {
             { value: "landscape", label: t(locale, "tool_orient_landscape") },
           ]}
           onChange={(value) => {
+            if ((outerFiles.length > 0 || innerFiles.length > 0) && value !== orientation) {
+              if (!window.confirm(t(locale, "tool_orient_confirm"))) return;
+            }
             patchActive({ orientation: value as Orientation });
             updateOptions({ orientation: value as Orientation });
           }}
@@ -1220,11 +1267,6 @@ function ToolAppInner({ locale }: Props) {
           onChange={(value) => updateOptions({ format: value as OutputFormat })}
         />
         <div className="ds-field">
-          <DsToggle testId="toggle-hinge" pressed={showHinge} onToggle={() => setShowHinge((value) => !value)}>
-            {t(locale, "tool_hinge_toggle")}
-          </DsToggle>
-        </div>
-        <div className="ds-field">
           <DsToggle
             testId="toggle-burn-hinge"
             pressed={Boolean(options.burnHinge)}
@@ -1247,25 +1289,41 @@ function ToolAppInner({ locale }: Props) {
             {t(locale, "tool_label_69")}
           </DsToggle>
         </div>
+          </div>
+        </details>
         {cloneLabel === "risk" ? (
-          <div className="ds-field">
+          <div className="ds-field mt-5">
             <DsToggle testId="toggle-assume-clone" pressed={assumeClone} onToggle={() => setAssumeClone((value) => !value)}>
               {t(locale, "tool_assume_clone")}
             </DsToggle>
             <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t(locale, "tool_assume_clone_hint")}</p>
           </div>
         ) : null}
-          </div>
-        </details>
         <button
           type="button"
-          disabled={busyExport || !hasExportable}
+          disabled={downloadDisabled}
+          title={downloadReason ?? undefined}
           data-testid="tool-download"
-          onClick={() => void onExport()}
+          onClick={() => {
+            if (guestBlocked) {
+              setShowAuth(true);
+              return;
+            }
+            void onExport();
+          }}
           className="ds-cta mt-6 w-full"
         >
-          <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
+          <SwapLabel text={busyExport ? t(locale, "tool_preparing") : guestBlocked ? t(locale, "tool_guest_download") : t(locale, "tool_download")} />
         </button>
+        {downloadReason && hasExportable ? (
+          <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-download-reason">
+            {downloadReason}
+          </p>
+        ) : !hasExportable ? (
+          <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-download-reason">
+            {outerFiles.length === 0 ? t(locale, "tool_need_outer") : t(locale, "tool_need_inner")}
+          </p>
+        ) : null}
         {session === "out" && hasExportable ? (
           <button
             type="button"
@@ -1278,7 +1336,8 @@ function ToolAppInner({ locale }: Props) {
         ) : null}
         <button
           type="button"
-          disabled={busyReview || !hasExportable}
+          disabled={busyReview || !canShareReview}
+          title={t(locale, "tool_review_hint")}
           data-testid="tool-review"
           onClick={() => void onReview()}
           className="ds-cta-ghost mt-3 w-full"
@@ -1322,7 +1381,17 @@ function ToolAppInner({ locale }: Props) {
             {visibleReviewUrl}
           </a>
         ) : null}
-        {reviewUpgrade ? (
+        {signedIn && billing && billing.plan !== "studio" ? (
+          <button
+            type="button"
+            data-testid="tool-review-upgrade"
+            disabled={checkoutBusy}
+            onClick={() => void onCheckout("studio_monthly")}
+            className="ds-cta-ghost mt-3 w-full"
+          >
+            {t(locale, "pricing_studio_cta")}
+          </button>
+        ) : reviewUpgrade ? (
           <button
             type="button"
             data-testid="tool-review-upgrade"
@@ -1336,9 +1405,15 @@ function ToolAppInner({ locale }: Props) {
       </aside>
       {hasExportable ? (
         <div className="tool-mobile-action lg:hidden" data-testid="tool-mobile-action">
-          <button type="button" disabled={busyExport} onClick={() => void onExport()} className="ds-cta w-full">
-            <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
-          </button>
+          {guestBlocked ? (
+            <button type="button" onClick={() => setShowAuth(true)} className="ds-cta w-full">
+              {t(locale, "tool_guest_download")}
+            </button>
+          ) : (
+            <button type="button" disabled={downloadDisabled} onClick={() => void onExport()} className="ds-cta w-full">
+              <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
+            </button>
+          )}
         </div>
       ) : null}
       {showAuth || (upgradeRequested && session === "out") ? (
@@ -1356,6 +1431,12 @@ function ToolAppInner({ locale }: Props) {
             nextPath={`${prefix}/tool`}
             onSuccess={() => {
               setShowAuth(false);
+              try {
+                sessionStorage.setItem("duoshot.trial-welcomed", "1");
+              } catch {
+                /* private mode */
+              }
+              flashStatus(t(locale, "tool_welcome_trial"), "ok");
               void refreshBilling();
             }}
           />
@@ -1445,8 +1526,7 @@ function DropZone({
         event.preventDefault();
         setOver(false);
         if (disabled) return;
-        const files = takeFiles(event.dataTransfer);
-        if (files.length) onFiles(files);
+        onFiles(event.dataTransfer);
       }}
     >
       <input
@@ -1574,6 +1654,7 @@ function PreviewCard({
   hinge = false,
   clone,
   slide,
+  zipReady = false,
   transform,
   onTransform,
 }: {
@@ -1587,6 +1668,7 @@ function PreviewCard({
   hinge?: boolean;
   clone: CloneResult["label"] | null;
   slide: number;
+  zipReady?: boolean;
   transform: CropTransform;
   onTransform: (patch: Partial<CropTransform>) => void;
 }) {
@@ -1721,7 +1803,9 @@ function PreviewCard({
             ? inspect.hasAlpha
               ? t(locale, "tool_check_alpha_flat")
               : t(locale, "tool_check_alpha_ok")
-            : t(locale, "tool_check_await")}
+            : src
+              ? "…"
+              : t(locale, "tool_check_await")}
         </li>
         <li>
           {t(locale, "tool_label_orientation")}: {specLabel}
@@ -1731,13 +1815,15 @@ function PreviewCard({
             ? inspect.colorSpace === "other"
               ? t(locale, "tool_check_rgb_bad")
               : t(locale, "tool_check_rgb_ok")
-            : t(locale, "tool_check_await")}
+            : src
+              ? "…"
+              : t(locale, "tool_check_await")}
         </li>
         {kind === "inner" ? <li>{t(locale, "tool_check_hinge")}</li> : null}
         <li data-testid={`${testId}-clone`}>
           {clone ? tf(locale, "tool_check_clone", { label: t(locale, `clone_${clone}`) }) : t(locale, "tool_check_clone_wait")}
         </li>
-        <li>{inspect ? t(locale, "tool_check_zip") : t(locale, "tool_check_zip_wait")}</li>
+        <li>{zipReady ? t(locale, "tool_check_zip") : t(locale, "tool_check_zip_wait")}</li>
       </ul>
     </figure>
   );

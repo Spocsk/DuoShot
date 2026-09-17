@@ -74,6 +74,7 @@ export function buildReadme(options: {
     "- Color: sRGB RGB, no alpha",
     options.unpaired ? "- Slides: outer/inner counts differ" : "- Slides: paired by index",
     "",
+    `Date: ${new Date().toISOString().slice(0, 10)}`,
     "PNG-24 (default) or JPEG q90. RGB, no alpha, exact App Store pixels.",
     "Sources and ZIP are retained at most 24 hours.",
   );

@@ -23,8 +23,10 @@ ${sizes}
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are Indie / Studio
 - Trial: 2 HD ZIP exports after signup, no card
-- Trial: 2 HD ZIPs without a card; Indie 12 EUR/month
+- Launch: 29 EUR / 60 days until 23 Oct 2026, then Indie 12 EUR/month
+- Indie 12 EUR/month: unlimited Duo ZIPs, 6.9" sizes, Client/App prefix
 - Studio 49 EUR/month includes 3 seats and client reviews retained for 7 days
+- We do not guarantee Apple will accept a set
 `;
   return new Response(body, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },

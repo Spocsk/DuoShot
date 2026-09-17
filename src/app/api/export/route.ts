@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("id, client_slug, plan, free_exports_used")
+    .select("id, client_slug, plan, free_exports_used, launch_offer_until, subscription_status")
     .eq("id", membership.workspace_id)
     .single();
 
@@ -99,6 +99,8 @@ export async function POST(request: Request) {
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
     workspacePlan: workspace?.plan,
+    launchOfferUntil: workspace?.launch_offer_until,
+    subscriptionStatus: workspace?.subscription_status,
   });
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
   const include69 = Boolean(body.include69);
@@ -169,7 +171,7 @@ export async function POST(request: Request) {
       async (index) =>
         scorePair(await hashFromBuffer(outerBuffers[index]!), await hashFromBuffer(innerBuffers[index]!), index, sameSet),
     );
-    if (pro && worstCloneLabel(cloneScores) === "risk" && !body.assumeCloneRisk) {
+    if (worstCloneLabel(cloneScores) === "risk" && !body.assumeCloneRisk) {
       if (reservedFree) {
         await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
       }

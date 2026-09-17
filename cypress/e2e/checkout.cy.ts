@@ -11,7 +11,7 @@ describe("checkout", () => {
     cy.visitFr("/tool?checkout=mock");
     cy.get('[data-testid="tool-status"]').should("contain", "Checkout mock");
     cy.visitFr("/tool?checkout=success");
-    cy.get('[data-testid="tool-status"]').should("contain", "Abonnement actif");
+    cy.get('[data-testid="tool-status"]').should("contain", "Accès actif");
     cy.visitFr("/tool?checkout=cancel");
     cy.get('[data-testid="tool-status"]').should("contain", "Paiement annulé");
   });
@@ -20,6 +20,7 @@ describe("checkout", () => {
     cy.loginAs("free");
     cy.visitFr("/tool?upgrade=1");
     cy.get('[data-testid="paywall"]').should("be.visible");
+    cy.get('[data-testid="paywall-cta-launch"]').should("be.visible");
   });
 
   it("starts a mock checkout from the 6.9 paywall", () => {

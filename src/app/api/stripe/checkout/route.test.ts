@@ -63,4 +63,35 @@ describe("POST /api/stripe/checkout", () => {
     expect(status).toBe(200);
     expect(body.url).toBe("https://duoshot.example/tool?checkout=mock&kind=indie_monthly");
   });
+
+  it("returns a mock Launch checkout URL while the sale is open", async () => {
+    vi.mocked(createServerSupabase).mockResolvedValue(
+      createSupabaseMock({
+        user: USER,
+        from: () => createQueryBuilder({ data: { workspace_id: "ws-1" } }),
+      }) as never,
+    );
+    vi.mocked(isStripeConfigured).mockReturnValue(false);
+    const { status, body } = await readJson(await POST(jsonRequest({ kind: "indie_launch", next: "/tool" })));
+    expect(status).toBe(200);
+    expect(body.url).toBe("https://duoshot.example/tool?checkout=mock&kind=indie_launch");
+  });
+
+  it("returns 410 when the Launch sale has closed", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime("2026-10-24T00:00:00.000Z");
+    try {
+      vi.mocked(createServerSupabase).mockResolvedValue(
+        createSupabaseMock({
+          user: USER,
+          from: () => createQueryBuilder({ data: { workspace_id: "ws-1" } }),
+        }) as never,
+      );
+      const { status, body } = await readJson(await POST(jsonRequest({ kind: "indie_launch" })));
+      expect(status).toBe(410);
+      expect(body.error).toBe("LAUNCH_CLOSED");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

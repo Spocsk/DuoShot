@@ -3,7 +3,7 @@
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { Overlay } from "@/components/overlay";
-import type { CheckoutKind } from "@/lib/plans";
+import { isLaunchSaleOpen, type CheckoutKind } from "@/lib/plans";
 
 export function PaywallModal({
   locale,
@@ -24,9 +24,20 @@ export function PaywallModal({
         {reason === "69" ? t(locale, "paywall_69") : t(locale, "paywall_title")}
       </h2>
       <p className="mt-3 text-[var(--muted)]">{t(locale, "paywall_lead")}</p>
+      {isLaunchSaleOpen() ? (
+        <button
+          type="button"
+          className="ds-cta mt-6 w-full"
+          data-testid="paywall-cta-launch"
+          disabled={busy}
+          onClick={() => onCheckout("indie_launch")}
+        >
+          {t(locale, "paywall_cta_launch")}
+        </button>
+      ) : null}
       <button
         type="button"
-        className="ds-cta mt-6 w-full"
+        className={`${isLaunchSaleOpen() ? "ds-cta-ghost mt-3" : "ds-cta mt-6"} w-full`}
         data-testid="paywall-cta-indie"
         disabled={busy}
         onClick={() => onCheckout("indie_monthly")}

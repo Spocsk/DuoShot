@@ -25,11 +25,12 @@ export async function GET() {
       source: "none",
       remainingFreeExports: 2,
       canUse69: false,
+      launchExpiresAt: null,
     });
   }
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("plan, free_exports_used")
+    .select("plan, free_exports_used, launch_offer_until, subscription_status")
     .eq("id", membership.workspace_id)
     .maybeSingle();
   const entitlements = await resolveEntitlements({
@@ -37,6 +38,8 @@ export async function GET() {
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
     workspacePlan: workspace?.plan,
+    launchOfferUntil: workspace?.launch_offer_until,
+    subscriptionStatus: workspace?.subscription_status,
   });
   return NextResponse.json(entitlements);
 }

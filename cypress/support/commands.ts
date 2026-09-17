@@ -59,6 +59,7 @@ function billing(plan: Plan, remaining: number | null) {
     source: "mock",
     remainingFreeExports: plan === "free" ? remaining : null,
     canUse69: plan !== "free",
+    launchExpiresAt: null,
   };
 }
 
@@ -74,6 +75,7 @@ function visitLocalized(path: string, locale: "fr" | "en", options?: Partial<Cyp
     onBeforeLoad(win) {
       const nativeMatch = win.matchMedia.bind(win);
       options?.onBeforeLoad?.(win);
+      win.confirm = () => true;
       Object.defineProperty(win, "matchMedia", {
         writable: true,
         configurable: true,

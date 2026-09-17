@@ -40,6 +40,7 @@ describe("GET /api/billing/status", () => {
       source: "none",
       remainingFreeExports: 2,
       canUse69: false,
+      launchExpiresAt: null,
     });
     expect(resolveEntitlements).not.toHaveBeenCalled();
   });
@@ -59,6 +60,7 @@ describe("GET /api/billing/status", () => {
       source: "workspace",
       remainingFreeExports: null,
       canUse69: true,
+      launchExpiresAt: null,
     });
     const { status, body } = await readJson(await GET());
     expect(status).toBe(200);
@@ -69,6 +71,8 @@ describe("GET /api/billing/status", () => {
       workspaceId: "ws-1",
       freeExportsUsed: 0,
       workspacePlan: "studio",
+      launchOfferUntil: undefined,
+      subscriptionStatus: undefined,
     });
   });
 });

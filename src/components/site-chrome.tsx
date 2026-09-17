@@ -55,6 +55,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-5 py-6 text-sm text-[var(--muted)]">
         <span>© {new Date().getFullYear()} DuoShot</span>
         <span data-testid="footer-privacy-line">{t(locale, "trust_retention")}</span>
+        <span data-testid="footer-disclaimer">{t(locale, "trust_no_guarantee")}</span>
         <span>{t(locale, "footer_stripe")}</span>
         <Link href={`${prefix}/specs`}>{t(locale, "nav_specs")}</Link>
         <Link href={`${prefix}/legal`}>{t(locale, "footer_legal")}</Link>
