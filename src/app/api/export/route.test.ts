@@ -23,12 +23,14 @@ const FREE = {
   source: "workspace" as const,
   remainingFreeExports: 0,
   canUse69: false,
+  launchExpiresAt: null,
 };
 const INDIE = {
   plan: "indie" as const,
   source: "workspace" as const,
   remainingFreeExports: null,
   canUse69: true,
+  launchExpiresAt: null,
 };
 
 function jsonRequest(body: unknown) {

@@ -35,7 +35,7 @@ Les pixels d’étagère et la guideline 2.3.3 vivent sur `/specs` et la FAQ —
 
 Harbor est l’app **démo** des visuels marketing et du ZIP exemple (`src/components/harbor-ui.tsx`), pas le nom du produit.
 
-Hors scope v1 (ne pas vendre ni prototyper comme livrable) : chassis / frames device, Sign in with Apple, tent/clock, vidéo App Store 15–30 s, upload vers Connect, A/B, API publique, CMP analytics. Invites d’équipe : annoncé « bientôt », pas livré.
+Hors scope v1 (ne pas vendre ni prototyper comme livrable) : chassis / frames device, Sign in with Apple, tent/clock, vidéo App Store 15–30 s, upload vers Connect, A/B, API publique, CMP analytics. Invites d’équipe Studio : 3 sièges livrés.
 
 ## Capabilities and Constraints
 
@@ -43,12 +43,12 @@ Hors scope v1 (ne pas vendre ni prototyper comme livrable) : chassis / frames de
 - Export v1 : étagère séparée, un PNG (défaut PNG-24) ou JPEG q90 par dalle. Pas de fenêtre boxed.
 - Uploads navigateur → Supabase Storage (jamais le body Vercel). Sharp en route handlers Node.
 - Auth v1 : Google, e-mail + mot de passe, magic link. Pas d’Apple.
-- Offres affichées : Free (preview + exemple + 2 ZIP HD après compte) ; Launch 29 € / 60 j (pic Duo) ; Indie 12 €/mois ; Studio 49 €/mois + lien review. Stripe live / Vercel Pro : pas tant que le checkout n’est pas validé.
+- Offres affichées : Free (preview + exemple + 2 ZIP HD après compte) ; Launch 29 € / 60 j jusqu’au **23 oct. 2026** ; Indie 12 €/mois ; Studio 49 €/mois + 3 sièges + lien review. Stripe live / Vercel Pro : pas tant que le checkout n’est pas validé.
 - Locales : français par défaut, anglais sous `/en`.
 - Mentions légales : éditeur personne physique en France ; identifiants société (SIRET, siège) **non encore remplis**.
 - Rétention Storage : 24 h.
 
-Ouvert : date de bascule Stripe live ; sièges d’équipe.
+Ouvert : date de bascule Stripe live.
 
 ## Brand Commitments
 

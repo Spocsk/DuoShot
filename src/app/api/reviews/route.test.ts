@@ -32,6 +32,7 @@ const STUDIO = {
   source: "workspace" as const,
   remainingFreeExports: null,
   canUse69: true,
+  launchExpiresAt: null,
 };
 
 function jsonRequest(body: unknown) {

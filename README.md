@@ -60,6 +60,7 @@ Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de
 | Offre | Prix | Notes |
 | --- | --- | --- |
 | Essai | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
+| Launch | 29 € / 60 j | Tout Indie. Visible jusqu’au 23 oct. 2026 |
 | Indie | 12 €/mo | ZIP illimités, 6,9″, multi-sets, préfixe Client/App |
 | Studio | 49 €/mo | + 3 sièges et reviews client pendant 7 jours |
 

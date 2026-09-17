@@ -1,4 +1,4 @@
-import { PRO_CHECKOUT_KIND, type CheckoutKind } from "./plans";
+import { CHECKOUT_CATALOG, PRO_CHECKOUT_KIND, type CheckoutKind } from "./plans";
 import { localePrefix } from "./site";
 import type { Locale } from "./specs";
 
@@ -26,5 +26,5 @@ export function checkoutReturnPath(locale: Locale): string {
 }
 
 export function isCheckoutKind(value: string | undefined): value is CheckoutKind {
-  return value === "indie_monthly" || value === "studio_monthly";
+  return Boolean(value && value in CHECKOUT_CATALOG);
 }

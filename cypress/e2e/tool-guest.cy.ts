@@ -32,7 +32,7 @@ describe("tool guest", () => {
     cy.get('[data-testid="warn-clone"]').should("be.visible");
     cy.get('[data-testid="same-set-details"]').should("have.attr", "data-open", "true");
     cy.get('[data-testid="preview-outer-clone"]').should("contain", "Risque");
-    cy.get('[data-testid="tool-download"]').should("not.be.disabled");
+    cy.get('[data-testid="tool-download"]').should("be.disabled");
   });
 
   it("warns when outer and inner counts differ", () => {
@@ -65,7 +65,8 @@ describe("tool guest", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-download"]').click();
+    cy.get('[data-testid="tool-download"]').should("be.disabled");
+    cy.get('[data-testid="tool-create-account"]').should("be.visible").click();
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
 

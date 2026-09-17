@@ -19,6 +19,7 @@ describe("billing", () => {
     expect(free.plan).toBe("free");
     expect(free.canUse69).toBe(false);
     expect(free.remainingFreeExports).toBe(1);
+    expect(free.launchExpiresAt).toBeNull();
   });
 
   it("unlocks 6.9-inch sizes for indie", () => {
@@ -35,6 +36,26 @@ describe("billing", () => {
     expect(mergePlanSources("free", "studio")).toBe("studio");
     expect(mergePlanSources("indie", "studio")).toBe("studio");
     expect(mergePlanSources("studio", "free")).toBe("studio");
+  });
+
+  it("treats an unexpired Launch grant as Indie", () => {
+    const until = new Date(Date.now() + 60_000).toISOString();
+    expect(planFromWorkspace("indie", { subscriptionStatus: "launch", launchOfferUntil: until })).toBe("indie");
+    expect(planFromWorkspace("indie", { subscriptionStatus: "launch", launchOfferUntil: "2020-01-01T00:00:00.000Z" })).toBe("free");
+  });
+
+  it("exposes launchExpiresAt on an active Launch grant", async () => {
+    vi.mocked(getStripe).mockReturnValue(null);
+    const until = new Date(Date.now() + 60_000).toISOString();
+    const entitlements = await resolveEntitlements({
+      email: "a@example.com",
+      workspaceId: "ws-1",
+      workspacePlan: "indie",
+      subscriptionStatus: "launch",
+      launchOfferUntil: until,
+    });
+    expect(entitlements.plan).toBe("indie");
+    expect(entitlements.launchExpiresAt).toBe(until);
   });
 });
 

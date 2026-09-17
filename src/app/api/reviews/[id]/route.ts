@@ -42,7 +42,7 @@ function reviewJson(id: string, review: ReviewRow, slides: SlideRow[]) {
 export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
   if (isDemoReview(id)) {
-    return NextResponse.json(harborReviewPayload(), {
+    return NextResponse.json(await harborReviewPayload(), {
       headers: { "Cache-Control": "public, max-age=300" },
     });
   }

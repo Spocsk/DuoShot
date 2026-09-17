@@ -7,13 +7,14 @@ import { t, tf } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
-import type { CheckoutKind } from "@/lib/plans";
+import { isLaunchSaleOpen, type CheckoutKind } from "@/lib/plans";
 import type { PlanId } from "@/lib/specs";
 import { localePrefix, reviewPath } from "@/lib/site";
 
 type Status = {
   plan?: PlanId;
   remainingFreeExports?: number | null;
+  launchExpiresAt?: string | null;
 };
 
 export function AccountApp({ locale }: { locale: Locale }) {
@@ -80,7 +81,9 @@ export function AccountApp({ locale }: { locale: Locale }) {
     plan === "studio"
       ? t(locale, "account_plan_studio")
       : plan === "indie"
-        ? t(locale, "account_plan_indie")
+        ? status?.launchExpiresAt
+          ? t(locale, "account_plan_launch")
+          : t(locale, "account_plan_indie")
         : plan === "free"
           ? t(locale, "account_plan_free")
           : null;
@@ -103,12 +106,23 @@ export function AccountApp({ locale }: { locale: Locale }) {
       ) : null}
       {plan === "free" ? (
         <div className="mt-8 flex flex-wrap gap-3">
+          {isLaunchSaleOpen() ? (
+            <button
+              type="button"
+              onClick={() => void checkout("indie_launch")}
+              disabled={busy}
+              data-testid="account-upgrade-launch"
+              className="ds-cta"
+            >
+              {t(locale, "pricing_launch_cta")}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => void checkout("indie_monthly")}
             disabled={busy}
             data-testid="account-upgrade-indie"
-            className="ds-cta"
+            className={isLaunchSaleOpen() ? "ds-cta-ghost" : "ds-cta"}
           >
             {t(locale, "pricing_indie_cta")}
           </button>

@@ -2,10 +2,11 @@ describe("marketing", () => {
   it("renders the French home, pricing, and primary CTAs", () => {
     cy.visitFr("/");
     cy.contains("h1", "ZIP anti-rejet.").should("be.visible");
+    cy.contains("Pour les indés iOS et les studios qui livrent leurs listings.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="cta-example"]').should("have.attr", "href").and("include", "/api/example-zip");
-    cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
-    cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-inner-portrait/01.png");
+    cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/03.png");
+    cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-inner-portrait/03.png");
     cy.get('[data-testid="zip-tree"]').should("not.contain", "duo-inner-landscape");
     cy.contains("Listing exemple — ce n’est pas le produit.").should("be.visible");
     cy.contains("3 sièges").should("be.visible");
@@ -13,6 +14,7 @@ describe("marketing", () => {
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.get('[data-testid="trust-line"]').should("be.visible");
     cy.get('[data-testid="pricing"]').scrollIntoView().should("be.visible");
+    cy.get('[data-testid="pricing-cta-indie_launch"]').should("be.visible");
     cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
     cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
   });
@@ -27,12 +29,13 @@ describe("marketing", () => {
 
   it("serves a dedicated pricing page", () => {
     cy.visitFr("/pricing");
-    cy.contains("h1", "Essai, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Essai, Launch, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/signup");
+    cy.get('[data-testid="pricing-cta-indie_launch"]').should("be.visible");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.contains("3 sièges").should("be.visible");
     cy.visitEn("/en/pricing");
-    cy.contains("h1", "Trial, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Trial, Launch, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/en/r/harbor");
   });
 

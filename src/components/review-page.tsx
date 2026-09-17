@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { Locale } from "@/lib/specs";
 import { t } from "@/lib/i18n";
+import { localePrefix } from "@/lib/site";
 
 type Slide = { index: number; clone: string; outer: string; inner: string };
 type Payload = {
@@ -18,6 +20,20 @@ type Payload = {
   slides: Slide[];
 };
 
+function Unavailable({ locale, testId }: { locale: Locale; testId: string }) {
+  const prefix = localePrefix(locale);
+  return (
+    <section className="max-w-2xl py-12" data-testid={testId}>
+      <p className="ds-label">DuoShot Studio</p>
+      <h1 className="font-display mt-3 text-5xl">{t(locale, "review_unavailable")}</h1>
+      <p className="mt-5 text-[var(--muted)]">{t(locale, "review_unavailable")}</p>
+      <Link href={prefix || "/"} className="ds-cta mt-8 inline-flex" data-testid="review-home">
+        {t(locale, "cta_home")}
+      </Link>
+    </section>
+  );
+}
+
 export function ReviewPage({ id, locale, demo = false }: { id: string; locale: Locale; demo?: boolean }) {
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +41,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
   const [hinge, setHinge] = useState(true);
   const [viewMode, setViewMode] = useState<"device" | "pixels">("device");
   const [busy, setBusy] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     void fetch(`/api/reviews/${id}`)
@@ -37,29 +54,33 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
 
   async function decide(action: "approve" | "redo") {
     setBusy(true);
+    const nextStatus = action === "approve" ? "approved" : "changes_requested";
     try {
+      if (demo) {
+        setData((current) => (current ? { ...current, status: nextStatus, comment } : current));
+        return;
+      }
       const response = await fetch(`/api/reviews/${id}/decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, comment }),
       });
       if (!response.ok) throw new Error("FAIL");
-      setData((current) =>
-        current
-          ? { ...current, status: action === "approve" ? "approved" : "changes_requested", comment }
-          : current,
-      );
+      setData((current) => (current ? { ...current, status: nextStatus, comment } : current));
     } finally {
       setBusy(false);
     }
   }
+
+  const slides = data?.slides ?? [];
+  const visible = slides[activeSlide] ? [slides[activeSlide]!] : slides;
 
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader locale={locale} path={locale === "en" ? `/en/r/${id}` : `/r/${id}`} />
       <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
         {error ? (
-          <p className="text-[var(--muted)]" data-testid="review-missing">{t(locale, "review_missing")}</p>
+          <Unavailable locale={locale} testId="review-missing" />
         ) : !data ? (
           <div className="t-skel max-w-md" aria-busy="true">
             <div className="t-skel-skeleton is-pulsing">
@@ -68,23 +89,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
             <p className="t-skel-content text-[var(--muted)]">…</p>
           </div>
         ) : data.expired || data.revoked ? (
-          <section className="max-w-2xl py-12" data-testid="review-unavailable">
-            <p className="ds-label">DuoShot Studio</p>
-            <h1 className="font-display mt-3 text-5xl">
-              {data.revoked
-                ? locale === "fr" ? "Review révoquée" : "Review revoked"
-                : locale === "fr" ? "Review expirée" : "Review expired"}
-            </h1>
-            <p className="mt-5 text-[var(--muted)]">
-              {data.revoked
-                ? locale === "fr"
-                  ? "Le studio a fermé ce lien. Demandez-lui un nouveau partage si nécessaire."
-                  : "The studio closed this link. Ask for a new share if needed."
-                : locale === "fr"
-                  ? "Les médias de review sont conservés sept jours, puis supprimés automatiquement."
-                  : "Review media is kept for seven days, then deleted automatically."}
-            </p>
-          </section>
+          <Unavailable locale={locale} testId="review-unavailable" />
         ) : (
           <>
             <h1 className="font-display text-5xl" data-testid="review-title">{data.set_name}</h1>
@@ -93,6 +98,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                 {t(locale, "review_demo_banner")}
               </p>
             ) : null}
+            <p className="ds-label mt-3">{t(locale, "example_listing")}</p>
             <p className="mt-3 text-[var(--muted)]" data-testid="review-status">
               {data.client_name ? `${data.client_name} · ` : ""}
               {data.orientation} · {data.status}
@@ -102,6 +108,22 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                 {locale === "fr" ? "Disponible jusqu’au" : "Available until"}{" "}
                 {new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(data.expiresAt))}
               </p>
+            ) : null}
+            {slides.length > 1 ? (
+              <nav className="mt-6 flex flex-wrap gap-2" aria-label={t(locale, "review_slide_nav")} data-testid="review-slides">
+                {slides.map((slide) => (
+                  <button
+                    key={slide.index}
+                    type="button"
+                    className={`ds-pill ${activeSlide === slide.index ? "ds-pill-ink" : ""}`}
+                    data-testid={`review-slide-${String(slide.index + 1).padStart(2, "0")}`}
+                    aria-pressed={activeSlide === slide.index}
+                    onClick={() => setActiveSlide(slide.index)}
+                  >
+                    {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}` as "clone_ok")}
+                  </button>
+                ))}
+              </nav>
             ) : null}
             <div className="review-view-controls mt-6">
               <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la review" : "Review view"}>
@@ -124,34 +146,33 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                   {t(locale, "review_pixel_view")}
                 </button>
               </div>
-              {viewMode === "device" ? (
-                <button
-                  type="button"
-                  className="ds-toggle"
-                  aria-pressed={hinge}
-                  onClick={() => setHinge((value) => !value)}
-                >
-                  <span className="text-sm">{t(locale, "tool_hinge_toggle")}</span>
-                  <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
-                    <span className="ds-toggle-thumb t-toggle-thumb" />
-                  </span>
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="ds-toggle"
+                aria-pressed={hinge}
+                data-testid="review-hinge"
+                onClick={() => setHinge((value) => !value)}
+              >
+                <span className="text-sm">{t(locale, "tool_hinge_toggle")}</span>
+                <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
+                  <span className="ds-toggle-thumb t-toggle-thumb" />
+                </span>
+              </button>
             </div>
             <div className="mt-10 space-y-12">
-              {data.slides.map((slide) => {
+              {visible.map((slide) => {
                 const landscape = data.orientation === "landscape";
                 return (
-                <section key={slide.index}>
-                  <p className="duo-caption mb-3">
-                    {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}`)}
+                <section key={slide.index} id={`review-slide-${slide.index}`}>
+                  <p className="duo-caption mb-3" data-testid={`review-clone-${slide.index}`}>
+                    {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}` as "clone_ok")}
                   </p>
                   <div className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}>
                     <div className={`preview-glass preview-outer t-resize${viewMode === "device" ? " device-bezel" : ""}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.outer} alt={t(locale, "review_alt_outer")} />
                     </div>
-                    <div className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${viewMode === "device" && hinge ? "is-hinge" : "hinge-off"}`}>
+                    <div className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${hinge ? "is-hinge" : "hinge-off"}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.inner} alt={t(locale, "review_alt_inner")} />
                       <span className="division" aria-hidden="true" />
@@ -161,8 +182,6 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                 );
               })}
             </div>
-            {demo ? null : (
-              <>
             <div className="ds-field mt-10 max-w-xl">
               <label className="ds-label" htmlFor="review-comment">
                 {t(locale, "review_comment")}
@@ -184,8 +203,6 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
               </button>
             </div>
             {data.comment ? <p className="mt-4 text-sm text-[var(--muted)]">{data.comment}</p> : null}
-              </>
-            )}
           </>
         )}
       </main>

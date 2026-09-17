@@ -434,7 +434,8 @@ button.ds-pill {
 }
 
 .ds-drop:hover,
-.ds-drop.is-over {
+.ds-drop.is-over,
+.ds-drop:focus-within {
   border-color: var(--foreground);
   border-style: dashed;
   background: var(--surface);
@@ -1374,6 +1375,9 @@ button.ds-pill {
   .pricing-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .pricing-grid.is-launch {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* 12 tracks: stamp, title, price, intro, 6 feats, foot, cta */
@@ -1914,16 +1918,17 @@ img.preview-glass {
 .compare-alpha {
   position: absolute;
   inset: 0;
-  --check: color-mix(in srgb, var(--muted) 55%, var(--background));
+  --check-a: #f7f3ec;
+  --check-b: #8a8378;
   background-image:
-    linear-gradient(45deg, var(--check) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--check) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--check) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--check) 75%);
-  background-size: 18px 18px;
-  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
-  opacity: 0.55;
-  mix-blend-mode: multiply;
+    linear-gradient(45deg, var(--check-b) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--check-b) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--check-b) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--check-b) 75%);
+  background-color: var(--check-a);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  opacity: 0.72;
 }
 
 .compare-hinge {

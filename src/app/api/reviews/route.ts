@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("plan, free_exports_used")
+    .select("plan, free_exports_used, launch_offer_until, subscription_status")
     .eq("id", membership.workspace_id)
     .maybeSingle();
   const entitlements = await resolveEntitlements({
@@ -51,6 +51,8 @@ export async function POST(request: Request) {
     workspaceId: membership.workspace_id,
     freeExportsUsed: workspace?.free_exports_used ?? 0,
     workspacePlan: workspace?.plan,
+    launchOfferUntil: workspace?.launch_offer_until,
+    subscriptionStatus: workspace?.subscription_status,
   });
   if (entitlements.plan !== "studio") {
     return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });

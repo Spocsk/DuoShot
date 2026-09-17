@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { CHECKOUT_CATALOG, type CheckoutKind } from "@/lib/plans";
+import { CHECKOUT_CATALOG, launchExpiresAt, type CheckoutKind } from "@/lib/plans";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import type { PlanId } from "@/lib/specs";
@@ -18,6 +18,7 @@ async function persistWorkspace(options: {
   customerId?: string | null;
   subscriptionId?: string | null;
   status?: string | null;
+  launchOfferUntil?: string | null;
 }) {
   const admin = createAdminSupabase();
   if (!admin) return;
@@ -29,6 +30,7 @@ async function persistWorkspace(options: {
   if (options.customerId !== undefined) patch.stripe_customer_id = options.customerId;
   if (options.subscriptionId !== undefined) patch.stripe_subscription_id = options.subscriptionId;
   if (options.status !== undefined) patch.subscription_status = options.status;
+  if (options.launchOfferUntil !== undefined) patch.launch_offer_until = options.launchOfferUntil;
   if (Object.keys(patch).length === 0) return;
   await admin.from("workspaces").update(patch).eq("id", options.workspaceId);
 }
@@ -57,6 +59,7 @@ export async function POST(request: Request) {
     const kind = session.metadata?.kind as CheckoutKind | undefined;
     if (workspaceId) {
       const plan = planFromKind(kind) ?? "indie";
+      const launch = kind === "indie_launch";
       const subscriptionId =
         typeof session.subscription === "string"
           ? session.subscription
@@ -66,8 +69,9 @@ export async function POST(request: Request) {
         workspaceId,
         plan,
         customerId,
-        subscriptionId,
-        status: "active",
+        subscriptionId: launch ? null : subscriptionId,
+        status: launch ? "launch" : "active",
+        launchOfferUntil: launch ? launchExpiresAt() : null,
       });
     }
   }

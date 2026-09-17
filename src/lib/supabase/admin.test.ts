@@ -29,6 +29,17 @@ describe("createPublicSupabase", () => {
   it("always builds a client from the publishable key", () => {
     expect(createPublicSupabase()).not.toBeNull();
   });
+
+  it("builds a client when the runtime has no native WebSocket", () => {
+    const host = globalThis as typeof globalThis & { WebSocket?: typeof WebSocket };
+    const original = host.WebSocket;
+    Reflect.deleteProperty(host, "WebSocket");
+    try {
+      expect(createPublicSupabase()).not.toBeNull();
+    } finally {
+      if (original) host.WebSocket = original;
+    }
+  });
 });
 
 describe("createReviewWriter", () => {

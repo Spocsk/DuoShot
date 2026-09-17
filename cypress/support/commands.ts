@@ -59,6 +59,7 @@ function billing(plan: Plan, remaining: number | null) {
     source: "mock",
     remainingFreeExports: plan === "free" ? remaining : null,
     canUse69: plan !== "free",
+    launchExpiresAt: null,
   };
 }
 
@@ -74,6 +75,7 @@ function visitLocalized(path: string, locale: "fr" | "en", options?: Partial<Cyp
     onBeforeLoad(win) {
       const nativeMatch = win.matchMedia.bind(win);
       options?.onBeforeLoad?.(win);
+      win.confirm = () => true;
       Object.defineProperty(win, "matchMedia", {
         writable: true,
         configurable: true,
@@ -169,6 +171,16 @@ Cypress.Commands.add("acknowledgeQuality", () => {
   });
 });
 
+Cypress.Commands.add("unlockExport", () => {
+  cy.acknowledgeQuality();
+  cy.get('[data-testid="preview-outer-clone"]').should("be.visible").and("not.contain", "dépose les deux");
+  cy.get("body").then(($body) => {
+    const toggle = $body.find('[data-testid="toggle-assume-clone"]');
+    if (toggle.length && toggle.attr("aria-pressed") !== "true") cy.wrap(toggle).click();
+  });
+  cy.get('[data-testid="tool-download"]').should("not.be.disabled");
+});
+
 declare global {
   namespace Cypress {
     interface Chainable {
@@ -178,6 +190,7 @@ declare global {
       interceptZip(alias?: string): Chainable<null>;
       dropScreens(sides?: { outer?: string | string[]; inner?: string | string[] }): Chainable<void>;
       acknowledgeQuality(): Chainable<void>;
+      unlockExport(): Chainable<void>;
     }
   }
 }

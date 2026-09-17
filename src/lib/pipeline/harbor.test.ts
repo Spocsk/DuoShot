@@ -11,16 +11,17 @@ import {
 describe("harbor demo review", () => {
   it("exposes the Connect ZIP tree used on the landing", () => {
     expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/duo-outer-portrait/01.png");
-    expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/duo-inner-portrait/01.png");
+    expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/duo-inner-portrait/03.png");
     expect(EXAMPLE_ZIP_TREE).toContain("exampleapp/README.txt");
   });
 
-  it("builds a public Harbor payload without storage", () => {
+  it("builds a public Harbor payload without storage", async () => {
     expect(isDemoReview(DEMO_REVIEW_ID)).toBe(true);
-    const payload = harborReviewPayload();
+    const payload = await harborReviewPayload();
     expect(payload.set_name).toBe("Harbor");
     expect(payload.demo).toBe(true);
     expect(payload.slides).toHaveLength(3);
+    expect(["ok", "review", "risk"]).toContain(payload.slides[0]?.clone);
     expect(payload.slides[0]?.outer).toContain(`/api/reviews/${DEMO_REVIEW_ID}/media`);
   });
 

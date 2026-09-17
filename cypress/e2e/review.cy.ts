@@ -5,8 +5,8 @@ describe("review", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-review"]').click();
-    cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('[data-testid="tool-review"]').should("be.disabled");
+    cy.get('[data-testid="tool-review-hint"]').should("contain", "Studio");
   });
 
   it("blocks Indie from creating a review link", () => {
@@ -18,8 +18,7 @@ describe("review", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-review"]').click();
-    cy.get('[data-testid="tool-status"]').should("contain", "réservé à Studio");
+    cy.get('[data-testid="tool-review"]').should("be.disabled");
     cy.get('[data-testid="tool-review-upgrade"]').should("contain", "Studio");
     cy.get("@reviews.all").should("have.length", 0);
   });
@@ -116,7 +115,8 @@ describe("review", () => {
     cy.visitEn("/en/r/harbor");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
     cy.get('[data-testid="review-demo"]').should("contain", "not the product");
-    cy.get('[data-testid="review-approve"]').should("not.exist");
+    cy.get('[data-testid="review-approve"]').should("be.visible").click();
+    cy.get('[data-testid="review-status"]').should("contain", "approved");
   });
 
   it("shows a missing state for unknown review ids", () => {
@@ -124,5 +124,6 @@ describe("review", () => {
     cy.visitFr("/r/missingid");
     cy.wait("@missing");
     cy.get('[data-testid="review-missing"]').should("be.visible");
+    cy.get('[data-testid="review-home"]').should("be.visible");
   });
 });
