@@ -159,9 +159,8 @@ describe("POST /api/stripe/webhook", () => {
         stripe_customer_id: "cus_launch",
         stripe_subscription_id: null,
         subscription_status: "launch",
+        launch_offer_until: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       }),
     );
-    const patch = update.mock.calls[0]?.[0] as { launch_offer_until: string };
-    expect(patch.launch_offer_until).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });
