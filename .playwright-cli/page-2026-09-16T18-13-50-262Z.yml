@@ -1,0 +1,72 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - link "Aller au contenu" [ref=f2e4] [cursor=pointer]:
+        - /url: "#main"
+      - generic [ref=f2e5]:
+        - link "DuoShot" [ref=f2e6] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f2e7]:
+          - navigation [ref=f2e8]:
+            - link "Outil" [ref=f2e9] [cursor=pointer]:
+              - /url: /tool
+            - link "Pixels" [ref=f2e10] [cursor=pointer]:
+              - /url: /specs
+            - link "Rejet" [ref=f2e11] [cursor=pointer]:
+              - /url: /rejet
+            - link "Tarifs" [ref=f2e12] [cursor=pointer]:
+              - /url: /pricing
+            - link "Connexion" [ref=f2e41] [cursor=pointer]:
+              - /url: /login
+            - link "Créer un compte" [ref=f2e42] [cursor=pointer]:
+              - /url: /signup
+          - link "English" [ref=f2e14] [cursor=pointer]:
+            - /url: /en/r/harbor
+    - main [ref=f2e15]:
+      - heading "Harbor" [level=1] [ref=f2e43]
+      - paragraph [ref=f2e44]: Listing exemple — ce n’est pas le produit. Harbor. Studio génère un vrai /r/xxx.
+      - paragraph [ref=f2e45]: Example listing · portrait · pending
+      - group "Affichage de la review" [ref=f2e47]:
+        - button "Aperçu appareil" [ref=f2e48]
+        - button "Pixels exportés" [active] [pressed] [ref=f2e49]
+      - generic [ref=f2e54]:
+        - generic [ref=f2e55]:
+          - paragraph [ref=f2e56]: 01 · OK
+          - generic [ref=f2e57]:
+            - img "Capture écran fermé" [ref=f2e59]
+            - img "Capture écran ouvert" [ref=f2e61]
+        - generic [ref=f2e62]:
+          - paragraph [ref=f2e63]: 02 · OK
+          - generic [ref=f2e64]:
+            - img "Capture écran fermé" [ref=f2e66]
+            - img "Capture écran ouvert" [ref=f2e68]
+        - generic [ref=f2e69]:
+          - paragraph [ref=f2e70]: 03 · OK
+          - generic [ref=f2e71]:
+            - img "Capture écran fermé" [ref=f2e73]
+            - img "Capture écran ouvert" [ref=f2e75]
+    - contentinfo [ref=f2e17]:
+      - generic [ref=f2e18]:
+        - generic [ref=f2e19]: © 2026 DuoShot
+        - generic [ref=f2e20]: Tes PNG partent sur nos serveurs (Paris), puis sont effacés sous 24 h.
+        - generic [ref=f2e21]: Stripe — résiliation à tout moment.
+        - link "Pixels" [ref=f2e22] [cursor=pointer]:
+          - /url: /specs
+        - link "Mentions" [ref=f2e23] [cursor=pointer]:
+          - /url: /legal
+        - link "CGU" [ref=f2e24] [cursor=pointer]:
+          - /url: /terms
+        - link "Confidentialité" [ref=f2e25] [cursor=pointer]:
+          - /url: /privacy
+        - link "Cookies" [ref=f2e26] [cursor=pointer]:
+          - /url: /cookies
+        - link "Sous-traitants" [ref=f2e27] [cursor=pointer]:
+          - /url: /legal/subprocessors
+        - link "Pourquoi pas l’IA" [ref=f2e28] [cursor=pointer]:
+          - /url: /pourquoi-pas-ia
+        - link "Décodeur de rejet" [ref=f2e29] [cursor=pointer]:
+          - /url: /rejet
+        - link "llms.txt" [ref=f2e30] [cursor=pointer]:
+          - /url: /llms.txt
+  - button "Open Next.js Dev Tools" [ref=f2e36] [cursor=pointer]
+  - alert [ref=f2e40]

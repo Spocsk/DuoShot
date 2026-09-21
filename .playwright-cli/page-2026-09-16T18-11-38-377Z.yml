@@ -1,0 +1,171 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "Aller au contenu" [ref=e4] [cursor=pointer]:
+        - /url: "#main"
+      - generic [ref=e5]:
+        - link "DuoShot" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e7]:
+          - navigation [ref=e8]:
+            - link "Outil" [ref=e9] [cursor=pointer]:
+              - /url: /tool
+            - link "Pixels" [ref=e10] [cursor=pointer]:
+              - /url: /specs
+            - link "Rejet" [ref=e11] [cursor=pointer]:
+              - /url: /rejet
+            - link "Tarifs" [ref=e12] [cursor=pointer]:
+              - /url: /pricing
+            - link "Connexion" [ref=e122] [cursor=pointer]:
+              - /url: /login
+            - link "Créer un compte" [ref=e123] [cursor=pointer]:
+              - /url: /signup
+          - link "English" [ref=e14] [cursor=pointer]:
+            - /url: /en/tool
+    - main [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - heading "Étagère Duo" [level=1] [ref=e19]
+            - button "Créer un compte" [ref=e124] [cursor=pointer]
+          - paragraph [ref=e21]: "Deux dépôts : l’écran compact (fermé) et le grand écran (ouvert). On te montre le pli, on signale si tu copies le même visuel, on pack le ZIP pour Connect."
+          - paragraph [ref=e23]:
+            - text: Tes PNG partent sur nos serveurs (Paris), puis sont effacés sous 24 h.
+            - link "Confidentialité" [ref=e24] [cursor=pointer]:
+              - /url: /privacy
+            - text: · Aucune garantie d’acceptation Apple.
+          - paragraph [ref=e25]:
+            - generic [ref=e26]: "01"
+            - text: Sources
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - paragraph [ref=e29]: Mes apps
+              - group [ref=e30]:
+                - generic "Mes apps" [ref=e31] [cursor=pointer]: App
+            - button "Nouveau set" [ref=e35]
+          - generic [ref=e36]:
+            - generic [ref=e37] [cursor=pointer]:
+              - button "Déposer outer (5,4″ — 1398×2034)" [active] [ref=e38]
+              - generic [ref=e39]: Déposer outer (5,4″ — 1398×2034)
+              - generic [ref=e40]: PNG ou JPEG. Clique ou dépose. PNG ou JPEG. Clique ou dépose.
+              - generic [ref=e41]:
+                - generic [ref=e42]: "2"
+                - generic [ref=e141]: "2"
+                - text: / 10
+              - generic "codex-clipboard-81fe4bac-8bca-4eda-bfd3-13585b74b650.png, codex-clipboard-ad6e02d9-729c-4457-9424-ad793e1f34d3.png" [ref=e142]: codex-clipboard-81fe4bac-8bca-4eda-bfd3-13585b74b650.png · codex-clipboard-ad6e02d9-729c-4457-9424-ad793e1f34d3.png
+            - generic [ref=e43] [cursor=pointer]:
+              - button "Déposer inner (7,6″ — 2007×2853)" [ref=e44]
+              - generic [ref=e45]: Déposer inner (7,6″ — 2007×2853)
+              - generic [ref=e46]: PNG ou JPEG. Clique ou dépose. PNG ou JPEG. Clique ou dépose.
+              - generic [ref=e47]:
+                - generic [ref=e48]: "0"
+                - generic [ref=e128]: "0"
+                - text: / 10
+          - status [ref=e143]: "Moins de 3 visuels : l’App Store aime les sets complets. (3+)"
+          - paragraph [ref=e49]:
+            - generic [ref=e50]: "02"
+            - text: Composition
+          - generic [ref=e51]:
+            - figure "Fermé · 5,4″" [ref=e52]:
+              - img "Fermé · 5,4″" [ref=e146]
+              - generic [ref=e147]:
+                - group "Mode de cadrage" [ref=e148]:
+                  - button "Remplir" [pressed] [ref=e149]
+                  - button "Tout afficher" [ref=e150]
+                  - button "Centrer" [ref=e151]
+                - generic [ref=e152]:
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: Horizontal
+                    - slider "Horizontal" [ref=e155]: "50"
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: Vertical
+                    - slider "Vertical" [ref=e158]: "50"
+                - paragraph [ref=e159]: Rognage 31.3% · agrandissement 10.17×
+                - paragraph [ref=e160]: Glisse le visuel ou utilise les curseurs pour choisir le cadrage exact.
+              - list [ref=e57]:
+                - listitem [ref=e58]: "Alpha : canal détecté → flatten"
+                - listitem [ref=e59]: "Orientation: 1398×2034"
+                - listitem [ref=e60]: "RGB : sRGB"
+                - listitem [ref=e61]: Clone 2.3.3 · dépose les deux étagères
+                - listitem [ref=e62]: "Structure ZIP : conforme Connect"
+            - figure "Ouvert · 7,6″" [ref=e63]:
+              - generic [ref=e65]: Dépose PNG ou JPEG
+              - list [ref=e68]:
+                - listitem [ref=e69]: En attente de source
+                - listitem [ref=e70]: "Orientation: 2007×2853"
+                - listitem [ref=e71]: En attente de source
+                - listitem [ref=e72]: Overlay charnière
+                - listitem [ref=e73]: Clone 2.3.3 · dépose les deux étagères
+                - listitem [ref=e74]: "Structure ZIP : après export"
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - paragraph [ref=e163]: 2 cadrages à vérifier
+              - paragraph [ref=e164]: Rognage supérieur à 25 % ou agrandissement supérieur à 2×. Vérifie chaque slide avant export.
+            - button "J’ai vérifié, continuer" [ref=e165]
+          - list [ref=e168]:
+            - listitem [ref=e169]:
+              - button "Slide 01" [ref=e170]:
+                - text: "01"
+                - generic [ref=e171]: codex-clipboard-81fe4bac-8bca-4eda-bfd3-13585b74b650.png
+              - button "Retirer 01" [ref=e172]:
+                - generic [aria-hidden] [ref=e173]: ×
+            - listitem [ref=e174]:
+              - button "Slide 02" [ref=e175]:
+                - text: "02"
+                - generic [ref=e176]: codex-clipboard-ad6e02d9-729c-4457-9424-ad793e1f34d3.png
+              - button "Retirer 02" [ref=e177]:
+                - generic [aria-hidden] [ref=e178]: ×
+          - generic [ref=e75]:
+            - button "Utiliser les mêmes fichiers sur les deux étagères (déconseillé)" [ref=e76] [cursor=pointer]
+            - button "Utiliser les mêmes fichiers sur les deux étagères (déconseillé)" [ref=e82]
+        - complementary [ref=e86]:
+          - paragraph [ref=e87]:
+            - generic [ref=e88]: "03"
+            - text: Vérification et export
+          - generic [ref=e89]:
+            - generic [ref=e90]: App
+            - textbox "App" [ref=e91]
+          - generic [ref=e92]:
+            - generic [ref=e93]: Client
+            - textbox "Client" [ref=e94]
+          - generic [ref=e95]:
+            - paragraph [ref=e96]: Orientation
+            - radiogroup "Orientation" [ref=e97]:
+              - radio "Portrait" [checked] [ref=e98] [cursor=pointer]
+              - radio "Paysage" [ref=e99] [cursor=pointer]
+          - group [ref=e100]:
+            - generic "Réglages avancés" [ref=e101] [cursor=pointer]
+          - button "Télécharger le ZIP" [disabled] [ref=e102]
+          - button "Lien review client" [disabled] [ref=e104]
+          - paragraph [ref=e106]: Studio — le client voit les pixels Connect.
+          - link "ZIP exemple" [ref=e107] [cursor=pointer]:
+            - /url: /api/example-zip?v=2
+          - paragraph [ref=e129]:
+            - text: Le preview est libre. Le ZIP HD demande un compte — 2 essais, sans carte.
+            - link "Créer un compte" [ref=e130] [cursor=pointer]:
+              - /url: /signup
+    - contentinfo [ref=e108]:
+      - generic [ref=e109]:
+        - generic [ref=e110]: © 2026 DuoShot
+        - generic [ref=e111]: Tes PNG partent sur nos serveurs (Paris), puis sont effacés sous 24 h.
+        - generic [ref=e112]: Stripe — résiliation à tout moment.
+        - link "Pixels" [ref=e113] [cursor=pointer]:
+          - /url: /specs
+        - link "Mentions" [ref=e114] [cursor=pointer]:
+          - /url: /legal
+        - link "CGU" [ref=e115] [cursor=pointer]:
+          - /url: /terms
+        - link "Confidentialité" [ref=e116] [cursor=pointer]:
+          - /url: /privacy
+        - link "Cookies" [ref=e117] [cursor=pointer]:
+          - /url: /cookies
+        - link "Sous-traitants" [ref=e118] [cursor=pointer]:
+          - /url: /legal/subprocessors
+        - link "Pourquoi pas l’IA" [ref=e119] [cursor=pointer]:
+          - /url: /pourquoi-pas-ia
+        - link "Décodeur de rejet" [ref=e120] [cursor=pointer]:
+          - /url: /rejet
+        - link "llms.txt" [ref=e121] [cursor=pointer]:
+          - /url: /llms.txt
+  - button "Open Next.js Dev Tools" [ref=e136] [cursor=pointer]
+  - alert [ref=e140]

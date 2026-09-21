@@ -1,0 +1,124 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Aller au contenu" [ref=e4] [cursor=pointer]:
+      - /url: "#main"
+    - generic [ref=e5]:
+      - link "DuoShot" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e7]:
+        - navigation [ref=e8]:
+          - link "Outil" [ref=e9] [cursor=pointer]:
+            - /url: /tool
+          - link "Pixels" [ref=e10] [cursor=pointer]:
+            - /url: /specs
+          - link "Rejet" [ref=e11] [cursor=pointer]:
+            - /url: /rejet
+          - link "Tarifs" [ref=e12] [cursor=pointer]:
+            - /url: /pricing
+        - link "English" [ref=e14] [cursor=pointer]:
+          - /url: /en/tool
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - heading "Étagère Duo" [level=1] [ref=e19]
+          - status [ref=e20]: Chargement du plan…
+        - paragraph [ref=e21]: "Deux dépôts : l’écran compact (fermé) et le grand écran (ouvert). On te montre le pli, on signale si tu copies le même visuel, on pack le ZIP pour Connect."
+        - paragraph [ref=e23]:
+          - text: Tes PNG partent sur nos serveurs (Paris), puis sont effacés sous 24 h.
+          - link "Confidentialité" [ref=e24] [cursor=pointer]:
+            - /url: /privacy
+          - text: · Aucune garantie d’acceptation Apple.
+        - paragraph [ref=e25]:
+          - generic [ref=e26]: "01"
+          - text: Sources
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - paragraph [ref=e29]: Mes apps
+            - group [ref=e30]:
+              - generic "Mes apps" [ref=e31] [cursor=pointer]: App
+          - button "Nouveau set" [ref=e35]
+        - generic [ref=e36]:
+          - generic [ref=e37] [cursor=pointer]:
+            - button "Déposer outer (5,4″ — 1398×2034)" [ref=e38]
+            - generic [ref=e39]: Déposer outer (5,4″ — 1398×2034)
+            - generic [ref=e40]: PNG ou JPEG. Clique ou dépose. PNG ou JPEG. Clique ou dépose.
+            - generic [ref=e41]:
+              - generic [ref=e42]: "0"
+              - text: / 10
+          - generic [ref=e43] [cursor=pointer]:
+            - button "Déposer inner (7,6″ — 2007×2853)" [ref=e44]
+            - generic [ref=e45]: Déposer inner (7,6″ — 2007×2853)
+            - generic [ref=e46]: PNG ou JPEG. Clique ou dépose. PNG ou JPEG. Clique ou dépose.
+            - generic [ref=e47]:
+              - generic [ref=e48]: "0"
+              - text: / 10
+        - paragraph [ref=e49]:
+          - generic [ref=e50]: "02"
+          - text: Composition
+        - generic [ref=e51]:
+          - figure "Fermé · 5,4″" [ref=e52]:
+            - generic [ref=e54]: Dépose PNG ou JPEG
+            - list [ref=e57]:
+              - listitem [ref=e58]: En attente de source
+              - listitem [ref=e59]: "Orientation: 1398×2034"
+              - listitem [ref=e60]: En attente de source
+              - listitem [ref=e61]: Clone 2.3.3 · dépose les deux étagères
+              - listitem [ref=e62]: "Structure ZIP : après export"
+          - figure "Ouvert · 7,6″" [ref=e63]:
+            - generic [ref=e65]: Dépose PNG ou JPEG
+            - list [ref=e68]:
+              - listitem [ref=e69]: En attente de source
+              - listitem [ref=e70]: "Orientation: 2007×2853"
+              - listitem [ref=e71]: En attente de source
+              - listitem [ref=e72]: Overlay charnière
+              - listitem [ref=e73]: Clone 2.3.3 · dépose les deux étagères
+              - listitem [ref=e74]: "Structure ZIP : après export"
+        - generic [ref=e75]:
+          - button "Utiliser les mêmes fichiers sur les deux étagères (déconseillé)" [ref=e76] [cursor=pointer]
+          - button "Utiliser les mêmes fichiers sur les deux étagères (déconseillé)" [ref=e82]
+      - complementary [ref=e86]:
+        - paragraph [ref=e87]:
+          - generic [ref=e88]: "03"
+          - text: Vérification et export
+        - generic [ref=e89]:
+          - generic [ref=e90]: App
+          - textbox "App" [ref=e91]
+        - generic [ref=e92]:
+          - generic [ref=e93]: Client
+          - textbox "Client" [ref=e94]
+        - generic [ref=e95]:
+          - paragraph [ref=e96]: Orientation
+          - radiogroup "Orientation" [ref=e97]:
+            - radio "Portrait" [checked] [ref=e98] [cursor=pointer]
+            - radio "Paysage" [ref=e99] [cursor=pointer]
+        - group [ref=e100]:
+          - generic "Réglages avancés" [ref=e101] [cursor=pointer]
+        - button "Télécharger le ZIP" [disabled] [ref=e102]
+        - button "Lien review client" [disabled] [ref=e104]
+        - paragraph [ref=e106]: Studio — le client voit les pixels Connect.
+        - link "ZIP exemple" [ref=e107] [cursor=pointer]:
+          - /url: /api/example-zip?v=2
+  - contentinfo [ref=e108]:
+    - generic [ref=e109]:
+      - generic [ref=e110]: © 2026 DuoShot
+      - generic [ref=e111]: Tes PNG partent sur nos serveurs (Paris), puis sont effacés sous 24 h.
+      - generic [ref=e112]: Stripe — résiliation à tout moment.
+      - link "Pixels" [ref=e113] [cursor=pointer]:
+        - /url: /specs
+      - link "Mentions" [ref=e114] [cursor=pointer]:
+        - /url: /legal
+      - link "CGU" [ref=e115] [cursor=pointer]:
+        - /url: /terms
+      - link "Confidentialité" [ref=e116] [cursor=pointer]:
+        - /url: /privacy
+      - link "Cookies" [ref=e117] [cursor=pointer]:
+        - /url: /cookies
+      - link "Sous-traitants" [ref=e118] [cursor=pointer]:
+        - /url: /legal/subprocessors
+      - link "Pourquoi pas l’IA" [ref=e119] [cursor=pointer]:
+        - /url: /pourquoi-pas-ia
+      - link "Décodeur de rejet" [ref=e120] [cursor=pointer]:
+        - /url: /rejet
+      - link "llms.txt" [ref=e121] [cursor=pointer]:
+        - /url: /llms.txt
