@@ -1516,7 +1516,7 @@ button.ds-pill {
   --preview-inner-h: 2853;
   display: grid;
   /* Crop surface = Connect pixels, not the mm chassis. */
-  grid-template-columns: minmax(0, calc(var(--preview-outer-w) * 1fr)) minmax(0, calc(var(--preview-inner-w) * 1fr));
+  grid-template-columns: minmax(0, 1398fr) minmax(0, 2007fr);
   grid-template-rows: auto minmax(0, auto) auto auto;
   align-items: stretch;
   column-gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -1528,6 +1528,7 @@ button.ds-pill {
   --preview-outer-h: 1398;
   --preview-inner-w: 2853;
   --preview-inner-h: 2007;
+  grid-template-columns: minmax(0, 2034fr) minmax(0, 2853fr);
 }
 
 .preview-duo figure {
@@ -1577,7 +1578,8 @@ button.ds-pill {
 }
 
 @media (max-width: 639px) {
-  .preview-duo {
+  .preview-duo,
+  .preview-duo.is-landscape {
     grid-template-columns: 1fr;
     grid-template-rows: none;
     row-gap: 1.5rem;
@@ -1606,9 +1608,14 @@ button.ds-pill {
     height: auto;
   }
 
-  .preview-duo .preview-stage .preview-outer,
-  .preview-duo.is-landscape .preview-stage .preview-outer {
-    width: calc(var(--preview-outer-w) / var(--preview-inner-w) * 100%);
+  .preview-duo .preview-stage .preview-glass.preview-outer {
+    width: calc(1398 / 2007 * 100%);
+    max-width: 100%;
+    height: auto;
+  }
+
+  .preview-duo.is-landscape .preview-stage .preview-glass.preview-outer {
+    width: calc(2034 / 2853 * 100%);
   }
 }
 
@@ -2095,7 +2102,7 @@ img.preview-glass {
   --preview-outer-h: 2034;
   --preview-inner-w: 2007;
   --preview-inner-h: 2853;
-  grid-template-columns: minmax(0, calc(var(--preview-outer-w) * 1fr)) minmax(0, calc(var(--preview-inner-w) * 1fr));
+  grid-template-columns: minmax(0, 1398fr) minmax(0, 2007fr);
 }
 
 .review-pair.is-pixels.is-landscape {
@@ -2103,6 +2110,7 @@ img.preview-glass {
   --preview-outer-h: 1398;
   --preview-inner-w: 2853;
   --preview-inner-h: 2007;
+  grid-template-columns: minmax(0, 2034fr) minmax(0, 2853fr);
 }
 
 .review-pair.is-pixels .preview-outer,
@@ -2123,7 +2131,10 @@ img.preview-glass {
 }
 
 @media (max-width: 639px) {
-  .review-pair {
+  .review-pair,
+  .review-pair.is-landscape,
+  .review-pair.is-pixels,
+  .review-pair.is-pixels.is-landscape {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2137,7 +2148,11 @@ img.preview-glass {
 
   .review-pair.is-pixels .preview-outer,
   .review-pair.is-pixels.is-landscape .preview-outer {
-    width: calc(var(--preview-outer-w) / var(--preview-inner-w) * 100%);
+    width: calc(1398 / 2007 * 100%);
+  }
+
+  .review-pair.is-pixels.is-landscape .preview-outer {
+    width: calc(2034 / 2853 * 100%);
   }
 }
 
