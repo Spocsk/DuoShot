@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
@@ -19,6 +20,7 @@ import {
   MAX_IMAGES,
   WARN_MIN_IMAGES,
   normalizeCropTransform,
+  connectPreviewStyle,
   duoSpec,
   textOverlayLayout,
   type CropTransform,
@@ -983,7 +985,10 @@ function ToolAppInner({ locale }: Props) {
           </p>
         ) : null}
         <p className="ds-step-label mt-10"><span>02</span>{locale === "fr" ? "Composition" : "Composition"}</p>
-        <div className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}`}>
+        <div
+          className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}`}
+          style={connectPreviewStyle(outerSpec, innerSpec) as CSSProperties}
+        >
           <PreviewCard
             testId="preview-outer"
             label={t(locale, "tool_preview_outer")}
@@ -1603,6 +1608,7 @@ function PreviewCard({
         <div
           className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && transform.fit === "cover" ? "is-draggable" : ""}`}
           data-testid={`${testId}-canvas`}
+          data-aspect={`${spec.width}/${spec.height}`}
           onPointerDown={(event) => {
             if (!src || transform.fit !== "cover") return;
             event.currentTarget.setPointerCapture(event.pointerId);

@@ -74,6 +74,8 @@ describe("review", () => {
     cy.get('[data-testid="review-device-view"]').should("have.attr", "aria-pressed", "true");
     cy.get('[data-testid="review-pixel-view"]').click();
     cy.get(".review-pair").should("have.class", "is-pixels");
+    cy.get(".review-pair .preview-outer").should("have.attr", "data-aspect", "1398/2034");
+    cy.get(".review-pair .preview-inner").should("have.attr", "data-aspect", "2007/2853");
     cy.get('[data-testid="review-comment"]').type("ok");
     cy.get('[data-testid="review-approve"]').click();
     cy.wait("@decide");

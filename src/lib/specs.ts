@@ -124,6 +124,24 @@ export function duoSpec(slot: "duo-outer" | "duo-inner", orientation: Orientatio
   return spec;
 }
 
+/** CSS custom properties so the crop/review pixel frame matches Connect, not the mm chassis. */
+export function connectPreviewStyle(
+  outer: Pick<SizeSpec, "width" | "height">,
+  inner: Pick<SizeSpec, "width" | "height">,
+): {
+  "--preview-outer-w": string;
+  "--preview-outer-h": string;
+  "--preview-inner-w": string;
+  "--preview-inner-h": string;
+} {
+  return {
+    "--preview-outer-w": String(outer.width),
+    "--preview-outer-h": String(outer.height),
+    "--preview-inner-w": String(inner.width),
+    "--preview-inner-h": String(inner.height),
+  };
+}
+
 export function specPixels(spec: Pick<SizeSpec, "width" | "height">): string {
   return `${spec.width}x${spec.height}`;
 }

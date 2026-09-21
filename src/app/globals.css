@@ -1510,9 +1510,13 @@ button.ds-pill {
 }
 
 .preview-duo {
+  --preview-outer-w: 1398;
+  --preview-outer-h: 2034;
+  --preview-inner-w: 2007;
+  --preview-inner-h: 2853;
   display: grid;
-  /* iPhone Duo: closed 84.1×117.8 mm, open 164.6×117.8 mm, same height */
-  grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
+  /* Crop surface = Connect pixels, not the mm chassis. */
+  grid-template-columns: minmax(0, calc(var(--preview-outer-w) * 1fr)) minmax(0, calc(var(--preview-inner-w) * 1fr));
   grid-template-rows: auto minmax(0, auto) auto auto;
   align-items: stretch;
   column-gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -1520,7 +1524,10 @@ button.ds-pill {
 }
 
 .preview-duo.is-landscape {
-  grid-template-columns: minmax(0, 117.8fr) minmax(0, 164.6fr);
+  --preview-outer-w: 2034;
+  --preview-outer-h: 1398;
+  --preview-inner-w: 2853;
+  --preview-inner-h: 2007;
 }
 
 .preview-duo figure {
@@ -1599,8 +1606,9 @@ button.ds-pill {
     height: auto;
   }
 
+  .preview-duo .preview-stage .preview-outer,
   .preview-duo.is-landscape .preview-stage .preview-outer {
-    width: calc(117.8 / 164.6 * 100%);
+    width: calc(var(--preview-outer-w) / var(--preview-inner-w) * 100%);
   }
 }
 
@@ -1631,6 +1639,13 @@ img.preview-glass {
   width: 100%;
   object-fit: cover;
   object-position: center top;
+}
+
+.preview-duo .preview-glass img,
+.preview-duo img.preview-glass,
+.review-pair.is-pixels img {
+  object-fit: fill;
+  object-position: center;
 }
 
 .preview-glass.is-draggable {
@@ -1814,11 +1829,22 @@ img.preview-glass {
   background: #0b0c0f;
 }
 
+.preview-duo .preview-outer {
+  aspect-ratio: var(--preview-outer-w) / var(--preview-outer-h);
+}
+
+.preview-duo .preview-inner {
+  aspect-ratio: var(--preview-inner-w) / var(--preview-inner-h);
+}
+
 .preview-duo.is-landscape .preview-outer,
 .review-pair.is-landscape .preview-outer {
-  aspect-ratio: 117.8 / 84.1;
   /* Rotate the closed-device silhouette with the content: hinge edge on top. */
   border-radius: 3.5% 3.5% 11% 11% / 5% 5% 16% 16%;
+}
+
+.review-pair.is-landscape .preview-outer {
+  aspect-ratio: 117.8 / 84.1;
 }
 
 .preview-inner .division {
@@ -1836,6 +1862,20 @@ img.preview-glass {
   );
   opacity: 0.72;
   z-index: 2;
+}
+
+.preview-duo.is-landscape .preview-inner .division,
+.review-pair.is-pixels.is-landscape .preview-inner .division {
+  inset: 50% 0 auto 0;
+  width: 100%;
+  height: 6%;
+  translate: 0 -50%;
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.18),
+    rgb(255 255 255 / 0.08) 45%,
+    rgb(0 0 0 / 0.28)
+  );
 }
 
 .preview-empty {
@@ -2050,8 +2090,30 @@ img.preview-glass {
   gap: 0.75rem 1.25rem;
 }
 
+.review-pair.is-pixels {
+  --preview-outer-w: 1398;
+  --preview-outer-h: 2034;
+  --preview-inner-w: 2007;
+  --preview-inner-h: 2853;
+  grid-template-columns: minmax(0, calc(var(--preview-outer-w) * 1fr)) minmax(0, calc(var(--preview-inner-w) * 1fr));
+}
+
+.review-pair.is-pixels.is-landscape {
+  --preview-outer-w: 2034;
+  --preview-outer-h: 1398;
+  --preview-inner-w: 2853;
+  --preview-inner-h: 2007;
+}
+
 .review-pair.is-pixels .preview-outer,
-.review-pair.is-pixels .preview-inner {
+.review-pair.is-pixels.is-landscape .preview-outer {
+  aspect-ratio: var(--preview-outer-w) / var(--preview-outer-h);
+  border-radius: 0;
+}
+
+.review-pair.is-pixels .preview-inner,
+.review-pair.is-pixels.is-landscape .preview-inner {
+  aspect-ratio: var(--preview-inner-w) / var(--preview-inner-h);
   border-radius: 0;
 }
 
@@ -2071,6 +2133,11 @@ img.preview-glass {
 
   .review-pair.is-landscape .preview-outer {
     width: calc(117.8 / 164.6 * 100%);
+  }
+
+  .review-pair.is-pixels .preview-outer,
+  .review-pair.is-pixels.is-landscape .preview-outer {
+    width: calc(var(--preview-outer-w) / var(--preview-inner-w) * 100%);
   }
 }
 

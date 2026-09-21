@@ -67,6 +67,8 @@ describe("tool export", () => {
     cy.get('[data-seg="landscape"]').click();
     cy.get('[data-testid="preview-outer"]').should("contain", "2034×1398");
     cy.get('[data-testid="preview-inner"]').should("contain", "2853×2007");
+    cy.get('[data-testid="preview-outer-canvas"]').should("have.attr", "data-aspect", "2034/1398");
+    cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "2853/2007");
     cy.dropScreens({
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
@@ -92,6 +94,9 @@ describe("tool export", () => {
     cy.visitFr("/tool");
     cy.wait("@billing");
     cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
+    cy.get('[data-testid="preview-outer-canvas"]').should("have.attr", "data-aspect", "1398/2034");
+    cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "2007/2853");
+    cy.get('[data-testid="preview-outer-crop-controls"]').should("contain", "Ce cadre est le PNG exporté");
     cy.get('[data-testid="preview-outer-crop-controls"] input[type="range"]').first().then(($input) => {
       const el = $input[0] as HTMLInputElement;
       const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import type { Locale } from "@/lib/specs";
+import { connectPreviewStyle, duoSpec, type Locale, type Orientation } from "@/lib/specs";
 import { t } from "@/lib/i18n";
 
 type Slide = { index: number; clone: string; outer: string; inner: string };
@@ -140,18 +140,30 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
             </div>
             <div className="mt-10 space-y-12">
               {data.slides.map((slide) => {
-                const landscape = data.orientation === "landscape";
+                const orientation: Orientation = data.orientation === "landscape" ? "landscape" : "portrait";
+                const landscape = orientation === "landscape";
+                const outerSpec = duoSpec("duo-outer", orientation);
+                const innerSpec = duoSpec("duo-inner", orientation);
                 return (
                 <section key={slide.index}>
                   <p className="duo-caption mb-3">
                     {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}`)}
                   </p>
-                  <div className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}>
-                    <div className={`preview-glass preview-outer t-resize${viewMode === "device" ? " device-bezel" : ""}`}>
+                  <div
+                    className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}
+                    style={viewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
+                  >
+                    <div
+                      className={`preview-glass preview-outer t-resize${viewMode === "device" ? " device-bezel" : ""}`}
+                      data-aspect={viewMode === "pixels" ? `${outerSpec.width}/${outerSpec.height}` : undefined}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.outer} alt={t(locale, "review_alt_outer")} />
                     </div>
-                    <div className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${viewMode === "device" && hinge ? "is-hinge" : "hinge-off"}`}>
+                    <div
+                      className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${viewMode === "device" && hinge ? "is-hinge" : "hinge-off"}`}
+                      data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.inner} alt={t(locale, "review_alt_inner")} />
                       <span className="division" aria-hidden="true" />

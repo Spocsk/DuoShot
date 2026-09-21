@@ -13,5 +13,7 @@ describe("i18n", () => {
     expect(tf("en", "account_remaining", { n: 1 })).toBe("1 free ZIPs left");
     expect(t("fr", "tool_download")).toBe("Télécharger le ZIP");
     expect(t("en", "tool_download")).toBe("Download ZIP");
+    expect(t("fr", "tool_crop_drag_hint")).toContain("PNG exporté");
+    expect(t("en", "tool_crop_drag_hint")).toContain("exported PNG");
   });
 });
