@@ -5,6 +5,7 @@ describe("review", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-review"]').click();
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
@@ -18,6 +19,7 @@ describe("review", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-review"]').click();
     cy.get('[data-testid="tool-status"]').should("contain", "réservé à Studio");
     cy.get('[data-testid="tool-review-upgrade"]').should("contain", "Studio");
@@ -71,6 +73,8 @@ describe("review", () => {
     cy.visitFr("/r/revtest12ab");
     cy.wait("@reviewGet");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
+    cy.get(".studio-review-label-outer").should("contain", "Écran fermé");
+    cy.get(".studio-review-label-inner").should("contain", "Écran ouvert");
     cy.get('[data-testid="review-device-view"]').should("have.attr", "aria-pressed", "true");
     cy.get('[data-testid="review-pixel-view"]').click();
     cy.get(".review-pair").should("have.class", "is-pixels");
@@ -79,7 +83,26 @@ describe("review", () => {
     cy.get('[data-testid="review-comment"]').type("ok");
     cy.get('[data-testid="review-approve"]').click();
     cy.wait("@decide");
-    cy.get('[data-testid="review-status"]').should("contain", "approved");
+    cy.get('[data-testid="review-status"]').should("contain", "Approuvé");
+    cy.get('[data-testid="review-decision-feedback"]').should("contain", "Décision enregistrée");
+  });
+
+  it("explains when a client decision fails", () => {
+    cy.intercept("GET", "**/api/reviews/revfail12ab", {
+      set_name: "Harbor",
+      client_name: "Acme",
+      orientation: "portrait",
+      status: "pending",
+      comment: null,
+      slides: [],
+    }).as("reviewGet");
+    cy.intercept("POST", "**/api/reviews/revfail12ab/decision", { statusCode: 500, body: { error: "FAILED" } }).as("decide");
+    cy.visitFr("/r/revfail12ab");
+    cy.wait("@reviewGet");
+    cy.get('[data-testid="review-approve"]').click();
+    cy.wait("@decide");
+    cy.get('[data-testid="review-decision-feedback"]').should("have.attr", "role", "alert").and("contain", "Réessayez");
+    cy.get('[data-testid="review-status"]').should("contain", "En attente");
   });
 
   it("shows the review URL even if the clipboard is denied", () => {
@@ -114,10 +137,10 @@ describe("review", () => {
   it("shows the Harbor demo review without Studio", () => {
     cy.visitFr("/r/harbor");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
-    cy.get('[data-testid="review-demo"]').should("be.visible").and("contain", "ce n’est pas le produit");
+    cy.get('[data-testid="review-demo"]').should("be.visible").and("contain", "application fictive");
     cy.visitEn("/en/r/harbor");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
-    cy.get('[data-testid="review-demo"]').should("contain", "not the product");
+    cy.get('[data-testid="review-demo"]').should("contain", "fictional app");
     cy.get('[data-testid="review-approve"]').should("not.exist");
   });
 

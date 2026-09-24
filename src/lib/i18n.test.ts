@@ -15,5 +15,7 @@ describe("i18n", () => {
     expect(t("en", "tool_download")).toBe("Download ZIP");
     expect(t("fr", "tool_crop_drag_hint")).toContain("PNG exporté");
     expect(t("en", "tool_crop_drag_hint")).toContain("exported PNG");
+    expect(t("fr", "tool_crop_device_hint")).toContain("164,6");
+    expect(t("en", "tool_crop_device_hint")).toContain("164.6");
   });
 });

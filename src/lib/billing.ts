@@ -1,85 +1,66 @@
-import { isProPlan, remainingFreeExports, type CheckoutKind } from "./plans";
+import { isProPlan, remainingFreeExports } from "./plans";
 import type { PlanId } from "./specs";
-import { getStripe } from "./stripe";
 
 export type Entitlements = {
   plan: PlanId;
-  source: "stripe" | "free" | "mock" | "workspace";
+  source: "stripe" | "free" | "workspace";
   remainingFreeExports: number | null;
   canUse69: boolean;
+  subscriptionStatus?: string | null;
+  periodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  hasBillingCustomer?: boolean;
 };
 
 export function planFromWorkspace(value: string | null | undefined): PlanId {
-  if (value === "indie" || value === "studio") return value;
-  return "free";
+  return value === "indie" || value === "studio" ? value : "free";
 }
 
-export function mergePlanSources(stripePlan: PlanId, workspacePlan: PlanId): PlanId {
-  if (stripePlan === "studio" || workspacePlan === "studio") return "studio";
-  if (stripePlan === "indie" || workspacePlan === "indie") return "indie";
+export function mergePlanSources(stripePlan: PlanId, manualPlan: PlanId): PlanId {
+  if (stripePlan === "studio" || manualPlan === "studio") return "studio";
+  if (stripePlan === "indie" || manualPlan === "indie") return "indie";
   return "free";
 }
 
 export function entitlementsFromPlan(
   plan: PlanId,
-  extra: Pick<Entitlements, "source"> & {
-    freeExportsUsed?: number;
-  },
+  extra: Pick<Entitlements, "source"> & { freeExportsUsed?: number } &
+    Partial<Pick<Entitlements, "subscriptionStatus" | "periodEnd" | "cancelAtPeriodEnd" | "hasBillingCustomer">>,
 ): Entitlements {
   return {
     plan,
     source: extra.source,
     remainingFreeExports: remainingFreeExports(extra.freeExportsUsed ?? 0, plan),
     canUse69: isProPlan(plan),
+    subscriptionStatus: extra.subscriptionStatus ?? null,
+    periodEnd: extra.periodEnd ?? null,
+    cancelAtPeriodEnd: extra.cancelAtPeriodEnd ?? false,
+    hasBillingCustomer: extra.hasBillingCustomer ?? false,
   };
 }
 
-export async function resolveEntitlements(options: {
-  email: string | null | undefined;
-  workspaceId: string;
-  freeExportsUsed?: number;
+/** The signed webhook projection is authoritative; manual grants are explicit. */
+export function resolveEntitlements(options: {
   workspacePlan?: string | null;
-}): Promise<Entitlements> {
-  const stripe = getStripe();
-  const used = options.freeExportsUsed ?? 0;
-  const workspacePlan = planFromWorkspace(options.workspacePlan);
-  if (!stripe || !options.email) {
-    return entitlementsFromPlan(workspacePlan, {
-      source: workspacePlan === "free" ? (stripe ? "free" : "mock") : "workspace",
-      freeExportsUsed: used,
-    });
-  }
-
-  const customers = await stripe.customers.list({ email: options.email, limit: 10 });
-  const matched = customers.data.filter(
-    (customer) => customer.metadata.workspace_id === options.workspaceId || !customer.metadata.workspace_id,
-  );
-  if (matched.length === 0) {
-    return entitlementsFromPlan(workspacePlan, {
-      source: workspacePlan === "free" ? "stripe" : "workspace",
-      freeExportsUsed: used,
-    });
-  }
-
-  let plan: PlanId = "free";
-  for (const customer of matched) {
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: "all",
-      limit: 20,
-    });
-    for (const subscription of subscriptions.data) {
-      if (!["active", "trialing"].includes(subscription.status)) continue;
-      const kind = subscription.metadata.kind as CheckoutKind | undefined;
-      if (kind === "studio_monthly") plan = "studio";
-      else if (plan !== "studio") plan = "indie";
-    }
-
-  }
-
-  const resolved = mergePlanSources(plan, workspacePlan);
-  return entitlementsFromPlan(resolved, {
-    source: resolved === plan ? "stripe" : "workspace",
-    freeExportsUsed: used,
+  manualPlan?: string | null;
+  subscriptionId?: string | null;
+  subscriptionStatus?: string | null;
+  periodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean | null;
+  customerId?: string | null;
+  freeExportsUsed?: number;
+}): Entitlements {
+  const stripePlan = options.subscriptionId && ["active", "trialing"].includes(options.subscriptionStatus ?? "")
+    ? planFromWorkspace(options.workspacePlan)
+    : "free";
+  const manualPlan = planFromWorkspace(options.manualPlan);
+  const plan = mergePlanSources(stripePlan, manualPlan);
+  return entitlementsFromPlan(plan, {
+    source: manualPlan !== "free" && plan === manualPlan ? "workspace" : stripePlan !== "free" ? "stripe" : "free",
+    freeExportsUsed: options.freeExportsUsed,
+    subscriptionStatus: options.subscriptionStatus,
+    periodEnd: options.periodEnd,
+    cancelAtPeriodEnd: options.cancelAtPeriodEnd ?? false,
+    hasBillingCustomer: Boolean(options.customerId),
   });
 }

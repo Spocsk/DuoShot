@@ -1,6 +1,6 @@
 import type { PlanId } from "./specs";
 
-export type CheckoutKind = "indie_monthly" | "studio_monthly";
+export type CheckoutKind = "indie_monthly" | "studio_monthly" | "indie_yearly" | "studio_yearly";
 
 export const FREE_EXPORTS = 2;
 export const PRO_CHECKOUT_KIND: CheckoutKind = "indie_monthly";
@@ -18,6 +18,7 @@ export const PLANS = {
     duoOnly: false,
     seats: 1,
     monthlyEur: 12,
+    yearlyEur: 120,
   },
   studio: {
     id: "studio" as const,
@@ -25,6 +26,7 @@ export const PLANS = {
     duoOnly: false,
     seats: 3,
     monthlyEur: 49,
+    yearlyEur: 490,
   },
 };
 
@@ -46,6 +48,18 @@ export const CHECKOUT_CATALOG: Record<
   studio_monthly: {
     name: "DuoShot Studio",
     amountCents: 4900,
+    mode: "subscription",
+    plan: "studio",
+  },
+  indie_yearly: {
+    name: "DuoShot Indie · yearly",
+    amountCents: 12000,
+    mode: "subscription",
+    plan: "indie",
+  },
+  studio_yearly: {
+    name: "DuoShot Studio · yearly",
+    amountCents: 49000,
     mode: "subscription",
     plan: "studio",
   },

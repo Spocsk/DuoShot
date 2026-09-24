@@ -1,4 +1,4 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { resolveEntitlements } from "@/lib/billing";
 import { mapLimit } from "@/lib/map-limit";
 import { FREE_EXPORTS, PRO_DAILY_CAP, isProPlan } from "@/lib/plans";
@@ -90,15 +90,16 @@ export async function POST(request: Request) {
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("id, client_slug, plan, free_exports_used")
+    .select("id, client_slug, plan, manual_plan, free_exports_used, stripe_subscription_id, subscription_status")
     .eq("id", membership.workspace_id)
     .single();
 
-  const entitlements = await resolveEntitlements({
-    email: user.email,
-    workspaceId: membership.workspace_id,
+  const entitlements = resolveEntitlements({
     freeExportsUsed: workspace?.free_exports_used ?? 0,
     workspacePlan: workspace?.plan,
+    manualPlan: workspace?.manual_plan,
+    subscriptionId: workspace?.stripe_subscription_id,
+    subscriptionStatus: workspace?.subscription_status,
   });
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
   const include69 = Boolean(body.include69);
@@ -204,41 +205,50 @@ export async function POST(request: Request) {
       compositionWarnings,
     });
 
-    if (pro) {
-      await supabase.rpc("increment_daily_export", { p_workspace_id: membership.workspace_id });
-    }
-
     const zipPath = `${user.id}/${crypto.randomUUID()}.zip`;
     const zipBytes = new Uint8Array(zip);
-    after(() => {
-      void (async () => {
-        await supabase.storage.from("exports").upload(zipPath, zipBytes, {
-          contentType: "application/zip",
-          upsert: true,
-        });
-        await supabase.from("export_sets").insert({
-          workspace_id: membership.workspace_id,
-          orientation: options.orientation,
-          include_69: include69,
-          fit_mode: options.fit,
-          background_mode: options.background,
-          format: options.format,
-          image_count: count,
-          storage_path: zipPath,
-          created_by: user.id,
-        });
-      })();
+    const exportsBucket = supabase.storage.from("exports");
+    const { error: uploadError } = await exportsBucket.upload(zipPath, zipBytes, {
+      contentType: "application/zip",
+      upsert: false,
     });
+    if (uploadError) throw new Error("STORAGE_UNAVAILABLE");
+    const { data: stored, error: readError } = await exportsBucket.download(zipPath);
+    if (readError || !stored || stored.size !== zipBytes.byteLength) throw new Error("STORAGE_UNAVAILABLE");
+    const { data: signed, error: signError } = await exportsBucket.createSignedUrl(zipPath, 600, {
+      download: `${slugify(appName) || "app"}.zip`,
+    });
+    if (signError || !signed?.signedUrl) throw new Error("STORAGE_UNAVAILABLE");
+    const { error: recordError } = await supabase.from("export_sets").insert({
+      workspace_id: membership.workspace_id,
+      orientation: options.orientation,
+      include_69: include69,
+      fit_mode: options.fit,
+      background_mode: options.background,
+      format: options.format,
+      image_count: count,
+      storage_path: zipPath,
+      created_by: user.id,
+    });
+    if (recordError) throw new Error("EXPORT_FAILED");
+    if (pro) {
+      const { error: incrementError } = await supabase.rpc("increment_daily_export", { p_workspace_id: membership.workspace_id });
+      if (incrementError) throw new Error("EXPORT_FAILED");
+    }
 
     const warning = unpaired ? "UNPAIRED" : countWarning ?? "";
     const filename = `${slugify(appName) || "app"}.zip`;
-    return new NextResponse(zipBytes, {
-      headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "X-Duoshot-Warning": warning,
-        "X-Duoshot-Filename": filename,
-      },
+    return NextResponse.json({
+      url: signed.signedUrl,
+      filename,
+      warning,
+      images: images.map((image) => ({
+        slot: image.spec.slot,
+        index: image.index + 1,
+        width: image.spec.width,
+        height: image.spec.height,
+        format: options.format,
+      })),
     });
   } catch (error) {
     if (reservedFree) {

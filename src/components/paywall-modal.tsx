@@ -9,15 +9,18 @@ export function PaywallModal({
   locale,
   reason,
   busy,
+  preferredKind,
   onClose,
   onCheckout,
 }: {
   locale: Locale;
   reason: "trial" | "69";
   busy: boolean;
+  preferredKind?: CheckoutKind;
   onClose: () => void;
   onCheckout: (kind: CheckoutKind) => void;
 }) {
+  const yearly = preferredKind?.endsWith("_yearly") ?? false;
   return (
     <Overlay onClose={onClose} labelledBy="paywall-title">
       <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
@@ -29,18 +32,18 @@ export function PaywallModal({
         className="ds-cta mt-6 w-full"
         data-testid="paywall-cta-indie"
         disabled={busy}
-        onClick={() => onCheckout("indie_monthly")}
+        onClick={() => onCheckout(yearly ? "indie_yearly" : "indie_monthly")}
       >
-        {t(locale, "paywall_cta_indie")}
+        {yearly ? (locale === "fr" ? "Indie · 120 € / an" : "Indie · €120 / year") : t(locale, "paywall_cta_indie")}
       </button>
       <button
         type="button"
         className="ds-cta-ghost mt-3 w-full"
         data-testid="paywall-cta-studio"
         disabled={busy}
-        onClick={() => onCheckout("studio_monthly")}
+        onClick={() => onCheckout(yearly ? "studio_yearly" : "studio_monthly")}
       >
-        {t(locale, "paywall_cta_studio")}
+        {yearly ? (locale === "fr" ? "Studio · 490 € / an" : "Studio · €490 / year") : t(locale, "paywall_cta_studio")}
       </button>
       <button
         type="button"

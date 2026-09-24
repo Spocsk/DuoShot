@@ -57,7 +57,7 @@ export function AuthForm({
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback?next=${afterAuth}`,
+          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(afterAuth)}`,
           skipBrowserRedirect: true,
         },
       });
@@ -97,7 +97,11 @@ export function AuthForm({
           fail(locale === "fr" ? "Accepte les conditions générales et la confidentialité." : "Please accept the terms and privacy policy.");
           return;
         }
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(afterAuth)}` },
+        });
         if (error) throw error;
         if (data.user) {
           try {
@@ -149,7 +153,7 @@ export function AuthForm({
   }
 
   return (
-    <div className={variant === "page" ? "mx-auto w-full max-w-md border-t border-[var(--line)] pt-8" : ""}>
+    <div className={variant === "page" ? "studio-auth-card mx-auto w-full max-w-md" : "studio-auth-card"}>
       <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
         {variant === "modal" ? t(locale, "auth_modal_title") : t(locale, mode === "signup" ? "signup_title" : "login_title")}
       </h1>
@@ -270,7 +274,7 @@ export function AuthForm({
         </button>
       </form>
       {message ? (
-        <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message">
+        <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message" role={messageOk ? "status" : "alert"}>
           {message}
         </p>
       ) : null}

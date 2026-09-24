@@ -1,8 +1,7 @@
 describe("prod workflow", () => {
   it("lets a stranger go from home to example ZIP to dual drop to trial export", () => {
     cy.visitFr("/");
-    cy.contains("1398×2034").should("be.visible");
-    cy.contains("2007×2853").should("be.visible");
+    cy.get('[data-testid="zip-tree"]').should("contain", "duo-outer-portrait").and("contain", "duo-inner-portrait");
     cy.get("header [data-testid='nav-tool']").should("be.visible");
     cy.get("header [data-testid='nav-specs']").should("be.visible");
     cy.get("header [data-testid='nav-reject']").should("be.visible");
@@ -19,7 +18,7 @@ describe("prod workflow", () => {
     });
 
     cy.visitFr("/tool");
-    cy.get('[data-testid="preview-outer"]').should("contain", "Dépose PNG ou JPEG");
+    cy.get('[data-testid="preview-outer"]').should("contain", "Importer");
     cy.get('[data-testid="preview-inner"] .division').should("not.be.visible");
 
     const triple = [
@@ -35,6 +34,7 @@ describe("prod workflow", () => {
     cy.dropScreens({ outer: triple, inner: tripleInner });
     cy.get('[data-testid="preview-outer"] img').should("exist");
     cy.get('[data-testid="preview-inner"] img').should("exist");
+    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-0"]').should("be.visible");
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-2"]').should("be.visible");
     cy.get('[data-testid="preview-inner"] .division').should("be.visible");
@@ -49,9 +49,10 @@ describe("prod workflow", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@export");
-    cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href").and("match", /^blob:/);
+    cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href", "https://storage.example/app.zip");
 
     cy.visitFr("/pricing");
     cy.contains("h1", "Essai, Indie, Studio.").should("be.visible");

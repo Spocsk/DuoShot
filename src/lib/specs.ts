@@ -124,6 +124,20 @@ export function duoSpec(slot: "duo-outer" | "duo-inner", orientation: Orientatio
   return spec;
 }
 
+/** Physical iPhone Duo chassis in millimetres. Open book keeps the closed height. */
+export const DUO_OUTER_MM = { width: 84.1, height: 117.8 } as const;
+export const DUO_INNER_MM = { width: 164.6, height: 117.8 } as const;
+
+export function duoChassisAspect(slot: "outer" | "inner", orientation: Orientation): string {
+  if (slot === "inner") {
+    return `${DUO_INNER_MM.width}/${DUO_INNER_MM.height}`;
+  }
+  if (orientation === "landscape") {
+    return `${DUO_OUTER_MM.height}/${DUO_OUTER_MM.width}`;
+  }
+  return `${DUO_OUTER_MM.width}/${DUO_OUTER_MM.height}`;
+}
+
 /** CSS custom properties so the crop/review pixel frame matches Connect, not the mm chassis. */
 export function connectPreviewStyle(
   outer: Pick<SizeSpec, "width" | "height">,

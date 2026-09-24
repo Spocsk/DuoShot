@@ -1,8 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import type { CheckoutKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
-import { DEMO_REVIEW_ID } from "@/lib/pipeline/harbor";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { PricingCta } from "@/components/pricing-cta";
 
@@ -66,7 +68,7 @@ type PlanCard = {
   cta: PlanCta | null;
 };
 
-function pricingPlans(locale: Locale): Record<(typeof PLAN_ORDER)[number], PlanCard> {
+function pricingPlans(locale: Locale, yearly: boolean): Record<(typeof PLAN_ORDER)[number], PlanCard> {
   const prefix = localePrefix(locale);
   return {
     trial: {
@@ -83,36 +85,46 @@ function pricingPlans(locale: Locale): Record<(typeof PLAN_ORDER)[number], PlanC
       },
     },
     indie: {
-      featured: false,
+      featured: true,
       title: t(locale, "pricing_indie_title"),
-      price: t(locale, "pricing_indie_price"),
+      price: yearly ? (locale === "fr" ? "120 € / an" : "€120 / year") : t(locale, "pricing_indie_price"),
       intro: t(locale, "pricing_indie_body"),
       foot: "",
-      cta: { kind: "indie_monthly", label: t(locale, "pricing_indie_cta"), ghost: true },
+      cta: { kind: yearly ? "indie_yearly" : "indie_monthly", label: yearly ? (locale === "fr" ? "Indie — 120 €/an" : "Indie — €120/year") : t(locale, "pricing_indie_cta") },
     },
     studio: {
-      featured: true,
+      featured: false,
       title: t(locale, "pricing_studio_title"),
-      price: t(locale, "pricing_studio_price"),
+      price: yearly ? (locale === "fr" ? "490 € / an" : "€490 / year") : t(locale, "pricing_studio_price"),
       intro: t(locale, "pricing_studio_body"),
       foot: `${t(locale, "pricing_seats_soon")} · ${t(locale, "pricing_note")}`,
-      cta: { kind: "studio_monthly", label: t(locale, "pricing_studio_cta"), ghost: true },
+      cta: { kind: yearly ? "studio_yearly" : "studio_monthly", label: yearly ? (locale === "fr" ? "Studio — 490 €/an" : "Studio — €490/year") : t(locale, "pricing_studio_cta"), ghost: true },
     },
   };
 }
 
 export function PricingSection({ locale, heading = "h2" }: { locale: Locale; heading?: "h1" | "h2" }) {
+  const [yearly, setYearly] = useState(false);
   const rows = pricingRows(locale);
-  const plans = pricingPlans(locale);
+  const plans = pricingPlans(locale, yearly);
   const Title = heading;
   const titleClass = heading === "h1" ? "font-display text-5xl" : "font-display text-4xl";
   return (
-    <section id="pricing" data-testid="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-16" data-reveal>
+    <section id="pricing" data-testid="pricing" className="studio-pricing mx-auto max-w-6xl scroll-mt-24 px-5 py-16" data-reveal>
       <Title className={titleClass}>{t(locale, "pricing_title")}</Title>
       <p className="mt-4 max-w-xl text-[var(--muted)]">{t(locale, "pricing_lead")}</p>
       <p className="mt-4 max-w-2xl border-l border-[var(--ink)] pl-4 text-sm text-[var(--muted)]">
         {t(locale, "pricing_free_body")}
       </p>
+      <div className="studio-billing-switch mt-8" role="group" aria-label={locale === "fr" ? "Période de facturation" : "Billing period"}>
+        <button type="button" aria-pressed={!yearly} onClick={() => setYearly(false)} data-testid="billing-monthly">
+          {locale === "fr" ? "Mensuel" : "Monthly"}
+        </button>
+        <button type="button" aria-pressed={yearly} onClick={() => setYearly(true)} data-testid="billing-yearly">
+          {locale === "fr" ? "Annuel" : "Yearly"}
+          <span className="studio-billing-saving">{locale === "fr" ? "2 mois offerts" : "2 months free"}</span>
+        </button>
+      </div>
       <div className="pricing-grid mt-12">
         {PLAN_ORDER.map((id) => {
           const plan = plans[id];
@@ -123,6 +135,13 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
               </p>
               <p className="font-display text-3xl">{plan.title}</p>
               <p className="mt-2 text-2xl">{plan.price}</p>
+              <p className="pricing-period-note">
+                {yearly && id !== "trial"
+                  ? id === "indie"
+                    ? locale === "fr" ? "Soit 10 € / mois · 2 mois offerts" : "Equivalent to €10 / month · 2 months free"
+                    : locale === "fr" ? "≈ 40,83 € / mois · 2 mois offerts" : "≈ €40.83 / month · 2 months free"
+                  : "\u00a0"}
+              </p>
               <p className="pricing-intro">{plan.intro || "\u00a0"}</p>
               <dl className="pricing-feats">
                 {rows.map((row) => (
@@ -151,7 +170,7 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
                   </Link>
                 ) : null}
                 {id === "studio" ? (
-                  <Link href={reviewPath(locale, DEMO_REVIEW_ID)} data-testid="pricing-review-demo" className="ds-text-btn mt-3">
+                  <Link href={reviewPath(locale, "harbor")} data-testid="pricing-review-demo" className="ds-text-btn mt-3">
                     {t(locale, "cta_review_demo")}
                   </Link>
                 ) : null}

@@ -14,6 +14,7 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import gsap from "gsap";
 import { useSearchParams } from "next/navigation";
 import {
   DEFAULT_RENDER_OPTIONS,
@@ -21,9 +22,12 @@ import {
   WARN_MIN_IMAGES,
   normalizeCropTransform,
   connectPreviewStyle,
+  duoChassisAspect,
   duoSpec,
   textOverlayLayout,
+  zipFolderName,
   type CropTransform,
+  type DeviceSlot,
   type FitMode,
   type Locale,
   type Orientation,
@@ -38,7 +42,7 @@ import { inspectFile, type SourceInspect } from "@/lib/pipeline/source-inspect";
 import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
-import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
+import { checkoutReturnPath, isCheckoutKind, startCheckout } from "@/lib/checkout";
 import type { CheckoutKind } from "@/lib/plans";
 import {
   defaultSet,
@@ -54,7 +58,6 @@ import {
 import { Overlay } from "@/components/overlay";
 import { PaywallModal } from "@/components/paywall-modal";
 import { AuthForm } from "@/components/auth-form";
-import { TrustLine } from "@/components/trust-line";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { mapLimit } from "@/lib/map-limit";
 import { mergeSideFiles } from "@/lib/merge-side-files";
@@ -63,6 +66,7 @@ type Props = { locale: Locale };
 
 type BillingStatus = {
   plan?: string;
+  source?: string;
   remainingFreeExports?: number | null;
   canUse69?: boolean;
 };
@@ -101,19 +105,26 @@ function ToolAppInner({ locale }: Props) {
   const [options, setOptions] = useState<RenderOptions>(DEFAULT_RENDER_OPTIONS);
   const [include69, setInclude69] = useState(false);
   const [showHinge, setShowHinge] = useState(true);
+  const [previewMode, setPreviewMode] = useState<"device" | "pixels">("device");
   const [assumeClone, setAssumeClone] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<"ok" | "err" | "busy" | "info">("info");
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   const [zipName, setZipName] = useState("app.zip");
+  const [exportImages, setExportImages] = useState<Array<{slot: string; index: number; width: number; height: number; format: string}>>([]);
   const [busyExport, setBusyExport] = useState(false);
   const [busyReview, setBusyReview] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [toolPanel, setToolPanel] = useState<"captures" | "adjust" | "review">("captures");
+  const [mobileView, setMobileView] = useState<"outer" | "inner" | "compare">("outer");
+  const [adjustSide, setAdjustSide] = useState<"outer" | "inner">("outer");
+  const completedSetsRef = useRef<Set<string>>(new Set());
   const [sameSetOpen, setSameSetOpen] = useState(false);
   const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
   const [outerInspects, setOuterInspects] = useState<SourceInspect[]>([]);
   const [innerInspects, setInnerInspects] = useState<SourceInspect[]>([]);
   const [qualityAcknowledged, setQualityAcknowledged] = useState(false);
+  const [appUsageConfirmed, setAppUsageConfirmed] = useState(false);
   const [clones, setClones] = useState<CloneResult[]>([]);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [session, setSession] = useState<"loading" | "out" | "in">("loading");
@@ -128,24 +139,30 @@ function ToolAppInner({ locale }: Props) {
   const setsRef = useRef<HTMLDetailsElement>(null);
   const [setsOpen, setSetsOpen] = useState(false);
   const [setsClosing, setSetsClosing] = useState(false);
-  const zipUrlRef = useRef<string | null>(null);
   const signedIn = session === "in";
   const checkoutFlag = searchParams.get("checkout");
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
+  const requestedPlan = searchParams.get("plan") ?? undefined;
+  const preferredUpgradeKind = isCheckoutKind(requestedPlan) ? requestedPlan : undefined;
   const urlStatus =
     checkoutFlag === "success"
-      ? t(locale, "checkout_success")
+      ? billing?.source === "stripe" && billing.plan !== "free"
+        ? t(locale, "checkout_success")
+        : locale === "fr" ? "Paiement reçu. Activation de l’abonnement en cours…" : "Payment received. Activating your subscription…"
       : checkoutFlag === "cancel"
         ? t(locale, "checkout_cancel")
-        : checkoutFlag === "mock"
-          ? t(locale, "checkout_mock")
-          : null;
+        : null;
 
   const sameSet = active?.sameSet ?? false;
   const effectiveInner = sameSet ? outerFiles : innerFiles;
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
   const cloneForced = sameSet;
   const hasExportable = outerFiles.length > 0 && (sameSet || innerFiles.length > 0);
+  useEffect(() => {
+    if (!active || completedSetsRef.current.has(active.id) || !hasExportable) return;
+    completedSetsRef.current.add(active.id);
+    setToolPanel("adjust");
+  }, [active, hasExportable]);
   const outerSlide = outerFiles[slideIndex];
   const innerSlide = effectiveInner[slideIndex];
   const orientation: Orientation = active?.orientation ?? "portrait";
@@ -195,6 +212,16 @@ function ToolAppInner({ locale }: Props) {
     return [...outer, ...inner];
   }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, options.fit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
   const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
+  const cloneAlert = cloneForced || clones.some((item) => item.label === "risk");
+  const preparationChecks = [
+    hasExportable,
+    hasExportable && !unpaired,
+    hasExportable && !cloneAlert,
+    hasExportable && severeQualityCount === 0,
+    appUsageConfirmed,
+    Boolean(zipUrl && exportImages.length),
+  ];
+  const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
 
   const warning = useMemo(() => {
     const count = Math.max(outerFiles.length, effectiveInner.length);
@@ -219,6 +246,12 @@ function ToolAppInner({ locale }: Props) {
     if (!response.ok) return;
     setBilling((await response.json()) as BillingStatus);
   }, []);
+
+  useEffect(() => {
+    if (checkoutFlag !== "success" || (billing?.source === "stripe" && billing.plan !== "free")) return;
+    const timer = window.setInterval(() => void refreshBilling(), 2000);
+    return () => window.clearInterval(timer);
+  }, [billing?.plan, billing?.source, checkoutFlag, refreshBilling]);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -308,13 +341,6 @@ function ToolAppInner({ locale }: Props) {
     const max = Math.max(outerFiles.length, effectiveInner.length, 1) - 1;
     queueMicrotask(() => setSlideIndex((index) => Math.min(index, max)));
   }, [outerFiles.length, effectiveInner.length]);
-
-  useEffect(() => {
-    zipUrlRef.current = zipUrl;
-    return () => {
-      if (zipUrl?.startsWith("blob:")) URL.revokeObjectURL(zipUrl);
-    };
-  }, [zipUrl]);
 
   const drawPreviews = useCallback(
     async (
@@ -425,8 +451,12 @@ function ToolAppInner({ locale }: Props) {
     const current = side === "outer" ? outerFiles : innerFiles;
     const next = mergeSideFiles(current, incoming);
     if (side === "outer") setOuterFiles(next);
-    else setInnerFiles(next);
+    else {
+      setInnerFiles(next);
+      if (outerFiles.length === 0) { setMobileView("inner"); setAdjustSide("inner"); }
+    }
     setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
     setZipUrl(null);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
@@ -451,6 +481,7 @@ function ToolAppInner({ locale }: Props) {
       saveSetMetas(nextSets);
     }
     setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
     setZipUrl(null);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
@@ -458,6 +489,7 @@ function ToolAppInner({ locale }: Props) {
   function updateOptions(patch: Partial<RenderOptions>) {
     setOptions({ ...options, ...patch });
     setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
     setZipUrl(null);
   }
 
@@ -474,6 +506,7 @@ function ToolAppInner({ locale }: Props) {
     setSets(nextSets);
     saveSetMetas(nextSets);
     setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
     setZipUrl(null);
   }
 
@@ -533,7 +566,7 @@ function ToolAppInner({ locale }: Props) {
       }
       if (severeQualityCount > 0 && !qualityAcknowledged) {
         flashStatus(t(locale, "tool_quality_ack_required"), "err");
-        document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
         return;
       }
       const extra = sameSet ? [] : innerFiles;
@@ -567,9 +600,11 @@ function ToolAppInner({ locale }: Props) {
           },
         }),
       });
-      const contentType = response.headers.get("content-type") ?? "";
-      if (!response.ok || contentType.includes("application/json")) {
-        const payload = (await response.json()) as { url?: string; error?: string; warning?: string };
+      const payload = (await response.json()) as {
+        url?: string; error?: string; warning?: string; filename?: string;
+        images?: Array<{slot: string; index: number; width: number; height: number; format: string}>;
+      };
+      if (!response.ok) {
         if (payload.error === "TRIAL_EXHAUSTED") {
           setPaywall("trial");
           flashStatus(t(locale, "error_trial"), "err");
@@ -584,20 +619,14 @@ function ToolAppInner({ locale }: Props) {
           flashStatus(t(locale, "error_clone"), "err");
           return;
         }
-        if (!response.ok) {
-          flashStatus(explainError(payload.error || "EXPORT_FAILED"), "err");
-          return;
-        }
+        flashStatus(explainError(payload.error || "EXPORT_FAILED"), "err");
         return;
       }
-      const warning = response.headers.get("X-Duoshot-Warning") ?? "";
-      const filename = response.headers.get("X-Duoshot-Filename") || "app.zip";
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      if (zipUrlRef.current?.startsWith("blob:")) URL.revokeObjectURL(zipUrlRef.current);
-      setZipName(filename);
-      setZipUrl(url);
-      startZipDownload(url, filename);
+      if (!payload.url) throw new Error("STORAGE_UNAVAILABLE");
+      const warning = payload.warning ?? "";
+      setZipName(payload.filename || "app.zip");
+      setZipUrl(payload.url);
+      setExportImages(payload.images ?? []);
       flashStatus(
         warning === "TOO_FEW"
           ? t(locale, "tool_warn")
@@ -642,7 +671,7 @@ function ToolAppInner({ locale }: Props) {
     }
     if (severeQualityCount > 0 && !qualityAcknowledged) {
       flashStatus(t(locale, "tool_quality_ack_required"), "err");
-      document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
       return;
     }
     setBusyReview(true);
@@ -732,7 +761,10 @@ function ToolAppInner({ locale }: Props) {
     saveActiveId(id);
     setActiveId(id);
     setSlideIndex(0);
+    setToolPanel("captures");
+    setMobileView("outer");
     setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
     setOuterFiles(await loadSetFiles(id, "outer"));
     setInnerFiles(await loadSetFiles(id, "inner"));
     setZipUrl(null);
@@ -837,35 +869,11 @@ function ToolAppInner({ locale }: Props) {
   const visibleReviewUrl = reviewUrl;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
-      <section className="min-w-0">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="font-display text-4xl">{t(locale, "tool_title")}</h1>
-          {session === "loading" ? (
-            <p className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">
-              {locale === "fr" ? "Chargement du plan…" : "Loading plan…"}
-            </p>
-          ) : !signedIn ? (
-            <button
-              type="button"
-              className="ds-pill ds-pill-ink"
-              data-testid="tool-quota"
-              onClick={() => setShowAuth(true)}
-            >
-              {t(locale, "tool_guest_quota")}
-            </button>
-          ) : (
-            <p className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">
-              {remainingLabel}
-            </p>
-          )}
-        </div>
-        <p className="mt-2 max-w-2xl text-[var(--muted)]">{t(locale, "tool_lead")}</p>
-        <div className="mt-4">
-          <TrustLine locale={locale} />
-        </div>
-        <p className="ds-step-label mt-8"><span>01</span>{locale === "fr" ? "Sources" : "Sources"}</p>
-        <div className="ds-set-bar mt-6">
+    <div className="studio-tool-shell mx-auto max-w-[92rem] px-5 pb-24 pt-5" data-tool-panel={toolPanel}>
+      <header className="tool-command-bar" id="tool-create">
+        <div className="tool-command-brand"><span className="tool-command-dot" aria-hidden="true" /><span>{locale === "fr" ? "Atelier" : "Workspace"}</span></div>
+        <div className="tool-command-set">
+          <div className="ds-set-bar">
           <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
             <p className="ds-label" id="tool-sets-label">
               {t(locale, "tool_sets")}
@@ -945,7 +953,78 @@ function ToolAppInner({ locale }: Props) {
             ) : null}
           </div>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+</div>
+        <div className="tool-command-orientation">
+          <Seg
+          label={t(locale, "tool_label_orientation")}
+          value={orientation}
+          options={[
+            { value: "portrait", label: t(locale, "tool_orient_portrait") },
+            { value: "landscape", label: t(locale, "tool_orient_landscape") },
+          ]}
+          onChange={(value) => {
+            patchActive({ orientation: value as Orientation });
+            updateOptions({ orientation: value as Orientation });
+          }}
+        />
+</div>
+        <div className="tool-command-account">
+          {session === "loading" ? <span className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">{locale === "fr" ? "Chargement…" : "Loading…"}</span> : !signedIn ? <button type="button" className="ds-pill ds-pill-ink" data-testid="tool-quota" onClick={() => setShowAuth(true)}>{locale === "fr" ? "Invité" : "Guest"}</button> : <span className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">{remainingLabel}</span>}
+        </div>
+      </header>
+      {urlStatus && toolPanel !== "review" ? <div className="tool-return-status"><StatusLine text={urlStatus} kind="info" testId="tool-status" /></div> : null}
+      <div className="tool-workspace">
+        <section className="studio-tool-main min-w-0" aria-label={locale === "fr" ? "Aperçu des captures" : "Screenshot preview"}>
+          <div className="tool-canvas-heading" id="tool-inspect">
+            <div><p className="tool-eyebrow">{locale === "fr" ? "Votre composition" : "Your composition"}</p><h1>{active?.name?.trim() || t(locale, "tool_label_app")}</h1></div>
+            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : (locale === "fr" ? "Aucune paire" : "No pairs")}</span>
+          </div>
+          <ToolCanvas mobileView={mobileView} locale={locale} slideIndex={slideIndex} onMobileView={setMobileView}>
+        <div
+          className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}${previewMode === "pixels" ? " is-pixels" : ""}`}
+          style={previewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
+        >
+          <PreviewCard
+            testId="preview-outer"
+            label={t(locale, "tool_preview_outer")}
+            src={previews?.outer}
+            kind="outer"
+            spec={outerSpec}
+            locale={locale}
+            orientation={orientation}
+            previewMode={previewMode}
+            slide={slideIndex}
+            transform={outerTransform}
+            onTransform={(patch) => updateCropTransform("outer", slideIndex, patch)}
+            onImportFiles={(files) => onSideFiles("outer", files)}
+          />
+          <PreviewCard
+            testId="preview-inner"
+            label={t(locale, "tool_preview_inner")}
+            src={previews?.inner}
+            kind="inner"
+            spec={innerSpec}
+            locale={locale}
+            orientation={orientation}
+            previewMode={previewMode}
+            hinge={showHinge}
+            slide={slideIndex}
+            transform={innerTransform}
+            onTransform={(patch) => updateCropTransform("inner", slideIndex, patch)}
+            onImportFiles={(files) => onSideFiles("inner", files)}
+          />
+        </div>
+          </ToolCanvas>
+          <PairStrip outerFiles={outerFiles} innerFiles={effectiveInner} active={slideIndex} locale={locale} sameSet={sameSet} onSelect={setSlideIndex} onRemove={(side, index) => removeSideFile(side === "inner" && sameSet ? "outer" : side, index)} />
+          {cloneAlert || unpaired || severeQualityCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{locale === "fr" ? "Des points demandent votre attention dans Vérifier." : "Some items need your attention in Check."}</span><button type="button" onClick={() => setToolPanel("review")}>{locale === "fr" ? "Voir le bilan" : "View report"}</button></div> : null}
+        </section>
+        <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={locale === "fr" ? "Commandes de l’atelier" : "Workspace controls"}>
+          <ToolPanelTabs value={toolPanel} onChange={setToolPanel} locale={locale} />
+          <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
+            {toolPanel === "captures" ? <>
+              <div className="tool-panel-heading"><h2>{locale === "fr" ? "Vos captures" : "Your screenshots"}</h2><p>{locale === "fr" ? "Importez les vues de votre app. Jusqu’à 10 paires." : "Import your app screens. Up to 10 pairs."}</p></div>
+              <div id="tool-import" className="tool-import-stack">
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
           <DropZone
             testId="drop-outer"
             label={tf(locale, "tool_drop_outer", { w: outerSpec.width, h: outerSpec.height })}
@@ -984,96 +1063,7 @@ function ToolAppInner({ locale }: Props) {
             {t(locale, "tool_cap")}
           </p>
         ) : null}
-        <p className="ds-step-label mt-10"><span>02</span>{locale === "fr" ? "Composition" : "Composition"}</p>
-        <div
-          className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}`}
-          style={connectPreviewStyle(outerSpec, innerSpec) as CSSProperties}
-        >
-          <PreviewCard
-            testId="preview-outer"
-            label={t(locale, "tool_preview_outer")}
-            src={previews?.outer}
-            kind="outer"
-            inspect={outerInspect}
-            spec={outerSpec}
-            locale={locale}
-            clone={cloneLabel}
-            slide={slideIndex}
-            transform={outerTransform}
-            onTransform={(patch) => updateCropTransform("outer", slideIndex, patch)}
-          />
-          <PreviewCard
-            testId="preview-inner"
-            label={t(locale, "tool_preview_inner")}
-            src={previews?.inner}
-            kind="inner"
-            inspect={innerInspect}
-            spec={innerSpec}
-            locale={locale}
-            hinge={showHinge}
-            clone={cloneLabel}
-            slide={slideIndex}
-            transform={innerTransform}
-            onTransform={(patch) => updateCropTransform("inner", slideIndex, patch)}
-          />
-        </div>
-        {severeQualityCount > 0 ? (
-          <div className="quality-gate" data-testid="quality-gate" data-acknowledged={qualityAcknowledged ? "true" : "false"}>
-            <div>
-              <p className="quality-gate-title">{tf(locale, "tool_quality_gate_title", { n: severeQualityCount })}</p>
-              <p className="quality-gate-copy">{t(locale, "tool_quality_gate_copy")}</p>
-            </div>
-            <button
-              type="button"
-              className={qualityAcknowledged ? "ds-pill ds-pill-ink" : "ds-cta-ghost"}
-              data-testid="quality-acknowledge"
-              aria-pressed={qualityAcknowledged}
-              onClick={() => setQualityAcknowledged((value) => !value)}
-            >
-              {qualityAcknowledged ? t(locale, "tool_quality_acknowledged") : t(locale, "tool_quality_ack")}
-            </button>
-          </div>
-        ) : null}
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Filmstrip
-            testId="filmstrip-outer"
-            files={outerFiles}
-            active={slideIndex}
-            locale={locale}
-            onSelect={setSlideIndex}
-            onRemove={(index) => removeSideFile("outer", index)}
-          />
-          <Filmstrip
-            testId="filmstrip-inner"
-            files={effectiveInner}
-            active={slideIndex}
-            locale={locale}
-            onSelect={setSlideIndex}
-            onRemove={(index) => removeSideFile(sameSet ? "outer" : "inner", index)}
-          />
-        </div>
-        {clones.length > 0 ? (
-          <ol className="mt-4 flex flex-wrap gap-2 font-mono text-xs t-avatar-group" data-testid="clone-badges">
-            {clones.map((item) => (
-              <li key={item.index}>
-                <CloneTip
-                  label={`${String(item.index + 1).padStart(2, "0")} · ${t(locale, `clone_${item.label}`)}`}
-                  hint={t(locale, `clone_${item.label}`)}
-                >
-                  <button
-                    type="button"
-                    className={`ds-pill ds-pill-ink t-avatar ${item.index === slideIndex ? "is-on" : ""}`}
-                    data-testid={`clone-badge-${item.index}`}
-                    data-clone={item.label}
-                    onClick={() => setSlideIndex(item.index)}
-                  >
-                    {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)}
-                  </button>
-                </CloneTip>
-              </li>
-            ))}
-          </ol>
-        ) : null}
+              </div>
         <div className="t-acc mt-6" data-testid="same-set-details" data-open={sameSet || sameSetOpen ? "true" : "false"}>
           <button
             type="button"
@@ -1097,6 +1087,7 @@ function ToolAppInner({ locale }: Props) {
                   onToggle={() => {
                     setSameSetOpen(true);
                     patchActive({ sameSet: !sameSet });
+                    setZipUrl(null);
                   }}
                 >
                   {t(locale, "tool_same_set")}
@@ -1105,43 +1096,52 @@ function ToolAppInner({ locale }: Props) {
             </div>
           </div>
         </div>
-      </section>
-      <aside className="min-w-0 h-fit border-t border-[var(--line)] pt-5 lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:border-t-0 lg:pt-0">
-        <p className="ds-step-label mb-4"><span>03</span>{locale === "fr" ? "Vérification et export" : "Check and export"}</p>
-        <div className="ds-field">
+              <div className="tool-panel-fields">
+                <div className="ds-field">
           <label className="ds-label" htmlFor="tool-input-app">
             {t(locale, "tool_label_app")}
           </label>
           <input
             id="tool-input-app"
             value={active?.name ?? ""}
-            onChange={(event) => patchActive({ name: event.target.value })}
+            onChange={(event) => { patchActive({ name: event.target.value }); setZipUrl(null); }}
             className="ds-input w-full"
           />
         </div>
-        <div className="ds-field">
-          <label className="ds-label" htmlFor="tool-input-client">
-            {t(locale, "tool_client")}
-          </label>
-          <input
-            id="tool-input-client"
-            value={active?.clientName ?? ""}
-            onChange={(event) => patchActive({ clientName: event.target.value })}
-            className="ds-input w-full"
-          />
+              </div>
+              <a href="/api/example-zip?v=2" data-testid="tool-example" className="ds-text-btn mt-4">{t(locale, "tool_example")}</a>
+            </> : null}
+            {toolPanel === "adjust" ? <>
+              <div className="tool-panel-heading"><h2>{locale === "fr" ? "Ajuster" : "Adjust"}</h2><p>{locale === "fr" ? "Cadrez la vue sélectionnée. Les changements apparaissent sur le canvas." : "Frame the selected view. Changes appear on the canvas."}</p></div>
+              <div className="tool-adjust-side" role="group" aria-label={locale === "fr" ? "Vue à ajuster" : "View to adjust"}>
+                <button type="button" className={adjustSide === "outer" ? "is-on" : ""} aria-pressed={adjustSide === "outer"} onClick={() => {setAdjustSide("outer"); setMobileView("outer");}}>{locale === "fr" ? "Fermé" : "Closed"}</button>
+                <button type="button" className={adjustSide === "inner" ? "is-on" : ""} aria-pressed={adjustSide === "inner"} onClick={() => {setAdjustSide("inner"); setMobileView("inner");}}>{locale === "fr" ? "Ouvert" : "Open"}</button>
+              </div>
+              <CropControls testId={`preview-${adjustSide}`} locale={locale} previewMode={previewMode} inspect={adjustSide === "outer" ? outerInspect : innerInspect} spec={adjustSide === "outer" ? outerSpec : innerSpec} transform={adjustSide === "outer" ? outerTransform : innerTransform} onTransform={(patch) => updateCropTransform(adjustSide, slideIndex, patch)} />
+              <div className="tool-view-settings">
+                <div className="review-view-controls">
+          <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la composition" : "Composition view"}>
+            <button
+              type="button"
+              className={previewMode === "device" ? "is-on" : ""}
+              aria-pressed={previewMode === "device"}
+              data-testid="tool-device-view"
+              onClick={() => setPreviewMode("device")}
+            >
+              {t(locale, "review_device_view")}
+            </button>
+            <button
+              type="button"
+              className={previewMode === "pixels" ? "is-on" : ""}
+              aria-pressed={previewMode === "pixels"}
+              data-testid="tool-pixel-view"
+              onClick={() => setPreviewMode("pixels")}
+            >
+              {t(locale, "review_pixel_view")}
+            </button>
+          </div>
         </div>
-        <Seg
-          label={t(locale, "tool_label_orientation")}
-          value={orientation}
-          options={[
-            { value: "portrait", label: t(locale, "tool_orient_portrait") },
-            { value: "landscape", label: t(locale, "tool_orient_landscape") },
-          ]}
-          onChange={(value) => {
-            patchActive({ orientation: value as Orientation });
-            updateOptions({ orientation: value as Orientation });
-          }}
-        />
+              </div>
         <details className="tool-advanced mt-5">
           <summary>{locale === "fr" ? "Réglages avancés" : "Advanced settings"}</summary>
           <div className="pt-2">
@@ -1246,6 +1246,7 @@ function ToolAppInner({ locale }: Props) {
             onToggle={() => {
               const next = !include69;
               setInclude69(next);
+              setZipUrl(null);
               if (next && (!billing || billing.canUse69 === false)) setPaywall("69");
             }}
           >
@@ -1262,15 +1263,131 @@ function ToolAppInner({ locale }: Props) {
         ) : null}
           </div>
         </details>
-        <button
+            </> : null}
+            {toolPanel === "review" ? <>
+              <div className="tool-panel-heading"><h2>{locale === "fr" ? "Vérifier" : "Check"}</h2><p>{locale === "fr" ? "Terminez ces étapes avant de préparer les fichiers." : "Complete these steps before preparing files."}</p></div>
+              <div className="tool-review-actions">
+                <p className="tool-eyebrow">{locale === "fr" ? "À faire" : "To do"}</p>
+                <ul>
+                  <li data-done={hasExportable && !unpaired}>{locale === "fr" ? "Compléter les vues fermé et ouvert" : "Complete the closed and open views"}</li>
+                  <li data-done={severeQualityCount === 0 && !cloneAlert}>{locale === "fr" ? "Examiner les alertes de cadrage et de similarité" : "Review framing and similarity alerts"}</li>
+                  <li data-done={appUsageConfirmed}>{locale === "fr" ? "Confirmer le contenu de l’app" : "Confirm the app content"}</li>
+                </ul>
+              </div>
+        {severeQualityCount > 0 ? (
+          <div className="quality-gate" data-testid="quality-gate" data-acknowledged={qualityAcknowledged ? "true" : "false"}>
+            <div>
+              <p className="quality-gate-title">{tf(locale, "tool_quality_gate_title", { n: severeQualityCount })}</p>
+              <p className="quality-gate-copy">{t(locale, "tool_quality_gate_copy")}</p>
+            </div>
+            <button
+              type="button"
+              className={qualityAcknowledged ? "ds-pill ds-pill-ink" : "ds-cta-ghost"}
+              data-testid="quality-acknowledge"
+              aria-pressed={qualityAcknowledged}
+              onClick={() => setQualityAcknowledged((value) => !value)}
+            >
+              {qualityAcknowledged ? t(locale, "tool_quality_acknowledged") : t(locale, "tool_quality_ack")}
+            </button>
+          </div>
+        ) : null}
+        {clones.length > 0 ? (
+          <ol className="mt-4 flex flex-wrap gap-2 font-mono text-xs t-avatar-group" data-testid="clone-badges">
+            {clones.map((item) => (
+              <li key={item.index}>
+                <CloneTip
+                  label={`${String(item.index + 1).padStart(2, "0")} · ${t(locale, `clone_${item.label}`)}`}
+                  hint={t(locale, `clone_${item.label}`)}
+                >
+                  <button
+                    type="button"
+                    className={`ds-pill ds-pill-ink t-avatar ${item.index === slideIndex ? "is-on" : ""}`}
+                    data-testid={`clone-badge-${item.index}`}
+                    data-clone={item.label}
+                    onClick={() => setSlideIndex(item.index)}
+                  >
+                    {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)}
+                  </button>
+                </CloneTip>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        <section className="ds-readiness mb-6" aria-label={locale === "fr" ? "Bilan de préparation" : "Readiness report"} data-testid="readiness-report">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-2xl">{locale === "fr" ? "Bilan du set" : "Set report"}</h2>
+            <strong className="font-mono text-xl" data-testid="readiness-score">{preparationScore}/100</strong>
+          </div>
+          <p className="mt-2 text-sm text-[var(--muted)]">{locale === "fr" ? "Score des contrôles applicables validés. Ne prédit pas l’approbation Apple." : "Share of applicable checks passed. Does not predict Apple approval."}</p>
+          <p className="ds-label mt-5">{locale === "fr" ? "Contrôles techniques" : "Technical checks"}</p>
+          <ul className="mt-2 space-y-2 text-sm">
+            {[
+              [preparationChecks[0], locale === "fr" ? "Captures fermé et ouvert présentes" : "Closed and open screenshots present"],
+              [preparationChecks[1], locale === "fr" ? "Paires complètes" : "Pairs complete"],
+              [preparationChecks[5], locale === "fr" ? "Fichiers finaux vérifiés et enregistrés" : "Final files verified and stored"],
+            ].map(([passed, label], index) => (
+              <li key={index} className="flex gap-2"><span aria-hidden="true">{passed ? "✓" : "○"}</span><span className="sr-only">{passed ? (locale === "fr" ? "Validé : " : "Passed: ") : (locale === "fr" ? "En attente : " : "Pending: ")}</span>{label}</li>
+            ))}
+          </ul>
+          <details className="tool-source-details">
+            <summary>{locale === "fr" ? `Sources de la paire ${String(slideIndex + 1).padStart(2, "0")}` : `Pair ${String(slideIndex + 1).padStart(2, "0")} sources`}</summary>
+            {([[
+              locale === "fr" ? "Fermé" : "Closed", outerInspect, outerSpec,
+            ], [
+              locale === "fr" ? "Ouvert" : "Open", innerInspect, innerSpec,
+            ]] as const).map(([name, inspect, spec]) => (
+              <div key={name} className="tool-source-row">
+                <strong>{name} · {spec.width} × {spec.height}</strong>
+                <span>{inspect ? inspect.hasAlpha ? t(locale, "tool_check_alpha_flat") : t(locale, "tool_check_alpha_ok") : t(locale, "tool_check_await")}</span>
+                <span>{inspect ? inspect.colorSpace === "other" ? t(locale, "tool_check_rgb_bad") : t(locale, "tool_check_rgb_ok") : t(locale, "tool_check_await")}</span>
+                <span>{inspect ? t(locale, "tool_check_zip") : t(locale, "tool_check_zip_wait")}</span>
+              </div>
+            ))}
+          </details>
+          <p className="ds-label mt-5">{locale === "fr" ? "Alertes visuelles" : "Visual alerts"}</p>
+          <ul className="mt-2 space-y-2 text-sm">
+            <li className="flex gap-2"><span aria-hidden="true">{preparationChecks[2] ? "✓" : "◇"}</span><span className="sr-only">{preparationChecks[2] ? (locale === "fr" ? "Validé : " : "Passed: ") : (locale === "fr" ? "À examiner : " : "Review: ")}</span>{locale === "fr" ? "Similarité entre les vues" : "Similarity between views"}</li>
+            <li className="flex gap-2"><span aria-hidden="true">{preparationChecks[3] ? "✓" : "◇"}</span><span className="sr-only">{preparationChecks[3] ? (locale === "fr" ? "Validé : " : "Passed: ") : (locale === "fr" ? "À examiner : " : "Review: ")}</span>{locale === "fr" ? "Cadrage de chaque capture" : "Framing of each screenshot"}</li>
+            {qualityItems.filter((item) => item.severity !== "ok").map((item) => (
+              <li key={`${item.side}-${item.index}`} className="pl-5 text-[var(--warn)]">
+                {item.side === "outer" ? (locale === "fr" ? "Fermé" : "Closed") : (locale === "fr" ? "Ouvert" : "Open")} {String(item.index + 1).padStart(2, "0")} · {locale === "fr" ? "rognage" : "crop"} {item.cropPercent.toFixed(0)} % · {locale === "fr" ? "agrandissement" : "upscale"} {item.scale.toFixed(1)}×
+              </li>
+            ))}
+            {clones.filter((item) => item.label !== "ok").map((item) => (
+              <li key={`clone-${item.index}`} className="pl-5 text-[var(--warn)]">
+                {locale === "fr" ? "Paire" : "Pair"} {String(item.index + 1).padStart(2, "0")} · {locale === "fr" ? "similarité à examiner" : "similarity needs review"}
+              </li>
+            ))}
+          </ul>
+          <p className="ds-label mt-5">{locale === "fr" ? "Confirmation humaine" : "Human confirmation"}</p>
+          <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
+            <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
+            <span>{locale === "fr" ? "J’ai vérifié que chaque visuel montre ma vraie app en usage, dans le bon état d’écran, et que le contenu importé reste lisible près du pli." : "I checked that every image shows my real app in use, in the correct screen state, and that imported content remains readable near the fold."}</span>
+          </label>
+          {cloneAlert || severeQualityCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{locale === "fr" ? "Les alertes restent à examiner, même si vous confirmez la vérification visuelle." : "Warnings still need review, even after visual confirmation."}</p> : null}
+        </section>
+              <div className="tool-panel-fields">
+                <div className="ds-field">
+          <label className="ds-label" htmlFor="tool-input-client">
+            {t(locale, "tool_client")}
+          </label>
+          <input
+            id="tool-input-client"
+            value={active?.clientName ?? ""}
+            onChange={(event) => { patchActive({ clientName: event.target.value }); setZipUrl(null); }}
+            className="ds-input w-full"
+          />
+        </div>
+              </div>
+        {!zipUrl ? <button
           type="button"
           disabled={busyExport || !hasExportable}
           data-testid="tool-download"
           onClick={() => void onExport()}
           className="ds-cta mt-6 w-full"
         >
-          <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
-        </button>
+          <SwapLabel text={busyExport ? t(locale, "tool_preparing") : locale === "fr" ? "Préparer les fichiers" : "Prepare files"} />
+        </button> : null}
         {session === "out" && hasExportable ? (
           <button
             type="button"
@@ -1318,9 +1435,22 @@ function ToolAppInner({ locale }: Props) {
         ) : null}
         {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
         {zipUrl ? (
-          <a href={zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-text-btn mt-3">
-            {t(locale, "tool_open_zip")}
-          </a>
+          <div className="mt-4 border-t border-[var(--line)] pt-4" data-testid="tool-export-delivery">
+            <p className="ds-label">{locale === "fr" ? "Fichiers prêts" : "Files ready"}</p>
+            <p className="mt-2 text-xs text-[var(--muted)]">{locale === "fr" ? "Chemins dans le dossier de l’app" : "Paths inside the app folder"}</p>
+            <ul className="mt-3 space-y-1 text-sm">
+              {exportImages.map((image) => (
+                <li key={`${image.slot}-${image.index}`} className="studio-delivered-file">
+                  <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
+                  <span>{image.slot === "duo-outer" ? (locale === "fr" ? "Fermé" : "Closed") : image.slot === "duo-inner" ? (locale === "fr" ? "Ouvert" : "Open") : "6.9"} · {image.width} × {image.height}</span>
+                </li>
+              ))}
+            </ul>
+            <a href={zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-cta mt-4 inline-flex">
+              {locale === "fr" ? "Télécharger le ZIP" : "Download ZIP"}
+            </a>
+            <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Télécharge le ZIP, puis dépose les fichiers fermé et ouvert dans les emplacements correspondants d’App Store Connect. La connexion directe à App Store Connect reste une évolution future." : "Download the ZIP, then upload closed and open images to their corresponding App Store Connect slots. Direct App Store Connect integration is a future improvement."}</p>
+          </div>
         ) : null}
         {visibleReviewUrl ? (
           <a href={visibleReviewUrl} data-testid="review-url" className="ds-text-btn mt-2">
@@ -1338,14 +1468,10 @@ function ToolAppInner({ locale }: Props) {
             {t(locale, "pricing_studio_cta")}
           </button>
         ) : null}
-      </aside>
-      {hasExportable ? (
-        <div className="tool-mobile-action lg:hidden" data-testid="tool-mobile-action">
-          <button type="button" disabled={busyExport} onClick={() => void onExport()} className="ds-cta w-full">
-            <SwapLabel text={busyExport ? t(locale, "tool_preparing") : t(locale, "tool_download")} />
-          </button>
-        </div>
-      ) : null}
+            </> : null}
+          </div>
+        </aside>
+      </div>
       {showAuth || (upgradeRequested && session === "out") ? (
         <Overlay
           onClose={() => {
@@ -1358,7 +1484,7 @@ function ToolAppInner({ locale }: Props) {
             locale={locale}
             mode="signup"
             variant="modal"
-            nextPath={`${prefix}/tool`}
+            nextPath={upgradeRequested && preferredUpgradeKind ? `${prefix}/tool?upgrade=1&plan=${preferredUpgradeKind}` : `${prefix}/tool`}
             onSuccess={() => {
               setShowAuth(false);
               void refreshBilling();
@@ -1371,6 +1497,7 @@ function ToolAppInner({ locale }: Props) {
           locale={locale}
           reason={paywall ?? "trial"}
           busy={checkoutBusy}
+          preferredKind={upgradeRequested ? preferredUpgradeKind : undefined}
           onClose={() => {
             setPaywall(null);
             setUpgradeDismissed(true);
@@ -1568,39 +1695,84 @@ function Seg({
   );
 }
 
+type ToolPanel = "captures" | "adjust" | "review";
+
+function ToolPanelTabs({ value, onChange, locale }: {value: ToolPanel; onChange: (value: ToolPanel) => void; locale: Locale}) {
+  const labels = locale === "fr" ? {captures: "Captures", adjust: "Ajuster", review: "Vérifier"} : {captures: "Screenshots", adjust: "Adjust", review: "Check"};
+  return <div className="tool-panel-tabs" role="tablist" aria-label={locale === "fr" ? "Commandes" : "Controls"}>{(["captures", "adjust", "review"] as const).map((panel) => <button key={panel} type="button" role="tab" id={`tool-tab-${panel}`} data-testid={`tool-tab-${panel}`} aria-controls={value === panel ? `tool-panel-${panel}` : undefined} aria-selected={value === panel} tabIndex={value === panel ? 0 : -1} className={value === panel ? "is-on" : ""} onClick={() => onChange(panel)} onKeyDown={(event) => { const dir = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0; if (!dir) return; event.preventDefault(); const panels = ["captures", "adjust", "review"] as const; const next = panels[(panels.indexOf(panel) + dir + panels.length) % panels.length]; onChange(next); requestAnimationFrame(() => document.getElementById(`tool-tab-${next}`)?.focus()); }}>{labels[panel]}</button>)}</div>;
+}
+
+function ToolCanvas({mobileView, onMobileView, slideIndex, locale, children}: {mobileView: "outer" | "inner" | "compare"; onMobileView: (value: "outer" | "inner" | "compare") => void; slideIndex: number; locale: Locale; children: ReactNode}) {
+  const labels = locale === "fr" ? {outer: "Fermé", inner: "Ouvert", compare: "Comparer"} : {outer: "Closed", inner: "Open", compare: "Compare"};
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const initialSlide = useRef(true);
+  useEffect(() => {
+    if (initialSlide.current) { initialSlide.current = false; return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !canvasRef.current) return;
+    const stages = canvasRef.current.querySelectorAll(".preview-stage");
+    const tween = gsap.fromTo(stages, {opacity: 0.65, y: 6}, {opacity: 1, y: 0, duration: 0.22, ease: "power2.out", clearProps: "all"});
+    return () => { tween.kill(); gsap.set(stages, {clearProps: "all"}); };
+  }, [slideIndex]);
+  return <div ref={canvasRef} className="tool-canvas" data-mobile-view={mobileView}>
+    <div className="tool-mobile-view" role="group" aria-label={locale === "fr" ? "Vue du canvas" : "Canvas view"}>{(["outer", "inner", "compare"] as const).map((view) => <button key={view} type="button" aria-pressed={mobileView === view} className={mobileView === view ? "is-on" : ""} onClick={() => onMobileView(view)}>{labels[view]}</button>)}</div>
+    {children}
+  </div>;
+}
+
+function PairStrip({outerFiles, innerFiles, active, locale, sameSet, onSelect, onRemove}: {outerFiles: File[]; innerFiles: File[]; active: number; locale: Locale; sameSet: boolean; onSelect: (index: number) => void; onRemove: (side: "outer" | "inner", index: number) => void}) {
+  const count = Math.max(outerFiles.length, innerFiles.length);
+  if (!count) return <p className="tool-pair-empty">{locale === "fr" ? "Importez votre première paire depuis Captures." : "Import your first pair in Screenshots."}</p>;
+  return <div className="tool-pair-strip" aria-label={locale === "fr" ? "Paires de captures" : "Screenshot pairs"}><div className="tool-pair-strip-head"><span>{locale === "fr" ? "Paires" : "Pairs"}</span><span>{count} / {MAX_IMAGES}</span></div><div className="tool-pair-list">{Array.from({length: count}, (_, index) => { const outer = outerFiles[index]; const inner = innerFiles[index]; return <div className={`tool-pair-item ${index === active ? "is-active" : ""}`} key={index}><button type="button" className="tool-pair-select" aria-current={index === active ? "true" : undefined} aria-label={`${locale === "fr" ? "Paire" : "Pair"} ${index + 1}: ${outer ? (locale === "fr" ? "fermé présent" : "closed present") : (locale === "fr" ? "fermé manquant" : "closed missing")}, ${inner ? (locale === "fr" ? "ouvert présent" : "open present") : (locale === "fr" ? "ouvert manquant" : "open missing")}`} onClick={() => onSelect(index)}><strong>{String(index + 1).padStart(2, "0")}</strong><span className="tool-pair-marks"><i data-present={Boolean(outer)} /><i data-present={Boolean(inner)} /></span></button><div className="tool-pair-remove">{outer ? <button type="button" aria-label={`${locale === "fr" ? "Retirer la vue fermé de la paire" : "Remove closed view from pair"} ${index + 1}`} onClick={() => onRemove("outer", index)}>× <span>{locale === "fr" ? "Fermé" : "Closed"}</span></button> : null}{inner && !sameSet ? <button type="button" aria-label={`${locale === "fr" ? "Retirer la vue ouvert de la paire" : "Remove open view from pair"} ${index + 1}`} onClick={() => onRemove("inner", index)}>× <span>{locale === "fr" ? "Ouvert" : "Open"}</span></button> : null}</div></div>; })}</div></div>;
+}
+
+function CropControls({testId, locale, previewMode, inspect, spec, transform, onTransform}: {testId: string; locale: Locale; previewMode: "device" | "pixels"; inspect: SourceInspect | null; spec: SizeSpec; transform: CropTransform; onTransform: (patch: Partial<CropTransform>) => void}) {
+  if (!inspect) return <p className="tool-adjust-empty">{locale === "fr" ? "Importez cette vue pour régler son cadrage." : "Import this view to adjust its framing."}</p>;
+  const metrics = compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform);
+  const cropHint = transform.fit === "cover" ? t(locale, previewMode === "pixels" ? "tool_crop_drag_hint" : "tool_crop_device_hint") : t(locale, "tool_crop_contain_hint");
+  const onRangeKey = (event: ReactKeyboardEvent<HTMLInputElement>, axis: "x" | "y") => {
+    const delta = event.key === "ArrowRight" || event.key === "ArrowUp" ? 0.01 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -0.01 : null;
+    const next = event.key === "Home" ? 0 : event.key === "End" ? 1 : delta == null ? null : Math.max(0, Math.min(1, Math.round((transform[axis] + delta) * 100) / 100));
+    if (next == null) return;
+    event.preventDefault();
+    onTransform({[axis]: next});
+  };
+  return <div className="crop-controls tool-crop-controls" data-testid={`${testId}-crop-controls`}><div className="crop-toolbar"><div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}><button type="button" className={transform.fit === "cover" ? "is-on" : ""} aria-pressed={transform.fit === "cover"} onClick={() => onTransform({fit: "cover"})}>{t(locale, "tool_crop_fill")}</button><button type="button" className={transform.fit === "contain" ? "is-on" : ""} aria-pressed={transform.fit === "contain"} onClick={() => onTransform({fit: "contain"})}>{t(locale, "tool_crop_show_all")}</button></div><button type="button" className="crop-reset" onClick={() => onTransform({x: 0.5, y: 0.5})}>{t(locale, "tool_crop_reset")}</button></div>{transform.fit === "cover" ? <div className="crop-axis-controls"><label><span>{t(locale, "tool_crop_horizontal")}</span><input type="range" min="0" max="100" value={Math.round(transform.x * 100)} onChange={(event) => onTransform({x: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "x")} /></label><label><span>{t(locale, "tool_crop_vertical")}</span><input type="range" min="0" max="100" value={Math.round(transform.y * 100)} onChange={(event) => onTransform({y: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "y")} /></label></div> : null}<div className="crop-readout"><p className={`crop-metrics is-${metrics.severity}`} data-testid={`${testId}-metrics`}>{tf(locale, "tool_crop_metrics", {crop: metrics.cropPercent.toFixed(1), scale: metrics.scale.toFixed(2)})}</p><p className="crop-hint">{cropHint}</p></div></div>;
+}
+
 function PreviewCard({
   testId,
   label,
   src,
   kind,
-  inspect,
   spec,
   locale,
+  orientation,
+  previewMode,
   hinge = false,
-  clone,
   slide,
   transform,
   onTransform,
+  onImportFiles,
 }: {
   testId: string;
   label: string;
   src?: string;
   kind: "outer" | "inner";
-  inspect: SourceInspect | null;
   spec: { width: number; height: number };
   locale: Locale;
+  orientation: Orientation;
+  previewMode: "device" | "pixels";
   hinge?: boolean;
-  clone: CloneResult["label"] | null;
   slide: number;
   transform: CropTransform;
   onTransform: (patch: Partial<CropTransform>) => void;
+  onImportFiles: (files: FileList | null) => void;
 }) {
-  const specLabel = `${spec.width}×${spec.height}`;
   const dragRef = useRef<{ pointerId: number; x: number; y: number; focusX: number; focusY: number } | null>(null);
-  const metrics = inspect
-    ? compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform)
-    : null;
-  const metricTone = metrics?.severity ?? "ok";
+  const inputRef = useRef<HTMLInputElement>(null);
+  const canvasAspect = previewMode === "pixels"
+    ? `${spec.width}/${spec.height}`
+    : duoChassisAspect(kind, orientation);
   return (
     <figure data-testid={testId} data-slide={slide}>
       <figcaption className="duo-caption text-left">{label}</figcaption>
@@ -1608,7 +1780,7 @@ function PreviewCard({
         <div
           className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && transform.fit === "cover" ? "is-draggable" : ""}`}
           data-testid={`${testId}-canvas`}
-          data-aspect={`${spec.width}/${spec.height}`}
+          data-aspect={canvasAspect}
           onPointerDown={(event) => {
             if (!src || transform.fit !== "cover") return;
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -1648,186 +1820,16 @@ function PreviewCard({
               </div>
             </>
           ) : (
-            <span className="preview-empty-copy">{t(locale, "tool_empty")}</span>
+            <div className="preview-empty-copy">
+              <span>{label} · {spec.width} × {spec.height}</span>
+              <button type="button" className="tool-empty-action" onClick={() => inputRef.current?.click()}>{locale === "fr" ? "Importer" : "Import"}</button>
+              <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${locale === "fr" ? "Importer" : "Import"} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
+            </div>
           )}
           {kind === "inner" ? <span className="division" aria-hidden="true" /> : null}
         </div>
       </div>
-      {src ? (
-        <div className="crop-controls" data-testid={`${testId}-crop-controls`}>
-          <div className="crop-toolbar">
-            <div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}>
-              <button
-                type="button"
-                className={transform.fit === "cover" ? "is-on" : ""}
-                aria-pressed={transform.fit === "cover"}
-                onClick={() => onTransform({ fit: "cover" })}
-              >
-                {t(locale, "tool_crop_fill")}
-              </button>
-              <button
-                type="button"
-                className={transform.fit === "contain" ? "is-on" : ""}
-                aria-pressed={transform.fit === "contain"}
-                onClick={() => onTransform({ fit: "contain" })}
-              >
-                {t(locale, "tool_crop_show_all")}
-              </button>
-            </div>
-            <button
-              type="button"
-              className="crop-reset"
-              onClick={() => onTransform({ x: 0.5, y: 0.5 })}
-            >
-              {t(locale, "tool_crop_reset")}
-            </button>
-          </div>
-          {transform.fit === "cover" ? (
-            <div className="crop-axis-controls">
-              <label>
-                <span>{t(locale, "tool_crop_horizontal")}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={Math.round(transform.x * 100)}
-                  onInput={(event) => onTransform({ x: Number(event.currentTarget.value) / 100 })}
-                  onChange={(event) => onTransform({ x: Number(event.currentTarget.value) / 100 })}
-                />
-              </label>
-              <label>
-                <span>{t(locale, "tool_crop_vertical")}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={Math.round(transform.y * 100)}
-                  onInput={(event) => onTransform({ y: Number(event.currentTarget.value) / 100 })}
-                  onChange={(event) => onTransform({ y: Number(event.currentTarget.value) / 100 })}
-                />
-              </label>
-            </div>
-          ) : null}
-          <div className="crop-readout">
-            {metrics ? (
-              <p className={`crop-metrics is-${metricTone}`} data-testid={`${testId}-metrics`}>
-                {tf(locale, "tool_crop_metrics", {
-                  crop: metrics.cropPercent.toFixed(1),
-                  scale: metrics.scale.toFixed(2),
-                })}
-              </p>
-            ) : null}
-            <p className="crop-hint">{transform.fit === "cover" ? t(locale, "tool_crop_drag_hint") : t(locale, "tool_crop_contain_hint")}</p>
-          </div>
-        </div>
-      ) : null}
-      <ul className="space-y-1 text-xs text-[var(--muted)]">
-        <li>
-          {inspect
-            ? inspect.hasAlpha
-              ? t(locale, "tool_check_alpha_flat")
-              : t(locale, "tool_check_alpha_ok")
-            : t(locale, "tool_check_await")}
-        </li>
-        <li>
-          {t(locale, "tool_label_orientation")}: {specLabel}
-        </li>
-        <li>
-          {inspect
-            ? inspect.colorSpace === "other"
-              ? t(locale, "tool_check_rgb_bad")
-              : t(locale, "tool_check_rgb_ok")
-            : t(locale, "tool_check_await")}
-        </li>
-        {kind === "inner" ? <li>{t(locale, "tool_check_hinge")}</li> : null}
-        <li data-testid={`${testId}-clone`}>
-          {clone ? tf(locale, "tool_check_clone", { label: t(locale, `clone_${clone}`) }) : t(locale, "tool_check_clone_wait")}
-        </li>
-        <li>{inspect ? t(locale, "tool_check_zip") : t(locale, "tool_check_zip_wait")}</li>
-      </ul>
     </figure>
-  );
-}
-
-function Filmstrip({
-  testId,
-  files,
-  active,
-  locale,
-  onSelect,
-  onRemove,
-}: {
-  testId: string;
-  files: File[];
-  active: number;
-  locale: Locale;
-  onSelect: (index: number) => void;
-  onRemove: (index: number) => void;
-}) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  if (files.length === 0) return null;
-
-  function setShifts(activeIdx: number | null, phase: "in" | "out") {
-    if (!rootRef.current) return;
-    const cs = getComputedStyle(document.documentElement);
-    const num = (name: string, fallback: number) => {
-      const parsed = parseFloat(cs.getPropertyValue(name));
-      return Number.isFinite(parsed) ? parsed : fallback;
-    };
-    const ease = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
-    const lift = num("--avatar-lift", -4);
-    const falloff = num("--avatar-falloff", 0.45);
-    const scale = num("--avatar-scale", 1.05);
-    const timing =
-      phase === "out"
-        ? ease("--avatar-ease-out", "cubic-bezier(0.34, 3.85, 0.64, 1)")
-        : ease("--avatar-ease-in", "cubic-bezier(0.22, 1, 0.36, 1)");
-    rootRef.current.querySelectorAll<HTMLElement>(".t-avatar").forEach((el, index) => {
-      el.style.transitionTimingFunction = timing;
-      if (activeIdx == null) {
-        el.style.setProperty("--shift", "0px");
-        el.style.setProperty("--scale-active", "1");
-        return;
-      }
-      const distance = Math.abs(index - activeIdx);
-      el.style.setProperty("--shift", `${(lift * Math.pow(falloff, distance)).toFixed(3)}px`);
-      el.style.setProperty("--scale-active", index === activeIdx ? String(scale) : "1");
-    });
-  }
-
-  return (
-    <div ref={rootRef} className="t-avatar-group" onMouseLeave={() => setShifts(null, "out")}>
-      <ol className="filmstrip" data-testid={testId}>
-        {files.map((file, index) => {
-          const seq = String(index + 1).padStart(2, "0");
-          return (
-            <li key={`${file.name}-${index}`} className="filmstrip-item t-avatar">
-              <button
-                type="button"
-                className={`filmstrip-thumb ${index === active ? "is-on" : ""}`}
-                data-testid={`${testId}-${seq}`}
-                aria-current={index === active}
-                aria-label={tf(locale, "tool_slide", { n: seq })}
-                onMouseEnter={() => setShifts(index, "in")}
-                onClick={() => onSelect(index)}
-              >
-                {seq}
-                <span className="filmstrip-name">{file.name}</span>
-              </button>
-              <button
-                type="button"
-                className="filmstrip-remove"
-                data-testid={`${testId}-remove-${seq}`}
-                aria-label={tf(locale, "tool_remove_slide", { n: seq })}
-                onClick={() => onRemove(index)}
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
   );
 }
 
@@ -1973,6 +1975,8 @@ function StatusLine({
       className={`t-toast is-open mt-3 text-sm ${kind === "err" ? "t-input is-error is-shaking" : ""}`}
       data-testid={testId}
       data-kind={kind}
+      role={kind === "err" ? "alert" : "status"}
+      aria-live={kind === "err" ? "assertive" : "polite"}
     >
       {kind === "busy" ? (
         <span className="t-think">
@@ -2049,15 +2053,4 @@ function drawTarget(
     }
   }
   return canvas.toDataURL("image/jpeg", 0.7);
-}
-
-function startZipDownload(url: string, filename: string) {
-  if (typeof window === "undefined" || "Cypress" in window) return;
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.rel = "noopener";
-  document.body.append(link);
-  link.click();
-  link.remove();
 }

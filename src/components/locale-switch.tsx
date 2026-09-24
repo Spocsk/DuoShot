@@ -19,7 +19,8 @@ export function LocaleSwitch({ locale, href }: { locale: Locale; href: string })
       href={href}
       hrefLang={other}
       data-testid="locale-switch"
-      className="ds-nav-link relative z-[60] font-mono text-xs tracking-[0.16em] uppercase"
+      className="ds-nav-link relative z-[60] inline-flex items-center gap-1.5 text-[0.68rem] font-semibold tracking-[0.04em] uppercase"
+      aria-label={other === "en" ? "Switch to English" : "Passer en français"}
       onClick={(event) => {
         persist();
         if (typeof window !== "undefined" && href === window.location.pathname) {
@@ -28,7 +29,8 @@ export function LocaleSwitch({ locale, href }: { locale: Locale; href: string })
         }
       }}
     >
-      {t(locale, "lang_switch")}
+      <span aria-hidden="true" className="text-sm leading-none">{other === "en" ? "🇬🇧" : "🇫🇷"}</span>
+      <span>{t(locale, "lang_switch")}</span>
     </Link>
   );
 }

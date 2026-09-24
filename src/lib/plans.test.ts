@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FREE_EXPORTS, PLANS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
+import { CHECKOUT_CATALOG, FREE_EXPORTS, PLANS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
 
 describe("plans", () => {
   it("gives two lifetime free exports", () => {
@@ -20,6 +20,11 @@ describe("plans", () => {
 
   it("includes three seats in Studio", () => {
     expect(PLANS.studio.seats).toBe(3);
+  });
+
+  it("offers two months free on annual subscriptions", () => {
+    expect(CHECKOUT_CATALOG.indie_yearly.amountCents).toBe(10 * CHECKOUT_CATALOG.indie_monthly.amountCents);
+    expect(CHECKOUT_CATALOG.studio_yearly.amountCents).toBe(10 * CHECKOUT_CATALOG.studio_monthly.amountCents);
   });
 
   it("formats euro amounts per locale", () => {

@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { connectPreviewStyle, duoSpec } from "./specs";
+import { connectPreviewStyle, duoChassisAspect, duoSpec } from "./specs";
+
+describe("duoChassisAspect", () => {
+  it("keeps the inner as the open landscape book in both screenshot orientations", () => {
+    expect(duoChassisAspect("inner", "portrait")).toBe("164.6/117.8");
+    expect(duoChassisAspect("inner", "landscape")).toBe("164.6/117.8");
+  });
+
+  it("rotates only the closed outer with landscape screenshots", () => {
+    expect(duoChassisAspect("outer", "portrait")).toBe("84.1/117.8");
+    expect(duoChassisAspect("outer", "landscape")).toBe("117.8/84.1");
+  });
+});
 
 describe("connectPreviewStyle", () => {
   it("exposes Connect pixel boxes for portrait crop frames", () => {

@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Figtree, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { Geist, IBM_Plex_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./transitions-root.css";
 import "./transitions-dev.css";
 import "./globals.css";
+import "./studio.css";
 import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_FR, getSiteUrl } from "@/lib/site";
 
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-});
-
-const sans = Figtree({
+const sans = Geist({
   subsets: ["latin"],
   variable: "--font-sans",
 });
@@ -37,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${display.variable} ${sans.variable} ${mono.variable} h-full antialiased`}
+      className={`${sans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

@@ -130,16 +130,18 @@ Cypress.Commands.add("loginAs", (plan: Plan = "free", remaining: number | null =
   );
 });
 
-function zipReply(headers: Record<string, string> = {}) {
+function zipReply() {
   return {
     statusCode: 200,
-    headers: {
-      "content-type": "application/zip",
-      "x-duoshot-filename": "app.zip",
-      "x-duoshot-warning": "",
-      ...headers,
+    body: {
+      url: "https://storage.example/app.zip",
+      filename: "app.zip",
+      warning: "",
+      images: [
+        { slot: "duo-outer", index: 1, width: 1398, height: 2034, format: "png" },
+        { slot: "duo-inner", index: 1, width: 2007, height: 2853, format: "png" },
+      ],
     },
-    body: Uint8Array.from([0x50, 0x4b, 0x03, 0x04]),
   };
 }
 
@@ -152,17 +154,19 @@ Cypress.Commands.add("dropScreens", (sides?: { outer?: string | string[]; inner?
   const inner = sides?.inner;
   const outerCount = Array.isArray(outer) ? outer.length : 1;
   cy.get('[data-testid="tool-sets"][data-ready="true"]');
+  cy.get('[data-testid="tool-tab-captures"]').click();
   cy.get('[data-testid="drop-outer-input"]').selectFile(outer, { force: true });
   cy.get('[data-testid="drop-outer"]').should("have.attr", "data-count", String(outerCount));
   if (inner) {
     const innerCount = Array.isArray(inner) ? inner.length : 1;
     cy.get('[data-testid="drop-inner-input"]').selectFile(inner, { force: true });
+    cy.get('[data-testid="tool-tab-captures"]').click();
     cy.get('[data-testid="drop-inner"]').should("have.attr", "data-count", String(innerCount));
   }
 });
 
 Cypress.Commands.add("acknowledgeQuality", () => {
-  cy.get('[data-testid="preview-outer-metrics"]').should("be.visible");
+  cy.get('[data-testid="tool-tab-review"]').click();
   cy.get("body").then(($body) => {
     const button = $body.find('[data-testid="quality-acknowledge"]');
     if (button.length && button.attr("aria-pressed") !== "true") cy.wrap(button).click();

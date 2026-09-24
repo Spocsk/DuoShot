@@ -51,7 +51,7 @@ describe("zip", () => {
     expect(readme).toContain("outer/inner counts differ");
     expect(readme).toContain("01: RISK 2.3.3");
     expect(readme).toContain("source had transparency");
-    expect(readme).toContain("Généré avec DuoShot");
+    expect(readme).toContain("Préparé avec DuoShot");
   });
 
   it("lists exact Connect pixels per folder", () => {

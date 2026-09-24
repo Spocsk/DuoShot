@@ -7,12 +7,21 @@ describe("checkout", () => {
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
 
-  it("shows mock, success, and cancel return messages", () => {
-    cy.visitFr("/tool?checkout=mock");
-    cy.get('[data-testid="tool-status"]').should("contain", "Checkout mock");
+  it("keeps the annual choice through guest signup", () => {
+    cy.visitFr("/pricing");
+    cy.get('[data-testid="billing-yearly"]').click();
+    cy.get('[data-testid="pricing-cta-indie_yearly"]').click();
+    cy.location("pathname").should("eq", "/tool");
+    cy.location("search").should("include", "plan=indie_yearly");
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+  });
+
+  it("waits for a confirmed subscription before showing success", () => {
     cy.visitFr("/tool?checkout=success");
-    cy.get('[data-testid="tool-status"]').should("contain", "Abonnement actif");
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="tool-status"]').should("contain", "Activation de l’abonnement en cours");
     cy.visitFr("/tool?checkout=cancel");
+    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-status"]').should("contain", "Paiement annulé");
   });
 
@@ -22,15 +31,17 @@ describe("checkout", () => {
     cy.get('[data-testid="paywall"]').should("be.visible");
   });
 
-  it("starts a mock checkout from the 6.9 paywall", () => {
+  it("starts Checkout from the 6.9 paywall", () => {
     cy.loginAs("free");
-    cy.intercept("POST", "**/api/stripe/checkout", { url: "/tool?checkout=mock" }).as("checkout");
+    cy.intercept("POST", "**/api/stripe/checkout", { url: "/tool?checkout=cancel" }).as("checkout");
     cy.visitFr("/tool");
+    cy.get('[data-testid="tool-tab-adjust"]').click();
     cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-69"]').click();
     cy.get('[data-testid="paywall-cta-indie"]').click();
     cy.wait("@checkout");
-    cy.location("search").should("include", "checkout=mock");
-    cy.get('[data-testid="tool-status"]').should("contain", "Checkout mock");
+    cy.location("search").should("include", "checkout=cancel");
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="tool-status"]').should("contain", "Paiement annulé");
   });
 });

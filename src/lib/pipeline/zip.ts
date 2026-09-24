@@ -69,12 +69,13 @@ export function buildReadme(options: {
   }
   lines.push(
     "Checks:",
-    options.pixels?.length ? `- Pixels: ${options.pixels.join(", ")}` : "- Pixels: App Store Connect shelf sizes",
+    options.pixels?.length ? `- Output dimensions: ${options.pixels.join(", ")}` : "- Output dimensions: selected formats",
     `- Alpha: flattened${options.flattenAlpha ? " (source had transparency)" : ""}`,
     "- Color: sRGB RGB, no alpha",
     options.unpaired ? "- Slides: outer/inner counts differ" : "- Slides: paired by index",
     "",
-    "PNG-24 (default) or JPEG q90. RGB, no alpha, exact App Store pixels.",
+    "PNG (default) or JPEG q90. RGB, no alpha. Review these files before manual upload.",
+    "Visual checks are advisory; this report does not predict App Store approval.",
     "Sources and ZIP are retained at most 24 hours.",
   );
   if (options.cloneScores?.length) {
@@ -88,7 +89,7 @@ export function buildReadme(options: {
     for (const warning of options.compositionWarnings) lines.push(`- ${warning}`);
   }
   if (options.branded) {
-    lines.push("", "Généré avec DuoShot — On ne vend pas un resize. On vend un build qui passe.");
+    lines.push("", "Préparé avec DuoShot — vérifie chaque image avant le dépôt dans App Store Connect.");
   }
   return `${lines.join("\n")}\n`;
 }

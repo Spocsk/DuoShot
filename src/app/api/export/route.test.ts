@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveEntitlements } from "@/lib/billing";
+import { composeZipImages } from "@/lib/pipeline/compose";
+import { buildZip } from "@/lib/pipeline/zip";
+import { duoSpec } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createQueryBuilder, createSupabaseMock, readJson } from "@/test/supabase-mock";
 import { POST } from "./route";
@@ -16,6 +19,7 @@ vi.mock("@/lib/pipeline/compose", () => ({
 vi.mock("@/lib/pipeline/zip", () => ({
   buildZip: vi.fn(),
 }));
+vi.mock("@/lib/pipeline/clone-hash", () => ({ hashFromBuffer: vi.fn().mockResolvedValue(BigInt(0)) }));
 
 const USER = { id: "user-1", email: "a@example.com" };
 const FREE = {
@@ -54,6 +58,8 @@ function withWorkspace() {
 beforeEach(() => {
   vi.mocked(createServerSupabase).mockReset();
   vi.mocked(resolveEntitlements).mockReset();
+  vi.mocked(composeZipImages).mockReset();
+  vi.mocked(buildZip).mockReset();
 });
 
 describe("POST /api/export", () => {
@@ -73,7 +79,7 @@ describe("POST /api/export", () => {
 
   it("gates 6.9-inch sizes on free plans", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(withWorkspace() as never);
-    vi.mocked(resolveEntitlements).mockResolvedValue(FREE);
+    vi.mocked(resolveEntitlements).mockReturnValue(FREE);
     const { status, body } = await readJson(
       await POST(
         jsonRequest({
@@ -89,7 +95,7 @@ describe("POST /api/export", () => {
 
   it("returns 402 when the trial is exhausted", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(withWorkspace() as never);
-    vi.mocked(resolveEntitlements).mockResolvedValue(FREE);
+    vi.mocked(resolveEntitlements).mockReturnValue(FREE);
     const { status, body } = await readJson(
       await POST(
         jsonRequest({
@@ -116,7 +122,7 @@ describe("POST /api/export", () => {
         },
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue(INDIE);
+    vi.mocked(resolveEntitlements).mockReturnValue(INDIE);
     const { status, body } = await readJson(
       await POST(
         jsonRequest({
@@ -127,5 +133,43 @@ describe("POST /api/export", () => {
     );
     expect(status).toBe(403);
     expect(body.error).toBe("PATH_FORBIDDEN");
+  });
+
+  it("delivers a ZIP larger than 4.5 MB through a signed storage URL", async () => {
+    const zip = Buffer.alloc(5_000_000, 7);
+    const uploaded: number[] = [];
+    const image = Buffer.from([1, 2, 3]);
+    vi.mocked(resolveEntitlements).mockReturnValue(INDIE);
+    vi.mocked(composeZipImages).mockResolvedValue({
+      images: [
+        { spec: duoSpec("duo-outer", "portrait"), index: 0, buffer: image },
+        { spec: duoSpec("duo-inner", "portrait"), index: 0, buffer: image },
+      ],
+      flattenAlpha: false,
+      compositionWarnings: [],
+    });
+    vi.mocked(buildZip).mockResolvedValue(zip);
+    vi.mocked(createServerSupabase).mockResolvedValue({
+      auth: { getUser: async () => ({ data: { user: USER } }) },
+      from: (table: string) => createQueryBuilder({ data: table === "workspace_members"
+        ? { workspace_id: "ws-1", role: "owner" }
+        : table === "daily_export_counts" ? { count: 0 }
+          : { id: "ws-1", client_slug: null, plan: "indie", free_exports_used: 0 }, error: null }),
+      rpc: async () => ({ data: 1, error: null }),
+      storage: { from: (bucket: string) => ({
+        download: async () => bucket === "uploads"
+          ? { data: { arrayBuffer: async () => Uint8Array.from(image).buffer }, error: null }
+          : { data: { size: zip.length }, error: null },
+        upload: async (_path: string, bytes: Uint8Array) => { uploaded.push(bytes.length); return { error: null }; },
+        createSignedUrl: async () => ({ data: { signedUrl: "https://storage.example/large.zip" }, error: null }),
+      }) },
+    } as never);
+    const { status, body } = await readJson(await POST(jsonRequest({
+      outerPaths: ["user-1/outer.png"], innerPaths: ["user-1/inner.png"], assumeCloneRisk: true,
+    })));
+    expect(status).toBe(200);
+    expect(uploaded).toEqual([zip.length]);
+    expect(body.url).toBe("https://storage.example/large.zip");
+    expect(body.images).toHaveLength(2);
   });
 });

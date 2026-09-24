@@ -54,7 +54,7 @@ describe("GET /api/billing/status", () => {
         },
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue({
+    vi.mocked(resolveEntitlements).mockReturnValue({
       plan: "studio",
       source: "workspace",
       remainingFreeExports: null,
@@ -65,10 +65,14 @@ describe("GET /api/billing/status", () => {
     expect(body.plan).toBe("studio");
     expect(body.canUse69).toBe(true);
     expect(resolveEntitlements).toHaveBeenCalledWith({
-      email: USER.email,
-      workspaceId: "ws-1",
       freeExportsUsed: 0,
       workspacePlan: "studio",
+      manualPlan: undefined,
+      customerId: undefined,
+      subscriptionId: undefined,
+      subscriptionStatus: undefined,
+      periodEnd: undefined,
+      cancelAtPeriodEnd: undefined,
     });
   });
 });

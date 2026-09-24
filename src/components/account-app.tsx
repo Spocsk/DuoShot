@@ -14,6 +14,10 @@ import { localePrefix, reviewPath } from "@/lib/site";
 type Status = {
   plan?: PlanId;
   remainingFreeExports?: number | null;
+  subscriptionStatus?: string | null;
+  periodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  hasBillingCustomer?: boolean;
 };
 
 export function AccountApp({ locale }: { locale: Locale }) {
@@ -21,6 +25,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
   const prefix = localePrefix(locale);
   const [email, setEmail] = useState<string | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
+  const [statusError, setStatusError] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -34,9 +39,12 @@ export function AccountApp({ locale }: { locale: Locale }) {
       setEmail(data.user.email ?? data.user.id);
     });
     void fetch("/api/billing/status")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("BILLING_UNAVAILABLE");
+        return res.json();
+      })
       .then((payload: Status) => setStatus(payload))
-      .catch(() => setStatus({ plan: "free", remainingFreeExports: 2 }));
+      .catch(() => setStatusError(true));
   }, [prefix, router]);
 
   async function checkout(kind: CheckoutKind) {
@@ -45,6 +53,23 @@ export function AccountApp({ locale }: { locale: Locale }) {
       await startCheckout(kind, checkoutReturnPath(locale));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Checkout indisponible");
+      setBusy(false);
+    }
+  }
+
+  async function manageBilling() {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
+      const payload = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !payload.url) throw new Error(payload.error || "BILLING_UNAVAILABLE");
+      window.location.assign(payload.url);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "BILLING_UNAVAILABLE");
       setBusy(false);
     }
   }
@@ -84,81 +109,97 @@ export function AccountApp({ locale }: { locale: Locale }) {
         : plan === "free"
           ? t(locale, "account_plan_free")
           : null;
+  const subscriptionLabel = status?.subscriptionStatus
+    ? ({
+        active: locale === "fr" ? "Actif" : "Active",
+        trialing: locale === "fr" ? "Période d’essai" : "Trialing",
+        past_due: locale === "fr" ? "Paiement en attente" : "Payment overdue",
+        unpaid: locale === "fr" ? "Impayé" : "Unpaid",
+        canceled: locale === "fr" ? "Résilié" : "Canceled",
+        incomplete: locale === "fr" ? "À confirmer" : "Incomplete",
+      } as Record<string, string>)[status.subscriptionStatus] ?? status.subscriptionStatus
+    : null;
 
   return (
-    <main id="main" className="flex-1">
-      <div className="mx-auto max-w-2xl px-5 py-12" data-testid="account">
-      <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
-      <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
-      <p className="ds-label mt-6">{t(locale, "account_plan_label")}</p>
-      {planLabel ? (
-        <p className="font-display mt-1 text-3xl" data-testid="account-plan">{planLabel}</p>
-      ) : (
-        <p className="mt-2 text-sm text-[var(--muted)]" role="status" data-testid="account-plan-loading">
-          {locale === "fr" ? "Chargement de votre abonnement…" : "Loading your subscription…"}
-        </p>
-      )}
-      {plan === "free" && remaining != null ? (
-        <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
-      ) : null}
-      {plan === "free" ? (
-        <div className="mt-8 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => void checkout("indie_monthly")}
-            disabled={busy}
-            data-testid="account-upgrade-indie"
-            className="ds-cta"
-          >
-            {t(locale, "pricing_indie_cta")}
-          </button>
-          <button
-            type="button"
-            onClick={() => void checkout("studio_monthly")}
-            disabled={busy}
-            data-testid="account-upgrade-studio"
-            className="ds-cta-ghost"
-          >
-            {t(locale, "pricing_studio_cta")}
-          </button>
+    <main id="main" className="studio-account-page flex-1">
+      <div className="studio-account-inner mx-auto max-w-2xl px-5 py-12" data-testid="account">
+        <div className="studio-account-heading">
+          <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
+          <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
         </div>
-      ) : null}
-      {plan === "indie" ? (
-        <button
-          type="button"
-          onClick={() => void checkout("studio_monthly")}
-          disabled={busy}
-          data-testid="account-upgrade-studio"
-          className="ds-cta mt-8"
-        >
-          {t(locale, "account_upgrade_studio")}
-        </button>
-      ) : null}
-      {plan === "studio" ? (
-        <>
-          <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex">
-            {t(locale, "cta_tool")}
+        <section className="studio-account-plan" aria-label={locale === "fr" ? "Votre offre" : "Your plan"}>
+          <p className="ds-label">{t(locale, "account_plan_label")}</p>
+          {planLabel ? (
+            <p className="font-display mt-1 text-3xl" data-testid="account-plan">{planLabel}</p>
+          ) : statusError ? (
+            <p className="ds-warn mt-2 text-sm" role="alert" data-testid="account-plan-error">
+              {locale === "fr" ? "Impossible de charger votre offre. Actualisez la page pour réessayer." : "Could not load your plan. Refresh the page to try again."}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-[var(--muted)]" role="status" data-testid="account-plan-loading">
+              {locale === "fr" ? "Chargement de votre abonnement…" : "Loading your subscription…"}
+            </p>
+          )}
+          {plan === "free" && remaining != null ? (
+            <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
+          ) : null}
+          {status?.subscriptionStatus ? (
+            <p className="mt-2 text-sm text-[var(--muted)]" data-testid="account-billing-state">
+              {locale === "fr" ? "Abonnement" : "Subscription"}: {subscriptionLabel}
+              {status.periodEnd ? ` · ${status.cancelAtPeriodEnd ? (locale === "fr" ? "Fin" : "Ends") : (locale === "fr" ? "Renouvellement" : "Renews")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(status.periodEnd))}` : ""}
+            </p>
+          ) : null}
+          {status?.hasBillingCustomer ? (
+            <button type="button" className="ds-cta-ghost mt-5" onClick={() => void manageBilling()} disabled={busy} data-testid="account-manage-billing">
+              {locale === "fr" ? "Gérer abonnement et factures" : "Manage subscription and invoices"}
+            </button>
+          ) : null}
+          {plan === "free" ? (
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void checkout("indie_monthly")}
+                disabled={busy}
+                data-testid="account-upgrade-indie"
+                className="ds-cta"
+              >
+                {t(locale, "pricing_indie_cta")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void checkout("studio_monthly")}
+                disabled={busy}
+                data-testid="account-upgrade-studio"
+                className="ds-cta-ghost"
+              >
+                {t(locale, "pricing_studio_cta")}
+              </button>
+            </div>
+          ) : null}
+          {plan === "studio" ? (
+            <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex">
+              {t(locale, "cta_tool")}
+            </Link>
+          ) : null}
+        </section>
+        {plan === "studio" ? <StudioWorkspace locale={locale} /> : null}
+        <div className="studio-account-settings mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
+          <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
+            {t(locale, "export_data")}
+          </button>
+          <button
+            type="button"
+            onClick={() => void erase()}
+            data-testid="account-delete"
+            className="ds-danger"
+          >
+            {t(locale, "delete_account")}
+          </button>
+          <Link href={`${prefix}/privacy`} className="ds-text-btn">
+            {locale === "fr" ? "Confidentialité" : "Privacy"}
           </Link>
-          <StudioWorkspace locale={locale} />
-        </>
-      ) : null}
-      <div className="mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
-        <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
-          {t(locale, "export_data")}
-        </button>
-        <button
-          type="button"
-          onClick={() => void erase()}
-          data-testid="account-delete"
-          className="ds-danger"
-        >
-          {t(locale, "delete_account")}
-        </button>
-        <Link href={`${prefix}/privacy`} className="ds-text-btn">
-          Do Not Sell
-        </Link>
-      </div>
-      {message ? <p className="ds-warn" data-testid="account-message">{message}</p> : null}
+        </div>
+        {message ? <p className="ds-warn" role="alert" data-testid="account-message">{message}</p> : null}
       </div>
     </main>
   );
