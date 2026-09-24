@@ -55,6 +55,25 @@ describe("compose", () => {
     expect(meta.height).toBe(1398);
   });
 
+  it("keeps ten closed/open pairs in order in a real ZIP", async () => {
+    const input = await sourcePng();
+    const { images } = await composeZipImages({
+      outerBuffers: Array(10).fill(input),
+      innerBuffers: Array(10).fill(input),
+      options: { ...DEFAULT_RENDER_OPTIONS, format: "jpeg" },
+      include69: false,
+      plan: "indie",
+    });
+    expect(images).toHaveLength(20);
+    const zip = await JSZip.loadAsync(await buildZip({
+      appName: "Ten Pairs", orientation: "portrait", branded: false,
+      include69: false, format: "jpeg", images,
+    }));
+    expect(zip.file("ten-pairs/duo-outer-portrait/10.jpg")).toBeTruthy();
+    expect(zip.file("ten-pairs/duo-inner-portrait/10.jpg")).toBeTruthy();
+    expect(zip.file("ten-pairs/duo-outer-portrait/11.jpg")).toBeNull();
+  }, 60_000);
+
   it("composes review JPEGs at Connect pixels, not 720", async () => {
     const input = await sourcePng();
     const pair = await reviewPairJpegs({

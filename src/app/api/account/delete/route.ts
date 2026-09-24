@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,27 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  }
+
+  const { data: owned, error: ownedError } = await supabase.from("workspace_members")
+    .select("workspace_id").eq("user_id", user.id).eq("role", "owner");
+  if (ownedError) return NextResponse.json({ error: "BILLING_LOOKUP_FAILED" }, { status: 500 });
+  const stripe = getStripe();
+  for (const member of owned ?? []) {
+    const { data: workspace, error: workspaceError } = await supabase.from("workspaces")
+      .select("stripe_subscription_id").eq("id", member.workspace_id).single();
+    if (workspaceError) return NextResponse.json({ error: "BILLING_LOOKUP_FAILED" }, { status: 500 });
+    if (workspace?.stripe_subscription_id) {
+      if (!stripe) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
+      try {
+        const subscription = await stripe.subscriptions.retrieve(workspace.stripe_subscription_id);
+        if (!['canceled', 'incomplete_expired'].includes(subscription.status)) {
+          await stripe.subscriptions.cancel(workspace.stripe_subscription_id, { prorate: false });
+        }
+      } catch {
+        return NextResponse.json({ error: "SUBSCRIPTION_CANCEL_FAILED" }, { status: 502 });
+      }
+    }
   }
 
   const { error } = await supabase.rpc("erase_current_user");

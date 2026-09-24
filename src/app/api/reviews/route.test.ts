@@ -79,7 +79,7 @@ describe("POST /api/reviews", () => {
         },
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue({ ...STUDIO, plan: "indie" });
+    vi.mocked(resolveEntitlements).mockReturnValue({ ...STUDIO, plan: "indie" });
     const { status, body } = await readJson(await POST(jsonRequest({})));
     expect(status).toBe(403);
     expect(body.error).toBe("STUDIO_REQUIRED");
@@ -95,7 +95,7 @@ describe("POST /api/reviews", () => {
         },
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue(STUDIO);
+    vi.mocked(resolveEntitlements).mockReturnValue(STUDIO);
     vi.mocked(createAdminSupabase).mockReturnValue(null);
     const { status, body } = await readJson(await POST(jsonRequest({})));
     expect(status).toBe(400);
@@ -112,7 +112,7 @@ describe("POST /api/reviews", () => {
         },
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue(STUDIO);
+    vi.mocked(resolveEntitlements).mockReturnValue(STUDIO);
     vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({}) as never);
     const { status, body } = await readJson(await POST(jsonRequest({ outerPaths: [], innerPaths: [] })));
     expect(status).toBe(400);
@@ -129,7 +129,7 @@ describe("POST /api/reviews", () => {
         },
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue(STUDIO);
+    vi.mocked(resolveEntitlements).mockReturnValue(STUDIO);
     vi.mocked(createAdminSupabase).mockReturnValue(
       createSupabaseMock({
         from: (table) => {
@@ -169,7 +169,7 @@ describe("POST /api/reviews", () => {
         }),
       }) as never,
     );
-    vi.mocked(resolveEntitlements).mockResolvedValue(STUDIO);
+    vi.mocked(resolveEntitlements).mockReturnValue(STUDIO);
     vi.mocked(createAdminSupabase).mockReturnValue(
       createSupabaseMock({
         from: (table) => {

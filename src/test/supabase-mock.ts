@@ -8,6 +8,7 @@ export function createQueryBuilder(result: QueryResult | (() => QueryResult)) {
     update: () => builder,
     upsert: () => builder,
     eq: () => builder,
+    is: () => builder,
     limit: () => builder,
     order: () => builder,
     maybeSingle: async () => resolve(),

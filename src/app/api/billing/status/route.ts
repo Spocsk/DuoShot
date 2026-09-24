@@ -29,14 +29,18 @@ export async function GET() {
   }
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("plan, free_exports_used")
+    .select("plan, manual_plan, free_exports_used, stripe_customer_id, stripe_subscription_id, subscription_status, subscription_period_end, subscription_cancel_at_period_end")
     .eq("id", membership.workspace_id)
     .maybeSingle();
-  const entitlements = await resolveEntitlements({
-    email: user.email,
-    workspaceId: membership.workspace_id,
+  const entitlements = resolveEntitlements({
     freeExportsUsed: workspace?.free_exports_used ?? 0,
     workspacePlan: workspace?.plan,
+    manualPlan: workspace?.manual_plan,
+    customerId: workspace?.stripe_customer_id,
+    subscriptionId: workspace?.stripe_subscription_id,
+    subscriptionStatus: workspace?.subscription_status,
+    periodEnd: workspace?.subscription_period_end,
+    cancelAtPeriodEnd: workspace?.subscription_cancel_at_period_end,
   });
   return NextResponse.json(entitlements);
 }

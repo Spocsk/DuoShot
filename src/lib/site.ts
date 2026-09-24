@@ -3,9 +3,9 @@ import type { Locale } from "./specs";
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "App Store Screenshot QA";
 export const SITE_PITCH_FR =
-  "Ton IA resize. Nous on te sort le ZIP que Connect accepte du premier coup — sans alpha, sans clone outer/inner, sans rejet.";
+  "Prépare les captures fermé et ouvert de ta vraie app. DuoShot vérifie les fichiers, signale les points à examiner et livre un set prêt à déposer.";
 export const SITE_PITCH_EN =
-  "Your AI resizes. We hand you the ZIP Connect accepts first try — no alpha, no outer/inner clone, no rejection.";
+  "Prepare closed and open screenshots of your real app. DuoShot checks the files, flags what needs review, and delivers a set ready to upload.";
 
 export function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");

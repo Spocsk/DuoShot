@@ -5,11 +5,11 @@ import type { Locale } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
 
 const CARDS = [
-  { code: "2.3.3 / don’t accurately reflect", title: "reject_2_title", body: "reject_2_body", cta: "tool" },
-  { code: "incorrect size / dimensions", title: "reject_3_title", body: "reject_3_body", cta: "specs" },
-  { code: "transparency / alpha", title: "reject_1_title", body: "reject_1_body", cta: "tool" },
-  { code: "4.2.3 / incomplete", title: "reject_incomplete_title", body: "reject_incomplete_body", cta: "tool" },
-  { code: "preview video", title: "reject_video_title", body: "reject_video_body", cta: "none" },
+  { code: "contenu / content", title: "reject_2_title", body: "reject_2_body", cta: "tool" },
+  { code: "dimensions / dimensions", title: "reject_3_title", body: "reject_3_body", cta: "specs" },
+  { code: "transparence / alpha", title: "reject_1_title", body: "reject_1_body", cta: "tool" },
+  { code: "set / set", title: "reject_incomplete_title", body: "reject_incomplete_body", cta: "tool" },
+  { code: "vidéo / video", title: "reject_video_title", body: "reject_video_body", cta: "none" },
 ] as const;
 
 export function RejectionPage({ locale }: { locale: Locale }) {

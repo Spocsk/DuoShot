@@ -1376,11 +1376,11 @@ button.ds-pill {
   }
 }
 
-/* 12 tracks: stamp, title, price, intro, 6 feats, foot, cta */
+/* 13 tracks: stamp, title, price, period, intro, 6 feats, foot, cta */
 .pricing-col {
   display: grid;
   grid-template-rows: subgrid;
-  grid-row: span 12;
+  grid-row: span 13;
   min-width: 0;
   min-height: 0;
   padding: 1.25rem 1.1rem 1.2rem;
@@ -1511,7 +1511,7 @@ button.ds-pill {
 
 .preview-duo {
   display: grid;
-  /* iPhone Duo: closed 84.1×117.8 mm, open 164.6×117.8 mm, same height */
+  /* Physical Duo: closed 84.1×117.8 mm, open 164.6×117.8 mm, same height. */
   grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
   grid-template-rows: auto minmax(0, auto) auto auto;
   align-items: stretch;
@@ -1570,7 +1570,8 @@ button.ds-pill {
 }
 
 @media (max-width: 639px) {
-  .preview-duo {
+  .preview-duo,
+  .preview-duo.is-landscape {
     grid-template-columns: 1fr;
     grid-template-rows: none;
     row-gap: 1.5rem;
@@ -1599,8 +1600,18 @@ button.ds-pill {
     height: auto;
   }
 
-  .preview-duo.is-landscape .preview-stage .preview-outer {
+  .preview-duo.is-landscape .preview-stage .preview-glass.preview-outer {
     width: calc(117.8 / 164.6 * 100%);
+  }
+
+  .preview-duo.is-pixels .preview-stage .preview-glass.preview-outer {
+    width: calc(1398 / 2007 * 100%);
+    max-width: 100%;
+    height: auto;
+  }
+
+  .preview-duo.is-pixels.is-landscape .preview-stage .preview-glass.preview-outer {
+    width: calc(2034 / 2853 * 100%);
   }
 }
 
@@ -1631,6 +1642,13 @@ img.preview-glass {
   width: 100%;
   object-fit: cover;
   object-position: center top;
+}
+
+.preview-duo.is-pixels .preview-glass img,
+.preview-duo.is-pixels img.preview-glass,
+.review-pair.is-pixels img {
+  object-fit: fill;
+  object-position: center;
 }
 
 .preview-glass.is-draggable {
@@ -1816,9 +1834,49 @@ img.preview-glass {
 
 .preview-duo.is-landscape .preview-outer,
 .review-pair.is-landscape .preview-outer {
-  aspect-ratio: 117.8 / 84.1;
   /* Rotate the closed-device silhouette with the content: hinge edge on top. */
   border-radius: 3.5% 3.5% 11% 11% / 5% 5% 16% 16%;
+}
+
+.preview-duo.is-landscape .preview-outer {
+  aspect-ratio: 117.8 / 84.1;
+}
+
+.review-pair.is-landscape .preview-outer {
+  aspect-ratio: 117.8 / 84.1;
+}
+
+.preview-duo.is-pixels {
+  --preview-outer-w: 1398;
+  --preview-outer-h: 2034;
+  --preview-inner-w: 2007;
+  --preview-inner-h: 2853;
+  grid-template-columns: minmax(0, 1398fr) minmax(0, 2007fr);
+}
+
+.preview-duo.is-pixels.is-landscape {
+  --preview-outer-w: 2034;
+  --preview-outer-h: 1398;
+  --preview-inner-w: 2853;
+  --preview-inner-h: 2007;
+  grid-template-columns: minmax(0, 2034fr) minmax(0, 2853fr);
+}
+
+.preview-duo.is-pixels .preview-outer,
+.preview-duo.is-pixels.is-landscape .preview-outer {
+  aspect-ratio: var(--preview-outer-w) / var(--preview-outer-h);
+  border-radius: 0;
+}
+
+.preview-duo.is-pixels .preview-inner,
+.preview-duo.is-pixels.is-landscape .preview-inner {
+  aspect-ratio: var(--preview-inner-w) / var(--preview-inner-h);
+  border-radius: 0;
+}
+
+.preview-duo.is-pixels .preview-glass::after,
+.preview-duo.is-pixels .division {
+  display: none;
 }
 
 .preview-inner .division {
@@ -1836,6 +1894,20 @@ img.preview-glass {
   );
   opacity: 0.72;
   z-index: 2;
+}
+
+.preview-duo.is-pixels.is-landscape .preview-inner .division,
+.review-pair.is-pixels.is-landscape .preview-inner .division {
+  inset: 50% 0 auto 0;
+  width: 100%;
+  height: 6%;
+  translate: 0 -50%;
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.18),
+    rgb(255 255 255 / 0.08) 45%,
+    rgb(0 0 0 / 0.28)
+  );
 }
 
 .preview-empty {
@@ -2050,8 +2122,31 @@ img.preview-glass {
   gap: 0.75rem 1.25rem;
 }
 
+.review-pair.is-pixels {
+  --preview-outer-w: 1398;
+  --preview-outer-h: 2034;
+  --preview-inner-w: 2007;
+  --preview-inner-h: 2853;
+  grid-template-columns: minmax(0, 1398fr) minmax(0, 2007fr);
+}
+
+.review-pair.is-pixels.is-landscape {
+  --preview-outer-w: 2034;
+  --preview-outer-h: 1398;
+  --preview-inner-w: 2853;
+  --preview-inner-h: 2007;
+  grid-template-columns: minmax(0, 2034fr) minmax(0, 2853fr);
+}
+
 .review-pair.is-pixels .preview-outer,
-.review-pair.is-pixels .preview-inner {
+.review-pair.is-pixels.is-landscape .preview-outer {
+  aspect-ratio: var(--preview-outer-w) / var(--preview-outer-h);
+  border-radius: 0;
+}
+
+.review-pair.is-pixels .preview-inner,
+.review-pair.is-pixels.is-landscape .preview-inner {
+  aspect-ratio: var(--preview-inner-w) / var(--preview-inner-h);
   border-radius: 0;
 }
 
@@ -2061,7 +2156,10 @@ img.preview-glass {
 }
 
 @media (max-width: 639px) {
-  .review-pair {
+  .review-pair,
+  .review-pair.is-landscape,
+  .review-pair.is-pixels,
+  .review-pair.is-pixels.is-landscape {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2071,6 +2169,15 @@ img.preview-glass {
 
   .review-pair.is-landscape .preview-outer {
     width: calc(117.8 / 164.6 * 100%);
+  }
+
+  .review-pair.is-pixels .preview-outer,
+  .review-pair.is-pixels.is-landscape .preview-outer {
+    width: calc(1398 / 2007 * 100%);
+  }
+
+  .review-pair.is-pixels.is-landscape .preview-outer {
+    width: calc(2034 / 2853 * 100%);
   }
 }
 
@@ -2265,4 +2372,132 @@ html {
   --think-highlight: var(--foreground);
   --tt-bg: var(--surface);
   --tt-fg: var(--foreground);
+}
+
+/* 2026 studio identity: quiet mineral surfaces, precise cobalt actions, imagery first. */
+:root {
+  --background: #f7f9fb;
+  --foreground: #152435;
+  --muted: #596b7c;
+  --accent: #214cb4;
+  --line: rgb(21 36 53 / 0.12);
+  --surface: #ffffff;
+  --warn: #9b4c2e;
+  --device: #17202b;
+}
+
+.font-display {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.055em;
+}
+
+.ds-cta,
+.ds-pill-ink {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ds-cta-ghost {
+  border-color: rgb(21 36 53 / 0.2);
+}
+
+.ds-home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  min-height: calc(100svh - var(--header-h));
+  background:
+    radial-gradient(ellipse 66% 90% at 77% 22%, rgb(190 216 239 / 0.85), transparent 75%),
+    linear-gradient(125deg, #f9fbfc 10%, #edf3f7 66%, #dbe8f0);
+}
+
+.ds-home-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 22%;
+  pointer-events: none;
+  background: linear-gradient(transparent, rgb(247 249 251 / 0.84));
+  z-index: -1;
+}
+
+.ds-home-hero-inner {
+  width: min(100%, 90rem);
+  min-height: calc(100svh - var(--header-h));
+  margin-inline: auto;
+  padding: clamp(3rem, 7vw, 7rem) clamp(1.25rem, 5.2vw, 5.5rem);
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  align-items: center;
+  gap: clamp(2.5rem, 5vw, 6rem);
+}
+
+.ds-home-hero h1 {
+  max-width: 12ch;
+  font-size: clamp(3.2rem, 5.2vw, 6.3rem);
+  line-height: 0.99;
+}
+
+.ds-home-hero .duo-stage {
+  padding: clamp(1rem, 2.2vw, 2rem);
+  border: 1px solid rgb(255 255 255 / 0.72);
+  border-radius: clamp(1.5rem, 3vw, 3rem);
+  background: rgb(255 255 255 / 0.46);
+  box-shadow: 0 35px 90px rgb(38 73 98 / 0.13), inset 0 1px rgb(255 255 255 / 0.84);
+  backdrop-filter: blur(20px);
+}
+
+.ds-home-hero .duo-chassis,
+.ds-home-hero .duo-book {
+  box-shadow: 0 24px 48px rgb(13 38 64 / 0.21), 0 2px 5px rgb(13 38 64 / 0.14);
+}
+
+.ds-proof-band {
+  border-block: 1px solid var(--line);
+  background: #fff;
+}
+
+.ds-proof-band-inner {
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: clamp(2rem, 7vw, 7rem);
+  padding: clamp(3rem, 7vw, 6rem) 1.25rem;
+}
+
+.ds-proof-band .zip-tree {
+  margin-top: 1.5rem;
+}
+
+.ds-readiness {
+  border-top: 2px solid var(--accent);
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgb(221 234 246 / 0.34), transparent 70%);
+  padding: 1.25rem 0;
+}
+
+.ds-readiness li span {
+  min-width: 1.2rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .ds-home-hero-inner {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-block: 3.5rem 4rem;
+  }
+  .ds-home-hero h1 { max-width: 14ch; }
+  .ds-home-hero .duo-stage { max-width: 46rem; }
+  .ds-proof-band-inner { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-home-hero *, .ds-readiness * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
