@@ -2,9 +2,6 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 export function LandingMotion({ children }: { children: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
@@ -31,52 +28,45 @@ export function LandingMotion({ children }: { children: ReactNode }) {
           { autoAlpha: 0, x: -52, rotate: -3 },
           { autoAlpha: 1, x: 0, rotate: 0, duration: 1.35, delay: 0.2, ease: "power3.out", clearProps: "all" },
         );
-
-        gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
-          gsap.fromTo(element, { autoAlpha: 0.5, y: 32 }, {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.85,
-            ease: "power3.out",
-            scrollTrigger: { trigger: element, start: "top 88%", once: true },
-            clearProps: "all",
-          });
-        });
       });
 
       media.add("(min-width: 900px) and (prefers-reduced-motion: no-preference)", () => {
         const sequence = node.querySelector<HTMLElement>(".studio-sequence");
         if (!sequence) return;
-        const closed = sequence.querySelector<HTMLElement>(".duo-closed");
-        const open = sequence.querySelector<HTMLElement>(".duo-open");
-        const device = sequence.querySelector<HTMLElement>(".studio-sequence-device");
-        const inspection = sequence.querySelector<HTMLElement>(".studio-sequence-inspection");
-        const scanLine = sequence.querySelector<HTMLElement>(".studio-sequence-inspection-line");
-        const result = sequence.querySelector<HTMLElement>(".studio-sequence-result");
-        const steps = sequence.querySelectorAll<HTMLElement>("[data-sequence-step]");
-        if (!closed || !open || !device || !inspection || !scanLine || !result || steps.length !== 3) return;
+        const scenes = Array.from(sequence.querySelectorAll<HTMLElement>(".studio-sequence-stage > [data-sequence-scene]"));
+        const steps = Array.from(sequence.querySelectorAll<HTMLElement>("[data-sequence-step]"));
+        if (scenes.length !== 3 || steps.length !== 3) return;
 
-        gsap.set([closed, open, device, inspection, scanLine, result], { willChange: "transform, opacity" });
-        gsap.timeline({
-          scrollTrigger: {
-            trigger: sequence,
-            start: "top 58%",
-            end: "bottom 75%",
-            scrub: 1,
-          },
-        })
-          // Pair the two captures without changing their physical scale.
-          .fromTo(closed, { xPercent: -12, rotation: -4 }, { xPercent: 0, rotation: 0, duration: 0.28, ease: "power2.inOut" }, 0)
-          .fromTo(open, { xPercent: 9, rotation: 3 }, { xPercent: 0, rotation: 0, duration: 0.28, ease: "power2.inOut" }, 0)
-          .to(steps[0], { opacity: 0.45, duration: 0.12 }, 0.3)
-          // The inspection frame traces the pair, followed by a vertical scan.
-          .fromTo(inspection, { clipPath: "inset(0 100% 0 0)", opacity: 0 }, { clipPath: "inset(0 0% 0 0)", opacity: 1, duration: 0.23, ease: "power2.out" }, 0.32)
-          .fromTo(scanLine, { yPercent: -44, opacity: 0 }, { yPercent: 165, opacity: 1, duration: 0.28, ease: "none" }, 0.42)
-          .to(steps[1], { opacity: 0.45, duration: 0.12 }, 0.63)
-          .to(inspection, { opacity: 0, duration: 0.12 }, 0.66)
-          // Lift the pair to make room for the report card.
-          .to(device, { yPercent: -8, duration: 0.28, ease: "power2.inOut" }, 0.67)
-          .fromTo(result, { y: 44, opacity: 0 }, { y: 0, opacity: 1, duration: 0.25, ease: "power2.out" }, 0.72);
+        gsap.set(scenes, { autoAlpha: 0 });
+        gsap.set(scenes[0], { autoAlpha: 1 });
+        gsap.set(steps, { opacity: 0.5 });
+        gsap.set(steps[0], { opacity: 1 });
+        const thumbs = scenes[0].querySelectorAll<HTMLElement>(".studio-sequence-thumb");
+        const importBar = scenes[0].querySelector<HTMLElement>(".studio-sequence-import-status i");
+        const importTimeline = gsap.timeline({ paused: true })
+          .fromTo(thumbs, { x: (index: number) => index === 0 ? -70 : 70, y: 65, autoAlpha: 0, scale: 1.12 }, { x: 0, y: 0, autoAlpha: 1, scale: 1, duration: 0.55, stagger: 0.12, ease: "power2.out" })
+          .to(thumbs, { x: (index: number) => index === 0 ? -95 : 95, y: -90, autoAlpha: 0, scale: 0.45, duration: 0.55, stagger: 0.08, ease: "power2.inOut" }, 0.75);
+        if (importBar) importTimeline.fromTo(importBar, { scaleX: 0 }, { scaleX: 1, duration: 0.95, ease: "power2.inOut" }, 0.45);
+        let active = -1;
+        const showScene = (index: number) => {
+          if (active === index) return;
+          active = index;
+          scenes.forEach((scene, sceneIndex) => {
+            gsap.to(scene, { autoAlpha: sceneIndex === index ? 1 : 0, duration: 0.28, ease: "power2.out", overwrite: true });
+          });
+          gsap.to(steps, { opacity: (stepIndex: number) => stepIndex === index ? 1 : 0.5, duration: 0.35, overwrite: true });
+          if (index === 0) importTimeline.restart();
+          else importTimeline.pause();
+        };
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const index = steps.indexOf(entry.target as HTMLElement);
+            if (index !== -1) showScene(index);
+          });
+        }, { rootMargin: "-49% 0px -49% 0px" });
+        steps.forEach((step) => observer.observe(step));
+        return () => observer.disconnect();
       });
     }, node);
 

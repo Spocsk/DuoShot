@@ -1,4 +1,4 @@
-import type { CropTransforms, Orientation } from "./specs";
+import type { CropTransforms, FitMode, Orientation } from "./specs";
 
 export type SetMeta = {
   id: string;
@@ -6,6 +6,7 @@ export type SetMeta = {
   clientName: string;
   orientation: Orientation;
   sameSet: boolean;
+  fitMode?: FitMode;
   transforms?: CropTransforms;
   lastReviewId?: string | null;
   lastReviewStatus?: string | null;

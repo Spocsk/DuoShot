@@ -8,6 +8,7 @@ import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
 import { t } from "@/lib/i18n";
 import { localePrefix } from "@/lib/site";
+import { clearAnalyticsAuthIntent, markAnalyticsAuthIntent, trackProduct } from "@/lib/analytics-client";
 
 type Mode = "login" | "signup";
 
@@ -77,6 +78,7 @@ export function AuthForm({
         fail(t(locale, "google_error"));
         return;
       }
+      markAnalyticsAuthIntent("google");
       window.location.assign(data.url);
     } catch (error) {
       fail(error instanceof Error ? error.message : t(locale, "google_error"));
@@ -104,6 +106,7 @@ export function AuthForm({
         });
         if (error) throw error;
         if (data.user) {
+          void trackProduct("account_created", { method: "password" });
           try {
             await persistConsent(data.user.id);
           } catch {
@@ -121,12 +124,14 @@ export function AuthForm({
           if (variant === "page") router.push(afterAuth);
         }
       } else {
+        markAnalyticsAuthIntent("password");
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         onSuccess?.();
         if (variant === "page") router.push(afterAuth);
       }
     } catch (error) {
+      clearAnalyticsAuthIntent();
       fail(error instanceof Error ? error.message : "Erreur");
     } finally {
       setBusy(false);
@@ -146,6 +151,7 @@ export function AuthForm({
     if (error) {
       fail(error.message);
     } else {
+      markAnalyticsAuthIntent("magic");
       setMessageOk(true);
       setMessage(locale === "fr" ? "Lien magique envoyé." : "Magic link sent.");
     }

@@ -16,6 +16,7 @@ import {
   type RenderOptions,
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { trackServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -235,6 +236,13 @@ export async function POST(request: Request) {
       const { error: incrementError } = await supabase.rpc("increment_daily_export", { p_workspace_id: membership.workspace_id });
       if (incrementError) throw new Error("EXPORT_FAILED");
     }
+
+    await trackServerEvent(supabase, user.id, "export_succeeded", zipPath, {
+      plan: entitlements.plan,
+      image_count: count,
+      include_69: include69,
+      format: options.format,
+    });
 
     const warning = unpaired ? "UNPAIRED" : countWarning ?? "";
     const filename = `${slugify(appName) || "app"}.zip`;

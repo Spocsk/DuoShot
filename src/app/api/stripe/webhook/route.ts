@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { trackServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string) {
   const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
   if (!workspaceId || !customerId) throw new Error("SUBSCRIPTION_UNLINKED");
   const { data: workspace, error: lookupError } = await admin.from("workspaces")
-    .select("stripe_customer_id, stripe_subscription_id")
+    .select("stripe_customer_id, stripe_subscription_id, plan, subscription_status")
     .eq("id", workspaceId).single();
   if (lookupError || !workspace || workspace.stripe_customer_id !== customerId) throw new Error("CUSTOMER_MISMATCH");
   // A late event for an older subscription cannot overwrite the current one.
@@ -38,6 +39,15 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string) {
     subscription_cancel_at_period_end: subscription.cancel_at_period_end,
   }).eq("id", workspaceId);
   if (error) throw error;
+  if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN && active && plan !== "free" &&
+      (workspace.plan === "free" || workspace.stripe_subscription_id !== subscription.id ||
+        !["active", "trialing"].includes(workspace.subscription_status ?? ""))) {
+    const { data: owner } = await admin.from("workspace_members")
+      .select("user_id").eq("workspace_id", workspaceId).eq("role", "owner").limit(1).maybeSingle();
+    if (owner?.user_id) {
+      await trackServerEvent(admin, owner.user_id, "subscription_activated", `${subscription.id}:activated`, { plan });
+    }
+  }
 }
 
 export async function POST(request: Request) {

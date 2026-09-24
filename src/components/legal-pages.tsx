@@ -119,20 +119,21 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         <Block title="Data we process">
           <p>
             Account data (email, auth identifiers), consent logs, workspace membership, export metadata, and the
-            screenshot files you upload. Vercel Web Analytics records aggregated page views without cookies. No
-            marketing or ads in v1.
+            screenshot files you upload. Vercel Web Analytics records aggregated page views without cookies. If you
+            agree, Mixpanel records pseudonymous product events, pages visited and visible time, without screenshots or email addresses.
           </p>
         </Block>
         <Block title="Legal bases">
           <p>
             Contract (GDPR Art. 6.1.b) for the tool and ZIP. Legal obligation + contract for Stripe invoices. Contract
-            for magic-link email and receipts.
+            for magic-link email and receipts. Consent for optional Mixpanel product analytics; you can change this
+            choice at any time via Analytics preferences in the footer.
           </p>
         </Block>
         <Block title="Transfers">
           <p>
             Captures and profile data are stored primarily in Paris (Supabase eu-west-3). Vercel, Stripe, Resend and
-            Google OAuth may process data in the US under the Data Privacy Framework / SCCs. List:{" "}
+            Google OAuth may process data in the US under the Data Privacy Framework / SCCs. Mixpanel analytics use an EU project. List:{" "}
             <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
               sub-processors
             </Link>
@@ -142,7 +143,8 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         <Block title="Retention">
           <p>
             Uploads and ZIP files: 24 hours. Derived Studio review JPEGs: 7 days maximum, or earlier if the owner
-            revokes the link. Account rows remain until you delete the account. Stripe keeps billing records as required by law.
+            revokes the link. Account rows remain until you delete the account. Analytics events follow the Mixpanel
+            project retention setting and can be deleted upon request. Stripe keeps billing records as required by law.
           </p>
         </Block>
         <Block title="Your rights">
@@ -168,20 +170,21 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       <Block title="Données traitées">
         <p>
           E-mail et identifiants Auth, journaux de consentement, membership workspace, métadonnées d’export, fichiers de
-          captures que vous déposez. Vercel Web Analytics compte les pages vues de façon agrégée, sans cookie. Pas de
-          marketing ni pubs en v1.
+          captures que vous déposez. Vercel Web Analytics compte les pages vues de façon agrégée, sans cookie. Avec
+          votre accord, Mixpanel mesure des événements produit pseudonymes, les pages et leur temps visible, sans captures ni e-mail.
         </p>
       </Block>
       <Block title="Bases légales">
         <p>
           Contrat (art. 6.1.b RGPD) pour l’outil et le ZIP. Obligation légale + contrat pour la facturation Stripe.
-          Contrat pour le magic link et les reçus.
+          Contrat pour le magic link et les reçus. Consentement pour les statistiques produit facultatives Mixpanel,
+          modifiable à tout moment depuis les préférences statistiques en pied de page.
         </p>
       </Block>
       <Block title="Transferts">
         <p>
           Captures et profil en primaire à Paris (Supabase eu-west-3). Vercel, Stripe, Resend et Google OAuth peuvent
-          traiter aux États-Unis (DPF / CCT). Liste :{" "}
+          traiter aux États-Unis (DPF / CCT). Les données analytiques Mixpanel utilisent un projet UE. Liste :{" "}
           <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
             sous-traitants
           </Link>
@@ -191,7 +194,8 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       <Block title="Durées">
         <p>
           Uploads et ZIP : 24 h. JPEG dérivés des reviews Studio : 7 jours maximum, ou moins si le propriétaire
-          révoque le lien. Lignes de compte jusqu’à suppression. Stripe conserve la facturation selon la loi.
+          révoque le lien. Lignes de compte jusqu’à suppression. Les événements analytiques suivent la durée configurée
+          dans le projet Mixpanel et peuvent être effacés sur demande. Stripe conserve la facturation selon la loi.
         </p>
       </Block>
       <Block title="Vos droits">
@@ -361,13 +365,14 @@ export function CookiesContent({ locale }: { locale: Locale }) {
           <p>
             Auth session cookies only (Supabase PKCE). They are required to keep you signed in and to download a ZIP. The
             functional <code>duoshot_locale</code> cookie is set only if you click FR/EN; without it, the language follows
-            the browser <code>Accept-Language</code> header. Vercel Web Analytics measures traffic without cookies, so
-            there is no CMP banner for ads or trackers. Stripe may set its own cookies on Stripe Checkout, off this site.
+            the browser <code>Accept-Language</code> header. Vercel Web Analytics measures aggregated traffic without
+            cookies. Stripe may set its own cookies on Stripe Checkout, off this site.
           </p>
         </Block>
-        <Block title="Later">
+        <Block title="Optional product analytics">
           <p>
-            If we add trackers, an opt-in banner will precede them. Details on{" "}
+            Mixpanel loads only after you accept product analytics. Its storage supports pseudonymous journeys. You
+            can refuse or change your choice through Analytics preferences in the footer. Details on{" "}
             <Link href={`${prefix}/privacy`} className="ds-link">
               privacy
             </Link>
@@ -384,14 +389,14 @@ export function CookiesContent({ locale }: { locale: Locale }) {
         <p>
           Cookies de session Auth seulement (Supabase PKCE). Ils servent à rester connecté et à télécharger un ZIP. Le
           cookie fonctionnel <code>duoshot_locale</code> n’est posé que si tu cliques FR/EN ; sans lui, la langue suit
-          l’en-tête <code>Accept-Language</code> du navigateur. Vercel Web Analytics mesure le trafic sans cookie, donc
-          pas de bandeau CMP pour pubs ou trackers. Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de
-          ce site.
+          l’en-tête <code>Accept-Language</code> du navigateur. Vercel Web Analytics mesure le trafic agrégé sans cookie.
+          Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de ce site.
         </p>
       </Block>
-      <Block title="Plus tard">
+      <Block title="Statistiques produit facultatives">
         <p>
-          Si des trackers arrivent, un bandeau opt-in les précédera. Détail :{" "}
+          Mixpanel ne se charge qu’après votre acceptation. Son stockage permet de suivre des parcours pseudonymes.
+          Vous pouvez refuser ou modifier votre choix depuis les préférences statistiques en pied de page. Détail :{" "}
           <Link href={`${prefix}/privacy`} className="ds-link">
             confidentialité
           </Link>
@@ -409,6 +414,7 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
       <ul className="list-disc pl-5">
         <li>Supabase — Postgres, Auth, Storage — eu-west-3 (Paris)</li>
         <li>Vercel — hosting, functions, Web Analytics — US/EU</li>
+        <li>Mixpanel — optional product analytics — EU project</li>
         <li>Stripe — payments — US/EU</li>
         <li>Resend — transactional email — US</li>
         <li>Google — OAuth sign-in — US</li>

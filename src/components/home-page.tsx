@@ -10,6 +10,37 @@ import { PricingSection } from "@/components/pricing-section";
 import { TrustLine } from "@/components/trust-line";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { DEMO_REVIEW_ID, EXAMPLE_ZIP_TREE } from "@/lib/pipeline/harbor";
+import { HarborCover, HarborInnerMain } from "@/components/harbor-ui";
+
+type SequencePhase = "import" | "inspect" | "report";
+
+function SequenceScene({ locale, phase }: { locale: Locale; phase: SequencePhase }) {
+  const fr = locale === "fr";
+  return <div className={`studio-sequence-scene is-${phase}`} data-sequence-scene={phase}>
+    <div className="studio-sequence-device"><DuoDevice locale={locale} /></div>
+    {phase === "import" ? <div className="studio-sequence-import">
+      <div className="studio-sequence-import-thumbs" aria-hidden="true">
+        <div className="studio-sequence-thumb is-outer"><HarborCover /><span>{fr ? "Fermé" : "Closed"}</span></div>
+        <div className="studio-sequence-thumb is-inner"><HarborInnerMain /><span>{fr ? "Ouvert" : "Open"}</span></div>
+      </div>
+      <div className="studio-sequence-import-status"><span>{fr ? "Import des deux vues" : "Importing both views"}</span><strong>2 / 2</strong><i /></div>
+    </div> : null}
+    {phase === "inspect" ? <div className="studio-sequence-info studio-sequence-analysis">
+      <div><span>{fr ? "DÉMO HARBOR · RÉSULTAT" : "HARBOR DEMO · RESULT"}</span><strong>{fr ? "2 / 2 vues analysées" : "2 / 2 views analyzed"}</strong></div>
+      <div className="studio-sequence-score"><span>{fr ? "Score de préparation" : "Preparation score"}</span><strong>83 / 100</strong></div>
+      <p>{fr ? "Dimensions contrôlées · cadrage à examiner" : "Dimensions checked · framing to review"}</p>
+    </div> : null}
+    {phase === "report" ? <div className="studio-sequence-info studio-sequence-report">
+      <span>{fr ? "DÉMO HARBOR · BILAN" : "HARBOR DEMO · REPORT"}</span>
+      <strong>{fr ? "Ce qui reste à vérifier" : "What still needs review"}</strong>
+      <ul>
+        <li><i className="studio-check" />{fr ? "Dimensions et format contrôlés" : "Dimensions and format checked"}</li>
+        <li><i className="studio-review-dot" />{fr ? "Cadrage à examiner" : "Framing to review"}</li>
+        <li><i className="studio-human-dot" />{fr ? "App en usage à confirmer" : "App in use to confirm"}</li>
+      </ul>
+    </div> : null}
+  </div>;
+}
 
 export function HomePage({ locale }: { locale: Locale }) {
   const prefix = localePrefix(locale);
@@ -62,33 +93,28 @@ export function HomePage({ locale }: { locale: Locale }) {
 
           <section className="studio-sequence" aria-label={fr ? "Parcours de préparation" : "Preparation journey"}>
             <div className="studio-sequence-stage" aria-hidden="true">
-              <div className="studio-sequence-device"><DuoDevice locale={locale} /></div>
-              <div className="studio-sequence-inspection">
-                <span className="studio-sequence-inspection-label">{fr ? "APERÇU · PAIRE 01" : "PREVIEW · PAIR 01"}</span>
-                <span className="studio-sequence-inspection-line" />
-                <span className="studio-sequence-inspection-detail">{fr ? "CADRAGE CONTRÔLÉ" : "FRAMING CHECKED"}</span>
-              </div>
-              <div className="studio-sequence-result">
-                <span>{fr ? "BILAN DE LA PAIRE" : "PAIR REPORT"}</span>
-                <strong>{fr ? "À vérifier ensemble" : "Ready for review"}</strong>
-                <small>{fr ? "Dimensions contrôlées · cadrage à examiner" : "Dimensions checked · framing to review"}</small>
-              </div>
+              <SequenceScene locale={locale} phase="import" />
+              <SequenceScene locale={locale} phase="inspect" />
+              <SequenceScene locale={locale} phase="report" />
             </div>
             <div className="studio-sequence-steps">
               <div className="studio-sequence-step" data-sequence-step>
                 <span>01</span>
                 <h2>{fr ? "Importez chaque état." : "Import each state."}</h2>
                 <p>{fr ? "Glissez vos captures fermé et ouvert. Les paires restent alignées, de la première à la dixième." : "Drop in closed and open captures. Every pair stays aligned, from the first to the tenth."}</p>
+                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="import" /></div>
               </div>
               <div className="studio-sequence-step" data-sequence-step>
                 <span>02</span>
                 <h2>{fr ? "Voyez le résultat avant l’export." : "See the result before export."}</h2>
                 <p>{fr ? "Examinez les écrans sur l’appareil et au pixel près. Ajustez le cadrage, la lisibilité et la charnière." : "Inspect device and pixel previews. Adjust framing, legibility, and the hinge."}</p>
+                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="inspect" /></div>
               </div>
               <div className="studio-sequence-step" data-sequence-step>
                 <span>03</span>
                 <h2>{fr ? "Sachez ce qui reste à vérifier." : "Know what still needs review."}</h2>
                 <p>{fr ? "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations." : "The report separates technical checks, visual alerts, and your confirmations."}</p>
+                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="report" /></div>
               </div>
             </div>
           </section>
@@ -128,7 +154,25 @@ export function HomePage({ locale }: { locale: Locale }) {
                 {t(locale, "cta_review_demo")} <span aria-hidden="true">↗</span>
               </Link>
             </div>
-            <div className="studio-review-mark" aria-hidden="true"><span>H</span><span>✓</span></div>
+            <div className="studio-review-preview" aria-label={fr ? "Aperçu de la revue client Harbor" : "Preview of the Harbor client review"}>
+              <div className="studio-review-preview-top">
+                <span>{fr ? "APERÇU DE LA REVUE" : "REVIEW PREVIEW"}</span>
+                <span className="studio-review-preview-status"><i />{fr ? "En attente" : "Awaiting decision"}</span>
+              </div>
+              <div className="studio-review-preview-heading">
+                <strong>Harbor</strong>
+                <span>{fr ? "Set 01 · Écran fermé + ouvert" : "Set 01 · Closed + open screens"}</span>
+              </div>
+              <div className="studio-review-preview-pair">
+                <div className="studio-review-preview-shot is-outer"><HarborCover /><span>{fr ? "Écran fermé" : "Closed screen"}</span></div>
+                <div className="studio-review-preview-shot is-inner"><HarborInnerMain /><span>{fr ? "Écran ouvert" : "Open screen"}</span></div>
+              </div>
+              <div className="studio-review-preview-decision">
+                <span>{fr ? "Votre décision" : "Your decision"}</span>
+                <div><span>{fr ? "Approuver" : "Approve"}</span><span>{fr ? "À refaire" : "Needs work"}</span></div>
+              </div>
+              <p>{fr ? "Lien temporaire · décision sur le set" : "Temporary link · decision on the set"}</p>
+            </div>
           </section>
 
           <PricingSection locale={locale} />

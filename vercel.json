@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/cron/analytics-erasure", "schedule": "0 4 * * *" }
+  ]
+}

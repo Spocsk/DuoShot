@@ -6,6 +6,7 @@ import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
 import { reviewPairJpegs } from "@/lib/pipeline/compose";
 import { createReviewWriter } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { trackServerEvent } from "@/lib/analytics-server";
 import { reviewPath } from "@/lib/site";
 import { DEFAULT_RENDER_OPTIONS, type CropTransforms, type Locale, type RenderOptions } from "@/lib/specs";
 import { reviewExpiresAt, reviewState } from "@/lib/reviews";
@@ -162,6 +163,8 @@ export async function POST(request: Request) {
   if (slideError) {
     return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
   }
+
+  await trackServerEvent(supabase, user.id, "review_created", review.id, { slide_count: pairCount });
 
   return NextResponse.json({ id: publicId, url: reviewPath(locale, publicId), expiresAt });
 }

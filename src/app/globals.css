@@ -1644,6 +1644,13 @@ img.preview-glass {
   object-position: center top;
 }
 
+/* The device frame is illustrative; it must show the entire composed export. */
+.tool-canvas .preview-glass img,
+.tool-canvas .preview-duo.is-pixels .preview-glass img {
+  object-fit: contain;
+  object-position: center;
+}
+
 .preview-duo.is-pixels .preview-glass img,
 .preview-duo.is-pixels img.preview-glass,
 .review-pair.is-pixels img {
@@ -1746,6 +1753,11 @@ img.preview-glass {
   min-height: var(--target);
   margin: 0;
   accent-color: var(--foreground);
+}
+
+.crop-axis-controls input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .crop-readout {

@@ -117,7 +117,7 @@ export async function renderScreenshot(
   const transform = normalizeCropTransform(cropTransform, options.fit);
   const metrics = compositionMetrics(sourceWidth, sourceHeight, spec.width, spec.height, transform);
   let foreground: Buffer;
-  if (transform.fit === "contain") {
+  if (metrics.fit === "contain") {
     foreground = await sharp(input, { failOn: "none" })
       .rotate()
       .resize({
@@ -131,13 +131,17 @@ export async function renderScreenshot(
       .png()
       .toBuffer();
   } else {
-    const width = Math.max(spec.width, Math.ceil(metrics.rect.width));
-    const height = Math.max(spec.height, Math.ceil(metrics.rect.height));
-    const left = Math.min(width - spec.width, Math.max(0, Math.round((width - spec.width) * transform.x)));
-    const top = Math.min(height - spec.height, Math.max(0, Math.round((height - spec.height) * transform.y)));
-    foreground = await sharp(input, { failOn: "none" })
+    const widthControlsScale = sourceWidth / sourceHeight <= spec.width / spec.height;
+    const resized = await sharp(input, { failOn: "none" })
       .rotate()
-      .resize({ width, height, fit: "fill" })
+      .resize(widthControlsScale
+        ? { width: Math.max(spec.width, Math.ceil(metrics.rect.width)) }
+        : { height: Math.max(spec.height, Math.ceil(metrics.rect.height)) })
+      .png()
+      .toBuffer({ resolveWithObject: true });
+    const left = Math.min(resized.info.width - spec.width, Math.max(0, Math.round((resized.info.width - spec.width) * transform.x)));
+    const top = Math.min(resized.info.height - spec.height, Math.max(0, Math.round((resized.info.height - spec.height) * transform.y)));
+    foreground = await sharp(resized.data)
       .extract({ left, top, width: spec.width, height: spec.height })
       .toColourspace("srgb")
       .png()

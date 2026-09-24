@@ -118,6 +118,21 @@ describe("pipeline", () => {
     expect(rightPixel[0]).toBeLessThan(15);
   });
 
+  it("applies the vertical focal point after zoom to the exported pixels", async () => {
+    const top = await sharp({ create: { width: 100, height: 100, channels: 3, background: "#ff0000" } }).png().toBuffer();
+    const bottom = await sharp({ create: { width: 100, height: 100, channels: 3, background: "#0000ff" } }).png().toBuffer();
+    const source = await sharp({ create: { width: 100, height: 200, channels: 3, background: "#000000" } })
+      .composite([{ input: top, left: 0, top: 0 }, { input: bottom, left: 0, top: 100 }])
+      .png().toBuffer();
+    const spec: SizeSpec = { id: "zoom-focus-test", slot: "duo-inner", label: "Focus", inches: "0", width: 100, height: 100, orientation: "portrait" };
+    const upper = await renderScreenshot(source, spec, DEFAULT_RENDER_OPTIONS, { fit: "cover", x: 0.5, y: 0, zoom: 1.5 });
+    const lower = await renderScreenshot(source, spec, DEFAULT_RENDER_OPTIONS, { fit: "cover", x: 0.5, y: 1, zoom: 1.5 });
+    const upperPixel = await sharp(upper).extract({ left: 50, top: 50, width: 1, height: 1 }).raw().toBuffer();
+    const lowerPixel = await sharp(lower).extract({ left: 50, top: 50, width: 1, height: 1 }).raw().toBuffer();
+    expect(upperPixel[0]).toBeGreaterThan(240);
+    expect(lowerPixel[2]).toBeGreaterThan(240);
+  });
+
   it("keeps generated copy clear of the preview bezel safe area", async () => {
     const input = await rgbaFixture();
     const spec = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;

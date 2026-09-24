@@ -4,8 +4,10 @@ describe("marketing", () => {
     cy.visitFr("/");
     cy.contains("h1", "Deux écrans.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("be.visible");
-    cy.get(".studio-sequence-inspection").should("not.be.visible");
+    cy.get(".studio-sequence-stage").should("not.be.visible");
+    cy.get(".studio-sequence-step-visual").should("have.length", 3);
     cy.get('[data-testid="zip-tree"]').scrollIntoView().should("be.visible");
+    cy.get(".studio-review-preview").scrollIntoView().should("be.visible").and("contain", "Votre décision");
     cy.document().then((doc) => {
       expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
     });
@@ -23,6 +25,7 @@ describe("marketing", () => {
     cy.contains("3 sièges").should("be.visible");
     cy.contains("Same set").should("not.exist");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/r/harbor");
+    cy.get(".studio-review-preview").should("contain", "Écran fermé").and("contain", "Approuver");
     cy.get('[data-testid="trust-line"]').should("be.visible");
     cy.get('[data-testid="pricing"]').scrollIntoView().should("be.visible");
     cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
@@ -50,27 +53,40 @@ describe("marketing", () => {
   });
 
   for (const [locale, path] of [["fr", "/"], ["en", "/en"]] as const) {
-    it(`keeps the inspection labels inside their frame in ${locale}`, () => {
+    it(`matches each scroll step to its phone scene in ${locale}`, () => {
       cy.viewport(1397, 920);
       if (locale === "fr") cy.visitFr(path);
       else cy.visitEn(path);
+      cy.get(".studio-sequence-step").eq(0).scrollIntoView();
+      cy.get('.studio-sequence-stage > [data-sequence-scene="import"]').should("be.visible");
       cy.get(".studio-sequence-step").eq(1).scrollIntoView();
-      cy.get(".studio-sequence-inspection").then(($frame) => {
-        const frame = $frame[0].getBoundingClientRect();
-        const top = $frame[0].querySelector(".studio-sequence-inspection-label")!.getBoundingClientRect();
-        const bottom = $frame[0].querySelector(".studio-sequence-inspection-detail")!.getBoundingClientRect();
-        expect(top.top).to.be.greaterThan(frame.top);
-        expect(top.bottom).to.be.lessThan(frame.bottom);
-        expect(bottom.top).to.be.greaterThan(frame.top);
-        expect(bottom.bottom).to.be.lessThan(frame.bottom);
-        expect(top.right).to.be.lessThan(frame.right);
-        expect(bottom.right).to.be.lessThan(frame.right);
-        const devices = $frame[0].parentElement!.querySelector(".duo-cluster")!.getBoundingClientRect();
-        expect(top.bottom).to.be.lessThan(devices.top);
-        expect(bottom.top).to.be.greaterThan(devices.bottom);
-      });
+      cy.get('.studio-sequence-stage > [data-sequence-scene="inspect"]').should("be.visible").should("contain", "83 / 100");
+      cy.get(".studio-sequence-step").eq(2).scrollIntoView();
+      cy.get('.studio-sequence-stage > [data-sequence-scene="report"]').should("be.visible");
+      cy.get(".studio-sequence-step").eq(1).scrollIntoView();
+      cy.get('.studio-sequence-stage > [data-sequence-scene="inspect"]').should("be.visible");
     });
   }
+
+  it("keeps the language button the same size on home and inside the site", () => {
+    cy.visitFr("/");
+    cy.get('[data-testid="locale-switch"]').then(($button) => {
+      const homeSize = Number.parseFloat(getComputedStyle($button[0]).fontSize);
+      cy.visitFr("/tool");
+      cy.get('[data-testid="locale-switch"]').then(($innerButton) => {
+        expect(Number.parseFloat(getComputedStyle($innerButton[0]).fontSize)).to.eq(homeSize);
+      });
+    });
+  });
+
+  it("explains the limits of AI in both FAQ languages", () => {
+    cy.visitFr("/");
+    cy.contains("button", "Pourquoi une IA ne suffit-elle pas").click();
+    cy.contains("la validation du contenu reste humaine").should("be.visible");
+    cy.visitEn("/en");
+    cy.contains("button", "Why isn’t AI alone enough").click();
+    cy.contains("a person makes the final content decision").should("be.visible");
+  });
 
   it("renders the English home", () => {
     cy.visitEn("/en");
@@ -78,6 +94,7 @@ describe("marketing", () => {
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
     cy.contains("Harbor demo").should("be.visible");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/en/r/harbor");
+    cy.get(".studio-review-preview").should("contain", "Closed screen").and("contain", "Approve");
     cy.get('[data-testid="locale-switch"]').should("contain", "🇫🇷");
     cy.get('[data-testid="billing-yearly"]').click();
     cy.contains("€120 / year").should("be.visible");

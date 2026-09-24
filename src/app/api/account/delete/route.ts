@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -34,8 +35,21 @@ export async function POST() {
     }
   }
 
+  if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
+    const admin = createAdminSupabase();
+    if (!admin) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
+    const { error: queueError } = await admin.from("analytics_erasure_jobs")
+      .upsert({ distinct_id: user.id, status: "pending" }, { onConflict: "distinct_id" });
+    if (queueError) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
+  }
+
   const { error } = await supabase.rpc("erase_current_user");
   if (error) {
+    if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
+      const admin = createAdminSupabase();
+      await admin?.from("analytics_erasure_jobs").delete()
+        .eq("distinct_id", user.id).eq("status", "pending").is("tracking_id", null);
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   await supabase.auth.signOut();

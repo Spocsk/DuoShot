@@ -608,6 +608,10 @@ export function i18nKeys(): { fr: string[]; en: string[] } {
 export const FAQ: Record<Locale, { q: string; a: string }[]> = {
   fr: [
     {
+      q: "Pourquoi une IA ne suffit-elle pas pour préparer ces captures ?",
+      a: "Une IA peut aider à créer ou redimensionner une image, mais elle ne peut pas confirmer seule que les captures montrent l’app réelle en usage, que les écrans fermé et ouvert racontent la même séquence et que le texte reste lisible près du pli. DuoShot prépare et signale les points à examiner ; la validation du contenu reste humaine.",
+    },
+    {
       q: "Quelles tailles pour l’iPhone Duo ?",
       a: "Outer 5,4″ : 1398×2034 (portrait) et 2034×1398 (paysage). Inner 7,6″ : 2007×2853 et 2853×2007. Option 6,9″ (Indie / Studio) : 1320×2868, 1290×2796, 1260×2736 et leurs paysages.",
     },
@@ -637,6 +641,10 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
   ],
   en: [
+    {
+      q: "Why isn’t AI alone enough to prepare these screenshots?",
+      a: "AI can help create or resize an image, but it cannot confirm on its own that the screenshots show the real app in use, that the closed and open screens tell the same story, and that text remains legible near the fold. DuoShot prepares the files and flags items to review; a person makes the final content decision.",
+    },
     {
       q: "What sizes for iPhone Duo?",
       a: "Outer 5.4″: 1398×2034 (portrait) and 2034×1398 (landscape). Inner 7.6″: 2007×2853 and 2853×2007. Optional 6.9″ (Indie / Studio): 1320×2868, 1290×2796, 1260×2736 and their landscapes.",

@@ -1,6 +1,7 @@
 import { PRO_CHECKOUT_KIND, type CheckoutKind } from "./plans";
 import { localePrefix } from "./site";
 import type { Locale } from "./specs";
+import { trackProduct } from "./analytics-client";
 
 export { PRO_CHECKOUT_KIND };
 
@@ -25,6 +26,7 @@ export async function startCheckout(kind: CheckoutKind, nextPath: string): Promi
   if (!payload.url) {
     throw new Error(payload.error || "CHECKOUT_UNAVAILABLE");
   }
+  await trackProduct("checkout_started", { plan: kind });
   window.location.assign(payload.url);
 }
 

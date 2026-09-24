@@ -5,6 +5,7 @@ import { localePrefix, localizedPath, pricingPath, rejectionPath } from "@/lib/s
 import { HeaderAuth } from "@/components/header-auth";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { SiteNav } from "@/components/site-nav";
+import { AnalyticsSettingsButton } from "@/components/analytics-settings-button";
 
 type Props = {
   locale: Locale;
@@ -21,7 +22,7 @@ export function SiteHeader({ locale, path }: Props) {
         {t(locale, "skip_main")}
       </a>
       <div className="mx-auto flex min-h-[var(--header-h)] max-w-6xl items-center justify-between gap-x-4 px-5">
-        <Link href={home} className="relative z-[60] font-display text-xl tracking-tight">
+        <Link href={home} className="site-wordmark relative z-[60] font-display text-xl tracking-tight">
           DuoShot
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-x-2">
@@ -61,6 +62,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={`${prefix}/terms`}>{t(locale, "footer_terms")}</Link>
         <Link href={`${prefix}/privacy`}>{t(locale, "footer_privacy")}</Link>
         <Link href={`${prefix}/cookies`}>{t(locale, "footer_cookies")}</Link>
+        <AnalyticsSettingsButton locale={locale} />
         <Link href={`${prefix}/legal/subprocessors`}>{t(locale, "footer_subprocessors")}</Link>
         <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t(locale, "footer_why")}</Link>
         <Link href={rejectionPath(locale)} data-testid="footer-reject">{t(locale, "footer_reject")}</Link>

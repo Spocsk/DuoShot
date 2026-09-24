@@ -18,6 +18,24 @@ async function sourcePng(): Promise<Buffer> {
     .toBuffer();
 }
 
+async function landmarkPng(): Promise<Buffer> {
+  const width = 300;
+  const height = 300;
+  const pixels = Buffer.alloc(width * height * 3);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const color = y < 30 ? [255, 255, 0] : y >= 270 ? [0, 255, 255] : x < 100 ? [255, 0, 0] : x < 200 ? [0, 255, 0] : [0, 0, 255];
+      pixels.set(color, (y * width + x) * 3);
+    }
+  }
+  return sharp(pixels, { raw: { width, height, channels: 3 } }).png().toBuffer();
+}
+
+async function samplePng(buffer: Buffer, x: number, y: number): Promise<number[]> {
+  const { data } = await sharp(buffer).extract({ left: x, top: y, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true });
+  return [...data.subarray(0, 3)];
+}
+
 describe("compose", () => {
   it("fills the device canvas by default", () => {
     expect(DEFAULT_RENDER_OPTIONS.fit).toBe("cover");
@@ -151,5 +169,42 @@ describe("compose", () => {
     expect(readme).toContain("duo-inner-portrait: 2007x2853");
     expect(readme).toContain("Composition warnings:");
     expect(readme).toContain("upscale");
+  }, 30_000);
+
+  it("keeps zoom, focal position, and Smart Fit in the PNGs extracted from the ZIP", async () => {
+    const input = await landmarkPng();
+    const { images } = await composeZipImages({
+      outerBuffers: [input, input],
+      innerBuffers: [input, input],
+      options: { ...DEFAULT_RENDER_OPTIONS, background: "solid", solidColor: "#112233", format: "png" },
+      transforms: {
+        outer: [
+          { fit: "cover", x: 1, y: 1, zoom: 1.2 },
+          { fit: "smart", x: 1, y: 1, zoom: 1.2 },
+        ],
+        inner: [
+          { fit: "cover", x: 0, y: 0, zoom: 1.2 },
+          { fit: "smart", x: 0, y: 0, zoom: 1.2 },
+        ],
+      },
+      include69: false,
+      plan: "free",
+    });
+    const zip = await JSZip.loadAsync(await buildZip({
+      appName: "Landmarks", orientation: "portrait", branded: false,
+      include69: false, format: "png", images,
+    }));
+    const read = async (slot: "outer" | "inner", index: number) => zip.file(`landmarks/duo-${slot}-portrait/0${index}.png`)!.async("nodebuffer");
+    const outerCover = await read("outer", 1);
+    const innerCover = await read("inner", 1);
+    const outerSmart = await read("outer", 2);
+    expect(await samplePng(outerCover, 30, 1000)).toEqual([0, 255, 0]);
+    expect(await samplePng(outerCover, 1360, 1000)).toEqual([0, 0, 255]);
+    expect(await samplePng(outerCover, 700, 2000)).toEqual([0, 255, 255]);
+    expect(await samplePng(innerCover, 30, 1400)).toEqual([255, 0, 0]);
+    expect(await samplePng(innerCover, 1950, 1400)).toEqual([0, 255, 0]);
+    expect(await samplePng(innerCover, 1000, 20)).toEqual([255, 255, 0]);
+    expect(await samplePng(outerSmart, 700, 20)).toEqual([17, 34, 51]);
+    expect(await samplePng(outerSmart, 700, 1000)).toEqual([0, 255, 0]);
   }, 30_000);
 });

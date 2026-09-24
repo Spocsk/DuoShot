@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { compositionMetrics, containRect, coverRect, parseHexColor, slugify } from "./geometry";
+import { compositionMetrics, containRect, coverRect, parseHexColor, resolveSlideFit, slugify } from "./geometry";
+import { normalizeCropTransform } from "../specs";
 
 describe("geometry", () => {
   it("fits the source inside the destination", () => {
@@ -26,6 +27,22 @@ describe("geometry", () => {
     expect(metrics.scale).toBe(1);
     expect(metrics.severity).toBe("severe");
     expect(metrics.rect).toEqual({ left: -100, top: 0, width: 200, height: 100 });
+  });
+
+  it("creates vertical travel through zoom and keeps the focal point", () => {
+    const metrics = compositionMetrics(200, 100, 100, 100, { fit: "cover", x: 0.5, y: 1, zoom: 1.2 });
+    expect(metrics.overflowY).toBeCloseTo(20);
+    expect(metrics.rect.top).toBeCloseTo(-20);
+    expect(metrics.rect.width).toBeCloseTo(240);
+  });
+
+  it("uses Smart only when filling loses less than ten percent, including zoom", () => {
+    const smart = normalizeCropTransform({ fit: "smart", x: 0.8, y: 0.2, zoom: 1 });
+    expect(resolveSlideFit(110, 100, 100, 100, smart)).toBe("cover");
+    expect(resolveSlideFit(125, 100, 100, 100, smart)).toBe("contain");
+    expect(resolveSlideFit(100, 100, 100, 100, { ...smart, zoom: 1.1 })).toBe("contain");
+    expect(compositionMetrics(125, 100, 100, 100, smart).cropPercent).toBe(0);
+    expect(normalizeCropTransform({ x: 0.8, zoom: 1.2 }, "contain")).toEqual({ fit: "contain", x: 0.8, y: 0.5, zoom: 1.2 });
   });
 
   it("flags large upscales even without crop", () => {

@@ -1,5 +1,5 @@
 export const SPECS_VERSION_DATE = "2026-09-12";
-export const POLICY_VERSION = "2026-09-13";
+export const POLICY_VERSION = "2026-09-24";
 export const MAX_IMAGES = 10;
 export const WARN_MIN_IMAGES = 3;
 export const JPEG_QUALITY = 90;
@@ -18,11 +18,13 @@ export type DeviceSlot = "duo-outer" | "duo-inner" | "iphone-69";
 export type PlanId = "free" | "indie" | "studio";
 
 export type CropTransform = {
-  fit: SlideFitMode;
+  fit: FitMode;
   /** Horizontal focal point, normalized from 0 (left) to 1 (right). */
   x: number;
   /** Vertical focal point, normalized from 0 (top) to 1 (bottom). */
   y: number;
+  /** Additional scale in cover mode. Missing values in saved sets mean 1. */
+  zoom?: number;
 };
 
 export type CropTransforms = {
@@ -34,6 +36,7 @@ export const DEFAULT_CROP_TRANSFORM: CropTransform = {
   fit: "cover",
   x: 0.5,
   y: 0.5,
+  zoom: 1,
 };
 
 export function normalizeCropTransform(
@@ -42,13 +45,12 @@ export function normalizeCropTransform(
 ): CropTransform {
   const clamp = (value: number | undefined) => Math.min(1, Math.max(0, Number.isFinite(value) ? value! : 0.5));
   return {
-    fit: transform?.fit === "contain" || transform?.fit === "cover"
+    fit: transform?.fit === "contain" || transform?.fit === "cover" || transform?.fit === "smart"
       ? transform.fit
-      : fallbackFit === "contain"
-        ? "contain"
-        : "cover",
+      : fallbackFit,
     x: clamp(transform?.x),
     y: clamp(transform?.y),
+    zoom: Math.min(2, Math.max(1, Number.isFinite(transform?.zoom) ? transform!.zoom! : 1)),
   };
 }
 

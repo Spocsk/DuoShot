@@ -25,6 +25,8 @@ Quality gate : `npm test` (Vitest) puis, après `npm run build`, `npm run test:e
 
 Renseigne uniquement les **noms** de variables dans `.env.example`. Les secrets vont dans `.env.local` / Vercel Sensitive / Runtime Secrets — jamais dans git.
 
+Analytics : Vercel mesure les pages agrégées ; Mixpanel mesure les parcours uniquement après accord. Configuration et rapports : [`docs/analytics.md`](docs/analytics.md).
+
 Le lien review Studio (`POST /api/reviews`) exige `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SECRET_KEY`) en local **et** sur Vercel — sans ça l’API répond 503.
 
 ## Auth

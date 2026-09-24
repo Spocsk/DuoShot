@@ -43,6 +43,7 @@ import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, isCheckoutKind, startCheckout } from "@/lib/checkout";
+import { trackProduct } from "@/lib/analytics-client";
 import type { CheckoutKind } from "@/lib/plans";
 import {
   defaultSet,
@@ -61,6 +62,9 @@ import { AuthForm } from "@/components/auth-form";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { mapLimit } from "@/lib/map-limit";
 import { mergeSideFiles } from "@/lib/merge-side-files";
+import { checkFoldImage } from "@/lib/fold-ocr-browser";
+import type { FoldCheckStatus } from "@/lib/fold-detection";
+import type { Worker as OcrWorker } from "tesseract.js";
 
 type Props = { locale: Locale };
 
@@ -82,6 +86,7 @@ const BOOT_SET: SetMeta = {
 };
 
 const EMPTY_TRANSFORMS: CropTransform[] = [];
+type FoldCheck = { key: string; status: FoldCheckStatus; count: number };
 
 export function ToolApp({ locale }: Props) {
   return (
@@ -105,7 +110,7 @@ function ToolAppInner({ locale }: Props) {
   const [options, setOptions] = useState<RenderOptions>(DEFAULT_RENDER_OPTIONS);
   const [include69, setInclude69] = useState(false);
   const [showHinge, setShowHinge] = useState(true);
-  const [previewMode, setPreviewMode] = useState<"device" | "pixels">("device");
+  const [previewMode, setPreviewMode] = useState<"device" | "pixels">("pixels");
   const [assumeClone, setAssumeClone] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<"ok" | "err" | "busy" | "info">("info");
@@ -123,6 +128,12 @@ function ToolAppInner({ locale }: Props) {
   const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
   const [outerInspects, setOuterInspects] = useState<SourceInspect[]>([]);
   const [innerInspects, setInnerInspects] = useState<SourceInspect[]>([]);
+  const [foldChecks, setFoldChecks] = useState<Record<number, FoldCheck>>({});
+  const foldCacheRef = useRef(new Map<string, FoldCheck>());
+  const foldFileIdsRef = useRef(new WeakMap<File, number>());
+  const nextFoldFileIdRef = useRef(1);
+  const ocrWorkerRef = useRef<Promise<OcrWorker> | null>(null);
+  const ocrQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [qualityAcknowledged, setQualityAcknowledged] = useState(false);
   const [appUsageConfirmed, setAppUsageConfirmed] = useState(false);
   const [clones, setClones] = useState<CloneResult[]>([]);
@@ -166,25 +177,77 @@ function ToolAppInner({ locale }: Props) {
   const outerSlide = outerFiles[slideIndex];
   const innerSlide = effectiveInner[slideIndex];
   const orientation: Orientation = active?.orientation ?? "portrait";
+  const globalFit = active?.fitMode ?? DEFAULT_RENDER_OPTIONS.fit;
   const renderOptions = useMemo(
-    () => ({ ...options, orientation }),
-    [options, orientation],
+    () => ({ ...options, fit: globalFit, orientation }),
+    [options, globalFit, orientation],
   );
   const outerSpec = duoSpec("duo-outer", orientation);
   const innerSpec = duoSpec("duo-inner", orientation);
   const outerTransforms = active?.transforms?.outer ?? EMPTY_TRANSFORMS;
   const innerTransforms = active?.transforms?.inner ?? EMPTY_TRANSFORMS;
   const outerTransform = useMemo(
-    () => normalizeCropTransform(outerTransforms[slideIndex], options.fit),
-    [options.fit, outerTransforms, slideIndex],
+    () => normalizeCropTransform(outerTransforms[slideIndex], globalFit),
+    [globalFit, outerTransforms, slideIndex],
   );
   const innerTransform = useMemo(
-    () => normalizeCropTransform(innerTransforms[slideIndex], options.fit),
-    [innerTransforms, options.fit, slideIndex],
+    () => normalizeCropTransform(innerTransforms[slideIndex], globalFit),
+    [globalFit, innerTransforms, slideIndex],
   );
   const outerInspect = outerInspects[slideIndex] ?? null;
   const effectiveInnerInspects = sameSet ? outerInspects : innerInspects;
   const innerInspect = effectiveInnerInspects[slideIndex] ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const jobs = effectiveInner.map((file, index) => {
+      let fileId = foldFileIdsRef.current.get(file);
+      if (!fileId) {
+        fileId = nextFoldFileIdRef.current++;
+        foldFileIdsRef.current.set(file, fileId);
+      }
+      const transform = normalizeCropTransform(innerTransforms[index], globalFit);
+      return { file, index, transform, key: [activeId, fileId, orientation, options.solidColor, transform.fit, transform.x, transform.y, transform.zoom].join(":") };
+    });
+    setFoldChecks((previous) => Object.fromEntries(jobs.map((job) => [job.index,
+      foldCacheRef.current.get(job.key) ?? (previous[job.index]?.key === job.key ? previous[job.index] : { key: job.key, status: "checking", count: 0 }),
+    ])));
+    const timer = window.setTimeout(() => { void (async () => {
+      for (const job of jobs) {
+        if (cancelled) return;
+        if (foldCacheRef.current.has(job.key)) continue;
+        try {
+          ocrWorkerRef.current ??= import("tesseract.js").then(async ({ createWorker, PSM }) => {
+            const worker = await createWorker(["eng", "fra"]);
+            await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
+            return worker;
+          });
+          const worker = await ocrWorkerRef.current;
+          if (cancelled) return;
+          const scan = ocrQueueRef.current.then(() => cancelled ? null : checkFoldImage(job.file, innerSpec, job.transform, worker, options.solidColor));
+          ocrQueueRef.current = scan.then(() => undefined, () => undefined);
+          const count = await scan;
+          if (count === null) return;
+          if (cancelled) return;
+          const result: FoldCheck = { key: job.key, status: count > 0 ? "warning" : "clear", count };
+          foldCacheRef.current.set(job.key, result);
+          setFoldChecks((previous) => previous[job.index]?.key === job.key ? { ...previous, [job.index]: result } : previous);
+        } catch {
+          if (cancelled) return;
+          const result: FoldCheck = { key: job.key, status: "error", count: 0 };
+          setFoldChecks((previous) => previous[job.index]?.key === job.key ? { ...previous, [job.index]: result } : previous);
+        }
+      }
+    })(); }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [activeId, effectiveInner, innerSpec, innerTransforms, globalFit, options.solidColor, orientation]);
+
+  useEffect(() => () => {
+    void ocrWorkerRef.current?.then((worker) => worker.terminate()).catch(() => {});
+  }, []);
+
+  const foldWarningCount = Object.values(foldChecks).filter((check) => check.status === "warning").length;
+  const currentFoldCheck = foldChecks[slideIndex];
 
   const qualityItems = useMemo(() => {
     const outer = outerInspects.map((inspect, index) => ({
@@ -195,7 +258,7 @@ function ToolAppInner({ locale }: Props) {
         inspect.height,
         outerSpec.width,
         outerSpec.height,
-        normalizeCropTransform(outerTransforms[index], options.fit),
+        normalizeCropTransform(outerTransforms[index], globalFit),
       ),
     }));
     const inner = effectiveInnerInspects.map((inspect, index) => ({
@@ -206,11 +269,11 @@ function ToolAppInner({ locale }: Props) {
         inspect.height,
         innerSpec.width,
         innerSpec.height,
-        normalizeCropTransform(innerTransforms[index], options.fit),
+        normalizeCropTransform(innerTransforms[index], globalFit),
       ),
     }));
     return [...outer, ...inner];
-  }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, options.fit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
+  }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, globalFit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
   const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
   const cloneAlert = cloneForced || clones.some((item) => item.label === "risk");
   const preparationChecks = [
@@ -450,6 +513,9 @@ function ToolAppInner({ locale }: Props) {
     const incoming = takeFiles(list).filter(isAllowedImage);
     const current = side === "outer" ? outerFiles : innerFiles;
     const next = mergeSideFiles(current, incoming);
+    if (next.length > current.length) {
+      void trackProduct("captures_added", { side, count: next.length - current.length });
+    }
     if (side === "outer") setOuterFiles(next);
     else {
       setInnerFiles(next);
@@ -493,12 +559,27 @@ function ToolAppInner({ locale }: Props) {
     setZipUrl(null);
   }
 
+  function updateGlobalFit(fit: FitMode) {
+    if (!active) return;
+    const current = active.transforms ?? { outer: [], inner: [] };
+    const transforms = {
+      outer: Array.from({ length: Math.max(current.outer.length, outerFiles.length) }, (_, index) => ({ ...normalizeCropTransform(current.outer[index], globalFit), fit })),
+      inner: Array.from({ length: Math.max(current.inner.length, effectiveInner.length) }, (_, index) => ({ ...normalizeCropTransform(current.inner[index], globalFit), fit })),
+    };
+    const nextSets = sets.map((item) => item.id === active.id ? { ...item, fitMode: fit, transforms } : item);
+    setSets(nextSets);
+    saveSetMetas(nextSets);
+    setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
+    setZipUrl(null);
+  }
+
   function updateCropTransform(side: "outer" | "inner", index: number, patch: Partial<CropTransform>) {
     if (!active) return;
     const currentTransforms = active.transforms ?? { outer: [], inner: [] };
     const sideTransforms = [...currentTransforms[side]];
     sideTransforms[index] = normalizeCropTransform({
-      ...normalizeCropTransform(sideTransforms[index], options.fit),
+      ...normalizeCropTransform(sideTransforms[index], globalFit),
       ...patch,
     });
     const transforms = { ...currentTransforms, [side]: sideTransforms };
@@ -545,6 +626,10 @@ function ToolAppInner({ locale }: Props) {
   }
 
   async function onExport() {
+    void trackProduct("export_requested", {
+      image_count: Math.max(outerFiles.length, effectiveInner.length),
+      plan: billing?.plan ?? "unknown",
+    });
     setBusyExport(true);
     flashStatus(t(locale, "tool_progress_compose"), "busy");
     setZipUrl(null);
@@ -595,8 +680,8 @@ function ToolAppInner({ locale }: Props) {
           assumeCloneRisk: assumeClone,
           options: renderOptions,
           transforms: {
-            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], options.fit)),
-            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], options.fit)),
+            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], globalFit)),
+            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }),
       });
@@ -605,6 +690,10 @@ function ToolAppInner({ locale }: Props) {
         images?: Array<{slot: string; index: number; width: number; height: number; format: string}>;
       };
       if (!response.ok) {
+        void trackProduct("export_failed", {
+          reason: ["TRIAL_EXHAUSTED", "IPHONE_69_GATED", "CLONE_RISK"].includes(payload.error ?? "")
+            ? payload.error! : "other",
+        });
         if (payload.error === "TRIAL_EXHAUSTED") {
           setPaywall("trial");
           flashStatus(t(locale, "error_trial"), "err");
@@ -637,6 +726,7 @@ function ToolAppInner({ locale }: Props) {
       );
       void refreshBilling();
     } catch (error) {
+      void trackProduct("export_failed", { reason: "network_or_storage" });
       flashStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_export"), "err");
     } finally {
       setBusyExport(false);
@@ -644,6 +734,7 @@ function ToolAppInner({ locale }: Props) {
   }
 
   async function onReview() {
+    void trackProduct("review_requested", { plan: billing?.plan ?? "unknown" });
     setReviewUpgrade(false);
     const supabase = createBrowserSupabase();
     const { data: sessionData } = await supabase.auth.getUser();
@@ -656,6 +747,7 @@ function ToolAppInner({ locale }: Props) {
     if (!plan) {
       const response = await fetch("/api/billing/status");
       if (!response.ok) {
+        void trackProduct("review_failed", { reason: "billing_unavailable" });
         setShowAuth(true);
         flashStatus(t(locale, "error_auth_review"), "err");
         return;
@@ -702,8 +794,8 @@ function ToolAppInner({ locale }: Props) {
           locale,
           options: renderOptions,
           transforms: {
-            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], options.fit)),
-            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], options.fit)),
+            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], globalFit)),
+            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }),
       });
@@ -730,6 +822,7 @@ function ToolAppInner({ locale }: Props) {
       }
       flashStatus(t(locale, "tool_review_ready"), "ok");
     } catch (error) {
+      void trackProduct("review_failed", { reason: "network_or_storage" });
       const code = error instanceof Error ? error.message : "STUDIO_REQUIRED";
       if (code === "STUDIO_REQUIRED") setReviewUpgrade(true);
       flashStatus(explainError(code), "err");
@@ -988,6 +1081,7 @@ function ToolAppInner({ locale }: Props) {
             testId="preview-outer"
             label={t(locale, "tool_preview_outer")}
             src={previews?.outer}
+            inspect={outerInspect}
             kind="outer"
             spec={outerSpec}
             locale={locale}
@@ -1002,6 +1096,7 @@ function ToolAppInner({ locale }: Props) {
             testId="preview-inner"
             label={t(locale, "tool_preview_inner")}
             src={previews?.inner}
+            inspect={innerInspect}
             kind="inner"
             spec={innerSpec}
             locale={locale}
@@ -1016,7 +1111,7 @@ function ToolAppInner({ locale }: Props) {
         </div>
           </ToolCanvas>
           <PairStrip outerFiles={outerFiles} innerFiles={effectiveInner} active={slideIndex} locale={locale} sameSet={sameSet} onSelect={setSlideIndex} onRemove={(side, index) => removeSideFile(side === "inner" && sameSet ? "outer" : side, index)} />
-          {cloneAlert || unpaired || severeQualityCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{locale === "fr" ? "Des points demandent votre attention dans Vérifier." : "Some items need your attention in Check."}</span><button type="button" onClick={() => setToolPanel("review")}>{locale === "fr" ? "Voir le bilan" : "View report"}</button></div> : null}
+          {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{locale === "fr" ? "Des points demandent votre attention dans Vérifier." : "Some items need your attention in Check."}</span><button type="button" onClick={() => setToolPanel("review")}>{locale === "fr" ? "Voir le bilan" : "View report"}</button></div> : null}
         </section>
         <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={locale === "fr" ? "Commandes de l’atelier" : "Workspace controls"}>
           <ToolPanelTabs value={toolPanel} onChange={setToolPanel} locale={locale} />
@@ -1118,6 +1213,7 @@ function ToolAppInner({ locale }: Props) {
                 <button type="button" className={adjustSide === "inner" ? "is-on" : ""} aria-pressed={adjustSide === "inner"} onClick={() => {setAdjustSide("inner"); setMobileView("inner");}}>{locale === "fr" ? "Ouvert" : "Open"}</button>
               </div>
               <CropControls testId={`preview-${adjustSide}`} locale={locale} previewMode={previewMode} inspect={adjustSide === "outer" ? outerInspect : innerInspect} spec={adjustSide === "outer" ? outerSpec : innerSpec} transform={adjustSide === "outer" ? outerTransform : innerTransform} onTransform={(patch) => updateCropTransform(adjustSide, slideIndex, patch)} />
+              {innerSlide ? <div className={`tool-fold-check is-${currentFoldCheck?.status ?? "checking"}`} role="status" data-testid="tool-fold-check"><strong>{locale === "fr" ? "Texte au pli · vue ouverte" : "Fold text · open view"}</strong><span>{foldStatusText(locale, currentFoldCheck)}</span></div> : null}
               <div className="tool-view-settings">
                 <div className="review-view-controls">
           <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la composition" : "Composition view"}>
@@ -1147,13 +1243,13 @@ function ToolAppInner({ locale }: Props) {
           <div className="pt-2">
         <Seg
           label={t(locale, "tool_label_fit")}
-          value={options.fit}
+          value={globalFit}
           options={[
             { value: "contain", label: t(locale, "tool_fit_contain") },
             { value: "cover", label: t(locale, "tool_fit_cover") },
             { value: "smart", label: t(locale, "tool_fit_smart") },
           ]}
-          onChange={(value) => updateOptions({ fit: value as FitMode })}
+          onChange={(value) => updateGlobalFit(value as FitMode)}
         />
         <Seg
           label={t(locale, "tool_label_bg")}
@@ -1353,6 +1449,9 @@ function ToolAppInner({ locale }: Props) {
                 {item.side === "outer" ? (locale === "fr" ? "Fermé" : "Closed") : (locale === "fr" ? "Ouvert" : "Open")} {String(item.index + 1).padStart(2, "0")} · {locale === "fr" ? "rognage" : "crop"} {item.cropPercent.toFixed(0)} % · {locale === "fr" ? "agrandissement" : "upscale"} {item.scale.toFixed(1)}×
               </li>
             ))}
+            {effectiveInner.map((_, index) => <li key={`fold-${index}`} className={`pl-5 ${foldChecks[index]?.status === "warning" ? "text-[var(--warn)]" : "text-[var(--muted)]"}`} data-testid={`fold-check-${index}`}>
+              {locale === "fr" ? "Ouvert" : "Open"} {String(index + 1).padStart(2, "0")} · {foldStatusText(locale, foldChecks[index])}
+            </li>)}
             {clones.filter((item) => item.label !== "ok").map((item) => (
               <li key={`clone-${item.index}`} className="pl-5 text-[var(--warn)]">
                 {locale === "fr" ? "Paire" : "Pair"} {String(item.index + 1).padStart(2, "0")} · {locale === "fr" ? "similarité à examiner" : "similarity needs review"}
@@ -1364,7 +1463,7 @@ function ToolAppInner({ locale }: Props) {
             <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
             <span>{locale === "fr" ? "J’ai vérifié que chaque visuel montre ma vraie app en usage, dans le bon état d’écran, et que le contenu importé reste lisible près du pli." : "I checked that every image shows my real app in use, in the correct screen state, and that imported content remains readable near the fold."}</span>
           </label>
-          {cloneAlert || severeQualityCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{locale === "fr" ? "Les alertes restent à examiner, même si vous confirmez la vérification visuelle." : "Warnings still need review, even after visual confirmation."}</p> : null}
+          {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{locale === "fr" ? "Les alertes restent à examiner, même si vous confirmez la vérification visuelle." : "Warnings still need review, even after visual confirmation."}</p> : null}
         </section>
               <div className="tool-panel-fields">
                 <div className="ds-field">
@@ -1446,7 +1545,7 @@ function ToolAppInner({ locale }: Props) {
                 </li>
               ))}
             </ul>
-            <a href={zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-cta mt-4 inline-flex">
+          <a href={zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-cta mt-4 inline-flex" onClick={() => void trackProduct("zip_download_clicked")}>
               {locale === "fr" ? "Télécharger le ZIP" : "Download ZIP"}
             </a>
             <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Télécharge le ZIP, puis dépose les fichiers fermé et ouvert dans les emplacements correspondants d’App Store Connect. La connexion directe à App Store Connect reste une évolution future." : "Download the ZIP, then upload closed and open images to their corresponding App Store Connect slots. Direct App Store Connect integration is a future improvement."}</p>
@@ -1725,10 +1824,17 @@ function PairStrip({outerFiles, innerFiles, active, locale, sameSet, onSelect, o
   return <div className="tool-pair-strip" aria-label={locale === "fr" ? "Paires de captures" : "Screenshot pairs"}><div className="tool-pair-strip-head"><span>{locale === "fr" ? "Paires" : "Pairs"}</span><span>{count} / {MAX_IMAGES}</span></div><div className="tool-pair-list">{Array.from({length: count}, (_, index) => { const outer = outerFiles[index]; const inner = innerFiles[index]; return <div className={`tool-pair-item ${index === active ? "is-active" : ""}`} key={index}><button type="button" className="tool-pair-select" aria-current={index === active ? "true" : undefined} aria-label={`${locale === "fr" ? "Paire" : "Pair"} ${index + 1}: ${outer ? (locale === "fr" ? "fermé présent" : "closed present") : (locale === "fr" ? "fermé manquant" : "closed missing")}, ${inner ? (locale === "fr" ? "ouvert présent" : "open present") : (locale === "fr" ? "ouvert manquant" : "open missing")}`} onClick={() => onSelect(index)}><strong>{String(index + 1).padStart(2, "0")}</strong><span className="tool-pair-marks"><i data-present={Boolean(outer)} /><i data-present={Boolean(inner)} /></span></button><div className="tool-pair-remove">{outer ? <button type="button" aria-label={`${locale === "fr" ? "Retirer la vue fermé de la paire" : "Remove closed view from pair"} ${index + 1}`} onClick={() => onRemove("outer", index)}>× <span>{locale === "fr" ? "Fermé" : "Closed"}</span></button> : null}{inner && !sameSet ? <button type="button" aria-label={`${locale === "fr" ? "Retirer la vue ouvert de la paire" : "Remove open view from pair"} ${index + 1}`} onClick={() => onRemove("inner", index)}>× <span>{locale === "fr" ? "Ouvert" : "Open"}</span></button> : null}</div></div>; })}</div></div>;
 }
 
+function foldStatusText(locale: Locale, check?: FoldCheck): string {
+  if (!check || check.status === "checking") return locale === "fr" ? "Analyse en cours…" : "Checking…";
+  if (check.status === "error") return locale === "fr" ? "Analyse indisponible : vérifiez visuellement le pli." : "Check unavailable: inspect the fold visually.";
+  if (check.status === "warning") return locale === "fr" ? "Texte possiblement sous le pli : vérifiez la lisibilité." : "Possible text beneath the fold: check legibility.";
+  return locale === "fr" ? "Aucun chevauchement détecté ; vérifiez le rendu final." : "No overlap detected; review the final image.";
+}
+
 function CropControls({testId, locale, previewMode, inspect, spec, transform, onTransform}: {testId: string; locale: Locale; previewMode: "device" | "pixels"; inspect: SourceInspect | null; spec: SizeSpec; transform: CropTransform; onTransform: (patch: Partial<CropTransform>) => void}) {
   if (!inspect) return <p className="tool-adjust-empty">{locale === "fr" ? "Importez cette vue pour régler son cadrage." : "Import this view to adjust its framing."}</p>;
   const metrics = compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform);
-  const cropHint = transform.fit === "cover" ? t(locale, previewMode === "pixels" ? "tool_crop_drag_hint" : "tool_crop_device_hint") : t(locale, "tool_crop_contain_hint");
+  const cropHint = metrics.fit === "cover" ? t(locale, previewMode === "pixels" ? "tool_crop_drag_hint" : "tool_crop_device_hint") : t(locale, "tool_crop_contain_hint");
   const onRangeKey = (event: ReactKeyboardEvent<HTMLInputElement>, axis: "x" | "y") => {
     const delta = event.key === "ArrowRight" || event.key === "ArrowUp" ? 0.01 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -0.01 : null;
     const next = event.key === "Home" ? 0 : event.key === "End" ? 1 : delta == null ? null : Math.max(0, Math.min(1, Math.round((transform[axis] + delta) * 100) / 100));
@@ -1736,13 +1842,32 @@ function CropControls({testId, locale, previewMode, inspect, spec, transform, on
     event.preventDefault();
     onTransform({[axis]: next});
   };
-  return <div className="crop-controls tool-crop-controls" data-testid={`${testId}-crop-controls`}><div className="crop-toolbar"><div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}><button type="button" className={transform.fit === "cover" ? "is-on" : ""} aria-pressed={transform.fit === "cover"} onClick={() => onTransform({fit: "cover"})}>{t(locale, "tool_crop_fill")}</button><button type="button" className={transform.fit === "contain" ? "is-on" : ""} aria-pressed={transform.fit === "contain"} onClick={() => onTransform({fit: "contain"})}>{t(locale, "tool_crop_show_all")}</button></div><button type="button" className="crop-reset" onClick={() => onTransform({x: 0.5, y: 0.5})}>{t(locale, "tool_crop_reset")}</button></div>{transform.fit === "cover" ? <div className="crop-axis-controls"><label><span>{t(locale, "tool_crop_horizontal")}</span><input type="range" min="0" max="100" value={Math.round(transform.x * 100)} onChange={(event) => onTransform({x: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "x")} /></label><label><span>{t(locale, "tool_crop_vertical")}</span><input type="range" min="0" max="100" value={Math.round(transform.y * 100)} onChange={(event) => onTransform({y: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "y")} /></label></div> : null}<div className="crop-readout"><p className={`crop-metrics is-${metrics.severity}`} data-testid={`${testId}-metrics`}>{tf(locale, "tool_crop_metrics", {crop: metrics.cropPercent.toFixed(1), scale: metrics.scale.toFixed(2)})}</p><p className="crop-hint">{cropHint}</p></div></div>;
+  const canMoveX = metrics.overflowX >= 1;
+  const canMoveY = metrics.overflowY >= 1;
+  return <div className="crop-controls tool-crop-controls" data-testid={`${testId}-crop-controls`}>
+    <div className="crop-toolbar">
+      <div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}>
+        <button type="button" className={metrics.fit === "cover" ? "is-on" : ""} aria-pressed={metrics.fit === "cover"} onClick={() => onTransform({fit: "cover"})}>{t(locale, "tool_crop_fill")}</button>
+        <button type="button" className={metrics.fit === "contain" ? "is-on" : ""} aria-pressed={metrics.fit === "contain"} onClick={() => onTransform({fit: "contain"})}>{t(locale, "tool_crop_show_all")}</button>
+      </div>
+      {transform.fit === "smart" ? <p className="crop-hint" data-testid={`${testId}-smart-result`}>{locale === "fr" ? `Smart a choisi « ${metrics.fit === "cover" ? "Remplir" : "Tout afficher"} » pour cette capture.` : `Smart chose “${metrics.fit === "cover" ? "Fill" : "Show all"}” for this capture.`}</p> : null}
+      <button type="button" className="crop-reset" onClick={() => onTransform({x: 0.5, y: 0.5, zoom: 1})}>{t(locale, "tool_crop_reset")}</button>
+    </div>
+    {metrics.fit === "cover" ? <div className="crop-axis-controls">
+      <label><span>{locale === "fr" ? "Zoom" : "Zoom"} · {Math.round((transform.zoom ?? 1) * 100)} %</span><input type="range" min="100" max="200" value={Math.round((transform.zoom ?? 1) * 100)} onChange={(event) => onTransform({zoom: Number(event.currentTarget.value) / 100})} /></label>
+      <label><span>{t(locale, "tool_crop_horizontal")}</span><input type="range" min="0" max="100" disabled={!canMoveX} value={Math.round(transform.x * 100)} onChange={(event) => onTransform({x: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "x")} /></label>
+      <label><span>{t(locale, "tool_crop_vertical")}</span><input type="range" min="0" max="100" disabled={!canMoveY} value={Math.round(transform.y * 100)} onChange={(event) => onTransform({y: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "y")} /></label>
+      {!canMoveY ? <p className="crop-hint">{locale === "fr" ? "Aucune marge verticale à cette échelle. Augmentez le zoom pour déplacer l’image vers le haut ou le bas." : "No vertical room at this scale. Increase zoom to move the image up or down."}</p> : null}
+    </div> : null}
+    <div className="crop-readout"><p className={`crop-metrics is-${metrics.severity}`} data-testid={`${testId}-metrics`}>{tf(locale, "tool_crop_metrics", {crop: metrics.cropPercent.toFixed(1), scale: metrics.scale.toFixed(2)})}</p><p className="crop-hint">{cropHint}</p></div>
+  </div>;
 }
 
 function PreviewCard({
   testId,
   label,
   src,
+  inspect,
   kind,
   spec,
   locale,
@@ -1757,6 +1882,7 @@ function PreviewCard({
   testId: string;
   label: string;
   src?: string;
+  inspect: SourceInspect | null;
   kind: "outer" | "inner";
   spec: { width: number; height: number };
   locale: Locale;
@@ -1770,6 +1896,7 @@ function PreviewCard({
 }) {
   const dragRef = useRef<{ pointerId: number; x: number; y: number; focusX: number; focusY: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const effectiveFit = inspect ? compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform).fit : transform.fit;
   const canvasAspect = previewMode === "pixels"
     ? `${spec.width}/${spec.height}`
     : duoChassisAspect(kind, orientation);
@@ -1778,11 +1905,11 @@ function PreviewCard({
       <figcaption className="duo-caption text-left">{label}</figcaption>
       <div className="preview-stage">
         <div
-          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && transform.fit === "cover" ? "is-draggable" : ""}`}
+          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && previewMode === "pixels" && effectiveFit === "cover" ? "is-draggable" : ""}`}
           data-testid={`${testId}-canvas`}
           data-aspect={canvasAspect}
           onPointerDown={(event) => {
-            if (!src || transform.fit !== "cover") return;
+            if (!src || previewMode !== "pixels" || effectiveFit !== "cover") return;
             event.currentTarget.setPointerCapture(event.pointerId);
             dragRef.current = {
               pointerId: event.pointerId,
@@ -1796,9 +1923,11 @@ function PreviewCard({
             const drag = dragRef.current;
             if (!drag || drag.pointerId !== event.pointerId) return;
             const rect = event.currentTarget.getBoundingClientRect();
+            if (!inspect) return;
+            const metrics = compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform);
             onTransform({
-              x: drag.focusX - (event.clientX - drag.x) / Math.max(rect.width, 1),
-              y: drag.focusY - (event.clientY - drag.y) / Math.max(rect.height, 1),
+              x: metrics.overflowX >= 1 ? drag.focusX - (event.clientX - drag.x) * spec.width / Math.max(rect.width * metrics.overflowX, 1) : drag.focusX,
+              y: metrics.overflowY >= 1 ? drag.focusY - (event.clientY - drag.y) * spec.height / Math.max(rect.height * metrics.overflowY, 1) : drag.focusY,
             });
           }}
           onPointerUp={(event) => {
