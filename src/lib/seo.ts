@@ -11,9 +11,11 @@ export function pageMetadata(options: {
   const canonicalPath = localizedPath(options.locale, options.path);
   const fr = localizedPath("fr", options.path);
   const en = localizedPath("en", options.path);
+  const isHome = canonicalPath === "/" || canonicalPath === "/en";
+  const socialTitle = isHome ? `${SITE_NAME} — ${options.title}` : `${options.title} · ${SITE_NAME}`;
   return {
     robots: /^(?:\/en)?\/(tool|account|login|signup|invite|r)(?:\/|$)/.test(canonicalPath) || process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
-    title: options.title,
+    title: isHome ? { absolute: socialTitle } : options.title,
     description: options.description,
     alternates: {
       canonical: absoluteUrl(canonicalPath),
@@ -24,7 +26,7 @@ export function pageMetadata(options: {
       },
     },
     openGraph: {
-      title: `${options.title} · ${SITE_NAME}`,
+      title: socialTitle,
       description: options.description,
       locale: options.locale === "fr" ? "fr_FR" : "en_US",
       alternateLocale: options.locale === "fr" ? ["en_US"] : ["fr_FR"],
@@ -34,7 +36,7 @@ export function pageMetadata(options: {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${options.title} · ${SITE_NAME}`,
+      title: socialTitle,
       description: options.description,
     },
   };

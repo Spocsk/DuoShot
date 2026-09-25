@@ -5,7 +5,7 @@ import { SITE_PITCH_FR } from "@/lib/site";
 export const metadata = pageMetadata({
   locale: "fr",
   path: "/",
-  title: "ZIP App Store Connect iPhone Duo",
+  title: "captures iPhone Duo pour l’App Store",
   description: SITE_PITCH_FR,
 });
 

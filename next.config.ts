@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "duoshot.vercel.app" }],
+        destination: "https://duoshot.site/:path*",
+        permanent: true,
+      },
       { source: "/why-not-ai", destination: "/pourquoi-pas-ia", permanent: true },
       { source: "/rejection", destination: "/rejet", permanent: true },
       { source: "/en/pourquoi-pas-ia", destination: "/en/why-not-ai", permanent: true },
