@@ -1,3 +1,4 @@
+import { AppleAvailability } from "./apple-availability";
 import Link from "next/link";
 import { FaqList } from "@/components/faq-list";
 import { FAQ, t } from "@/lib/i18n";
@@ -60,9 +61,10 @@ export function HomePage({ locale }: { locale: Locale }) {
               </h1>
               <p>
                 {fr
-                  ? "Préparez vos captures iPhone Duo, vérifiez chaque détail et exportez un set prêt à déposer."
-                  : "Prepare your iPhone Duo screenshots, check every detail, and export a set ready to upload."}
+                  ? "Préparez vos captures iPhone Duo, vérifiez chaque détail et exportez deux séries d’images dans un ZIP."
+                  : "Prepare your iPhone Duo screenshots, check every detail, and export both image sets in a ZIP."}
               </p>
+              <AppleAvailability locale={locale} />
               <div className="studio-hero-actions">
                 <Link href={`${prefix}/tool`} data-testid="cta-tool" className="ds-cta">
                   {t(locale, "cta_tool")}
@@ -77,7 +79,7 @@ export function HomePage({ locale }: { locale: Locale }) {
               <DuoDevice locale={locale} />
             </div>
             <p className="studio-hero-footnote">
-              <span>{fr ? "Démo Harbor" : "Harbor demo"}</span>
+              <span>{fr ? "Harbor · app fictive" : "Harbor · fictional app"}</span>
               <span>{fr ? "Écran fermé / écran ouvert" : "Closed screen / open screen"}</span>
             </p>
           </section>

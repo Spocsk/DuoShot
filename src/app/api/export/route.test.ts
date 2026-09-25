@@ -5,8 +5,10 @@ import { buildZip } from "@/lib/pipeline/zip";
 import { duoSpec } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createQueryBuilder, createSupabaseMock, readJson } from "@/test/supabase-mock";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { POST } from "./route";
 
+vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: vi.fn(),
 }));
@@ -56,6 +58,7 @@ function withWorkspace() {
 }
 
 beforeEach(() => {
+  vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({ rpc: async () => ({ data: "export-1", error: null }) }) as never);
   vi.mocked(createServerSupabase).mockReset();
   vi.mocked(resolveEntitlements).mockReset();
   vi.mocked(composeZipImages).mockReset();
@@ -171,5 +174,7 @@ describe("POST /api/export", () => {
     expect(uploaded).toEqual([zip.length]);
     expect(body.url).toBe("https://storage.example/large.zip");
     expect(body.images).toHaveLength(2);
+    expect(body.exportId).toBe("export-1");
+    expect(Date.parse(body.expiresAt as string)).toBeGreaterThan(Date.now());
   });
 });

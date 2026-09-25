@@ -37,7 +37,7 @@ describe("prod workflow", () => {
     cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-0"]').should("be.visible");
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-2"]').should("be.visible");
-    cy.get('[data-testid="preview-inner"] .division').should("be.visible");
+    cy.get('[data-testid="preview-inner"] .division').should("not.be.visible");
     cy.get('[data-testid="tool-create-account"]').should("contain", "2 ZIP HD");
     cy.get('[data-testid="tool-example"]').should("have.attr", "href").and("include", "/api/example-zip");
 

@@ -57,7 +57,7 @@ describe("POST /api/reviews", () => {
     expect(body.error).toBe("AUTH_REQUIRED");
   });
 
-  it("returns 400 without a workspace", async () => {
+  it("returns 409 without a workspace", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(
       createSupabaseMock({
         user: USER,
@@ -65,7 +65,7 @@ describe("POST /api/reviews", () => {
       }) as never,
     );
     const { status, body } = await readJson(await POST(jsonRequest({})));
-    expect(status).toBe(400);
+    expect(status).toBe(409);
     expect(body.error).toBe("NO_WORKSPACE");
   });
 
@@ -211,7 +211,7 @@ describe("GET /api/reviews", () => {
     expect(body.error).toBe("AUTH_REQUIRED");
   });
 
-  it("returns an empty list without a workspace", async () => {
+  it("returns an explicit error without a workspace", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(
       createSupabaseMock({
         user: USER,
@@ -219,7 +219,7 @@ describe("GET /api/reviews", () => {
       }) as never,
     );
     const { status, body } = await readJson(await GET());
-    expect(status).toBe(200);
-    expect(body.reviews).toEqual([]);
+    expect(status).toBe(409);
+    expect(body.error).toBe("NO_WORKSPACE");
   });
 });

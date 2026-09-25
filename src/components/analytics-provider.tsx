@@ -33,12 +33,12 @@ async function syncAccountChoice(userId: string, choice: Exclude<AnalyticsChoice
   return !error;
 }
 
-function reportAuthIfPending(userId: string) {
+async function reportAuthIfPending(userId: string) {
+  await identifyAnalyticsUser(userId);
   const method = consumeAnalyticsAuthIntent();
   if (method && analyticsChoice() === "accepted") {
     void trackProduct("auth_succeeded", { method });
   }
-  void identifyAnalyticsUser(userId);
 }
 
 export function AnalyticsProvider() {

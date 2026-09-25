@@ -136,7 +136,7 @@ describe("tool export", () => {
     cy.get('[data-testid="preview-inner-crop-controls"]').contains("button", "Tout afficher").click();
     cy.get('[data-testid="preview-inner-metrics"]').should("contain", "Rognage 0.0%");
     cy.window().then((win) => {
-      const sets = JSON.parse(win.localStorage.getItem("duoshot.sets.v1") || "[]");
+      const sets = JSON.parse(win.localStorage.getItem("duoshot.sets.v1:00000000-0000-4000-8000-000000000001") || "[]");
       expect(sets[0].transforms.outer[0].x).to.eq(0.82);
       expect(sets[0].transforms.inner[0].fit).to.eq("contain");
     });
@@ -180,7 +180,7 @@ describe("tool export", () => {
     cy.get('[data-testid="preview-outer-smart-result"]').should("be.visible");
     cy.get('[data-testid="preview-outer-crop-controls"]').contains("button", "Remplir").click();
     cy.window().then((win) => {
-      const [set] = JSON.parse(win.localStorage.getItem("duoshot.sets.v1") || "[]");
+      const [set] = JSON.parse(win.localStorage.getItem("duoshot.sets.v1:00000000-0000-4000-8000-000000000001") || "[]");
       expect(set.fitMode).to.eq("smart");
       expect(set.transforms.outer[0].fit).to.eq("cover");
     });
@@ -197,7 +197,7 @@ describe("tool export", () => {
     cy.get('[data-testid="tool-pixel-view"]').click();
     cy.get('[data-testid="preview-outer-canvas"] img').should("have.css", "object-fit", "contain");
     cy.window().then((win) => {
-      const [set] = JSON.parse(win.localStorage.getItem("duoshot.sets.v1") || "[]");
+      const [set] = JSON.parse(win.localStorage.getItem("duoshot.sets.v1:00000000-0000-4000-8000-000000000001") || "[]");
       expect(set.fitMode).to.eq("smart");
       expect(set.transforms.outer[0]).to.include({ fit: "smart", x: 0.82, zoom: 1.2 });
       expect(set.transforms.inner[0].fit).to.eq("smart");
@@ -220,7 +220,7 @@ describe("tool export", () => {
     cy.get('[data-testid="preview-inner-crop-controls"] input[type="range"]').eq(1).focus().type('{rightarrow}');
     cy.get('[data-testid="preview-inner-crop-controls"] input[type="range"]').eq(1).should('have.value', '51');
     cy.window().then((win) => {
-      const sets = JSON.parse(win.localStorage.getItem('duoshot.sets.v1') || '[]');
+      const sets = JSON.parse(win.localStorage.getItem('duoshot.sets.v1:guest') || '[]');
       expect(sets[0].transforms.inner[0].x).to.eq(0.51);
     });
   });
@@ -244,7 +244,7 @@ describe("tool export", () => {
       el.dispatchEvent(new Event("change", { bubbles: true }));
     });
     cy.window().then((win) => {
-      const sets = JSON.parse(win.localStorage.getItem("duoshot.sets.v1") || "[]");
+      const sets = JSON.parse(win.localStorage.getItem("duoshot.sets.v1:guest") || "[]");
       expect(sets[0].transforms.inner[0].zoom).to.eq(1.2);
       expect(sets[0].transforms.inner[0].y).to.eq(0.8);
     });

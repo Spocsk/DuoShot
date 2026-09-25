@@ -9,6 +9,7 @@ export function PaywallModal({
   locale,
   reason,
   busy,
+  available = false,
   preferredKind,
   onClose,
   onCheckout,
@@ -16,6 +17,7 @@ export function PaywallModal({
   locale: Locale;
   reason: "trial" | "69";
   busy: boolean;
+  available?: boolean;
   preferredKind?: CheckoutKind;
   onClose: () => void;
   onCheckout: (kind: CheckoutKind) => void;
@@ -27,11 +29,12 @@ export function PaywallModal({
         {reason === "69" ? t(locale, "paywall_69") : t(locale, "paywall_title")}
       </h2>
       <p className="mt-3 text-[var(--muted)]">{t(locale, "paywall_lead")}</p>
+      {!available ? <p role="status" className="mt-3 text-sm">{locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet."}</p> : null}
       <button
         type="button"
         className="ds-cta mt-6 w-full"
         data-testid="paywall-cta-indie"
-        disabled={busy}
+        disabled={busy || !available}
         onClick={() => onCheckout(yearly ? "indie_yearly" : "indie_monthly")}
       >
         {yearly ? (locale === "fr" ? "Indie · 120 € / an" : "Indie · €120 / year") : t(locale, "paywall_cta_indie")}
@@ -40,7 +43,7 @@ export function PaywallModal({
         type="button"
         className="ds-cta-ghost mt-3 w-full"
         data-testid="paywall-cta-studio"
-        disabled={busy}
+        disabled={busy || !available}
         onClick={() => onCheckout(yearly ? "studio_yearly" : "studio_monthly")}
       >
         {yearly ? (locale === "fr" ? "Studio · 490 € / an" : "Studio · €490 / year") : t(locale, "paywall_cta_studio")}

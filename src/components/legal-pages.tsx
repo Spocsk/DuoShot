@@ -142,8 +142,7 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Retention">
           <p>
-            Uploads and ZIP files: 24 hours. Derived Studio review JPEGs: 7 days maximum, or earlier if the owner
-            revokes the link. Account rows remain until you delete the account. Analytics events follow the Mixpanel
+            Sources and ZIP files expire after 24 hours; review media after 7 days or revocation. Physical deletion is scheduled every 15 minutes and retried after failures. Local browser drafts remain on your device until you remove them. Account rows remain until you delete the account. Analytics events follow the Mixpanel
             project retention setting and can be deleted upon request. Stripe keeps billing records as required by law.
           </p>
         </Block>
@@ -193,8 +192,7 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Durées">
         <p>
-          Uploads et ZIP : 24 h. JPEG dérivés des reviews Studio : 7 jours maximum, ou moins si le propriétaire
-          révoque le lien. Lignes de compte jusqu’à suppression. Les événements analytiques suivent la durée configurée
+          Sources et ZIP expirent après 24 h ; médias de revue après 7 jours ou révocation. La suppression physique est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les brouillons locaux restent sur votre appareil jusqu’à leur suppression. Lignes de compte jusqu’à suppression. Les événements analytiques suivent la durée configurée
           dans le projet Mixpanel et peuvent être effacés sur demande. Stripe conserve la facturation selon la loi.
         </p>
       </Block>
@@ -240,8 +238,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Trial and plans">
           <p>
-            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Indie: €12/month, unlimited ZIPs within a
-            fair-use daily cap, 6.9″ sizes and Client/App prefix included. Studio: €49/month, everything in Indie plus
+            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Indie: €12/month or €120/year billed annually, up to 100 ZIP exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €49/month or €490/year billed annually, everything in Indie plus
             three seats and client reviews retained for seven days. Prices include VAT where applicable.
             Billing via Stripe, cancel from Stripe.
           </p>
@@ -308,8 +305,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Essai et offres">
         <p>
-          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Indie : 12 €/mois, ZIP illimités dans
-          un plafond quotidien anti-abus, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois, tout Indie plus trois
+          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Indie : 12 €/mois ou 120 €/an facturés annuellement, 100 exports ZIP par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois ou 490 €/an facturés annuellement, tout Indie plus trois
           sièges et des reviews client conservées sept jours. Prix TTC le cas échéant. Paiement via Stripe, résiliation
           depuis Stripe.
         </p>

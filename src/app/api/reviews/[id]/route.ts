@@ -99,7 +99,8 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (error || !data) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   const { data: objects } = await writer.storage.from("reviews").list(id, { limit: 100 });
   if (objects?.length) {
-    await writer.storage.from("reviews").remove(objects.map((object) => `${id}/${object.name}`));
+    const { error: cleanupError } = await writer.storage.from("reviews").remove(objects.map((object) => `${id}/${object.name}`));
+    if (cleanupError) console.error("review_cleanup_pending", { publicId: id });
   }
   return NextResponse.json({ id, status: "revoked", revokedAt });
 }

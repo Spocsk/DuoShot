@@ -1,0 +1,49 @@
+# Recette de lancement DuoShot — 25 septembre 2026
+
+Le lancement payant n’est pas ouvert. Le domaine principal retenu est désormais **https://duoshot.site**, acheté par le propriétaire pendant l’exécution. Les validations ci-dessous distinguent le code local, les services réels et le déploiement public, qui sert encore la version précédente.
+
+## Résultats établis
+
+| Domaine | Preuve et portée |
+|---|---|
+| Base | Historiques rapprochés, sept migrations additives enregistrées et vérifiées dans le projet Supabase `jvhqcmqwrihbtwrggwuq`. Aucune migration initiale rejouée. Accès Studio manuel du propriétaire conservé. Voir `schema-reconciliation-2026-09-25.md`. |
+| Inscription | Appel à l’inscription publique Supabase, e-mail reçu et confirmé par le propriétaire, puis connexion par le formulaire réel. La saisie initiale du formulaire d’inscription n’a pas été rejouée dans le navigateur. |
+| Brouillon | Import anonyme de deux PNG dans Chrome, connexion du compte confirmé, transfert explicite dans ce compte, récupération des images et du nom, génération réelle du ZIP. |
+| Export portrait | Export `6e483b52-f69d-40d4-9f63-b9b6a3b43b5b`, 1 068 836 octets. Deux PNG : 1398×2034 et 2007×2853, sRGB, sans alpha. Quota passé de 2 à 1. |
+| Export paysage | Export `0a9023b9-9e45-4ffc-860d-b6446ae93364`, 43 032 259 octets. Dix paires, vingt JPEG : 2034×1398 et 2853×2007, sRGB, sans alpha. Quota passé de 1 à 0. Appels HTTP réels, sans interception réseau. |
+| Récupération | Deux demandes de lien renouvelé sur le même export, sans consommation supplémentaire. ZIP téléchargé par HTTP puis décompressé et inspecté. Requête anonyme refusée (401). |
+| Échec volumineux | Lot de stress de 55 735 539 octets refusé par Supabase (« maximum allowed size »), réservation remboursée. La limite effective du projet est 50 Mo malgré le réglage du bucket à 100 Mo. Erreur applicative explicite 413 ajoutée ; réduire le lot ou choisir JPEG. |
+| Purge | Route cron exécutée réellement avec son secret : 105 objets expirés supprimés via Storage, zéro candidat restant. Objet témoin présent avant, absent après. Aucun effacement SQL de `storage.objects` dans le nouveau chemin. Le contrôle ne prouve pas l’absence de fichiers physiques orphelins dont les anciennes tâches auraient déjà effacé les métadonnées. |
+| Studio | Trois membres réels, quatrième siège refusé, mauvaise adresse refusée, invitation révoquée non acceptée, acceptation puis accès Studio effectif. Création de revue et décision client réelles, suppression refusée depuis un autre workspace, révocation et disparition physique des deux médias confirmées. Le compte d’inscription a retrouvé son workspace personnel. |
+| Effacement du compte | Compte éphémère créé pour la recette puis supprimé par la route authentifiée : utilisateur absent, fichier Storage absent, demande Mixpanel acceptée par l’API EU, état `submitted` jusqu’à sa confirmation finale. |
+| Tests PostgreSQL | Migrations exécutées dans PGlite : réservation/refund, plafond quotidien, conservation des métadonnées, effacement bloqué avant suppression Storage, sièges/invitations, réutilisation de tentative Checkout. PGlite sérialise ses requêtes ; ce test ne remplace pas un test de contention multi-connexions sur PostgreSQL distant. |
+| Tests applicatifs | 169 tests Vitest passent, lint et vérification TypeScript passent. Build Next.js réussi. |
+| Navigateur simulé | 60 tests Cypress passent sur les 11 suites lors du run complet final. Le test de consentement charge le véritable SDK Mixpanel et intercepte seulement son ingestion EU : aucune émission avant accord, émission après accord, arrêt après refus. Les API produit sont simulées dans les autres suites ; ne pas les présenter comme certification de production. |
+| SEO servi | 12 routes privées FR/EN testées via HTTP local : `noindex` présent. Canonical du domaine final, sitemap et robots explorables vérifiés. Les nouvelles métadonnées ne sont pas encore déployées publiquement. |
+| Infrastructure | `duoshot.site` attaché à Vercel et répond en HTTPS. Propriété Search Console de domaine vérifiée par DNS. Supabase Site URL et callback mis à jour. Secrets serveur, secret cron, cohorte interne et Checkout désactivé configurés dans Vercel Production, sans clé Stripe de test. |
+| Mesure | Projet Mixpanel EU DuoShot 4067310 créé, fuseau Europe/Paris. Tests de consentement/arrêt de suivi passent. Refus vérifié dans l’interface. Jetons public et GDPR désormais configurés pour le prochain déploiement ; demande de suppression soumise et suivi horaire activé. |
+
+## Limites qui restent ouvertes
+
+- **Déploiement** : équipe Vercel Hobby. Récapitulatif Pro ouvert : 24 $ TTC immédiatement et environ 24 $/mois au palier de base, usage additionnel possible. Le propriétaire doit finaliser cet abonnement. La purge toutes les quinze minutes ne doit pas être remplacée silencieusement par une tâche quotidienne.
+- **Téléchargement navigateur** : Chrome reproduit `ERR_BLOCKED_BY_CLIENT` lors de l’ouverture de Storage. L’accès HTTP et les fichiers sont valides. La tentative Safari a été interrompue par la fermeture de l’application avant certification du téléchargement ; profil Chrome vierge et navigateur mobile physique restent à tester. L’émulation responsive n’est pas un navigateur mobile réel.
+- **Stripe** : quatre prix et clés de test existent, mais aucun environnement Supabase séparé n’est configuré pour leur recette. Supabase bloque la création : les deux emplacements gratuits actifs sont occupés par DuoShot et le-cabinet. Le propriétaire doit libérer un emplacement ou fournir un projet de test payant. Ne pas connecter Stripe test à la base commerciale. Quatre Checkouts, renouvellement, impayé, changement d’offre, événements retardés/désordonnés et suppression d’un abonné restent à certifier sur cet environnement. Les tests unitaires et SQL ne prouvent pas cette intégration externe.
+- **Activation commerciale** : compte live, fiscalité, quatre prix live, webhook/portail live et achat réel contrôlé par le propriétaire non validés. Garder `STRIPE_CHECKOUT_ENABLED=false`.
+- **Analytics** : jeton OAuth GDPR configuré et demande soumise (`01a0d856-f1a8-7766-b5a2-8580440d9a91`). L’effacement externe ne peut pas être déclaré achevé sans confirmation de Mixpanel. L’événement diagnostic interne envoyé par l’API EU apparaît dans Events ; les événements produit du profil Chrome initial n’y sont pas apparus pendant la vérification. Collecte navigateur réelle, rapports sauvegardés, exclusions de cohortes et rétention J7/J30 restent à mettre en service ; ne pas inventer de données historiques.
+- **Invitations e-mail** : Resend non configuré. Le lien manuel fonctionne ; l’interface indique l’absence d’envoi. La délivrabilité d’invitation n’est donc pas certifiée.
+- **Design** : capture desktop et capture mobile à 390 px inspectées, comparaison fermé/ouvert sans débordement. Les libellés de suppression sont rendus visibles et les cibles tactiles agrandies ; nouvelle capture inspectée après correction et les 17 tests atelier passent à nouveau sur le build final. La capture Cypress utilise des sources synthétiques ; les captures d’apps complexes et le téléchargement sur appareil mobile physique restent à vérifier.
+- **Acquisition** : observations externes, backlinks, citations IA et conversions commerciales non établis. Le protocole et les brouillons sont dans `commercial-learning.md` ; aucun envoi réalisé.
+
+## Mise en production et retour arrière
+
+1. Finaliser la recette locale puis obtenir Vercel Pro. Conserver les boutons payants désactivés. Les secrets de collecte et d’effacement Mixpanel sont prêts pour le prochain build.
+2. Les migrations additives ont précédé le code. Déployer le code à Paris (`cdg1`) ; contrôler les fonctions et le cron dans le déploiement effectif, sans se limiter à `vercel.json`.
+3. Tester en production compte, quota, petit/gros export, renouvellement de lien, droits Studio et disponibilité explicite du paiement.
+4. Appliquer seulement ensuite `supabase/cutover/20260925_retire_legacy_rpc.sql` : retrait des anciens RPC/quota et des politiques Storage de revue publiques. Vérifier qu’un lien de revue fonctionne via la route serveur mais qu’une URL Storage publique ne donne plus les médias.
+5. Vérifier les URL canoniques publiques, soumettre `https://duoshot.site/sitemap.xml` à Search Console et inspecter `/`, `/en`, `/specs`, `/en/specs`, `/pricing`, `/en/pricing`.
+6. Observer la première exécution automatique du cron et les journaux `storage_cleanup`, `export_refund_failed`, `review_cleanup_pending`, erreurs Stripe et file d’effacement analytique.
+7. En cas d’incident, désactiver Checkout et redéployer la dernière version compatible. Le rollback préexistant est `dpl_9gPV3ttHELSmb2g19pwwc9Pt1dzK` ; après le cutover, il nécessite de restaurer les anciennes permissions ou de conserver les routes corrigées. Ne pas retirer `manual_plan` ni les droits des abonnés pour fermer les ventes.
+
+## Rejouer la recette réelle d’export
+
+Avec un compte de test dédié disposant d’au moins un essai : charger les variables Supabase publiques, `DUOSHOT_TEST_EMAIL`, `DUOSHOT_TEST_PASSWORD`, `DUOSHOT_TEST_CONSUME_TRIAL=true`, puis exécuter `node --env-file=.env.local scripts/verify-real-export.mjs`. Par défaut la cible est `http://localhost:3001`; `DUOSHOT_TEST_BASE_URL` permet de la changer. Ce script consomme un essai, importe deux sources synthétiques, produit dix paires et contrôle le ZIP Storage, les dimensions, la couleur, l’absence d’alpha, le quota et l’interdiction d’accès anonyme. Aucun identifiant n’est inclus dans le dépôt.

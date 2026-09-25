@@ -36,6 +36,8 @@ export async function POST(request: Request, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq("public_id", id)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString())
       .select("public_id, status, comment")
       .maybeSingle();
     if (error || !data) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });

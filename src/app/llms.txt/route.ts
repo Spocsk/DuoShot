@@ -5,7 +5,7 @@ export function GET() {
   const sizes = SIZE_SPECS.map(
     (spec) => `- ${spec.label} ${spec.inches} ${spec.orientation}: ${spec.width}x${spec.height}`,
   ).join("\n");
-  const body = `# DuoShot
+  const body = `# DuoShot — App Store Screenshot QA
 > ${SITE_PITCH_FR}
 
 - Specs version: ${SPECS_VERSION_DATE}
@@ -23,7 +23,11 @@ ${sizes}
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are Indie / Studio
 - Trial: 2 HD ZIP exports after signup, no card
-- Trial: 2 HD ZIPs without a card; Indie 12 EUR/month
+- Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year. Annual billing upfront; paid limit 100 ZIPs per UTC day.
+- Apple upload status checked 2026-09-25: Duo upload support is announced for later this year. Prepare files now, upload manually when available.
+- Apple source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
+- Harbor is a fictional demonstration. No approval guarantee.
+- Projects are saved locally on the device, not synchronized.
 - Studio 49 EUR/month includes 3 seats and client reviews retained for 7 days
 `;
   return new Response(body, {

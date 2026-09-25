@@ -52,7 +52,7 @@ export async function GET(request: Request, { params }: Params) {
   return new NextResponse(Buffer.from(await data.arrayBuffer()), {
     headers: {
       "Content-Type": "image/jpeg",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "private, no-store",
     },
   });
 }

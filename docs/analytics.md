@@ -38,3 +38,25 @@ Les noms de fichiers, contenus des captures, e-mails, noms d'apps/clients, URL c
 - **Studio** : `review_requested` → `review_created`, segmenté par offre et langue si disponibles.
 
 Dans Mixpanel Events View, les derniers événements et profils pseudonymes donnent une **activité récente**, pas une liste fiable des personnes encore en ligne.
+
+## Configuration au 25 septembre 2026
+
+Projet DuoShot **4067310**, résidence EU, fuseau Europe/Paris. Les jetons public et GDPR sont configurés dans `.env.local` et Vercel Production pour le prochain déploiement. Les migrations sont appliquées. La demande d’effacement de recette a été acceptée par l’API EU et reste `submitted` sous le suivi `01a0d856-f1a8-7766-b5a2-8580440d9a91`. Un suivi horaire silencieux attend la confirmation finale ; le compte et son fichier Storage ont déjà disparu. Générer ce jeton depuis Profile → Data & Privacy, le conserver côté serveur et prévoir son renouvellement annuel ([documentation Mixpanel](https://docs.mixpanel.com/docs/privacy/end-user-data-management)). Ne marquer `done` qu’après la confirmation `SUCCESS` de l’API.
+
+`ANALYTICS_INTERNAL_USER_IDS` contient le fondateur et les trois comptes de recette conservés. Le serveur attribue `audience=internal|external`; le navigateur démarre à `anonymous` et confirme cette propriété après identification. Exclure les profils identifiés internes de tout rapport commercial, y compris leurs événements anonymes fusionnés. Les profils `unknown` restent dans une catégorie séparée, jamais comptés comme externes.
+
+Preuves de recette : le SDK navigateur émet vers l’UE uniquement après consentement et s’arrête après refus (test Cypress avec ingestion interceptée). Un événement diagnostic `instrumentation_check`, explicitement interne, a été envoyé à l’API EU et apparaît dans Events. Ce diagnostic ne représente aucune conversion. Les événements produit du profil Chrome initial ne sont pas apparus dans Events pendant la vérification ; la collecte navigateur réelle et les rapports sauvegardés restent à confirmer après déploiement, avec un profil sans bloqueur. Aucune donnée commerciale historique n’a été reconstruite.
+
+## Spécification des rapports à enregistrer
+
+| Rapport | Réglage |
+|---|---|
+| Découverte → premier export | Funnel `page_viewed` (accueil ou atelier) → `captures_added` → `auth_succeeded` → `export_succeeded`, fenêtre 7 jours, utilisateurs uniques, exclure cohorte interne. Prévoir une vue séparée pour les personnes déjà connectées afin de ne pas compter leur absence de reconnexion comme un abandon. |
+| Temps jusqu’au premier export | Dans ce funnel, temps de conversion import → export, médiane et P90 ; limiter au premier export observé, afficher N et taux de consentement disponible. |
+| Tarifs → abonnement | `page_viewed` sur tarifs → `checkout_started` → `subscription_activated`, fenêtre 7 jours, segmenter les quatre offres. Le dernier événement est produit uniquement par le webhook signé. Comparer aux abonnements réellement enregistrés dans Stripe. |
+| Réutilisation | Retention `export_succeeded` → `export_succeeded`, cohortes par semaine du premier export observé, J7 et J30 ; afficher seulement les cohortes matures et leurs effectifs. |
+| Revues Studio | `review_requested` → `review_created`, fenêtre 24 h, utilisateurs uniques et nombre de demandes. |
+| Erreurs et abandons | `export_failed`/`review_failed` par code et étape, comptes uniques, ratio sur demandes ; abandon = absence d’étape suivante dans la fenêtre, pas fermeture supposée du navigateur. |
+| Téléchargements demandés | Nombre de `zip_download_clicked` rapporté aux exports ; ce compteur ne prouve pas la réception du fichier. |
+
+Tableaux opérationnels séparés : Supabase `export_sets`, `export_reservations`, `stripe_events`, `analytics_erasure_jobs` et Stripe pour paiements/résiliations. Les journaux ne doivent pas exposer d’URL signées ni de captures. Les rapports Mixpanel ne remplacent pas ces traces transactionnelles.

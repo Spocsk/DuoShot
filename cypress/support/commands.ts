@@ -59,6 +59,7 @@ function billing(plan: Plan, remaining: number | null) {
     source: "mock",
     remainingFreeExports: plan === "free" ? remaining : null,
     canUse69: plan !== "free",
+    checkoutAvailable: true,
   };
 }
 
@@ -100,6 +101,7 @@ function visitLocalized(path: string, locale: "fr" | "en", options?: Partial<Cyp
       } else {
         win.localStorage.removeItem(AUTH_COOKIE);
       }
+      for (const key of Object.keys(win.localStorage)) if (key.startsWith("duoshot.sets.")) win.localStorage.removeItem(key);
       win.localStorage.removeItem("duoshot.sets.v1");
       win.localStorage.removeItem("duoshot.sets.active");
     },

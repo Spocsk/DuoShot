@@ -14,11 +14,12 @@ export async function sendTransactionalEmail(options: {
     return { sent: false, mocked: true };
   }
   const resend = new Resend(key);
-  await resend.emails.send({
-    from: "DuoShot <noreply@duoshot.app>",
+  const { error } = await resend.emails.send({
+    from: process.env.RESEND_FROM || "DuoShot <noreply@duoshot.site>",
     to: options.to,
     subject: options.subject,
     text: options.text,
   });
+  if (error) throw new Error("EMAIL_DELIVERY_FAILED");
   return { sent: true, mocked: false };
 }

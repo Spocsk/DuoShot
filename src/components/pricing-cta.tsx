@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CheckoutKind } from "@/lib/plans";
 import { startCheckout } from "@/lib/checkout";
@@ -21,6 +21,8 @@ export function PricingCta({
 }) {
   const router = useRouter();
   const dest = `${toolPath(locale)}?upgrade=1&plan=${kind}`;
+  const [available, setAvailable] = useState(false);
+  useEffect(() => { void fetch("/api/billing/availability").then((r) => r.ok ? r.json() : null).then((data) => setAvailable(data?.checkoutAvailable === true)).catch(() => setAvailable(false)); }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,8 +50,8 @@ export function PricingCta({
 
   return (
     <>
-      <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy}>
-        {busy ? (locale === "fr" ? "Ouverture…" : "Opening…") : label}
+      <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
+        {!available ? (locale === "fr" ? "Paiements bientôt ouverts" : "Payments opening soon") : busy ? (locale === "fr" ? "Ouverture…" : "Opening…") : label}
       </button>
       {error ? (
         <p className="ds-warn mt-2 text-sm" role="alert" data-testid={`pricing-error-${kind}`}>{error}</p>

@@ -15,6 +15,7 @@ const request = (kind: string) => new Request("http://localhost/api/stripe/check
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, next: "/tool" }),
 });
 
+const attemptRpc = async (_name: string, args: unknown) => ({ data: { attempt_id: "attempt-1", kind: (args as {p_kind:string}).p_kind, return_path: "/tool", expires_at: new Date(Date.now()+86400000).toISOString() }, error: null });
 function workspace(stripeSubscriptionId: string | null = null) {
   return createSupabaseMock({
     user,
@@ -36,12 +37,17 @@ function workspaceWithoutCustomer() {
 beforeEach(() => {
   vi.mocked(createServerSupabase).mockReset();
   vi.mocked(getStripe).mockReset();
-  vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({}) as never);
+  vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({ rpc: attemptRpc }) as never);
   vi.stubEnv("STRIPE_INDIE_PRICE_ID", "price_indie");
   vi.stubEnv("STRIPE_STUDIO_PRICE_ID", "price_studio");
   vi.stubEnv("STRIPE_INDIE_YEARLY_PRICE_ID", "price_indie_yearly");
   vi.stubEnv("STRIPE_STUDIO_YEARLY_PRICE_ID", "price_studio_yearly");
   vi.stubEnv("STRIPE_TAX_ENABLED", "false");
+  vi.stubEnv("STRIPE_CHECKOUT_ENABLED", "true");
+  vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_example");
+  vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_example");
+  vi.stubEnv("SUPABASE_SECRET_KEY", "example");
+  vi.stubEnv("VERCEL_ENV", "preview");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -97,7 +103,7 @@ describe("POST /api/stripe/checkout", () => {
   it("persists a new Stripe customer through the server-only client", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspaceWithoutCustomer());
     const update = vi.fn(() => createQueryBuilder({ data: { stripe_customer_id: "cus_new" }, error: null }));
-    vi.mocked(createAdminSupabase).mockReturnValue({ from: () => ({ ...createQueryBuilder({ data: null }), update }) } as never);
+    vi.mocked(createAdminSupabase).mockReturnValue({ rpc: attemptRpc, from: () => ({ ...createQueryBuilder({ data: null }), update }) } as never);
     vi.mocked(getStripe).mockReturnValue({
       customers: { create: vi.fn().mockResolvedValue({ id: "cus_new" }) },
       subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },

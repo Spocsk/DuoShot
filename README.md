@@ -45,10 +45,10 @@ Projet Supabase : [DuoShot](https://supabase.com/dashboard/project/jvhqcmqwrihbt
 3. [Supabase → Authentication → Providers → Google](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/providers) : activer, coller Client ID + secret. Aucun secret dans git.
 4. [URL Configuration](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/url-configuration) :
 
-   - **Site URL** : `https://duoshot.vercel.app`
+   - **Site URL** : `https://duoshot.site`
    - **Redirect URLs** :
-     - `https://duoshot.vercel.app/auth/callback`
-     - `https://duoshot.vercel.app/**`
+     - `https://duoshot.site/auth/callback`
+     - `https://duoshot.site/**`
      - `http://localhost:3000/auth/callback`
      - `http://localhost:3000/**`
      - `https://duoshot-*-spocsks-projects.vercel.app/**`
@@ -62,8 +62,8 @@ Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de
 | Offre | Prix | Notes |
 | --- | --- | --- |
 | Essai | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
-| Indie | 12 €/mo | ZIP illimités, 6,9″, multi-sets, préfixe Client/App |
-| Studio | 49 €/mo | + 3 sièges et reviews client pendant 7 jours |
+| Indie | 12 €/mo ou 120 €/an | 100 ZIP/jour UTC, 6,9″, multi-sets, préfixe Client/App |
+| Studio | 49 €/mo ou 490 €/an | + 3 sièges et reviews client pendant 7 jours |
 
 Ne pas passer Stripe **live** ni Vercel Pro tant que le checkout n’est pas validé.
 

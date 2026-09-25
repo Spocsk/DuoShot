@@ -1,3 +1,4 @@
+import { CHECKOUT_CATALOG } from "./plans";
 import { FAQ } from "./i18n";
 import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, getSiteUrl } from "./site";
 import type { Locale } from "./specs";
@@ -19,12 +20,14 @@ export function jsonLdGraph(locale: Locale) {
         name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
-        offers: {
-          "@type": "AggregateOffer",
-          lowPrice: "0",
-          highPrice: "49",
-          priceCurrency: "EUR",
-        },
+        offers: [
+          { "@type": "Offer", name: "2 trial ZIP exports", price: "0", priceCurrency: "EUR" },
+          ...Object.entries(CHECKOUT_CATALOG).map(([kind, offer]) => ({
+            "@type": "Offer", name: offer.name, url: `${url}${locale === "en" ? "/en" : ""}/pricing`,
+            price: String(offer.amountCents / 100), priceCurrency: "EUR",
+            priceSpecification: { "@type": "UnitPriceSpecification", price: String(offer.amountCents / 100), priceCurrency: "EUR", billingDuration: kind.endsWith("yearly") ? "P1Y" : "P1M" },
+          })),
+        ],
         description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
         url,
       },

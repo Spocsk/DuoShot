@@ -4,17 +4,8 @@ import { getSiteUrl } from "@/lib/site";
 export default function robots(): MetadataRoute.Robots {
   const base = getSiteUrl();
   return {
-    rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: ["/tool", "/account", "/api/", "/auth/", "/r/"],
-      },
-      { userAgent: "GPTBot", allow: "/" },
-      { userAgent: "ClaudeBot", allow: "/" },
-      { userAgent: "PerplexityBot", allow: "/" },
-      { userAgent: "Google-Extended", allow: "/" },
-    ],
+    // Crawlers must reach private page HTML to read noindex. Authentication protects data.
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/auth/"] }],
     sitemap: `${base}/sitemap.xml`,
     host: base,
   };

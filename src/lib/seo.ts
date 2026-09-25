@@ -8,10 +8,11 @@ export function pageMetadata(options: {
   title: string;
   description: string;
 }): Metadata {
-  const canonicalPath = options.locale === "fr" ? options.path : localizedPath("en", options.path);
-  const fr = options.path;
+  const canonicalPath = localizedPath(options.locale, options.path);
+  const fr = localizedPath("fr", options.path);
   const en = localizedPath("en", options.path);
   return {
+    robots: /^(?:\/en)?\/(tool|account|login|signup|invite|r)(?:\/|$)/.test(canonicalPath) || process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
     title: options.title,
     description: options.description,
     alternates: {

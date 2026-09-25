@@ -9,7 +9,7 @@ export const metadata = pageMetadata({
   description: "DuoShot account: plans, JSON export, deletion.",
 });
 
-export const robots = { index: false, follow: false };
+
 export const dynamic = "force-dynamic";
 
 export default function Page() {

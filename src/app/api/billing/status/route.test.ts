@@ -26,7 +26,7 @@ describe("GET /api/billing/status", () => {
     expect(body.error).toBe("AUTH_REQUIRED");
   });
 
-  it("returns free defaults without a workspace", async () => {
+  it("returns an explicit error without a workspace", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(
       createSupabaseMock({
         user: USER,
@@ -34,13 +34,8 @@ describe("GET /api/billing/status", () => {
       }) as never,
     );
     const { status, body } = await readJson(await GET());
-    expect(status).toBe(200);
-    expect(body).toEqual({
-      plan: "free",
-      source: "none",
-      remainingFreeExports: 2,
-      canUse69: false,
-    });
+    expect(status).toBe(409);
+    expect(body.error).toBe("NO_WORKSPACE");
     expect(resolveEntitlements).not.toHaveBeenCalled();
   });
 

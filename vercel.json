@@ -1,5 +1,7 @@
 {
+  "regions": ["cdg1"],
   "crons": [
-    { "path": "/api/cron/analytics-erasure", "schedule": "0 4 * * *" }
+    { "path": "/api/cron/analytics-erasure", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/storage-cleanup", "schedule": "*/15 * * * *" }
   ]
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveEntitlements } from "@/lib/billing";
+import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { mapLimit } from "@/lib/map-limit";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
@@ -33,39 +33,28 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
 
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
-  if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 400 });
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("plan, manual_plan, free_exports_used, stripe_subscription_id, subscription_status")
-    .eq("id", membership.workspace_id)
-    .maybeSingle();
-  const entitlements = resolveEntitlements({
-    freeExportsUsed: workspace?.free_exports_used ?? 0,
-    workspacePlan: workspace?.plan,
-    manualPlan: workspace?.manual_plan,
-    subscriptionId: workspace?.stripe_subscription_id,
-    subscriptionStatus: workspace?.subscription_status,
-  });
+  const context = await readWorkspaceBilling(supabase, user.id);
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  const { membership, entitlements } = context;
   if (entitlements.plan !== "studio") {
     return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
   }
 
   const writer = createReviewWriter(supabase);
 
-  const body = (await request.json()) as Body;
+  let body: Body;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "INVALID_JSON" }, { status: 400 }); }
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? [];
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? []);
   if (outerPaths.length === 0 || innerPaths.length === 0) {
     return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
+  }
+  if (!Array.isArray(outerPaths) || !Array.isArray(innerPaths) || outerPaths.length > 10 || innerPaths.length > 10 || outerPaths.length !== innerPaths.length) {
+    return NextResponse.json({ error: "INVALID_PAIRS" }, { status: 400 });
+  }
+  if ([...outerPaths, ...innerPaths].some((path) => typeof path !== "string" || !path.startsWith(`${user.id}/`))) {
+    return NextResponse.json({ error: "PATH_FORBIDDEN" }, { status: 403 });
   }
   const orientation = body.options?.orientation ?? body.orientation;
   const options: RenderOptions = {
@@ -155,12 +144,19 @@ export async function POST(request: Request) {
     const code = error instanceof Error ? error.message : "REVIEW_UPLOAD_FAILED";
     return code;
   });
+  const createdReviewId = review.id;
+  async function revokeIncompleteReview() {
+    const { error } = await writer.from("review_links").update({ revoked_at: new Date().toISOString(), status: "revoked" }).eq("id", createdReviewId);
+    if (error) console.error("review_cleanup_failed", { reviewId: createdReviewId });
+  }
   if (typeof slides === "string") {
+    await revokeIncompleteReview();
     const status = slides === "PATH_FORBIDDEN" ? 403 : slides === "UPLOAD_MISSING" ? 400 : 500;
     return NextResponse.json({ error: slides }, { status });
   }
   const { error: slideError } = await writer.from("review_slides").insert(slides);
   if (slideError) {
+    await revokeIncompleteReview();
     return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
   }
 
@@ -175,21 +171,17 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
-  if (!membership) return NextResponse.json({ reviews: [] });
+  const context = await readWorkspaceBilling(supabase, user.id);
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  const { membership } = context;
   const writer = createReviewWriter(supabase);
-  const { data } = await writer
+  const { data, error } = await writer
     .from("review_links")
     .select("public_id, set_name, client_name, status, comment, created_at, expires_at, revoked_at")
     .eq("workspace_id", membership.workspace_id)
     .order("created_at", { ascending: false })
     .limit(20);
+  if (error) return NextResponse.json({ error: "REVIEWS_UNAVAILABLE" }, { status: 503 });
   return NextResponse.json({
     reviews: (data ?? []).map((review) => ({ ...review, ...reviewState(review) })),
   });

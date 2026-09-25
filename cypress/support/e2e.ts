@@ -4,3 +4,5 @@ beforeEach(() => {
   cy.clearAllCookies();
   resetE2eSession();
 });
+
+beforeEach(() => { cy.intercept("GET", "**/api/billing/availability", { checkoutAvailable: true }); });

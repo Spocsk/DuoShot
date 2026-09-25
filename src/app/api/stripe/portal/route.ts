@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { getStripe } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
@@ -9,14 +10,12 @@ export async function POST(request: Request) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const { data: membership } = await supabase.from("workspace_members")
-    .select("workspace_id, role").eq("user_id", user.id).eq("active", true).limit(1).maybeSingle();
-  if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 400 });
+  const context = await readWorkspaceBilling(supabase, user.id);
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  const { membership, workspace } = context;
   if (membership.role !== "owner" && membership.role !== "admin") {
     return NextResponse.json({ error: "BILLING_OWNER_REQUIRED" }, { status: 403 });
   }
-  const { data: workspace } = await supabase.from("workspaces")
-    .select("stripe_customer_id").eq("id", membership.workspace_id).single();
   if (!workspace?.stripe_customer_id) {
     return NextResponse.json({ error: "NO_BILLING_CUSTOMER" }, { status: 404 });
   }

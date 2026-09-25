@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { resolveEntitlements } from "@/lib/billing";
+import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { mapLimit } from "@/lib/map-limit";
-import { FREE_EXPORTS, PRO_DAILY_CAP, isProPlan } from "@/lib/plans";
+import { FREE_EXPORTS, isProPlan } from "@/lib/plans";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { slugify } from "@/lib/pipeline/geometry";
 import { scorePair, worstCloneLabel, type CloneResult } from "@/lib/pipeline/clone-score";
@@ -16,6 +16,7 @@ import {
   type RenderOptions,
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { trackServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
@@ -58,7 +59,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
   }
 
-  const body = (await request.json()) as Body;
+  const body = (await request.json().catch(() => null)) as Body | null;
+  if (!body) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? body.paths ?? [];
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? body.paths ?? []);
@@ -78,30 +80,9 @@ export async function POST(request: Request) {
   }
   const unpaired = outerPaths.length !== innerPaths.length && !sameSet;
 
-  const { data: membership, error: memberError } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
-  if (memberError || !membership) {
-    return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 400 });
-  }
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id, client_slug, plan, manual_plan, free_exports_used, stripe_subscription_id, subscription_status")
-    .eq("id", membership.workspace_id)
-    .single();
-
-  const entitlements = resolveEntitlements({
-    freeExportsUsed: workspace?.free_exports_used ?? 0,
-    workspacePlan: workspace?.plan,
-    manualPlan: workspace?.manual_plan,
-    subscriptionId: workspace?.stripe_subscription_id,
-    subscriptionStatus: workspace?.subscription_status,
-  });
+  const context = await readWorkspaceBilling(supabase, user.id);
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  const { membership, workspace, entitlements } = context;
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
   const include69 = Boolean(body.include69);
   const pro = isProPlan(entitlements.plan);
@@ -114,34 +95,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "TRIAL_EXHAUSTED" }, { status: 402 });
   }
 
-  if (pro) {
-    const { data: countRow } = await supabase
-      .from("daily_export_counts")
-      .select("count")
-      .eq("workspace_id", membership.workspace_id)
-      .eq("day", new Date().toISOString().slice(0, 10))
-      .maybeSingle();
-    const used = countRow?.count ?? 0;
-    if (used >= PRO_DAILY_CAP) {
-      return NextResponse.json({ error: "DAILY_LIMIT" }, { status: 402 });
-    }
-  }
-
-  let reservedFree = false;
-  if (!pro) {
-    const { data: consumed, error: consumeError } = await supabase.rpc("consume_free_export", {
-      p_workspace_id: membership.workspace_id,
-      p_limit: FREE_EXPORTS,
-    });
-    if (consumeError) {
-      return NextResponse.json({ error: "EXPORT_FAILED" }, { status: 500 });
-    }
-    if (consumed === -1) {
-      return NextResponse.json({ error: "TRIAL_EXHAUSTED" }, { status: 402 });
-    }
-    reservedFree = true;
-  }
-
+  const admin = createAdminSupabase();
+  if (!admin) return NextResponse.json({ error: "EXPORT_UNAVAILABLE" }, { status: 503 });
+  let reservation: string | null = null;
   try {
     targetsFor({
       orientation: options.orientation,
@@ -149,9 +105,6 @@ export async function POST(request: Request) {
       plan: entitlements.plan,
     });
   } catch (error) {
-    if (reservedFree) {
-      await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
-    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "TARGET_ERROR" },
       { status: 403 },
@@ -159,6 +112,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    const { data: reserved, error: reserveError } = await admin.rpc("reserve_export", {
+      p_workspace_id: membership.workspace_id, p_user_id: user.id,
+    });
+    if (reserveError || !reserved) {
+      const code = ["TRIAL_EXHAUSTED", "DAILY_LIMIT"].find((value) => reserveError?.message?.includes(value));
+      return NextResponse.json({ error: code ?? "EXPORT_UNAVAILABLE" }, { status: code ? 402 : 503 });
+    }
+    reservation = reserved as string;
     const [outerBuffers, innerBuffers] = await Promise.all([
       mapLimit(outerPaths, 4, (storagePath) => downloadOwned(supabase, user.id, storagePath)),
       mapLimit(innerPaths, 4, (storagePath) => downloadOwned(supabase, user.id, storagePath)),
@@ -172,10 +133,7 @@ export async function POST(request: Request) {
         scorePair(await hashFromBuffer(outerBuffers[index]!), await hashFromBuffer(innerBuffers[index]!), index, sameSet),
     );
     if (pro && worstCloneLabel(cloneScores) === "risk" && !body.assumeCloneRisk) {
-      if (reservedFree) {
-        await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
-      }
-      return NextResponse.json({ error: "CLONE_RISK", cloneScores }, { status: 403 });
+      throw new Error("CLONE_RISK");
     }
 
     const { images, flattenAlpha, compositionWarnings } = await composeZipImages({
@@ -213,29 +171,29 @@ export async function POST(request: Request) {
       contentType: "application/zip",
       upsert: false,
     });
-    if (uploadError) throw new Error("STORAGE_UNAVAILABLE");
+    if (uploadError) {
+      console.error("export_storage_upload_failed", { bytes: zipBytes.byteLength, message: uploadError.message });
+      throw new Error(/size|too large|payload/i.test(uploadError.message) ? "EXPORT_TOO_LARGE" : "STORAGE_UNAVAILABLE");
+    }
     const { data: stored, error: readError } = await exportsBucket.download(zipPath);
-    if (readError || !stored || stored.size !== zipBytes.byteLength) throw new Error("STORAGE_UNAVAILABLE");
+    if (readError || !stored || stored.size !== zipBytes.byteLength) {
+      console.error("export_storage_verify_failed", { bytes: zipBytes.byteLength, storedBytes: stored?.size, message: readError?.message });
+      throw new Error("STORAGE_UNAVAILABLE");
+    }
     const { data: signed, error: signError } = await exportsBucket.createSignedUrl(zipPath, 600, {
       download: `${slugify(appName) || "app"}.zip`,
     });
     if (signError || !signed?.signedUrl) throw new Error("STORAGE_UNAVAILABLE");
-    const { error: recordError } = await supabase.from("export_sets").insert({
-      workspace_id: membership.workspace_id,
-      orientation: options.orientation,
-      include_69: include69,
-      fit_mode: options.fit,
-      background_mode: options.background,
-      format: options.format,
-      image_count: count,
-      storage_path: zipPath,
-      created_by: user.id,
+    const filename = `${slugify(appName) || "app"}.zip`;
+    const { error: recordError } = await admin.rpc("finish_export", {
+      p_reservation: reservation,
+      p_export: {
+        orientation: options.orientation, include_69: include69, fit_mode: options.fit,
+        background_mode: options.background, format: options.format, image_count: count,
+        storage_path: zipPath, filename,
+      },
     });
     if (recordError) throw new Error("EXPORT_FAILED");
-    if (pro) {
-      const { error: incrementError } = await supabase.rpc("increment_daily_export", { p_workspace_id: membership.workspace_id });
-      if (incrementError) throw new Error("EXPORT_FAILED");
-    }
 
     await trackServerEvent(supabase, user.id, "export_succeeded", zipPath, {
       plan: entitlements.plan,
@@ -245,8 +203,9 @@ export async function POST(request: Request) {
     });
 
     const warning = unpaired ? "UNPAIRED" : countWarning ?? "";
-    const filename = `${slugify(appName) || "app"}.zip`;
     return NextResponse.json({
+      exportId: reservation,
+      expiresAt: new Date(Date.now() + 600_000).toISOString(),
       url: signed.signedUrl,
       filename,
       warning,
@@ -259,11 +218,12 @@ export async function POST(request: Request) {
       })),
     });
   } catch (error) {
-    if (reservedFree) {
-      await supabase.rpc("refund_free_export", { p_workspace_id: membership.workspace_id });
+    if (reservation) {
+      const { error: refundError } = await admin.rpc("finish_export", { p_reservation: reservation, p_export: null });
+      if (refundError) console.error("export_refund_failed", { reservation });
     }
     const code = error instanceof Error ? error.message : "EXPORT_FAILED";
-    const status = code === "PATH_FORBIDDEN" ? 403 : code.endsWith("_FAILED") ? 500 : 400;
+    const status = ["PATH_FORBIDDEN", "CLONE_RISK"].includes(code) ? 403 : code === "EXPORT_TOO_LARGE" ? 413 : code.endsWith("_UNAVAILABLE") ? 503 : code.endsWith("_FAILED") ? 500 : 400;
     return NextResponse.json({ error: code }, { status });
   }
 }

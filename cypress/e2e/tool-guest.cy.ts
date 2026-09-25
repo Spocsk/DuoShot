@@ -146,7 +146,8 @@ describe("tool guest", () => {
 
   it("shows one state at a time on mobile and offers Compare", () => {
     cy.viewport(390, 844);
-    cy.visitFr("/tool");
+    cy.visitFr("/tool", { onBeforeLoad(win) { win.localStorage.setItem("duoshot_analytics_choice_v1", "rejected"); } });
+    cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
     cy.get('.tool-canvas').should('have.attr', 'data-mobile-view', 'outer');
     cy.get('[data-testid="preview-outer"]').should('be.visible');
     cy.get('[data-testid="preview-inner"]').should('not.be.visible');
@@ -157,6 +158,8 @@ describe("tool guest", () => {
     cy.get('[data-testid="preview-outer"]').should('be.visible');
     cy.get('[data-testid="preview-inner"]').should('be.visible');
     cy.document().then((doc) => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1));
+    cy.get('.tool-canvas').scrollIntoView();
+    cy.screenshot("atelier-mobile-390", { capture: "viewport" });
   });
 
   it("switches contextual panels with the keyboard", () => {
@@ -166,4 +169,30 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-tab-adjust"]').type('{rightarrow}');
     cy.get('[data-testid="tool-tab-review"]').should('have.attr', 'aria-selected', 'true').and('be.focused');
   });
+  it("offers existing-account login without losing the imported pair", () => {
+    cy.visitFr("/tool");
+    cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="tool-download"]').click();
+    cy.contains("button", "Déjà un compte ? Se connecter").click();
+    cy.get('[data-testid="auth-form"]').should("contain", "Connexion");
+    cy.get('[data-testid="auth-privacy"]').should("not.exist");
+    cy.get('[data-testid="auth-email"]').type("{esc}");
+    cy.get('[data-testid="preview-outer"] img').should("exist");
+    cy.get('[data-testid="preview-inner"] img').should("exist");
+  });
+  it("keeps export settings when a local draft is reopened", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.contains("summary", "Réglages avancés").click();
+    cy.get('#tool-input-title').type("Titre conservé");
+    cy.get('[data-seg="jpeg"]').click();
+    cy.reload();
+    cy.get('[data-testid="tool-sets"][data-ready="true"]');
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.contains("summary", "Réglages avancés").click();
+    cy.get('#tool-input-title').should("have.value", "Titre conservé");
+    cy.get('[data-seg="jpeg"]').should("have.attr", "aria-checked", "true");
+  });
+
 });

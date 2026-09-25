@@ -13,11 +13,13 @@ import { localePrefix, reviewPath } from "@/lib/site";
 
 type Status = {
   plan?: PlanId;
+  source?: "stripe" | "workspace" | "free";
   remainingFreeExports?: number | null;
   subscriptionStatus?: string | null;
   periodEnd?: string | null;
   cancelAtPeriodEnd?: boolean;
   hasBillingCustomer?: boolean;
+  checkoutAvailable?: boolean;
 };
 
 export function AccountApp({ locale }: { locale: Locale }) {
@@ -48,6 +50,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
   }, [prefix, router]);
 
   async function checkout(kind: CheckoutKind) {
+    if (!status?.checkoutAvailable) { setMessage(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet."); return; }
     setBusy(true);
     try {
       await startCheckout(kind, checkoutReturnPath(locale));
@@ -126,6 +129,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
         <div className="studio-account-heading">
           <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
           <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
+          <button className="ds-text-btn mt-3" onClick={() => void createBrowserSupabase().auth.signOut().then(({ error }) => { if (error) setMessage(error.message); else router.replace(`${prefix}/login`); })}>{locale === "fr" ? "Se déconnecter" : "Sign out"}</button>
         </div>
         <section className="studio-account-plan" aria-label={locale === "fr" ? "Votre offre" : "Your plan"}>
           <p className="ds-label">{t(locale, "account_plan_label")}</p>
@@ -143,7 +147,8 @@ export function AccountApp({ locale }: { locale: Locale }) {
           {plan === "free" && remaining != null ? (
             <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
           ) : null}
-          {status?.subscriptionStatus ? (
+          {status?.source === "workspace" ? <p className="mt-2 text-sm text-[var(--muted)]">{locale === "fr" ? "Accès accordé manuellement" : "Manually granted access"}</p> : null}
+          {status?.subscriptionStatus && status.source !== "workspace" ? (
             <p className="mt-2 text-sm text-[var(--muted)]" data-testid="account-billing-state">
               {locale === "fr" ? "Abonnement" : "Subscription"}: {subscriptionLabel}
               {status.periodEnd ? ` · ${status.cancelAtPeriodEnd ? (locale === "fr" ? "Fin" : "Ends") : (locale === "fr" ? "Renouvellement" : "Renews")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(status.periodEnd))}` : ""}
@@ -156,10 +161,11 @@ export function AccountApp({ locale }: { locale: Locale }) {
           ) : null}
           {plan === "free" ? (
             <div className="mt-8 flex flex-wrap gap-3">
+              {status?.checkoutAvailable !== true ? <p className="w-full text-sm text-[var(--muted)]">{locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet."}</p> : null}
               <button
                 type="button"
                 onClick={() => void checkout("indie_monthly")}
-                disabled={busy}
+                disabled={busy || status?.checkoutAvailable !== true}
                 data-testid="account-upgrade-indie"
                 className="ds-cta"
               >
@@ -168,7 +174,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
               <button
                 type="button"
                 onClick={() => void checkout("studio_monthly")}
-                disabled={busy}
+                disabled={busy || status?.checkoutAvailable !== true}
                 data-testid="account-upgrade-studio"
                 className="ds-cta-ghost"
               >
@@ -267,10 +273,10 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: inviteEmail, locale }),
     });
-    const payload = (await response.json()) as { error?: string };
+    const payload = (await response.json()) as { error?: string; emailSent?: boolean; acceptPath?: string };
     if (response.ok) {
       setInviteEmail("");
-      setStudioMessage(locale === "fr" ? "Invitation envoyée." : "Invitation sent.");
+      setStudioMessage(payload.emailSent ? (locale === "fr" ? "Invitation envoyée." : "Invitation sent.") : `${locale === "fr" ? "Invitation créée, e-mail non envoyé. Partage ce lien : " : "Invitation created, email not sent. Share this link: "}${window.location.origin}${payload.acceptPath ?? ""}`);
       await refreshStudio();
     } else {
       setStudioMessage(

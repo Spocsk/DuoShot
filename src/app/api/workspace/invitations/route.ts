@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { readWorkspaceBilling } from "@/lib/workspace-billing";
+import { getSiteUrl } from "@/lib/site";
 import { sendTransactionalEmail } from "@/lib/email";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -12,17 +14,13 @@ async function ownerContext() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 }) };
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const context = await readWorkspaceBilling(supabase, user.id);
+  if (!context.ok) return { error: NextResponse.json({ error: context.error }, { status: context.status }) };
+  const { membership, workspace, entitlements } = context;
   if (!membership || membership.role !== "owner") {
     return { error: NextResponse.json({ error: "OWNER_REQUIRED" }, { status: 403 }) };
   }
-  return { user, membership };
+  return { user, membership, workspace, entitlements };
 }
 
 export async function GET() {
@@ -48,50 +46,26 @@ export async function POST(request: Request) {
   }
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
-  const { data: workspace } = await admin
-    .from("workspaces")
-    .select("name, plan")
-    .eq("id", context.membership.workspace_id)
-    .single();
-  if (workspace?.plan !== "studio") return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
-  const [{ count: memberCount }, { count: inviteCount }] = await Promise.all([
-    admin.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", context.membership.workspace_id),
-    admin
-      .from("workspace_invitations")
-      .select("id", { count: "exact", head: true })
-      .eq("workspace_id", context.membership.workspace_id)
-      .is("accepted_at", null)
-      .is("revoked_at", null)
-      .gt("expires_at", new Date().toISOString()),
-  ]);
-  if ((memberCount ?? 0) + (inviteCount ?? 0) >= 3) {
-    return NextResponse.json({ error: "SEAT_LIMIT" }, { status: 409 });
-  }
+  const workspace = context.workspace;
+  if (context.entitlements.plan !== "studio") return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
   const token = randomBytes(24).toString("base64url");
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await admin
-    .from("workspace_invitations")
-    .insert({
-      workspace_id: context.membership.workspace_id,
-      email,
-      role: "member",
-      token_hash: tokenHash,
-      invited_by: context.user.id,
-      expires_at: expiresAt,
-    })
-    .select("id, email, role, created_at, expires_at")
-    .single();
-  if (error || !data) return NextResponse.json({ error: "INVITE_FAILED" }, { status: 500 });
-  const origin = new URL(request.url).origin;
+  const { data, error } = await admin.rpc("create_workspace_invitation", {
+    p_workspace_id: context.membership.workspace_id, p_user_id: context.user.id, p_email: email, p_token_hash: tokenHash,
+  });
+  if (error || !data) {
+    const code = ["SEAT_LIMIT", "INVITE_EXISTS", "ALREADY_MEMBER", "STUDIO_REQUIRED"].find((code) => error?.message?.includes(code));
+    return NextResponse.json({ error: code ?? "INVITE_FAILED" }, { status: code ? 409 : 503 });
+  }
+  const origin = getSiteUrl();
   const path = `${body.locale === "en" ? "/en" : ""}/invite/${token}`;
-  await sendTransactionalEmail({
+  const delivery = await sendTransactionalEmail({
     to: email,
     subject: body.locale === "en" ? `Join ${workspace.name} on DuoShot` : `Rejoignez ${workspace.name} sur DuoShot`,
     text:
       body.locale === "en"
         ? `You have been invited to a DuoShot Studio workspace. Accept within 7 days: ${origin}${path}`
         : `Vous êtes invité·e dans un espace DuoShot Studio. Acceptez sous 7 jours : ${origin}${path}`,
-  });
-  return NextResponse.json({ invitation: data, acceptPath: path }, { status: 201 });
+  }).catch(() => ({ sent: false, mocked: false }));
+  return NextResponse.json({ invitation: data, acceptPath: path, emailSent: delivery.sent }, { status: 201 });
 }

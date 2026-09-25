@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { removeStorageObjects } from "@/lib/storage-cleanup";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -35,6 +36,15 @@ export async function POST() {
     }
   }
 
+  const storageAdmin = createAdminSupabase();
+  if (!storageAdmin) return NextResponse.json({ error: "ERASURE_UNAVAILABLE" }, { status: 503 });
+  try {
+    const cleanup = await removeStorageObjects(storageAdmin, user.id);
+    if (!cleanup.complete) return NextResponse.json({ error: "ERASURE_RETRY_REQUIRED" }, { status: 503 });
+  } catch {
+    return NextResponse.json({ error: "STORAGE_DELETE_FAILED" }, { status: 503 });
+  }
+
   if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
     const admin = createAdminSupabase();
     if (!admin) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
@@ -43,7 +53,7 @@ export async function POST() {
     if (queueError) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
   }
 
-  const { error } = await supabase.rpc("erase_current_user");
+  const { error } = await storageAdmin.rpc("erase_account", { p_user_id: user.id });
   if (error) {
     if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
       const admin = createAdminSupabase();

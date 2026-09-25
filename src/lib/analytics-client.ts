@@ -11,6 +11,8 @@ export type ProductEvent =
 const KEY = "duoshot_analytics_choice_v1";
 const AUTH_INTENT_KEY = "duoshot_analytics_auth_intent";
 const TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
+let audience = "anonymous";
+let identityRevision = 0;
 let sdk: typeof Mixpanel | null = null;
 let loading: Promise<typeof Mixpanel | null> | null = null;
 
@@ -79,15 +81,28 @@ export async function setAnalyticsChoice(choice: Exclude<AnalyticsChoice, null>)
 
 export async function trackProduct(event: ProductEvent, properties: Record<string, string | number | boolean> = {}) {
   const mixpanel = await getSdk();
-  if (mixpanel && analyticsChoice() === "accepted") mixpanel.track(event, properties);
+  if (mixpanel && analyticsChoice() === "accepted") mixpanel.track(event, { ...properties, audience });
 }
 
 export async function identifyAnalyticsUser(userId: string) {
+  const revision = ++identityRevision;
   const mixpanel = await getSdk();
-  if (mixpanel && analyticsChoice() === "accepted") mixpanel.identify(userId);
+  if (mixpanel && analyticsChoice() === "accepted") {
+    try {
+      const response = await fetch("/api/billing/status", { cache: "no-store" });
+      const status = response.ok ? await response.json() : null;
+      if (revision !== identityRevision) return;
+      audience = status?.audience === "internal" ? "internal" : status?.audience === "external" ? "external" : "unknown";
+    } catch { if (revision !== identityRevision) return; audience = "unknown"; }
+    if (revision !== identityRevision || analyticsChoice() !== "accepted") return;
+    mixpanel.identify(userId);
+    mixpanel.people.set({ audience });
+  }
 }
 
 export function resetAnalyticsUser() {
+  identityRevision++;
+  audience = "anonymous";
   sdk?.reset();
 }
 

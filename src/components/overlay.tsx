@@ -35,10 +35,9 @@ export function Overlay({
   useEffect(() => {
     restoreFocusRef.current = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus();
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const frame = window.requestAnimationFrame(() => setOpen(true));
+    const frame = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? null : window.requestAnimationFrame(() => setOpen(true));
     return () => {
-      window.cancelAnimationFrame(frame);
+      if (frame !== null) window.cancelAnimationFrame(frame);
       restoreFocusRef.current?.focus();
     };
   }, []);
@@ -57,10 +56,10 @@ export function Overlay({
         }
         const first = focusable[0]!;
         const last = focusable[focusable.length - 1]!;
-        if (event.shiftKey && document.activeElement === first) {
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
           event.preventDefault();
           last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
+        } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialogRef.current)) {
           event.preventDefault();
           first.focus();
         }

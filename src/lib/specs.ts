@@ -1,4 +1,4 @@
-export const SPECS_VERSION_DATE = "2026-09-12";
+export const SPECS_VERSION_DATE = "2026-09-25";
 export const POLICY_VERSION = "2026-09-24";
 export const MAX_IMAGES = 10;
 export const WARN_MIN_IMAGES = 3;

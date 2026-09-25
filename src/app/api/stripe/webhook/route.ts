@@ -15,21 +15,27 @@ function planForPrice(priceId: string | undefined): "indie" | "studio" | "free" 
 async function syncSubscription(stripe: Stripe, subscriptionId: string) {
   const admin = createAdminSupabase();
   if (!admin) throw new Error("SUPABASE_ADMIN_REQUIRED");
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const workspaceId = subscription.metadata.workspace_id;
-  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+  const linked = await stripe.subscriptions.retrieve(subscriptionId);
+  const workspaceId = linked.metadata.workspace_id;
+  const customerId = typeof linked.customer === "string" ? linked.customer : linked.customer.id;
   if (!workspaceId || !customerId) throw new Error("SUBSCRIPTION_UNLINKED");
   const { data: workspace, error: lookupError } = await admin.from("workspaces")
-    .select("stripe_customer_id, stripe_subscription_id, plan, subscription_status")
+    .select("stripe_customer_id, stripe_subscription_id, plan, subscription_status, stripe_sync_version")
     .eq("id", workspaceId).single();
   if (lookupError || !workspace || workspace.stripe_customer_id !== customerId) throw new Error("CUSTOMER_MISMATCH");
+  // Read the revision before fetching the authoritative state. Otherwise a stale
+  // Stripe response could be paired with a newer database revision and overwrite it.
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const currentCustomer = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+  if (subscription.metadata.workspace_id !== workspaceId || currentCustomer !== customerId) throw new Error("CUSTOMER_MISMATCH");
   // A late event for an older subscription cannot overwrite the current one.
   if (workspace.stripe_subscription_id && workspace.stripe_subscription_id !== subscription.id) return;
   const priceId = subscription.items.data[0]?.price.id;
   const active = ["active", "trialing"].includes(subscription.status);
   const plan = active ? planForPrice(priceId) : "free";
   const periodEnd = subscription.items.data[0]?.current_period_end;
-  const { error } = await admin.from("workspaces").update({
+  const { data: updated, error } = await admin.from("workspaces").update({
+    stripe_sync_version: workspace.stripe_sync_version + 1,
     plan,
     seats: plan === "studio" ? 3 : 1,
     stripe_subscription_id: subscription.status === "canceled" ? null : subscription.id,
@@ -37,8 +43,8 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string) {
     subscription_status: subscription.status,
     subscription_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
     subscription_cancel_at_period_end: subscription.cancel_at_period_end,
-  }).eq("id", workspaceId);
-  if (error) throw error;
+  }).eq("id", workspaceId).eq("stripe_sync_version", workspace.stripe_sync_version).select("id").maybeSingle();
+  if (error || !updated) throw new Error("SUBSCRIPTION_SYNC_CONFLICT");
   if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN && active && plan !== "free" &&
       (workspace.plan === "free" || workspace.stripe_subscription_id !== subscription.id ||
         !["active", "trialing"].includes(workspace.subscription_status ?? ""))) {
@@ -64,10 +70,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "INVALID_SIGNATURE" }, { status: 400 });
   }
 
-  const { error: markerError } = await admin.from("stripe_events")
-    .insert({ id: event.id, type: event.type });
-  if (markerError?.code === "23505") return NextResponse.json({ received: true, duplicate: true });
-  if (markerError) return NextResponse.json({ error: "EVENT_STORE_FAILED" }, { status: 500 });
+  const liveKey = /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "");
+  if (event.livemode !== liveKey || (process.env.VERCEL_ENV === "production" && !event.livemode)) {
+    return NextResponse.json({ error: "WEBHOOK_ENVIRONMENT_MISMATCH" }, { status: 400 });
+  }
+  const { data: marker, error: lookupError } = await admin.from("stripe_events").select("id").eq("id", event.id).maybeSingle();
+  if (lookupError) return NextResponse.json({ error: "EVENT_STORE_FAILED" }, { status: 500 });
+  if (marker) return NextResponse.json({ received: true, duplicate: true });
 
   try {
     let subscriptionId: string | undefined;
@@ -82,9 +91,10 @@ export async function POST(request: Request) {
       subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
     }
     if (subscriptionId) await syncSubscription(stripe, subscriptionId);
+    const { error: markerError } = await admin.from("stripe_events").insert({ id: event.id, type: event.type });
+    if (markerError && markerError.code !== "23505") throw new Error("EVENT_STORE_FAILED");
     return NextResponse.json({ received: true });
   } catch {
-    await admin.from("stripe_events").delete().eq("id", event.id);
     return NextResponse.json({ error: "EVENT_PROCESSING_FAILED" }, { status: 500 });
   }
 }

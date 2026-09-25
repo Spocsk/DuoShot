@@ -47,13 +47,9 @@ import { trackProduct } from "@/lib/analytics-client";
 import type { CheckoutKind } from "@/lib/plans";
 import {
   defaultSet,
-  deleteSetFiles,
-  loadActiveId,
-  loadSetFiles,
-  loadSetMetas,
-  saveActiveId,
-  saveSetFiles,
-  saveSetMetas,
+  createSetStore,
+  importLocalDrafts,
+  loadSetMetas as readDraftMetas,
   type SetMeta,
 } from "@/lib/sets-store";
 import { Overlay } from "@/components/overlay";
@@ -73,6 +69,7 @@ type BillingStatus = {
   source?: string;
   remainingFreeExports?: number | null;
   canUse69?: boolean;
+  checkoutAvailable?: boolean;
 };
 
 const subscribeNever = () => () => {};
@@ -89,16 +86,28 @@ const EMPTY_TRANSFORMS: CropTransform[] = [];
 type FoldCheck = { key: string; status: FoldCheckStatus; count: number };
 
 export function ToolApp({ locale }: Props) {
+  const [owner, setOwner] = useState<string | null>(null);
+  useEffect(() => {
+    const supabase = createBrowserSupabase();
+    let current = true;
+    let authChanged = false;
+    void supabase.auth.getUser().then(({ data }) => { if (current && !authChanged) setOwner(data.user?.id ?? "guest"); });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => { authChanged = true; setOwner(session?.user.id ?? "guest"); });
+    return () => { current = false; data.subscription.unsubscribe(); };
+  }, []);
   return (
     <main id="main" className="flex-1">
       <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
-        <ToolAppInner locale={locale} />
+        {owner ? <ToolAppInner key={owner} locale={locale} owner={owner} /> : <p role="status">{locale === "fr" ? "Chargement de l’atelier…" : "Loading workspace…"}</p>}
       </Suspense>
     </main>
   );
 }
 
-function ToolAppInner({ locale }: Props) {
+function ToolAppInner({ locale, owner }: Props & { owner: string }) {
+  const [storageError, setStorageError] = useState(false);
+  const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
+  const { loadSetMetas, saveSetMetas, loadActiveId, saveActiveId, loadSetFiles, saveSetFiles, deleteSetFiles } = useMemo(() => createSetStore(owner, () => setStorageError(true)), [owner]);
   const prefix = localePrefix(locale);
   const searchParams = useSearchParams();
   const [sets, setSets] = useState<SetMeta[]>([BOOT_SET]);
@@ -107,8 +116,8 @@ function ToolAppInner({ locale }: Props) {
   const active = sets.find((item) => item.id === activeId) ?? sets[0];
   const [outerFiles, setOuterFiles] = useState<File[]>([]);
   const [innerFiles, setInnerFiles] = useState<File[]>([]);
-  const [options, setOptions] = useState<RenderOptions>(DEFAULT_RENDER_OPTIONS);
-  const [include69, setInclude69] = useState(false);
+  const options = useMemo(() => ({ ...DEFAULT_RENDER_OPTIONS, ...active?.renderOptions }), [active?.renderOptions]);
+  const include69 = active?.include69 ?? false;
   const [showHinge, setShowHinge] = useState(true);
   const [previewMode, setPreviewMode] = useState<"device" | "pixels">("pixels");
   const [assumeClone, setAssumeClone] = useState(false);
@@ -137,9 +146,14 @@ function ToolAppInner({ locale }: Props) {
   const [qualityAcknowledged, setQualityAcknowledged] = useState(false);
   const [appUsageConfirmed, setAppUsageConfirmed] = useState(false);
   const [clones, setClones] = useState<CloneResult[]>([]);
+  const [billingError, setBillingError] = useState(false);
+  const [activationTimedOut, setActivationTimedOut] = useState(false);
+  const [activationAttempt, setActivationAttempt] = useState(0);
+  const [downloadId, setDownloadId] = useState<string | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [session, setSession] = useState<"loading" | "out" | "in">("loading");
   const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
   const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
@@ -159,7 +173,7 @@ function ToolAppInner({ locale }: Props) {
     checkoutFlag === "success"
       ? billing?.source === "stripe" && billing.plan !== "free"
         ? t(locale, "checkout_success")
-        : locale === "fr" ? "Paiement reçu. Activation de l’abonnement en cours…" : "Payment received. Activating your subscription…"
+        : locale === "fr" ? (activationTimedOut ? "Activation non confirmée. Vérifie à nouveau le statut de l’abonnement." : "Retour du paiement. Vérification de l’activation en cours…") : (activationTimedOut ? "Activation not confirmed. Check your subscription status again." : "Returned from checkout. Checking activation…")
       : checkoutFlag === "cancel"
         ? t(locale, "checkout_cancel")
         : null;
@@ -297,24 +311,24 @@ function ToolAppInner({ locale }: Props) {
   }, [outerFiles.length, effectiveInner.length]);
 
   const refreshBilling = useCallback(async () => {
-    const supabase = createBrowserSupabase();
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
-      setSession("out");
-      setBilling(null);
-      return;
-    }
-    setSession("in");
-    const response = await fetch("/api/billing/status");
-    if (!response.ok) return;
-    setBilling((await response.json()) as BillingStatus);
+    setBillingError(false);
+    try {
+      const supabase = createBrowserSupabase();
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) { setSession("out"); setBilling(null); return; }
+      setSession("in");
+      const response = await fetch("/api/billing/status", { cache: "no-store" });
+      if (!response.ok) throw new Error("BILLING_UNAVAILABLE");
+      setBilling(await response.json() as BillingStatus);
+    } catch { setBilling(null); setBillingError(true); }
   }, []);
 
   useEffect(() => {
     if (checkoutFlag !== "success" || (billing?.source === "stripe" && billing.plan !== "free")) return;
     const timer = window.setInterval(() => void refreshBilling(), 2000);
-    return () => window.clearInterval(timer);
-  }, [billing?.plan, billing?.source, checkoutFlag, refreshBilling]);
+    const timeout = window.setTimeout(() => { window.clearInterval(timer); setActivationTimedOut(true); }, 60000);
+    return () => { window.clearInterval(timer); window.clearTimeout(timeout); };
+  }, [billing?.plan, billing?.source, checkoutFlag, refreshBilling, activationAttempt]);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -357,7 +371,7 @@ function ToolAppInner({ locale }: Props) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
 
   useEffect(() => {
     function onPointer(event: PointerEvent) {
@@ -397,7 +411,7 @@ function ToolAppInner({ locale }: Props) {
         }
       }
     },
-    [active, sets, session],
+    [active, sets, session, saveSetMetas],
   );
 
   useEffect(() => {
@@ -509,8 +523,14 @@ function ToolAppInner({ locale }: Props) {
     return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
   }
 
-  function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
-    const incoming = takeFiles(list).filter(isAllowedImage);
+  async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+    const selected = takeFiles(list);
+    const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
+      if (!isAllowedImage(file) || file.size > 50 * 1024 * 1024) return null;
+      try { const bitmap = await createImageBitmap(file); bitmap.close(); return file; } catch { return null; }
+    }));
+    const incoming = checked.filter((file): file is File => file !== null);
+    if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo maximum et 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 10 screenshots per side.", "err");
     const current = side === "outer" ? outerFiles : innerFiles;
     const next = mergeSideFiles(current, incoming);
     if (next.length > current.length) {
@@ -553,7 +573,7 @@ function ToolAppInner({ locale }: Props) {
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
-    setOptions({ ...options, ...patch });
+    patchActive({ renderOptions: { ...options, ...patch } });
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
     setZipUrl(null);
@@ -606,6 +626,7 @@ function ToolAppInner({ locale }: Props) {
     if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
     if (code === "NO_IMAGES") return t(locale, "error_no_images");
     if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
+    if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduis le nombre de paires ou choisis JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
     if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
     return t(locale, "error_export");
   }
@@ -633,6 +654,7 @@ function ToolAppInner({ locale }: Props) {
     setBusyExport(true);
     flashStatus(t(locale, "tool_progress_compose"), "busy");
     setZipUrl(null);
+    setDownloadId(null);
     try {
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
@@ -686,10 +708,11 @@ function ToolAppInner({ locale }: Props) {
         }),
       });
       const payload = (await response.json()) as {
-        url?: string; error?: string; warning?: string; filename?: string;
+        url?: string; error?: string; warning?: string; filename?: string; exportId?: string; expiresAt?: string;
         images?: Array<{slot: string; index: number; width: number; height: number; format: string}>;
       };
       if (!response.ok) {
+        void refreshBilling();
         void trackProduct("export_failed", {
           reason: ["TRIAL_EXHAUSTED", "IPHONE_69_GATED", "CLONE_RISK"].includes(payload.error ?? "")
             ? payload.error! : "other",
@@ -715,6 +738,7 @@ function ToolAppInner({ locale }: Props) {
       const warning = payload.warning ?? "";
       setZipName(payload.filename || "app.zip");
       setZipUrl(payload.url);
+      setDownloadId(payload.exportId ?? null);
       setExportImages(payload.images ?? []);
       flashStatus(
         warning === "TOO_FEW"
@@ -731,6 +755,27 @@ function ToolAppInner({ locale }: Props) {
     } finally {
       setBusyExport(false);
     }
+  }
+
+  async function onDownload() {
+    void trackProduct("zip_download_clicked");
+    if (!downloadId) { if (zipUrl) window.location.assign(zipUrl); return; }
+    try {
+      const response = await fetch(`/api/exports/${downloadId}/download?format=json`, { cache: "no-store" });
+      const payload = await response.json() as { url?: string; error?: string };
+      if (!response.ok || !payload.url) {
+        const messages: Record<string, [string, string]> = {
+          EXPORT_EXPIRED: ["Ce ZIP a expiré après 24 h. Tes captures locales restent disponibles.", "This ZIP expired after 24 hours. Your local screenshots remain available."],
+          EXPORT_DELETED: ["Ce fichier a été supprimé du serveur.", "This file has been removed from the server."],
+          AUTH_REQUIRED: ["Reconnecte-toi pour récupérer ce fichier.", "Sign in again to retrieve this file."],
+        };
+        const message = messages[payload.error ?? ""];
+        flashStatus(message ? message[locale === "fr" ? 0 : 1] : locale === "fr" ? "Téléchargement indisponible. Réessaie sans générer un nouvel export." : "Download unavailable. Retry without generating another export.", "err");
+        return;
+      }
+      setZipUrl(payload.url);
+      window.location.assign(payload.url);
+    } catch { flashStatus(locale === "fr" ? "Erreur réseau. Réessaie le téléchargement ; aucun essai supplémentaire n’est consommé." : "Network error. Retry the download; no additional trial is consumed.", "err"); }
   }
 
   async function onReview() {
@@ -832,6 +877,7 @@ function ToolAppInner({ locale }: Props) {
   }
 
   async function onCheckout(kind: CheckoutKind) {
+    if (!billing?.checkoutAvailable) { flashStatus(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet.", "info"); return; }
     if (!signedIn) {
       setPaywall(null);
       setShowAuth(true);
@@ -942,7 +988,7 @@ function ToolAppInner({ locale }: Props) {
 
   const remaining = billing?.remainingFreeExports;
   const remainingLabel =
-    !billing && session === "in"
+    billingError ? (locale === "fr" ? "Statut temporairement indisponible" : "Status temporarily unavailable") : !billing && session === "in"
       ? locale === "fr"
         ? "Chargement du plan…"
         : "Loading plan…"
@@ -968,6 +1014,11 @@ function ToolAppInner({ locale }: Props) {
         <div className="tool-command-set">
           <div className="ds-set-bar">
           <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
+            <p className="mb-2 text-xs text-[var(--muted)]">{locale === "fr" ? "Brouillons sur cet appareil · sans synchronisation" : "Drafts on this device · no synchronization"}</p>
+            {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Garde cet onglet ouvert et libère de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
+            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{locale === "fr" ? "Récupérer explicitement les brouillons anonymes ou anciens dans ce compte" : "Import anonymous or older drafts into this account"}</button> : null}
+            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{locale === "fr" ? "Réessayer le statut" : "Retry status"}</button> : null}
+            {activationTimedOut ? <button className="ds-text-btn" onClick={() => { setActivationTimedOut(false); setActivationAttempt((n) => n + 1); }}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
             <p className="ds-label" id="tool-sets-label">
               {t(locale, "tool_sets")}
             </p>
@@ -1057,7 +1108,9 @@ function ToolAppInner({ locale }: Props) {
           ]}
           onChange={(value) => {
             patchActive({ orientation: value as Orientation });
-            updateOptions({ orientation: value as Orientation });
+            setQualityAcknowledged(false);
+            setAppUsageConfirmed(false);
+            setZipUrl(null);
           }}
         />
 </div>
@@ -1341,7 +1394,7 @@ function ToolAppInner({ locale }: Props) {
             pressed={include69}
             onToggle={() => {
               const next = !include69;
-              setInclude69(next);
+              patchActive({ include69: next });
               setZipUrl(null);
               if (next && (!billing || billing.canUse69 === false)) setPaywall("69");
             }}
@@ -1545,10 +1598,10 @@ function ToolAppInner({ locale }: Props) {
                 </li>
               ))}
             </ul>
-          <a href={zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-cta mt-4 inline-flex" onClick={() => void trackProduct("zip_download_clicked")}>
+          <a href={downloadId ? `/api/exports/${downloadId}/download` : zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-cta mt-4 inline-flex" onClick={(event) => { event.preventDefault(); void onDownload(); }}>
               {locale === "fr" ? "Télécharger le ZIP" : "Download ZIP"}
             </a>
-            <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Télécharge le ZIP, puis dépose les fichiers fermé et ouvert dans les emplacements correspondants d’App Store Connect. La connexion directe à App Store Connect reste une évolution future." : "Download the ZIP, then upload closed and open images to their corresponding App Store Connect slots. Direct App Store Connect integration is a future improvement."}</p>
+            <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Décompresse le ZIP pour obtenir les deux séries d’images. Le fichier reste récupérable pendant 24 h, sans nouvel essai. Le clic demande le téléchargement ; vérifie ensuite le fichier dans ton navigateur. Le dépôt manuel dépend de l’ouverture des emplacements Duo dans App Store Connect." : "Unzip the archive to get both image sets. Retrieve it again within 24 hours without another trial. Clicking requests a download; check the file in your browser. Manual upload depends on Duo slots becoming available in App Store Connect."}</p>
           </div>
         ) : null}
         {visibleReviewUrl ? (
@@ -1560,7 +1613,7 @@ function ToolAppInner({ locale }: Props) {
           <button
             type="button"
             data-testid="tool-review-upgrade"
-            disabled={checkoutBusy}
+            disabled={checkoutBusy || billing?.checkoutAvailable !== true}
             onClick={() => void onCheckout("studio_monthly")}
             className="ds-cta-ghost mt-3 w-full"
           >
@@ -1581,7 +1634,7 @@ function ToolAppInner({ locale }: Props) {
         >
           <AuthForm
             locale={locale}
-            mode="signup"
+            mode={authMode}
             variant="modal"
             nextPath={upgradeRequested && preferredUpgradeKind ? `${prefix}/tool?upgrade=1&plan=${preferredUpgradeKind}` : `${prefix}/tool`}
             onSuccess={() => {
@@ -1589,10 +1642,14 @@ function ToolAppInner({ locale }: Props) {
               void refreshBilling();
             }}
           />
+          <button type="button" className="ds-text-btn mt-4" onClick={() => setAuthMode((mode) => mode === "signup" ? "login" : "signup")}>
+            {authMode === "signup" ? (locale === "fr" ? "Déjà un compte ? Se connecter" : "Already have an account? Sign in") : (locale === "fr" ? "Créer un compte" : "Create an account")}
+          </button>
         </Overlay>
       ) : null}
       {paywall || (upgradeRequested && session === "in") ? (
         <PaywallModal
+          available={billing?.checkoutAvailable === true}
           locale={locale}
           reason={paywall ?? "trial"}
           busy={checkoutBusy}

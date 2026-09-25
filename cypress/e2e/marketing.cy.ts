@@ -21,7 +21,7 @@ describe("marketing", () => {
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-inner-portrait/01.png");
     cy.get('[data-testid="zip-tree"]').should("not.contain", "duo-inner-landscape");
-    cy.contains("Démo Harbor").should("be.visible");
+    cy.contains("Harbor · app fictive").should("be.visible");
     cy.contains("3 sièges").should("be.visible");
     cy.contains("Same set").should("not.exist");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/r/harbor");
@@ -92,7 +92,7 @@ describe("marketing", () => {
     cy.visitEn("/en");
     cy.contains("h1", "Two screens.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
-    cy.contains("Harbor demo").should("be.visible");
+    cy.contains("Harbor · fictional app").should("be.visible");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/en/r/harbor");
     cy.get(".studio-review-preview").should("contain", "Closed screen").and("contain", "Approve");
     cy.get('[data-testid="locale-switch"]').should("contain", "🇫🇷");
@@ -137,9 +137,9 @@ describe("marketing", () => {
   it("exposes robots and sitemap", () => {
     cy.request("/robots.txt").then((response) => {
       expect(response.status).to.eq(200);
-      expect(response.body).to.include("Disallow: /tool");
-      expect(response.body).to.include("Disallow: /account");
-      expect(response.body).to.include("Disallow: /r/");
+      expect(response.body).not.to.include("Disallow: /tool");
+      expect(response.body).not.to.include("Disallow: /account");
+      expect(response.body).not.to.include("Disallow: /r/");
       expect(response.body).to.include("sitemap.xml");
     });
     cy.request("/sitemap.xml").then((response) => {

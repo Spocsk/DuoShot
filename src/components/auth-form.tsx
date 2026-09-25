@@ -161,9 +161,9 @@ export function AuthForm({
   return (
     <div className={variant === "page" ? "studio-auth-card mx-auto w-full max-w-md" : "studio-auth-card"}>
       <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
-        {variant === "modal" ? t(locale, "auth_modal_title") : t(locale, mode === "signup" ? "signup_title" : "login_title")}
+        {variant === "modal" && mode === "signup" ? t(locale, "auth_modal_title") : t(locale, mode === "signup" ? "signup_title" : "login_title")}
       </h1>
-      {variant === "modal" ? (
+      {variant === "modal" && mode === "signup" ? (
         <p className="mt-2 text-sm text-[var(--muted)]">{t(locale, "auth_modal_lead")}</p>
       ) : null}
       <button type="button" onClick={onGoogle} data-testid="auth-google" className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>

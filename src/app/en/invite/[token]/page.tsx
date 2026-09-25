@@ -1,3 +1,4 @@
+export const metadata = { robots: { index: false, follow: false } };
 import { InviteAccept } from "@/components/invite-accept";
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {

@@ -16,28 +16,10 @@ export async function POST(request: Request) {
   const tokenHash = createHash("sha256").update(body.token).digest("hex");
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
-  const { data: invitation } = await admin
-    .from("workspace_invitations")
-    .select("id, workspace_id, email, role, expires_at, accepted_at, revoked_at")
-    .eq("token_hash", tokenHash)
-    .maybeSingle();
-  if (!invitation || invitation.revoked_at || invitation.accepted_at || new Date(invitation.expires_at).getTime() <= Date.now()) {
-    return NextResponse.json({ error: "INVITE_EXPIRED" }, { status: 410 });
+  const { data: workspaceId, error } = await admin.rpc("accept_workspace_invitation", { p_token_hash: tokenHash, p_user_id: user.id });
+  if (error) {
+    const code = ["INVITE_EXPIRED", "EMAIL_MISMATCH", "SEAT_LIMIT", "STUDIO_REQUIRED"].find((code) => error.message.includes(code));
+    return NextResponse.json({ error: code ?? "INVITE_FAILED" }, { status: code === "INVITE_EXPIRED" ? 410 : code === "EMAIL_MISMATCH" ? 403 : code ? 409 : 503 });
   }
-  if (!user.email || user.email.toLowerCase() !== invitation.email.toLowerCase()) {
-    return NextResponse.json({ error: "EMAIL_MISMATCH" }, { status: 403 });
-  }
-  const { error: memberError } = await admin.from("workspace_members").upsert(
-    { workspace_id: invitation.workspace_id, user_id: user.id, role: invitation.role, active: false },
-    { onConflict: "workspace_id,user_id" },
-  );
-  if (memberError) return NextResponse.json({ error: "SEAT_LIMIT" }, { status: 409 });
-  await admin.from("workspace_members").update({ active: false }).eq("user_id", user.id);
-  await admin
-    .from("workspace_members")
-    .update({ active: true })
-    .eq("user_id", user.id)
-    .eq("workspace_id", invitation.workspace_id);
-  await admin.from("workspace_invitations").update({ accepted_at: new Date().toISOString() }).eq("id", invitation.id);
-  return NextResponse.json({ workspaceId: invitation.workspace_id, accepted: true });
+  return NextResponse.json({ workspaceId, accepted: true });
 }

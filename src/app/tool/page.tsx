@@ -9,7 +9,7 @@ export const metadata = pageMetadata({
   description: "Compose tes screenshots Duo : drop, preview dual, ZIP.",
 });
 
-export const robots = { index: false, follow: false };
+
 export const dynamic = "force-dynamic";
 
 export default function Page() {

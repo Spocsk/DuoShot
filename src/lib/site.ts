@@ -3,9 +3,9 @@ import type { Locale } from "./specs";
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "App Store Screenshot QA";
 export const SITE_PITCH_FR =
-  "Prépare les captures fermé et ouvert de ta vraie app. DuoShot vérifie les fichiers, signale les points à examiner et livre un set prêt à déposer.";
+  "Prépare les captures fermé et ouvert de ta vraie app. DuoShot vérifie les fichiers, signale les points à examiner et livre deux séries d’images dans un ZIP à décompresser.";
 export const SITE_PITCH_EN =
-  "Prepare closed and open screenshots of your real app. DuoShot checks the files, flags what needs review, and delivers a set ready to upload.";
+  "Prepare closed and open screenshots of your real app. DuoShot checks the files, flags what needs review, and delivers two image sets in a ZIP to unzip.";
 
 export function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
@@ -29,6 +29,8 @@ export function reviewPath(locale: Locale, id: string): string {
 
 export function localizedPath(locale: Locale, path: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
+  const pair = MARKETING_ROUTE_PAIRS.find((route) => route.fr === clean || route.en === clean || `/en${route.fr}` === clean);
+  if (pair) return pair[locale];
   const reviewId = reviewIdFromPath(clean);
   if (reviewId !== null) {
     if (!reviewId) return locale === "en" ? "/en/r" : "/r";

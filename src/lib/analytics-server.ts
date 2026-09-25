@@ -1,3 +1,4 @@
+import { analyticsAudience } from "./analytics-audience";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type ServerEvent = "export_succeeded" | "review_created" | "subscription_activated";
@@ -24,7 +25,7 @@ export async function trackServerEvent(
         event,
         properties: {
           token, distinct_id: userId, $insert_id: insertId, time: Math.floor(Date.now() / 1000),
-          ...properties,
+          ...properties, audience: analyticsAudience(userId),
         },
       }]),
       signal: AbortSignal.timeout(2000),

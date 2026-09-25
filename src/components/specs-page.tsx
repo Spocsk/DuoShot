@@ -1,3 +1,4 @@
+import { AppleAvailability } from "./apple-availability";
 import { FAQ, t } from "@/lib/i18n";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
@@ -14,6 +15,8 @@ export function SpecsPage({ locale }: { locale: Locale }) {
         <p className="ds-label">{SPECS_VERSION_DATE}</p>
         <h1 className="font-display mt-3 text-5xl">{t(locale, "specs_title")}</h1>
         <p className="mt-4 max-w-2xl text-[var(--muted)]">{t(locale, "specs_intro")}</p>
+        <AppleAvailability locale={locale} />
+        <p className="mt-4 max-w-3xl text-sm">{locale === "fr" ? "En portrait : 1398 × 2034 px pour l’écran fermé, 2007 × 2853 px pour l’écran ouvert. En paysage, inverse les dimensions. Exporte entre une et dix paires, en PNG ou JPEG sans transparence. Trois captures constituent un conseil éditorial, pas une exigence Apple." : "Portrait: 1398 × 2034 px for the closed display and 2007 × 2853 px for the open display. Swap dimensions for landscape. Export one to ten pairs in PNG or JPEG without transparency. Three screenshots are an editorial recommendation, not an Apple requirement."}</p>
         <div className="mt-8 overflow-x-auto border-t border-[var(--line)]">
           <table className="w-full min-w-[640px] text-left text-sm tabular-nums">
             <thead className="ds-spec-head">
