@@ -5,7 +5,9 @@ import { buildExampleZip } from "./example-zip";
 
 describe("example-zip", () => {
   it("packs Harbor slides in the Connect folder contract", async () => {
-    const zip = await JSZip.loadAsync(await buildExampleZip());
+    const concurrent = await Promise.all(Array.from({ length: 30 }, () => buildExampleZip()));
+    for (const result of concurrent) expect(result).toBe(concurrent[0]);
+    const zip = await JSZip.loadAsync(concurrent[0]);
     const names = Object.keys(zip.files);
     expect(names).toContain("exampleapp/duo-outer-portrait/01.png");
     expect(names).toContain("exampleapp/duo-inner-portrait/03.png");

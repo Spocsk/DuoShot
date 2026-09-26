@@ -8,6 +8,9 @@ import {
 import { updateSession } from "@/lib/supabase/proxy";
 
 function needsSessionRefresh(pathname: string) {
+  // Status handlers authenticate and refresh their own cookies. Repeating that
+  // round-trip here doubles Auth/DB work for every client polling the queue.
+  if (pathname === "/api/health" || pathname.startsWith("/api/render-jobs/") || pathname === "/api/internal/render-worker") return false;
   return /^\/(?:en\/)?(?:tool|account)(?:\/|$)/.test(pathname) || pathname.startsWith("/auth/") || pathname.startsWith("/api/");
 }
 

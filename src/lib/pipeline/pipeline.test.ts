@@ -45,6 +45,24 @@ function countBrightPixels(
 }
 
 describe("pipeline", () => {
+  it("rejects a pathological cover expansion but still allows contain", async () => {
+    const source = await sharp({ create: { width: 1, height: 1000, channels: 3, background: "red" } }).png().toBuffer();
+    const spec = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;
+    await expect(renderScreenshot(source, spec, { ...DEFAULT_RENDER_OPTIONS, fit: "cover" })).rejects.toThrow("RENDER_GEOMETRY_TOO_LARGE");
+    const output = await renderScreenshot(source, spec, { ...DEFAULT_RENDER_OPTIONS, fit: "contain" });
+    expect((await sharp(output).metadata()).width).toBe(spec.width);
+  });
+
+  it("preserves translucent colors through resize and crop", async () => {
+    const input = await rgbaFixture();
+    const spec: SizeSpec = { id: "alpha-resize", slot: "duo-outer", label: "Alpha", inches: "0", width: 100, height: 100, orientation: "portrait" };
+    for (const fit of ["cover", "contain"] as const) {
+      const output = await renderScreenshot(input, spec, { ...DEFAULT_RENDER_OPTIONS, format: "png", fit, background: "solid", solidColor: "#000000" });
+      const pixel = await sharp(output).extract({ left: 50, top: 50, width: 1, height: 1 }).raw().toBuffer();
+      [88, 16, 36].forEach((expected, index) => expect(Math.abs(pixel[index]! - expected)).toBeLessThanOrEqual(1));
+    }
+  });
+
   it("renders exact pixels, flattens alpha, RGB PNG", async () => {
     const input = await rgbaFixture();
     const spec = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;

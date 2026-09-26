@@ -1,6 +1,12 @@
 import { defineConfig } from "cypress";
+import { loadEnvConfig } from "@next/env";
+
+loadEnvConfig(process.cwd());
 
 export default defineConfig({
+  expose: {
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "https://supabase.example.invalid",
+  },
   e2e: {
     baseUrl: "http://localhost:3000",
     specPattern: "cypress/e2e/**/*.cy.ts",

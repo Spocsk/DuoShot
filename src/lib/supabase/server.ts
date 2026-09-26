@@ -1,10 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { getSupabasePublicKey, getSupabaseUrl } from "./env";
+import { getSupabasePublicKey } from "./env";
+import { getSupabaseAuthCookieName, getSupabaseServerUrl } from "./server-env";
+import { supabaseCookieOptions } from "./cookie-options";
 
 export async function createServerSupabase() {
   const cookieStore = await cookies();
-  return createServerClient(getSupabaseUrl(), getSupabasePublicKey(), {
+  return createServerClient(getSupabaseServerUrl(), getSupabasePublicKey(), {
+    cookieOptions: { ...supabaseCookieOptions(), name: getSupabaseAuthCookieName() },
     cookies: {
       getAll() {
         return cookieStore.getAll();

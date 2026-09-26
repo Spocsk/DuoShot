@@ -39,6 +39,8 @@ beforeEach(() => {
   vi.mocked(getStripe).mockReset();
   vi.mocked(createAdminSupabase).mockReset();
   vi.stubEnv("VERCEL_ENV", "preview");
+  vi.stubEnv("APP_ENV", "test");
+  vi.stubEnv("BILLING_ALLOWED_USER_IDS", "");
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_example");
   vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test");
   vi.stubEnv("STRIPE_STUDIO_PRICE_ID", "price_studio");
@@ -127,7 +129,7 @@ describe("POST /api/stripe/webhook", () => {
     expect(insert).toHaveBeenCalled();
   });
   it("rejects test events at a production endpoint", async () => {
-    const {update,insert}=setup("active");vi.stubEnv("VERCEL_ENV","production");
+    const {update,insert}=setup("active");vi.stubEnv("VERCEL_ENV","");vi.stubEnv("APP_ENV","production");
     expect((await POST(request("valid"))).status).toBe(400);
     expect(update).not.toHaveBeenCalled();expect(insert).not.toHaveBeenCalled();
   });

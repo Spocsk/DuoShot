@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSupabaseUrl } from "@/lib/supabase/env";
 import { readJson } from "@/test/supabase-mock";
 import { POST } from "./route";
@@ -14,7 +14,11 @@ function jsonRequest(body: unknown, host?: string) {
   });
 }
 
+beforeEach(() => {
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://supabase.example.invalid");
+});
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
 

@@ -1,5 +1,8 @@
 "use client";
 
+import { submitRender, resumeRender } from "@/lib/render-client";
+import { assertBatchSize, MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
+
 import { DeviceCamera } from "@/components/device-camera";
 import {
   Suspense,
@@ -106,6 +109,7 @@ export function ToolApp({ locale }: Props) {
 }
 
 function ToolAppInner({ locale, owner }: Props & { owner: string }) {
+  const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
   const { loadSetMetas, saveSetMetas, loadActiveId, saveActiveId, loadSetFiles, saveSetFiles, deleteSetFiles } = useMemo(() => createSetStore(owner, () => setStorageError(true)), [owner]);
@@ -355,6 +359,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         if (!cancelled) {
           setSets([first]);
           setActiveId(first.id);
+          setDraftsLoaded(true);
         }
         return;
       }
@@ -368,6 +373,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       if (cancelled) return;
       setOuterFiles((prev) => (prev.length > 0 ? prev : outer));
       setInnerFiles((prev) => (prev.length > 0 ? prev : inner));
+      setDraftsLoaded(true);
     })();
     return () => {
       cancelled = true;
@@ -527,11 +533,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
     const selected = takeFiles(list);
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
-      if (!isAllowedImage(file) || file.size > 50 * 1024 * 1024) return null;
-      try { const bitmap = await createImageBitmap(file); bitmap.close(); return file; } catch { return null; }
+      if (!isAllowedImage(file) || file.size > MAX_SOURCE_BYTES) return null;
+      try { const metadata = await inspectFile(file); if (metadata.width * metadata.height > MAX_SOURCE_PIXELS) return null; const bitmap = await createImageBitmap(file); const allowed = bitmap.width * bitmap.height <= MAX_SOURCE_PIXELS; bitmap.close(); return allowed ? file : null; } catch { return null; }
     }));
     const incoming = checked.filter((file): file is File => file !== null);
-    if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo maximum et 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 10 screenshots per side.", "err");
+    if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo et 40 mégapixels maximum, 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 40 megapixels, 10 screenshots per side.", "err");
     const current = side === "outer" ? outerFiles : innerFiles;
     const next = mergeSideFiles(current, incoming);
     if (next.length > current.length) {
@@ -625,12 +631,51 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (code === "CLONE_RISK") return t(locale, "error_clone");
     if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
     if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
+    if (code === "RENDER_BUSY") return locale === "fr" ? "Le serveur traite déjà plusieurs lots. Réessaie dans quelques secondes ; aucun quota n’a été consommé." : "The server is processing other batches. Retry shortly; no quota was consumed.";
     if (code === "NO_IMAGES") return t(locale, "error_no_images");
     if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
     if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduis le nombre de paires ou choisis JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
+    if (code === "RENDER_PENDING") return locale === "fr" ? "Le rendu continue sur le serveur. Reviens sur cette page pour récupérer le résultat." : "Rendering continues on the server. Return to this page to retrieve it.";
+    if (code === "RENDER_ALREADY_PENDING") return locale === "fr" ? "Un rendu est déjà en cours sur ce compte. Recharge la page pour le retrouver." : "A render is already pending for this account. Reload to recover it.";
+    if (code === "RENDER_INTERRUPTED") return locale === "fr" ? "Ce rendu a été interrompu. Ton essai a été restitué ; tu peux réessayer." : "This render was interrupted. Your trial was restored; you can retry.";
+    if (code === "RENDER_GEOMETRY_TOO_LARGE") return locale === "fr" ? "Cette capture est trop allongée pour ce recadrage. Choisis le mode Contenir ou réduis le zoom." : "This screenshot is too narrow or wide for this crop. Choose Contain or reduce the zoom.";
+    if (code === "INPUT_TOO_LARGE" || code === "BATCH_TOO_LARGE") return locale === "fr" ? "Limite dépassée : 50 Mo et 40 mégapixels par capture, 200 Mo par lot." : "Limit exceeded: 50 MB and 40 megapixels per screenshot, 200 MB per batch.";
     if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
     return t(locale, "error_export");
   }
+
+  useEffect(() => {
+    if (owner === "guest" || !draftsLoaded) return;
+    let mounted = true;
+    const progress = (state: "queued" | "running") => {
+      if (!mounted) return;
+      setStatusKind("busy");
+      setStatus(state === "queued" ? (locale === "fr" ? "Ton rendu est en attente…" : "Your render is queued…") : t(locale, "tool_progress_compose"));
+    };
+    for (const kind of ["export", "review"] as const) {
+      const pending = resumeRender(owner, kind, progress);
+      if (!pending) continue;
+      queueMicrotask(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(true); });
+      void pending.then(async response => {
+        const payload = await response.json();
+        if (!response.ok || !payload.url) throw new Error(payload.error ?? "RENDER_UNAVAILABLE");
+        if (!mounted) return;
+        if (kind === "export") {
+          setZipUrl(payload.url); setZipName(payload.filename ?? "app.zip");
+          setDownloadId(payload.exportId ?? null); setExportImages(payload.images ?? []);
+        } else {
+          setReviewUrl(new URL(payload.url, window.location.origin).href);
+          setReviewStatus(t(locale, "tool_review_ready"));
+        }
+        setToolPanel("review");
+        setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
+        void refreshBilling();
+      }).catch(() => {
+        if (mounted) { setStatusKind("err"); setStatus(locale === "fr" ? "Récupération du rendu indisponible. Recharge la page pour réessayer sans créer une nouvelle demande." : "Render recovery unavailable. Reload to retry without creating a new request."); }
+      }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
+    }
+    return () => { mounted = false; };
+  }, [owner, locale, refreshBilling, draftsLoaded]);
 
   async function uploadSide(userId: string, files: File[], onProgress: () => void) {
     const supabase = createBrowserSupabase();
@@ -678,6 +723,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         return;
       }
       const extra = sameSet ? [] : innerFiles;
+      assertBatchSize([...outerFiles, ...extra]);
       const total = outerFiles.length + extra.length;
       let done = 0;
       const tick = () => {
@@ -690,10 +736,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       ]);
       const innerPaths = sameSet ? outerPaths : uploadedInner;
       flashStatus(t(locale, "tool_progress_compose"), "busy");
-      const response = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await submitRender(sessionData.user.id, "export", {
           outerPaths,
           innerPaths,
           sameSet: cloneForced,
@@ -706,7 +749,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], globalFit)),
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
-        }),
+        }, (state) => {
+        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Tu peux revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as {
         url?: string; error?: string; warning?: string; filename?: string; exportId?: string; expiresAt?: string;
@@ -816,6 +860,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     flashStatus(t(locale, "tool_review_preparing"), "busy");
     try {
       const extra = sameSet ? [] : innerFiles;
+      assertBatchSize([...outerFiles, ...extra]);
       const total = outerFiles.length + extra.length;
       let done = 0;
       const tick = () => {
@@ -827,10 +872,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         extra.length ? uploadSide(sessionData.user.id, extra, tick) : Promise.resolve([] as string[]),
       ]);
       const innerPaths = sameSet ? outerPaths : uploadedInner;
-      const response = await fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await submitRender(sessionData.user.id, "review", {
           outerPaths,
           innerPaths,
           sameSet: cloneForced,
@@ -843,10 +885,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], globalFit)),
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
-        }),
+        }, (state) => {
+        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Tu peux revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
       if (!response.ok) {
+        void trackProduct("review_failed", { reason: ["STUDIO_REQUIRED", "INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "UPLOAD_MISSING"].includes(payload.error ?? "") ? payload.error! : "other" });
         if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
         flashStatus(explainError(payload.error || "STUDIO_REQUIRED"), "err");
         return;

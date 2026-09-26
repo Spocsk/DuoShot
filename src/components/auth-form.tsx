@@ -18,12 +18,14 @@ export function AuthForm({
   variant = "page",
   nextPath,
   onSuccess,
+  initialError = false,
 }: {
   locale: Locale;
   mode: Mode;
   variant?: "page" | "modal";
   nextPath?: string;
   onSuccess?: () => void;
+  initialError?: boolean;
 }) {
   const router = useRouter();
   const prefix = localePrefix(locale);
@@ -31,7 +33,7 @@ export function AuthForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [privacy, setPrivacy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(initialError ? (locale === "fr" ? "Ce lien de connexion est invalide ou a expiré. Demande un nouveau lien ou reconnecte-toi." : "This sign-in link is invalid or expired. Request a new link or sign in again.") : null);
   const [messageOk, setMessageOk] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -146,7 +148,7 @@ export function AuthForm({
     const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${origin}/auth/callback?next=${afterAuth}` },
+      options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(afterAuth)}` },
     });
     if (error) {
       fail(error.message);
@@ -278,6 +280,7 @@ export function AuthForm({
         <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="ds-text-btn">
           {t(locale, "magic")}
         </button>
+        {mode === "login" ? <Link href={`${prefix}/forgot-password`} className="ds-text-btn">{locale === "fr" ? "Mot de passe oublié ?" : "Forgot password?"}</Link> : null}
       </form>
       {message ? (
         <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message" role={messageOk ? "status" : "alert"}>

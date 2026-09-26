@@ -1,9 +1,8 @@
 "use client";
 
-import { Analytics } from "@vercel/analytics/next";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { analyticsPath, sanitizedAnalyticsUrl } from "@/lib/analytics-path";
+import { analyticsPath } from "@/lib/analytics-path";
 import {
   analyticsChoice, analyticsConfigured, identifyAnalyticsUser, resetAnalyticsUser,
   setAnalyticsChoice, trackProduct, consumeAnalyticsAuthIntent, type AnalyticsChoice,
@@ -132,10 +131,6 @@ export function AnalyticsProvider() {
 
   return (
     <>
-      <Analytics beforeSend={(event) => {
-        const url = sanitizedAnalyticsUrl(event.url);
-        return url ? { ...event, url } : null;
-      }} />
       {configured && ready && (choice === null || settingsOpen) ? (
         <div className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-xl border border-[var(--line)] bg-[var(--background)] p-5 shadow-2xl" role="dialog" aria-label={fr ? "Préférences statistiques" : "Analytics preferences"}>
           <p className="font-display text-lg">{fr ? "Mesure des parcours" : "Product analytics"}</p>

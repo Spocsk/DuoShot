@@ -1,0 +1,65 @@
+name: Build VPS image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/vps-production-readiness]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: duoshot-container-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_MIXPANEL_TOKEN: ${{ vars.NEXT_PUBLIC_MIXPANEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate public build configuration
+        shell: bash
+        run: |
+          test -n "$NEXT_PUBLIC_SITE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+          test -n "$NEXT_PUBLIC_MIXPANEL_TOKEN"
+      - name: Image identity
+        id: image
+        shell: bash
+        run: echo "tag=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.image.outputs.tag }}
+          outputs: type=docker,dest=${{ runner.temp }}/duoshot.tar
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_MIXPANEL_TOKEN=${{ env.NEXT_PUBLIC_MIXPANEL_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - uses: actions/upload-artifact@v4
+        with:
+          name: duoshot-image-${{ github.sha }}
+          path: ${{ runner.temp }}/duoshot.tar
+          compression-level: 1
+          retention-days: 1

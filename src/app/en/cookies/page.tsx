@@ -5,7 +5,7 @@ export const metadata = pageMetadata({
   locale: "en",
   path: "/cookies",
   title: "Cookies",
-  description: "DuoShot cookies: Auth session, cookieless Vercel, optional Mixpanel with consent.",
+  description: "DuoShot cookies: Auth session and optional Mixpanel with consent.",
 });
 
 export default function Page() {

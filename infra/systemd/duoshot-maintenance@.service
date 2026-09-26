@@ -1,0 +1,13 @@
+[Unit]
+Description=DuoShot %i maintenance
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec web-i9qtpe5bpyig86s1aljxr5gv node scripts/run-maintenance.mjs %i
+TimeoutStartSec=75
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

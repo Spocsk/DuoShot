@@ -12,7 +12,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
   const result = await readWorkspaceBilling(supabase, user.id);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-  return NextResponse.json({ ...result.entitlements, checkoutAvailable: checkoutAvailable(), audience: analyticsAudience(user.id) }, {
+  return NextResponse.json({ ...result.entitlements, checkoutAvailable: checkoutAvailable(user.id), audience: analyticsAudience(user.id) }, {
     headers: { "Cache-Control": "no-store" },
   });
 }

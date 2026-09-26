@@ -1,0 +1,12 @@
+[Unit]
+Description=Encrypted DuoShot backup and verified off-host copy
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/data/duoshot/nightly-backup.sh
+TimeoutStartSec=2h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

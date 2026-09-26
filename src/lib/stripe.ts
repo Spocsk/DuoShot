@@ -1,11 +1,12 @@
 import Stripe from "stripe";
+import { billingEnvironmentMatches } from "./billing-environment";
 
 export function isStripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+  return billingEnvironmentMatches();
 }
 
 export function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
+  if (!key || !billingEnvironmentMatches()) return null;
   return new Stripe(key);
 }

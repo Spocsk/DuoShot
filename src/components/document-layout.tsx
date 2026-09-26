@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, IBM_Plex_Mono } from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
-import "./transitions-root.css";
-import "./transitions-dev.css";
-import "./globals.css";
-import "./studio.css";
+import "@/app/transitions-root.css";
+import "@/app/transitions-dev.css";
+import "@/app/globals.css";
+import "@/app/studio.css";
 import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_FR, getSiteUrl } from "@/lib/site";
 
 const sans = Geist({
@@ -30,10 +30,10 @@ export const metadata: Metadata = {
   verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export function DocumentLayout({ children, locale }: { children: React.ReactNode; locale: "fr" | "en" }) {
   return (
     <html
-      lang="fr"
+      lang={locale}
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

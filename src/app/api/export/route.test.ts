@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveEntitlements } from "@/lib/billing";
 import { composeZipImages } from "@/lib/pipeline/compose";
@@ -141,7 +142,7 @@ describe("POST /api/export", () => {
   it("delivers a ZIP larger than 4.5 MB through a signed storage URL", async () => {
     const zip = Buffer.alloc(5_000_000, 7);
     const uploaded: number[] = [];
-    const image = Buffer.from([1, 2, 3]);
+    const image = await sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } }).png().toBuffer();
     vi.mocked(resolveEntitlements).mockReturnValue(INDIE);
     vi.mocked(composeZipImages).mockResolvedValue({
       images: [
@@ -160,8 +161,9 @@ describe("POST /api/export", () => {
           : { id: "ws-1", client_slug: null, plan: "indie", free_exports_used: 0 }, error: null }),
       rpc: async () => ({ data: 1, error: null }),
       storage: { from: (bucket: string) => ({
+        info: async () => ({ data: { size: bucket === "uploads" ? image.length : zip.length }, error: null }),
         download: async () => bucket === "uploads"
-          ? { data: { arrayBuffer: async () => Uint8Array.from(image).buffer }, error: null }
+          ? { data: { size: image.length, arrayBuffer: async () => Uint8Array.from(image).buffer }, error: null }
           : { data: { size: zip.length }, error: null },
         upload: async (_path: string, bytes: Uint8Array) => { uploaded.push(bytes.length); return { error: null }; },
         createSignedUrl: async () => ({ data: { signedUrl: "https://storage.example/large.zip" }, error: null }),

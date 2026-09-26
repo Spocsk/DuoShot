@@ -34,6 +34,10 @@ export function createStorageMock(options?: {
   return {
     from(bucket: string) {
       return {
+        info: async (path: string) => {
+          const result = await options?.download?.(bucket, path);
+          return result?.data ? { data: { size: (await result.data.arrayBuffer()).byteLength }, error: null } : { data: null, error: { message: "missing" } };
+        },
         download: (path: string) =>
           options?.download
             ? options.download(bucket, path)

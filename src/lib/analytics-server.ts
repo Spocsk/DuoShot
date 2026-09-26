@@ -18,7 +18,7 @@ export async function trackServerEvent(
       .select("accepted").eq("user_id", userId).eq("kind", "analytics")
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (error || data?.accepted !== true) return;
-    await fetch("https://api-eu.mixpanel.com/track?verbose=1", {
+    const response = await fetch("https://api-eu.mixpanel.com/track?verbose=1", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify([{
@@ -30,7 +30,11 @@ export async function trackServerEvent(
       }]),
       signal: AbortSignal.timeout(2000),
     });
+    const result = response.ok ? await response.json() as { status?: number } : null;
+    if (!response.ok || result?.status !== 1) {
+      console.warn("analytics_delivery_failed", { event, status: response.status });
+    }
   } catch {
-    // Analytics is best effort. Billing, export and reviews keep their own records.
+    console.warn("analytics_delivery_failed", { event, reason: "network_or_response" });
   }
 }

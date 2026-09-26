@@ -156,7 +156,7 @@ describe("POST /api/reviews", () => {
     })
       .png()
       .toBuffer();
-    const blob = { arrayBuffer: async () => Uint8Array.from(png).buffer };
+    const blob = { size: png.length, arrayBuffer: async () => Uint8Array.from(png).buffer };
     vi.mocked(createServerSupabase).mockResolvedValue(
       createSupabaseMock({
         user: USER,
