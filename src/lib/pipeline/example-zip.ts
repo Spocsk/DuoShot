@@ -1,11 +1,23 @@
 import { SIZE_SPECS } from "../specs";
 import { HARBOR_SLIDES, harborInnerSvg, harborOuterSvg, pngFromSvg } from "./harbor";
 import { buildZip } from "./zip";
+import { renderSlots } from "./render-slots";
 
-let cached: Buffer | null = null;
+let cached: Promise<Buffer> | null = null;
 
-export async function buildExampleZip(): Promise<Buffer> {
-  if (cached) return cached;
+export function buildExampleZip(): Promise<Buffer> {
+  // Concurrent anonymous requests on a cold process must share one render.
+  cached ??= (async () => {
+    const release = await renderSlots.acquire();
+    try { return await renderExampleZip(); } finally { release(); }
+  })().catch((error) => {
+    cached = null;
+    throw error;
+  });
+  return cached;
+}
+
+async function renderExampleZip(): Promise<Buffer> {
   const outer = SIZE_SPECS.find((spec) => spec.id === "outer-p")!;
   const inner = SIZE_SPECS.find((spec) => spec.id === "inner-p")!;
   const images = [];
@@ -21,7 +33,7 @@ export async function buildExampleZip(): Promise<Buffer> {
       buffer: await pngFromSvg(harborInnerSvg(inner.width, inner.height, slide), inner.width, inner.height),
     });
   }
-  cached = await buildZip({
+  return buildZip({
     appName: "ExampleApp",
     clientSlug: null,
     orientation: "portrait",
@@ -36,5 +48,4 @@ export async function buildExampleZip(): Promise<Buffer> {
       { index: 2, distance: 30, label: "ok" },
     ],
   });
-  return cached;
 }
