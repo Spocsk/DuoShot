@@ -1,0 +1,14 @@
+[Unit]
+Description=DuoShot durable render worker
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/docker exec web-i9qtpe5bpyig86s1aljxr5gv node scripts/run-render-worker.mjs
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

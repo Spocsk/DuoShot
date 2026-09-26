@@ -36,8 +36,22 @@ async function user(plan='free'){
 const post=(body)=>({method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
 const body=(u,count=1,format='jpeg')=>({outerPaths:Array(count).fill(u.paths[0]),innerPaths:Array(count).fill(u.paths[1]),appName:'VPS synthetic acceptance',assumeCloneRisk:true,options:{orientation:'landscape',format,fit:'cover'}});
 const privateUrl=(url)=>{const parsed=new URL(url);assert.equal(parsed.origin,process.env.NEXT_PUBLIC_SUPABASE_URL);return internal+parsed.pathname+parsed.search;};
+async function awaitRender(u,response){
+ if(response.status!==202)return response;
+ const {jobId}=await response.json();assert.match(jobId,/^[a-f0-9-]{36}$/);
+ const deadline=Date.now()+31*60_000;
+ while(Date.now()<deadline){
+  const stateResponse=await u.request(`/api/render-jobs/${jobId}`);
+  if(stateResponse.status>=500){await new Promise(r=>setTimeout(r,1000));continue;}
+  assert.equal(stateResponse.status,200);const state=await stateResponse.json();
+  if(state.state==='completed')return Response.json({...state.result,jobId});
+  if(state.state==='failed')return Response.json({error:state.error,jobId},{status:400});
+  await new Promise(r=>setTimeout(r,1000));
+ }
+ throw new Error('JOB_WAIT_TIMEOUT');
+}
 async function render(u,count=1,format='jpeg'){
- const start=Date.now(); const response=await u.request('/api/export',post(body(u,count,format))); const payload=await response.json();
+ const start=Date.now(); const requestKey=randomUUID();const options=post(body(u,count,format));options.headers['Idempotency-Key']=requestKey;const accepted=await u.request('/api/export',options);const admissionMs=Date.now()-start;const response=await awaitRender(u,accepted);const payload=await response.json();
  if(response.status!==200)return {status:response.status,error:payload.error,ms:Date.now()-start};
  const renderMs=Date.now()-start;
  if(count===10) console.log(JSON.stringify({test:'large_zip_render_finished',renderMs}));
@@ -45,15 +59,26 @@ async function render(u,count=1,format='jpeg'){
  const bytes=Buffer.from(await zipResponse.arrayBuffer()); const zip=await JSZip.loadAsync(bytes,{checkCRC32:true});
  const images=Object.entries(zip.files).filter(([p])=>/\.(png|jpg)$/.test(p));assert.equal(images.length,count*2);
  const meta=await sharp(await images[0][1].async('nodebuffer')).metadata();assert.equal(meta.format,format==='png'?'png':'jpeg');
- return {status:200,ms:Date.now()-start,renderMs,bytes:bytes.length,exportId:payload.exportId,images:images.length};
+ return {status:200,admissionMs,jobId:payload.jobId,requestKey,ms:Date.now()-start,renderMs,bytes:bytes.length,exportId:payload.exportId,images:images.length};
 }
 try {
  const free=await user(); const result=await render(free,10);assert.equal(result.status,200,JSON.stringify(result));assert(result.bytes>4_500_000);console.log(JSON.stringify({test:'free_20_image_zip',...result}));
  const recover=await free.request(`/api/exports/${result.exportId}/download?format=json`);assert.equal(recover.status,200);assert.equal((await free.request('/api/billing/status').then(r=>r.json())).remainingFreeExports,1);
  assert.equal((await fetch(base+`/api/exports/${result.exportId}/download`)).status,401);
- const studio=await user('studio');assert.equal((await studio.request(`/api/exports/${result.exportId}/download`)).status,404);
- const foreign=await studio.request('/api/export',post(body(free)));assert.equal(foreign.status,403);
- const created=await studio.request('/api/reviews',post({...body(studio),locale:'fr'}));const review=await created.json();assert.equal(created.status,200,JSON.stringify(review));reviewIds.push(review.id);
+ if(result.jobId){
+  const duplicate=post(body(free,10));duplicate.headers['Idempotency-Key']=result.requestKey;
+  const replay=await free.request('/api/export',duplicate);assert.equal(replay.status,202);assert.equal((await replay.json()).jobId,result.jobId);
+  assert.equal((await free.request('/api/billing/status').then(r=>r.json())).remainingFreeExports,1);
+  assert.equal((await fetch(base+`/api/render-jobs/${result.jobId}`)).status,401);
+  const invalid=post({...body(free),outerPaths:[`${free.id}/missing.png`]});invalid.headers['Idempotency-Key']=randomUUID();
+  const failed=await awaitRender(free,await free.request('/api/export',invalid));assert.equal(failed.status,400);
+  assert.equal((await free.request('/api/billing/status').then(r=>r.json())).remainingFreeExports,1);
+  console.log(JSON.stringify({test:'durable_idempotency_and_refund',passed:true}));
+ }
+ const studio=await user('studio');
+ if(result.jobId)assert.equal((await studio.request(`/api/render-jobs/${result.jobId}`)).status,404);assert.equal((await studio.request(`/api/exports/${result.exportId}/download`)).status,404);
+ const foreignOptions=post(body(free));foreignOptions.headers['Idempotency-Key']=randomUUID();const foreign=await studio.request('/api/export',foreignOptions);assert.equal(foreign.status,403);
+ const reviewOptions=post({...body(studio),locale:'fr'});reviewOptions.headers['Idempotency-Key']=randomUUID();const created=await awaitRender(studio,await studio.request('/api/reviews',reviewOptions));const review=await created.json();assert.equal(created.status,200,JSON.stringify(review));reviewIds.push(review.id);
  const read=await fetch(base+`/api/reviews/${review.id}`).then(r=>r.json());assert.equal(read.slides.length,1);
  const media=base+read.slides[0].outer;assert.equal((await fetch(media)).status,200);
  assert.equal((await free.request(`/api/reviews/${review.id}`,{method:'DELETE'})).status,404);
@@ -65,7 +90,8 @@ try {
   const start=Date.now();const settled=await Promise.allSettled(pool.slice(0,n).map(u=>render(u)));
   const results=settled.map(r=>r.status==='fulfilled'?r.value:{status:0,error:r.reason?.message??'NETWORK_ERROR',ms:Date.now()-start});
   const times=results.map(r=>r.renderMs??r.ms).sort((a,b)=>a-b);
-  const summary={test:'parallel_personalized_zip',users:n,success:results.filter(r=>r.status===200).length,failures:results.filter(r=>r.status!==200),p95ms:times[Math.ceil(n*.95)-1],maxms:times.at(-1),wallMs:Date.now()-start};console.log(JSON.stringify(summary));
+  const admissions=results.map(r=>r.admissionMs??r.ms).sort((a,b)=>a-b);
+  const summary={admissionP95ms:admissions[Math.ceil(n*.95)-1],test:'parallel_personalized_zip',users:n,success:results.filter(r=>r.status===200).length,failures:results.filter(r=>r.status!==200),p95ms:times[Math.ceil(n*.95)-1],maxms:times.at(-1),wallMs:Date.now()-start};console.log(JSON.stringify(summary));
   if(summary.success!==n){process.exitCode=1;break;}
  }
 } finally {

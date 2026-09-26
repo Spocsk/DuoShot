@@ -29,7 +29,7 @@ COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/src/lib/pipeline/fonts ./src/lib/pipeline/fonts
 COPY --from=build /app/src/lib/pipeline/fonts /usr/local/share/fonts/duoshot
 RUN fc-cache -f
-COPY --from=build --chown=node:node /app/scripts/run-maintenance.mjs /app/scripts/check-deployment-env.mjs ./scripts/
+COPY --from=build --chown=node:node /app/scripts/run-maintenance.mjs /app/scripts/run-render-worker.mjs /app/scripts/check-deployment-env.mjs ./scripts/
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
