@@ -162,6 +162,9 @@ Cypress.Commands.add("dropScreens", (sides?: { outer?: string | string[]; inner?
   if (inner) {
     const innerCount = Array.isArray(inner) ? inner.length : 1;
     cy.get('[data-testid="drop-inner-input"]').selectFile(inner, { force: true });
+    // Image validation is asynchronous; completing the first pair opens Adjust.
+    // Wait for that transition before returning to the capture counts.
+    cy.get('[data-testid="tool-tab-adjust"]').should("have.attr", "aria-selected", "true");
     cy.get('[data-testid="tool-tab-captures"]').click();
     cy.get('[data-testid="drop-inner"]').should("have.attr", "data-count", String(innerCount));
   }
