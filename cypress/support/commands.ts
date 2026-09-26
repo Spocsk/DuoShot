@@ -1,5 +1,5 @@
-const PROJECT_REF = "jvhqcmqwrihbtwrggwuq";
-const AUTH_COOKIE = `sb-${PROJECT_REF}-auth-token`;
+const SUPABASE_URL = String(Cypress.expose("supabaseUrl"));
+const AUTH_COOKIE = `sb-${new URL(SUPABASE_URL).hostname.split(".")[0]}-auth-token`;
 const USER_ID = "00000000-0000-4000-8000-000000000001";
 const USER_EMAIL = "e2e@duoshot.test";
 
@@ -19,7 +19,7 @@ function fakeJwt() {
       aud: "authenticated",
       exp: now + 3600,
       iat: now,
-      iss: `https://${PROJECT_REF}.supabase.co/auth/v1`,
+      iss: `${SUPABASE_URL}/auth/v1`,
       sub: USER_ID,
       email: USER_EMAIL,
       role: "authenticated",

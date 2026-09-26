@@ -29,6 +29,27 @@ and Storage separately, verify RLS/private buckets, install encrypted
 off-host backups, and test a restore. Back up both PostgreSQL and the
 Storage directory; the database alone does not contain image files.
 
+The live stack is now controlled by Coolify under the `DuoShot` project.
+Its generated Compose lives in
+`/data/coolify/services/5if8qfnj7o1bi2lrd3nbncff`; use that directory for
+operations. Do not start the original preparation Compose at the same time.
+`export-coolify.py` exports the five services with root-only runtime env files
+and stable bind mounts. Preserve the ownership/mode of the PostgreSQL key
+directory when copying it; Coolify otherwise prefixes named volumes.
+
+`backup-offline.sh --offline <compose-directory>` creates an age-encrypted,
+consistent maintenance snapshot: logical database dumps, roles, keys, runtime
+configuration and Storage files. It stops the API/Auth/Storage temporarily and
+restarts them even after an error. Drain the app/worker first. It is **not yet
+scheduled for production**. A copy must leave the VPS before considering the
+backup complete. The private age identity is on the Mac, outside this repo;
+only the public recipient is stored on the VPS.
+
+`verify-backup.py archive.age identity.age root@host db-container` authenticates
+the archive locally and restores its main database into a temporary database.
+It checks the auth/storage schemas and removes only its temporary database.
+This verifies the logical backup, not the full app/OAuth recovery procedure.
+
 Official references:
 - https://supabase.com/docs/guides/self-hosting/docker
 - https://supabase.com/docs/guides/self-hosting/restore-from-platform

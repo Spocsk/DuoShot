@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { publicSupabaseUrl } from "@/lib/supabase/server-env";
 
 export const runtime = "nodejs";
 type Params = { params: Promise<{ id: string }> };
@@ -26,8 +27,9 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ error: missing ? "EXPORT_DELETED" : "DOWNLOAD_UNAVAILABLE" }, { status: missing ? 410 : 503 });
   }
   const headers = { "Cache-Control": "private, no-store" };
+  const url = publicSupabaseUrl(data.signedUrl);
   if (new URL(request.url).searchParams.get("format") === "json") {
-    return NextResponse.json({ url: data.signedUrl, expiresAt: new Date(Date.now() + ttl * 1000).toISOString() }, { headers });
+    return NextResponse.json({ url, expiresAt: new Date(Date.now() + ttl * 1000).toISOString() }, { headers });
   }
-  return NextResponse.redirect(data.signedUrl, { status: 303, headers });
+  return NextResponse.redirect(url, { status: 303, headers });
 }

@@ -39,9 +39,10 @@ Sources :
 - Swap de secours 2 Gio, swappiness 10 ; elle ne remplace pas la RAM nécessaire aux rendus.
 - Logs Docker limités par défaut avec le pilote `local` : 10 Mo × 3 fichiers par conteneur.
 - Test `docker run --rm hello-world` réussi après redémarrage ; environ 3,3 Gio de RAM disponibles, swap inutilisée au repos.
-- Proxy et Sentinel Coolify sains. Supabase officiel `self-hosted/v0.8.2` installé dans `/data/duoshot/supabase` : PostgreSQL, Auth, PostgREST, Storage et Envoy. Les cinq services sont sains avant leur reprise par Coolify. API limitée à `127.0.0.1:8000`, PostgreSQL sans port public ; inscriptions désactivées.
+- Proxy et Sentinel Coolify sains. Supabase officiel `self-hosted/v0.8.2` installé dans `/data/duoshot/supabase` : PostgreSQL, Auth, PostgREST, Storage et Envoy. Les cinq services sont sains après leur reprise par Coolify et le test de 60 Mio a été répété avec succès. API limitée à `127.0.0.1:8000`, PostgreSQL sans port public ; inscriptions désactivées.
 - Test réel réussi : upload privé de 60 Mio, URL signée, téléchargement vérifié par SHA-256, accès anonymes refusés, suppression des seuls objets synthétiques. Environ 270 Mio pour Supabase au repos et 2,9 Gio disponibles sur le VPS ; aucun test de rendu en charge à ce stade.
-- Ressource Coolify `duoshot-supabase` créée (`5if8qfnj7o1bi2lrd3nbncff`), reprise des mêmes données et clés en cours. Les secrets restent dans des fichiers root-only sur le nouveau VPS.
+- Ressource Coolify `duoshot-supabase` créée (`5if8qfnj7o1bi2lrd3nbncff`), reprise des mêmes données et clés vérifiée. Les secrets restent dans des fichiers root-only sur le nouveau VPS.
+- Première sauvegarde chiffrée age créée, copiée sur le Mac et dump restauré dans une base temporaire avec succès ; automatisation hors hôte et validation applicative complète après restauration encore à faire. La clé privée de déchiffrement reste sur le Mac.
 - Migration des comptes en attente de la connexion PostgreSQL source. Fichier privé demandé sur le Mac : `~/.config/duoshot/source-database-url`. Ne pas le committer. SMTP et OAuth restent à configurer.
 
 ## Audit de l'ancien VPS hébergeant Coolify
@@ -58,12 +59,13 @@ Sources :
 ## Corrections locales préparées, non déployées
 
 - Dockerfile Node 24 / Next standalone, utilisateur non privilégié et endpoint de santé.
-- Workflow `.github/workflows/container.yml` préparé (manuel ou push de la branche de migration) pour construire l'image Linux amd64 dans GitHub Actions et la publier sur GHCR avec le SHA du commit. Variables publiques de build configurées dans GitHub, dont `https://api.duoshot.site` pour la future API ; aucun secret serveur dans les arguments de build. Export Docker temporaire conservé un jour pour transférer l’image sans clé de registre persistante sur le VPS. Construction CI à vérifier.
+- Workflow `.github/workflows/container.yml` préparé (manuel ou push de la branche de migration) pour construire l'image Linux amd64 dans GitHub Actions et la publier sur GHCR avec le SHA du commit. Variables publiques de build configurées dans GitHub, dont `https://api.duoshot.site` pour la future API ; aucun secret serveur dans les arguments de build. Export Docker temporaire conservé un jour pour transférer l’image sans clé de registre persistante sur le VPS. Première image construite avec succès dans GitHub Actions (run `36259182433`), publication GHCR et export Docker réussis ; validation de la dernière révision en cours.
 - Suppression du fallback Supabase Cloud codé en dur et de Vercel Web Analytics.
 - Layouts racines FR/EN distincts pour corriger la langue HTML sans rendre les pages publiques dynamiques.
 - Validation stricte des rendus, chemins possédés par l'utilisateur, couleurs, dimensions et tailles ; sources dédupliquées et vérifiées avant traitement.
 - Limites : 50 Mio/source, 200 Mio/lot, 40 mégapixels/image, 100 Mio/ZIP.
 - Réduction des copies mémoire et de la concurrence des rendus ; attente de la fin des travaux en cours avant nettoyage sur erreur.
+- Accès Supabase serveur par URL Docker interne avec conservation de l’identité du cookie public et réécriture des URL signées vers HTTPS. Le navigateur conserve l’URL publique.
 - Garde provisoire d'un rendu actif par processus Node sur CX23, configurable à deux après mesures. **Ce n'est pas la file PostgreSQL durable prévue**, ni une limite globale entre plusieurs réplicas.
 - Meilleure détection des erreurs d'envoi Mixpanel ; scripts de contrôle des variables et de maintenance.
 - Vitest mis à jour ; audit npm sans vulnérabilité lors du contrôle.
@@ -83,3 +85,7 @@ Validation : 190 tests unitaires réussis, lint et `git diff --check` réussis. 
 9. Maintenance et synchronisation finale, bascule DNS, contrôles de production et procédure de retour arrière compatible avec les nouvelles écritures.
 
 Le domaine reste chez Vercel ; sa gestion DNS sera modifiée uniquement à la bascule validée. Ne pas résilier les services existants avant validation des remplacements.
+
+## Livraison en cours
+
+PR de préparation : https://github.com/Spocsk/DuoShot/pull/5 (draft, non fusionnée). Le contrôle Vercel de cette branche échoue sur les limites de cron Hobby ; il ne constitue pas un échec de l’image VPS. Le harnais Cypress a été adapté pour dériver le cookie du projet Supabase configuré, au lieu de coder le projet Cloud en dur.

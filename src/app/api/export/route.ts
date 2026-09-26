@@ -20,6 +20,7 @@ import {
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { publicSupabaseUrl } from "@/lib/supabase/server-env";
 import { trackServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
@@ -190,7 +191,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       exportId: reservation,
       expiresAt: new Date(Date.now() + 600_000).toISOString(),
-      url: signed.signedUrl,
+      url: publicSupabaseUrl(signed.signedUrl),
       filename,
       warning,
       images: images.map((image) => ({
