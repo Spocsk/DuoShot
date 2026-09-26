@@ -78,6 +78,7 @@ function titleSvg(spec: SizeSpec, options: RenderOptions): string | null {
   const subtitle = options.subtitle?.trim();
   if (!title && !subtitle) return null;
   const family = `DuoShot ${options.titleFont}`;
+  const systemFamily = options.titleFont === "serif" ? "DejaVu Serif" : "DejaVu Sans";
   const layout = textOverlayLayout(spec, options.titlePosition);
   const fitted = (value: string, size: number) =>
     Array.from(value).length * size * 0.68 > layout.maxWidth
@@ -85,7 +86,7 @@ function titleSvg(spec: SizeSpec, options: RenderOptions): string | null {
       : "";
   return `<svg width="${spec.width}" height="${spec.height}" xmlns="http://www.w3.org/2000/svg">
     <style>${fontFaceCss(options.titleFont)}
-      .t{font-family:'${family}';fill:#F4F1EA;text-anchor:middle;}
+      .t{font-family:'${family}','${systemFamily}';fill:#F4F1EA;text-anchor:middle;}
     </style>
     ${title ? `<text class="t" x="${layout.x}" y="${layout.yTitle}" font-size="${layout.titleSize}" font-weight="700"${fitted(title, layout.titleSize)}>${escapeXml(title)}</text>` : ""}
     ${subtitle ? `<text class="t" x="${layout.x}" y="${layout.ySubtitle}" font-size="${layout.subtitleSize}" opacity="0.82"${fitted(subtitle, layout.subtitleSize)}>${escapeXml(subtitle)}</text>` : ""}

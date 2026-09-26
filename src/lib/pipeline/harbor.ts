@@ -47,7 +47,7 @@ export function isDemoReview(id: string): boolean {
 
 function fontFace(): string {
   return `<style>@font-face{font-family:"Harbor Sans";src:url('data:font/ttf;base64,${FONT_B64}') format('truetype');}
-      .t{font-family:'Harbor Sans';fill:#f7f9f8;}.small{font-size:28px;letter-spacing:2px;opacity:.86}</style>`;
+      .t{font-family:'Harbor Sans','DejaVu Sans';fill:#f7f9f8;}.small{font-size:28px;letter-spacing:2px;opacity:.86}</style>`;
 }
 
 export function harborOuterSvg(width: number, height: number, slide: (typeof HARBOR_SLIDES)[number]) {

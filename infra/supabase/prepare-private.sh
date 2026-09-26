@@ -3,9 +3,11 @@
 # Requires a COPY of the official docker/ directory in a fresh destination.
 set -eu
 umask 077
+prep_script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "${1:?Usage: prepare-private.sh /absolute/path/to/fresh/supabase}"
 test -f docker-compose.yml
 test -f compose.cx23.yml
+python3 "$prep_script_dir/tune-envoy.py" .
 if test -e .env; then
   echo 'Refusing to overwrite existing credentials.' >&2
   exit 1

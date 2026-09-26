@@ -20,11 +20,15 @@ RUN test -n "$NEXT_PUBLIC_SITE_URL" && test -n "$NEXT_PUBLIC_SUPABASE_URL" \
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends fontconfig \
+    && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000 MALLOC_ARENA_MAX=2
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/src/lib/pipeline/fonts ./src/lib/pipeline/fonts
+COPY --from=build /app/src/lib/pipeline/fonts /usr/local/share/fonts/duoshot
+RUN fc-cache -f
 COPY --from=build --chown=node:node /app/scripts/run-maintenance.mjs /app/scripts/check-deployment-env.mjs ./scripts/
 USER node
 EXPOSE 3000
