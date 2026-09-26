@@ -48,6 +48,8 @@ beforeEach(() => {
   vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_example");
   vi.stubEnv("SUPABASE_SECRET_KEY", "example");
   vi.stubEnv("VERCEL_ENV", "preview");
+  vi.stubEnv("APP_ENV", "test");
+  vi.stubEnv("BILLING_ALLOWED_USER_IDS", "");
 });
 afterEach(() => vi.unstubAllEnvs());
 

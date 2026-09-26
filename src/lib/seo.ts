@@ -14,7 +14,7 @@ export function pageMetadata(options: {
   const isHome = canonicalPath === "/" || canonicalPath === "/en";
   const socialTitle = isHome ? `${SITE_NAME} — ${options.title}` : `${options.title} · ${SITE_NAME}`;
   return {
-    robots: /^(?:\/en)?\/(tool|account|login|signup|invite|r)(?:\/|$)/.test(canonicalPath) || process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
+    robots: /^(?:\/en)?\/(tool|account|login|signup|forgot-password|reset-password|invite|r)(?:\/|$)/.test(canonicalPath) || process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
     title: isHome ? { absolute: socialTitle } : options.title,
     description: options.description,
     alternates: {

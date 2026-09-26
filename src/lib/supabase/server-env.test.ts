@@ -29,3 +29,14 @@ describe("self-hosted Supabase routing", () => {
       .toBe("https://another.example/file.zip");
   });
 });
+
+describe("auth cookie transport", () => {
+  it("marks cookies Secure on the public HTTPS deployment, including private SSR transport", async () => {
+    const { supabaseCookieOptions } = await import("./cookie-options");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
+    vi.stubEnv("SUPABASE_INTERNAL_URL", "http://api-gw:8000");
+    expect(supabaseCookieOptions()).toEqual({ secure: true, sameSite: "lax", path: "/" });
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    expect(supabaseCookieOptions().secure).toBe(false);
+  });
+});

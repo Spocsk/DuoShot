@@ -6,6 +6,7 @@ import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
+import { createHash } from "node:crypto";
 
 export const runtime = "nodejs";
 
@@ -28,18 +29,15 @@ async function checkout(request: Request) {
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
 
   const body = (await request.json().catch(() => ({}))) as { kind?: string; next?: string };
-  if (!body.kind || !(body.kind in CHECKOUT_CATALOG)) {
+  if (!body.kind || !Object.hasOwn(CHECKOUT_CATALOG, body.kind)) {
     return NextResponse.json({ error: "INVALID_PLAN" }, { status: 400 });
   }
-  if (!checkoutAvailable()) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
+  if (!checkoutAvailable(user.id)) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
   const kind = body.kind as CheckoutKind;
   const priceId = priceIdFor(kind);
   const stripe = getStripe();
   const admin = createAdminSupabase();
   if (!stripe || !priceId || !admin) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
-  if (process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") && process.env.STRIPE_LIVE_ENABLED !== "true") {
-    return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
-  }
 
   const context = await readWorkspaceBilling(supabase, user.id);
   if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
@@ -93,6 +91,7 @@ async function checkout(request: Request) {
   if (!selectedPrice) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
+    integration_identifier: `duoshot-checkout-${createHash("sha256").update(attempt.attempt_id).digest("hex").slice(0, 8).replace(/[0-9a-f]/g, (char) => String.fromCharCode(97 + parseInt(char, 16)))}`,
     expires_at: Math.floor(Date.parse(attempt.expires_at) / 1000),
     customer: customerId,
     client_reference_id: membership.workspace_id,

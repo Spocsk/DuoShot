@@ -9,11 +9,12 @@ for (const name of required) {
   try { if (new URL(process.env[name]).protocol !== 'https:') missing.push(`${name} (HTTPS required)`); }
   catch { missing.push(`${name} (invalid URL)`); }
 }
+if (process.env.APP_ENV !== 'production') missing.push('APP_ENV (production required on the VPS)');
 if (process.env.STRIPE_CHECKOUT_ENABLED === 'true') {
   for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_INDIE_PRICE_ID', 'STRIPE_STUDIO_PRICE_ID', 'STRIPE_INDIE_YEARLY_PRICE_ID', 'STRIPE_STUDIO_YEARLY_PRICE_ID']) {
     if (!process.env[name]) missing.push(name);
   }
-  if (!process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')) missing.push('STRIPE_SECRET_KEY (live required)');
+  if (!/^(sk|rk)_live_.+/.test(process.env.STRIPE_SECRET_KEY ?? '')) missing.push('STRIPE_SECRET_KEY (live required)');
   if (process.env.STRIPE_LIVE_ENABLED !== 'true') missing.push('STRIPE_LIVE_ENABLED');
 }
 console.log(JSON.stringify({

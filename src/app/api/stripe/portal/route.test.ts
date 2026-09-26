@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getStripe } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createQueryBuilder, createSupabaseMock, readJson } from "@/test/supabase-mock";
@@ -11,7 +11,8 @@ const request = () => new Request("http://localhost/api/stripe/portal", {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ locale: "en" }),
 });
 
-beforeEach(() => { vi.mocked(getStripe).mockReset(); vi.mocked(createServerSupabase).mockReset(); });
+afterEach(() => vi.unstubAllEnvs());
+beforeEach(() => { vi.stubEnv("APP_ENV", "test"); vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_example"); vi.mocked(getStripe).mockReset(); vi.mocked(createServerSupabase).mockReset(); });
 
 describe("POST /api/stripe/portal", () => {
   it("requires an authenticated billing owner", async () => {

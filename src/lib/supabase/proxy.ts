@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicKey, getSupabaseUrl } from "./env";
 import { getSupabaseAuthCookieName, getSupabaseServerUrl } from "./server-env";
+import { supabaseCookieOptions } from "./cookie-options";
 
 export async function updateSession(request: NextRequest, requestHeaders?: Headers) {
   const headers = requestHeaders ?? new Headers(request.headers);
@@ -12,7 +13,7 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
     return supabaseResponse;
   }
   const supabase = createServerClient(getSupabaseServerUrl(), getSupabasePublicKey(), {
-    cookieOptions: { name: getSupabaseAuthCookieName() },
+    cookieOptions: { ...supabaseCookieOptions(), name: getSupabaseAuthCookieName() },
     cookies: {
       getAll() {
         return request.cookies.getAll();

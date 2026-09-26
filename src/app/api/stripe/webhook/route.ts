@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { trackServerEvent } from "@/lib/analytics-server";
+import { billingEventMatches } from "@/lib/billing-environment";
 
 export const runtime = "nodejs";
 
@@ -70,8 +71,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "INVALID_SIGNATURE" }, { status: 400 });
   }
 
-  const liveKey = /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "");
-  if (event.livemode !== liveKey || (process.env.VERCEL_ENV === "production" && !event.livemode)) {
+  if (!billingEventMatches(event.livemode)) {
     return NextResponse.json({ error: "WEBHOOK_ENVIRONMENT_MISMATCH" }, { status: 400 });
   }
   const { data: marker, error: lookupError } = await admin.from("stripe_events").select("id").eq("id", event.id).maybeSingle();
