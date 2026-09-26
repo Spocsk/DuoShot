@@ -62,7 +62,8 @@ export function MentionsContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Host">
           <p>
-            Vercel Inc. — 440 North Barranca Avenue #4133, Covina, CA 91723, United States. The app also uses
+            Hetzner Online GmbH — Industriestr. 25, 91710 Gunzenhausen, Germany. Application server in Falkenstein, Germany.
+            Host contact: +49 9831 505-0. The app also uses
             subprocessors listed in the{" "}
             <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
               sub-processors
@@ -95,7 +96,8 @@ export function MentionsContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Hébergeur">
         <p>
-          Vercel Inc. — 440 North Barranca Avenue #4133, Covina, CA 91723, États-Unis. Le service s’appuie aussi sur les
+          Hetzner Online GmbH — Industriestr. 25, 91710 Gunzenhausen, Allemagne. Serveur applicatif à Falkenstein, Allemagne.
+          Contact de l’hébergeur : +49 9831 505-0. Le service s’appuie aussi sur les
           sous-traitants listés dans la{" "}
           <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
             liste des sous-traitants
@@ -132,7 +134,7 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Transfers">
           <p>
-            Captures and profile data are stored primarily in Paris (Supabase eu-west-3). Vercel, Stripe, Resend and
+            Captures and profile data are stored primarily in Falkenstein, Germany, on Hetzner infrastructure with self-hosted Supabase. Stripe, Resend and
             Google OAuth may process data in the US under the Data Privacy Framework / SCCs. Mixpanel analytics use an EU project. List:{" "}
             <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
               sub-processors
@@ -182,7 +184,7 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Transferts">
         <p>
-          Captures et profil en primaire à Paris (Supabase eu-west-3). Vercel, Stripe, Resend et Google OAuth peuvent
+          Captures et profils stockés en primaire à Falkenstein, en Allemagne, sur l’infrastructure Hetzner avec Supabase auto-hébergé. Stripe, Resend et Google OAuth peuvent
           traiter aux États-Unis (DPF / CCT). Les données analytiques Mixpanel utilisent un projet UE. Liste :{" "}
           <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
             sous-traitants
@@ -407,8 +409,8 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
     <>
       <p>{locale === "fr" ? `Liste datée : ${POLICY_VERSION}.` : `Dated list: ${POLICY_VERSION}.`}</p>
       <ul className="list-disc pl-5">
-        <li>Supabase — Postgres, Auth, Storage — eu-west-3 (Paris)</li>
-        <li>Vercel — hosting and functions — US/EU</li>
+        <li>{locale === "fr" ? "Hetzner — hébergement de l’application, PostgreSQL, Auth et Storage Supabase auto-hébergés — Falkenstein, Allemagne" : "Hetzner — application hosting and self-hosted Supabase PostgreSQL, Auth and Storage — Falkenstein, Germany"}</li>
+        <li>{locale === "fr" ? "Vercel — enregistrement du domaine et DNS" : "Vercel — domain registration and DNS"}</li>
         <li>Mixpanel — optional product analytics — EU project</li>
         <li>Stripe — payments — US/EU</li>
         <li>Resend — transactional email — US</li>

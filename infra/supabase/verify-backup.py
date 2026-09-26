@@ -22,6 +22,7 @@ with tarfile.open(fileobj=io.BytesIO(plain), mode='r:gz') as tar:
     assert 'volumes/storage' in names
     assert json.load(tar.extractfile('./manifest.json'))['offline'] is True
     dump = tar.extractfile('./postgres.dump').read()
+    counts = json.load(tar.extractfile('./row-counts.json')) if './row-counts.json' in names else None
 print('Backup authenticated; database, roles, Storage and keys present.')
 ssh = ['ssh', '-o', 'BatchMode=yes', '-o', 'UseKeychain=yes', host]
 db = 'duoshot_restore_' + uuid.uuid4().hex[:12]
@@ -46,6 +47,14 @@ try:
     result = command('docker', 'exec', container, 'psql', '-U', 'supabase_admin', '-d', db, '-Atc',
                      "select count(*) from information_schema.tables where table_schema in ('auth','storage');")
     assert result.returncode == 0 and int(result.stdout.strip()) > 0
+    if counts is not None:
+        result = command('docker', 'exec', container, 'psql', '-U', 'supabase_admin', '-d', db, '-Atc',
+                         "select json_build_object('auth_users', (select count(*) from auth.users), 'workspaces', (select count(*) from public.workspaces), 'storage_objects', (select count(*) from storage.objects));")
+        assert result.returncode == 0 and json.loads(result.stdout) == counts
+        result = command('docker', 'exec', container, 'psql', '-U', 'supabase_admin', '-d', db, '-Atc',
+                         "select relrowsecurity from pg_class where oid = 'public.workspaces'::regclass;")
+        assert result.returncode == 0 and result.stdout.strip() == b't'
+        print('Application tables and row counts match; workspace RLS is enabled.')
     print('Actual database restore succeeded; auth/storage schemas verified.')
 finally:
     result = command('docker', 'exec', container, 'dropdb', '-U', 'supabase_admin', db)

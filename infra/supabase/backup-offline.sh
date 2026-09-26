@@ -30,9 +30,15 @@ trap restore_services EXIT
 docker compose stop api-gw auth rest storage >/dev/null
 DUOSHOT_DB="$(docker compose ps -q db)"
 test -n "$DUOSHOT_DB"
-docker exec "$DUOSHOT_DB" pg_dumpall -U postgres --roles-only > "$DUOSHOT_STAGING/roles.sql"
-docker exec "$DUOSHOT_DB" pg_dump -U postgres -Fc postgres > "$DUOSHOT_STAGING/postgres.dump"
-docker exec "$DUOSHOT_DB" pg_dump -U postgres -Fc _supabase > "$DUOSHOT_STAGING/internal.dump"
+docker exec "$DUOSHOT_DB" pg_dumpall -U supabase_admin --roles-only > "$DUOSHOT_STAGING/roles.sql"
+docker exec "$DUOSHOT_DB" pg_dump -U supabase_admin -Fc postgres > "$DUOSHOT_STAGING/postgres.dump"
+docker exec "$DUOSHOT_DB" pg_dump -U supabase_admin -Fc _supabase > "$DUOSHOT_STAGING/internal.dump"
+# Capture a small restore check, without copying any user content into logs.
+docker exec "$DUOSHOT_DB" psql -U supabase_admin -d postgres -Atc \
+  "select json_build_object('auth_users', (select count(*) from auth.users), 'workspaces', (select count(*) from public.workspaces), 'storage_objects', (select count(*) from storage.objects));" \
+  > "$DUOSHOT_STAGING/row-counts.json"
+test -s /data/duoshot/app.env
+cp /data/duoshot/app.env "$DUOSHOT_STAGING/app.env"
 cp docker-compose.yml "$DUOSHOT_STAGING/coolify-compose.yml"
 python3 - "$DUOSHOT_STAGING/manifest.json" <<'PY'
 import datetime, json, sys

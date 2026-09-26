@@ -1,5 +1,5 @@
 export const SPECS_VERSION_DATE = "2026-09-25";
-export const POLICY_VERSION = "2026-09-24";
+export const POLICY_VERSION = "2026-09-26";
 export const MAX_IMAGES = 10;
 export const WARN_MIN_IMAGES = 3;
 export const JPEG_QUALITY = 90;

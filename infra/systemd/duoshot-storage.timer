@@ -1,0 +1,11 @@
+[Unit]
+Description=Remove expired DuoShot files and refund abandoned exports
+
+[Timer]
+OnCalendar=*:0/15
+RandomizedDelaySec=30
+Persistent=true
+Unit=duoshot-maintenance@storage.service
+
+[Install]
+WantedBy=timers.target

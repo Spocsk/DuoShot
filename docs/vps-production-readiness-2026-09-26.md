@@ -1,91 +1,83 @@
 # Production et migration VPS — état au 26 septembre 2026
 
-## Décisions et blocages
+## Décision et état réel
 
-- Décision utilisateur actualisée : **nouveau CX23 exclusivement pour DuoShot**, plutôt que rescale du VPS existant. Conserver Coolify sur l'ancien VPS et lui rattacher le nouveau serveur.
-- Dépense autorisée explicitement à **7,19 € TTC/mois**, sans sauvegardes Hetzner payantes. Serveur créé : `duoshot-prod`, ID Hetzner `167542515`, IPv4 `178.104.185.75`, Falkenstein, CX23 / 2 vCPU / 4 Go / 40 Go. Ubuntu 24.04, IPv6 et pare-feu existant appliqué. Accès SSH par la clé du Mac vérifié.
-- Démarrage avec `RENDER_CONCURRENCY=1`, images construites hors du VPS. Une montée en gamme future reste soumise aux stocks ; ne pas promettre un upgrade immédiat.
-- La stack Supabase complète documente 4 Go / 2 CPU / 40 Go comme minimum pour elle seule, et recommande 8 Go ou plus. Valider une stack réduite aux services utilisés et sa marge mémoire avec DuoShot avant migration ; conserver Supabase Cloud pendant la préparation. Les objectifs de charge restent à vérifier, pas garantis sur CX23.
-- Réutiliser Coolify et son proxy ; préserver tous les projets existants.
-- Aucune migration de données ni bascule DNS exécutée. Les alternatives ci-dessous sont conservées pour référence ; le CPX42 n'est pas retenu.
-- Rattachement Coolify effectué et validation terminée. La clé administrateur existante est autorisée uniquement depuis l’IP de l’ancien VPS. Serveur Coolify `tm1ijjnpf2jnm68prtkezgav`. Projet `DuoShot` créé (`a31oimznlhul8pxbpfbtjerr`).
-- Les disponibilités de nouveaux CX43 à Falkenstein/Helsinki ne sont PAS confirmées. L'affichage d'une ligne tarifaire ne prouve pas sa disponibilité.
+Nouveau **CX23 dédié à DuoShot**, autorisé à **7,19 € TTC/mois** (serveur + IPv4), sans sauvegardes Hetzner payantes. Le VPS existant conserve Coolify et ses autres projets.
 
-## Alternatives budgétaires
+- Hetzner : `duoshot-prod`, ID `167542515`, Falkenstein, IPv4 `178.104.185.75`, 2 vCPU partagés, 4 Go RAM, 40 Go disque.
+- Coolify : serveur `tm1ijjnpf2jnm68prtkezgav`, projet `a31oimznlhul8pxbpfbtjerr`, environnement production `x1jgceugvx4nelbottfuxk8f`.
+- Site et Supabase **déployés en accès privé**. Aucun compte ou fichier de l'ancienne production importé ; aucune bascule DNS ni résiliation.
+- Le domaine reste enregistré chez Vercel. Les enregistrements DNS seront modifiés à la bascule validée ; un transfert de registrar n'est pas requis pour héberger ailleurs.
+- Un upgrade futur dépend des disponibilités. Le CX23 n'est pas une garantie de débit ; la capacité doit être mesurée avec les rendus réels.
 
-Tarifs consultés le 26 septembre, avec TVA française à 20 %. Vérifier le panier avant tout achat.
+## Nouveau serveur et services
 
-| Option | Prix affiché | Limite / conséquence |
-| --- | --- | --- |
-| Hetzner CX43, 8 vCPU / 16 Go / 160 Go | 19,19 €/mois serveur, +0,60 € IPv4 | Nouveau serveur dans une autre région si disponible ; sauvegardes en supplément. |
-| Hetzner CX33, 4 vCPU / 8 Go / 80 Go | 10,19 €/mois serveur, +0,60 € IPv4 | Candidat pour une migration progressive ; capacité complète DuoShot + Supabase à mesurer. |
-| Hetzner CAX31, ARM, 16 Go | 25,19 €/mois serveur | Pas de rescale depuis x86 ; compatibilité de toutes les images à vérifier. |
-| OVH VPS-3, 6 vCores / 12 Go / 100 Go | À partir de 12,48 € TTC/mois | Lien commercial configuré avec `pricing=upfront12` ; tarif mensuel sans engagement et disponibilité non validés. |
-| OVH VPS-4, 8 vCores / 24 Go / 200 Go | À partir de 23,95 € TTC/mois | Même réserve sur les conditions tarifaires ; candidat pour regrouper les projets après tests. |
+Ubuntu 24.04 mis à jour, redémarrage effectué, noyau `6.8.0-142-generic`. Docker 29.8.1 et Compose 5.5.1 depuis le dépôt officiel. Swap de secours 2 Gio, swappiness 10 ; logs Docker `local` limités à 10 Mo × 3.
 
-Un second serveur s'ajoute à la facture actuelle. Un remplacement nécessite la migration vérifiée de tous les services avant toute résiliation. Les vCPU ne constituent pas une garantie de débit de rendu ; les tests de charge restent obligatoires.
+SSH par clés uniquement, nouvelle connexion vérifiée. Clé d'administration Coolify limitée à l'IP de l'ancien VPS. Le hook cloud-init traitait certains veth Docker comme de vraies interfaces réseau ; garde ajoutée pour les interfaces virtuelles. Aucun zombie observé sur le nouveau VPS.
 
-Sources :
-- https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/
-- https://docs.hetzner.com/cloud/servers/faq/
-- https://www.ovhcloud.com/fr/vps/
-- https://coolify.io/docs/core/infrastructure/servers/overview
+| Ressource | Configuration active |
+| --- | --- |
+| `duoshot-supabase`, `5if8qfnj7o1bi2lrd3nbncff` | PostgreSQL, Auth, PostgREST, Storage et Envoy ; cinq services sains ; API sur 127.0.0.1:8000 uniquement, aucun port PostgreSQL public. |
+| `duoshot-web`, `i9qtpe5bpyig86s1aljxr5gv` | Next standalone, Node 24 non privilégié ; 127.0.0.1:3000 uniquement ; 1 536 Mio RAM, 256 PID, heap Node 512 Mio, un rendu actif. |
+| Maintenance systemd | Storage toutes les 15 minutes ; effacement analytics chaque jour à 04:00 UTC. Deux exécutions manuelles réussies. Une file vide ne valide pas les identifiants Mixpanel GDPR. |
 
-## Nouveau VPS dédié — préparation effectuée
+Supabase réduit est basé sur la distribution officielle `self-hosted/v0.8.2`. Données et clés persistent sous `/data/duoshot/supabase`; secrets root-only. Schéma applicatif et retrait des anciennes RPC appliqués sur la cible neuve. Inscriptions publiques désactivées ; SMTP et Google OAuth non configurés. La stack Supabase complète recommande davantage de RAM ; seuls les services nécessaires sont lancés ici.
 
-- Démarrage et accès SSH validés. Aucun service système en échec ni zombie observé lors du premier contrôle.
-- Mises à jour Ubuntu installées ; redémarrage et reconnexion SSH vérifiés. Noyau actif `6.8.0-142-generic`, aucun service en échec, pas de redémarrage supplémentaire requis.
-- Docker Engine 29.8.1 et Compose 5.5.1 installés via le dépôt officiel Docker.
-- Swap de secours 2 Gio, swappiness 10 ; elle ne remplace pas la RAM nécessaire aux rendus.
-- Logs Docker limités par défaut avec le pilote `local` : 10 Mo × 3 fichiers par conteneur.
-- Test `docker run --rm hello-world` réussi après redémarrage ; environ 3,3 Gio de RAM disponibles, swap inutilisée au repos.
-- Proxy et Sentinel Coolify sains. Supabase officiel `self-hosted/v0.8.2` installé dans `/data/duoshot/supabase` : PostgreSQL, Auth, PostgREST, Storage et Envoy. Les cinq services sont sains après leur reprise par Coolify et le test de 60 Mio a été répété avec succès. API limitée à `127.0.0.1:8000`, PostgreSQL sans port public ; inscriptions désactivées.
-- Test réel réussi : upload privé de 60 Mio, URL signée, téléchargement vérifié par SHA-256, accès anonymes refusés, suppression des seuls objets synthétiques. Environ 270 Mio pour Supabase au repos et 2,9 Gio disponibles sur le VPS ; aucun test de rendu en charge à ce stade.
-- Ressource Coolify `duoshot-supabase` créée (`5if8qfnj7o1bi2lrd3nbncff`), reprise des mêmes données et clés vérifiée. Les secrets restent dans des fichiers root-only sur le nouveau VPS.
-- Première sauvegarde chiffrée age créée, copiée sur le Mac et dump restauré dans une base temporaire avec succès ; automatisation hors hôte et validation applicative complète après restauration encore à faire. La clé privée de déchiffrement reste sur le Mac.
-- Migration des comptes en attente de la connexion PostgreSQL source. Fichier privé demandé sur le Mac : `~/.config/duoshot/source-database-url`. Ne pas le committer. SMTP et OAuth restent à configurer.
+Image privée actuellement déployée : `ghcr.io/spocsk/duoshot:cb14b4b67f1b65b10b3bc6635cf9eb52e3ee01ad`.
 
-## Audit de l'ancien VPS hébergeant Coolify
+## Corrections et validation
 
-- Ubuntu 24.04.4, noyau 6.8.0-110-generic, redémarrage requis.
-- Environ 3,7 Gio RAM, 2,5 Gio utilisés ; swap 1,9/2 Gio, sans échange actif observé pendant la mesure.
-- Racine : environ 9,7 Go libres ; volume supplémentaire de 15 Go presque vide.
-- 22 conteneurs en fonctionnement : Coolify, Traefik, Postiz, n8n, Umami, applications et bases associées.
-- Trois processus Node zombies observés ; ne pas tuer arbitrairement leurs parents.
-- `cloud-init-hotplugd` en échec : exception de détection des métadonnées dans son journal. Cause et remédiation encore à vérifier.
-- Index APT rafraîchis avec succès. Aucune mise à niveau des paquets, suppression Docker ou opération de redémarrage exécutée.
-- Sauvegarde cohérente et restauration à vérifier avant maintenance. Le simple inventaire du dossier Coolify ne prouve pas l'existence d'une sauvegarde exploitable.
+- Limites de sources, lots, pixels et ZIP : 50 Mio/source, 200 Mio/lot, 40 MP/source et intermédiaire, 100 Mio/ZIP. Validation des chemins propriétaires et métadonnées réelles.
+- Attente des traitements en cours avant nettoyage sur erreur ; remboursements d'export idempotents.
+- Images intermédiaires en mémoire brute : évite deux encodages PNG par rendu. Comparaison exacte des pixels réussie sur 12 combinaisons transparence/EXIF, cadrage et format. Test permanent contre la régression de prémultiplication alpha.
+- Fontconfig et polices embarquées dans l'image ; fallback SVG vérifié.
+- URL Supabase interne pour les services, identité du cookie public préservée, URL signées réécrites vers l'API publique prévue.
+- Envoy : suppression du timeout fixe de 30 secondes pour Storage, délai d'inactivité 120 s et durée maximale 600 s ; query strings et Referer retirés des logs pour ne pas journaliser les tokens signés.
+- SEO : langue HTML FR/EN, canonicals/sitemap du domaine final et noindex sur outil, compte et reviews. Voir [audit SEO/GEO](seo-geo-vps-2026-09-26.md). Le domaine public actuel conserve les anciennes erreurs jusqu'à la bascule.
+- Retrait de Vercel Web Analytics. Analytics métier soumis au consentement ; erreurs de livraison Mixpanel détectées.
 
-## Corrections locales préparées, non déployées
+195 tests unitaires, TypeScript et lint réussis localement. CI applicative `36262616975` et image `36262613894` réussies pour `cb14b4b`. La CI précédente a également validé les 64 tests Cypress. Le contrôle Vercel de la PR échoue sur les limites de cron Hobby ; il ne représente pas le déploiement VPS.
 
-- Dockerfile Node 24 / Next standalone, utilisateur non privilégié et endpoint de santé.
-- Workflow `.github/workflows/container.yml` préparé (manuel ou push de la branche de migration) pour construire l'image Linux amd64 dans GitHub Actions et la publier sur GHCR avec le SHA du commit. Variables publiques de build configurées dans GitHub, dont `https://api.duoshot.site` pour la future API ; aucun secret serveur dans les arguments de build. Export Docker temporaire conservé un jour pour transférer l’image sans clé de registre persistante sur le VPS. Première image construite avec succès dans GitHub Actions (run `36259182433`), publication GHCR et export Docker réussis ; validation de la dernière révision en cours.
-- Suppression du fallback Supabase Cloud codé en dur et de Vercel Web Analytics.
-- Layouts racines FR/EN distincts pour corriger la langue HTML sans rendre les pages publiques dynamiques.
-- Validation stricte des rendus, chemins possédés par l'utilisateur, couleurs, dimensions et tailles ; sources dédupliquées et vérifiées avant traitement.
-- Limites : 50 Mio/source, 200 Mio/lot, 40 mégapixels/image, 100 Mio/ZIP.
-- Réduction des copies mémoire et de la concurrence des rendus ; attente de la fin des travaux en cours avant nettoyage sur erreur.
-- Accès Supabase serveur par URL Docker interne avec conservation de l’identité du cookie public et réécriture des URL signées vers HTTPS. Le navigateur conserve l’URL publique.
-- Garde provisoire d'un rendu actif par processus Node sur CX23, configurable à deux après mesures. **Ce n'est pas la file PostgreSQL durable prévue**, ni une limite globale entre plusieurs réplicas.
-- Meilleure détection des erreurs d'envoi Mixpanel ; scripts de contrôle des variables et de maintenance.
-- Vitest mis à jour ; audit npm sans vulnérabilité lors du contrôle.
+## Tests réels sur la cible privée
 
-Validation : 190 tests unitaires réussis, lint et `git diff --check` réussis. Build final réussi après ajout du contrôle de concurrence et passage à un rendu par défaut ; les 3 tests de contrôle de concurrence repassent. Les 35 tests Cypress ciblés ont réussi avant cet ajout. Image Docker non construite (Docker local indisponible). Aucun test de charge réel de production effectué.
+1. Upload privé de 60 Mio, URL signée, téléchargement SHA-256 identique, accès anonyme refusé, objets synthétiques supprimés.
+2. Trente téléchargements simultanés à froid de l'exemple : 30/30 réussis, ZIP CRC valide, 5,6–5,8 s. Ce test mesure le cache partagé de l'exemple, pas trente rendus personnalisés.
+3. Compte gratuit : vingt images HD dans un ZIP de 43 Mo ; archive entièrement téléchargée et CRC vérifié. Récupération du téléchargement sans consommer un essai supplémentaire.
+4. Isolation : téléchargement anonyme 401, autre utilisateur 404, sources d'un autre utilisateur 403. Review publique accessible, révocation réservée au propriétaire, médias devenus 410 après révocation.
+5. Mesure avant optimisation (`3376a1e`) : vingt images en 42,6 s ; 5 rendus personnalisés simultanés réussis, P95 28,3 s. À 15 utilisateurs, 9 réussites et 6 rejets `RENDER_BUSY` après expiration de l'attente. Pic mémoire application 598 Mio, aucun OOM/redémarrage, swap inutilisée. Santé HTTP : 80 contrôles sans erreur, P95 95 ms.
+6. Après optimisation (`cb14b4b`) : vingt images en 19,0 s (55 % plus rapide). 5/5 utilisateurs, P95 14,4 s ; 15/15, P95 36,1 s ; 30 utilisateurs : 20 réussites et 10 rejets `RENDER_BUSY`. Palier 50 non exécuté après cet échec. Pic mémoire 488 Mio, aucun OOM/redémarrage, 80 sondes de santé sans erreur (P95 79 ms). Les 51 comptes synthétiques et leurs fichiers ont été nettoyés.
 
-## Travail restant avant ouverture
+Le générateur de charge s'exécute dans un conteneur séparé sur le même VPS, avec authentification réelle, upload, rendu et vérification CRC. Il partage donc le CPU du serveur. Les comptes, workspaces et fichiers synthétiques sont nettoyés. Le harnais refuse toute cible contenant déjà des utilisateurs et nécessite une activation explicite. Les premiers essais depuis le Mac étaient biaisés par le tunnel réseau ; ils ne servent pas à conclure sur la capacité CPU du serveur.
 
-1. Rattachement du CX23 à Coolify terminé ; vérifier le déploiement de la ressource Supabase et les sauvegardes/restaurations avant migration et maintenance.
-2. Préparer l'image Linux dans CI, configurer Coolify, les limites mémoire et les sauvegardes externes chiffrées.
-3. Implémenter la file durable PostgreSQL et le worker : admission, un travail global au démarrage sur CX23 (deux après mesures), reprise, leases, idempotence, remboursement unique, statut récupérable côté client.
-4. Migrer Supabase avec utilisateurs/Auth/UUID/données et fichiers Storage séparément ; vérifier les politiques privées et les liens de review.
-5. Vérifier Stripe **live** : seul le compte de test est accessible via le connecteur ; la production précédemment inspectée n'avait pas de webhook configuré. Ne pas déclarer les paiements opérationnels.
-6. Vérifier les événements métier Mixpanel réels et créer les rapports. Actuellement seuls l'événement d'instrumentation et les événements de session sont visibles dans le projet.
-7. Vérifier SEO/GEO sur le domaine final : les corrections locales ne corrigent pas le déploiement Vercel actuel tant qu'elles ne sont pas publiées.
-8. Tester uploads, ZIP complets, reviews et abonnements ; charge progressive jusqu'à 30 utilisateurs puis pic de 50, mesure mémoire/latence/erreurs et absence de perte.
-9. Maintenance et synchronisation finale, bascule DNS, contrôles de production et procédure de retour arrière compatible avec les nouvelles écritures.
+**La file PostgreSQL durable reste à implémenter.** Le sémaphore actuel protège la mémoire d'un processus, mais perd l'attente au redémarrage et rejette après 45 secondes. Il ne constitue ni une file persistante ni une limite globale multi-réplicas. L'objectif de plusieurs dizaines de rendus lourds simultanés n'est pas encore validé.
 
-Le domaine reste chez Vercel ; sa gestion DNS sera modifiée uniquement à la bascule validée. Ne pas résilier les services existants avant validation des remplacements.
+## Sauvegarde et restauration
 
-## Livraison en cours
+Sauvegarde cohérente hors ligne : arrêt temporaire du web puis des services d'écriture Supabase, dumps PostgreSQL et rôles, Storage, clés, configuration API et application ; redémarrage garanti par trap. Chiffrement age, clé privée conservée uniquement sur le Mac.
 
-PR de préparation : https://github.com/Spocsk/DuoShot/pull/5 (draft, non fusionnée). Le contrôle Vercel de cette branche échoue sur les limites de cron Hobby ; il ne constitue pas un échec de l’image VPS. Le harnais Cypress a été adapté pour dériver le cookie du projet Supabase configuré, au lieu de coder le projet Cloud en dur.
+- Dernière archive : `20260926T182816Z.tar.gz.age`, présente sur le VPS et copiée dans `~/.config/duoshot/backups/` sur le Mac.
+- Déchiffrement et restauration réelle dans une base temporaire réussis, tables Auth/Storage/application, nombres de lignes et activation RLS workspace vérifiés. Base temporaire supprimée ensuite.
+- Cette vérification utilise `--no-owner --no-privileges` : elle ne valide pas à elle seule une restauration complète des rôles, droits, objets Storage et parcours utilisateur.
+- Sauvegardes automatiques hors hôte avec rétention, alerte et exercice de reprise complet encore nécessaires. Les timers de maintenance ne sont pas des sauvegardes.
+
+## Mixpanel et Stripe
+
+Mixpanel EU est accessible. Projet `4067310`, workspace `4563765`. Pages vues et engagements reçus. Les événements serveur `export_succeeded` et `review_created` ont été reçus après les parcours réels du harnais sur des comptes synthétiques explicitement classés internes et consentants. Parcours navigateur complet et paiement encore à vérifier. Board préparé : [DuoShot — activation, paiements et reviews](https://eu.mixpanel.com/project/4067310/app/boards#id=11550070). Trois funnels avec audience externe uniquement : activation/téléchargement, checkout/abonnement actif, demande/création de review. Une valeur vide n'est pas une preuve d'absence de conversion ; seuls les utilisateurs consentants sont mesurés.
+
+Stripe : le connecteur expose uniquement **Tech Master en mode test** (`acct_1UExSRClApGnRrWt`). Aucun compte DuoShot live accessible ; aucun paiement réel exécuté. Checkout et live restent désactivés sur le VPS. Vérifier compte live, produits/prix, webhook signé, abonnements et portail avant activation.
+
+## Ancien VPS hébergeant Coolify
+
+Ubuntu 24.04.4, noyau 6.8.0-110, redémarrage requis ; 22 conteneurs. Environ 2,5/3,7 Gio RAM utilisés, swap 1,9/2 Gio, racine 9,7 Go libres ; volume 15 Go presque vide. Trois zombies Node et échec cloud-init-hotplugd observés. Index APT rafraîchis ; aucune mise à niveau, suppression Docker ou relance des projets existants effectuée. Prévoir sauvegarde/restauration vérifiée et maintenance avant redémarrage. Ne pas tuer arbitrairement les parents des zombies.
+
+## Étapes avant ouverture
+
+1. Finaliser capacité : file persistante, admission/idempotence, reprise après crash, remboursement unique, état récupérable côté client ; tests 30 utilisateurs puis pic de 50 avec plusieurs tailles de lots.
+2. Automatiser et vérifier les sauvegardes hors hôte ; migration Supabase des UUID/comptes/mots de passe/données et fichiers Storage séparément.
+3. **Accès source manquant** : fournir la connexion PostgreSQL source dans le fichier privé `~/.config/duoshot/source-database-url`, jamais dans le dépôt ou les logs. Configurer SMTP et Google OAuth.
+4. Donner accès au compte Stripe production DuoShot ; valider un parcours réel autorisé et le webhook avant ouverture des paiements.
+5. Vérifier la réception du funnel complet Mixpanel après consentement et le retrait du consentement. Renseigner l'identité légale réelle de l'éditeur avant publication.
+6. Synchronisation finale, bascule DNS/HTTPS, contrôles de production, retour arrière compatible avec les écritures nouvelles. Conserver Vercel et Supabase Cloud tant que le remplacement n'est pas validé.
+
+PR draft : https://github.com/Spocsk/DuoShot/pull/5, non fusionnée.
