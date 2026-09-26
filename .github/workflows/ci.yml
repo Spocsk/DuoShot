@@ -27,6 +27,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - run: python3 -m unittest discover -s infra/supabase -p 'test_*.py'
 
   e2e:
     runs-on: ubuntu-latest

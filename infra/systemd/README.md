@@ -42,3 +42,31 @@ before stopping Supabase writes. Restart the worker with the web after maintenan
 Rollback: stop admission (`RENDER_QUEUE_ENABLED=false`) only after draining all
 queued/running jobs, then stop the worker. Keep the queue schema and metadata
 until existing results have expired; do not drop it while requests remain.
+
+Status requests verify the JWT with Supabase `getClaims()` and cached signing
+keys, then query through the user's RLS-scoped client. They do not trust a decoded
+session object. The proxy skips its redundant Auth round-trip for this route;
+other authenticated routes are unchanged. See the [Supabase getClaims reference](https://supabase.com/docs/reference/javascript/auth-getclaims).
+
+## Encrypted off-host backups
+
+`duoshot-backup.timer` checks hourly from 03:00 to 23:00 UTC. A successful copy
+for the current UTC day suppresses further runs; active render jobs defer it to
+the next tick. The backup briefly stops the private web/API while making a
+consistent dump/archive, then restarts them **before** copying the ciphertext.
+This is a maintenance backup, not a zero-downtime backup.
+
+The destination is the existing volume on the old VPS:
+`/mnt/HC_Volume_106838029/duoshot-backups`. The sender uses a dedicated root-only
+key. Its authorized_keys entry permits only the receiver script, only from the
+DuoShot VPS IP, and forbids forwarding and interactive shells. The receiver
+checks the age header, exact byte count and SHA-256 before atomic publication.
+It preserves at least 2 GiB of free space and rejects archives larger than 5 GiB.
+Seven verified timestamped archives are retained on each host. Failed copies
+do not advance the success marker or delete existing archives.
+
+Observe failures with `systemctl status duoshot-backup.service` and the journal;
+no external alert destination is configured yet. Inspect capacity before the
+archive approaches the receiver limit. The decryption key stays on the Mac;
+after disaster recovery, reapply account/file erasures before reopening access.
+Test the full service and an off-host restore before enabling the timer.

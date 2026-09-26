@@ -39,6 +39,9 @@ docker exec "$DUOSHOT_DB" psql -U supabase_admin -d postgres -Atc \
   > "$DUOSHOT_STAGING/row-counts.json"
 test -s /data/duoshot/app.env
 cp /data/duoshot/app.env "$DUOSHOT_STAGING/app.env"
+cp /data/coolify/services/i9qtpe5bpyig86s1aljxr5gv/docker-compose.yml "$DUOSHOT_STAGING/web-compose.yml"
+mkdir "$DUOSHOT_STAGING/systemd"
+cp /etc/systemd/system/duoshot-*.service /etc/systemd/system/duoshot-*.timer "$DUOSHOT_STAGING/systemd/"
 cp docker-compose.yml "$DUOSHOT_STAGING/coolify-compose.yml"
 python3 - "$DUOSHOT_STAGING/manifest.json" <<'PY'
 import datetime, json, sys

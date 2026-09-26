@@ -24,7 +24,9 @@ SSH par clés uniquement, nouvelle connexion vérifiée. Clé d'administration C
 
 Supabase réduit est basé sur la distribution officielle `self-hosted/v0.8.2`. Données et clés persistent sous `/data/duoshot/supabase`; secrets root-only. Schéma applicatif et retrait des anciennes RPC appliqués sur la cible neuve. Inscriptions publiques désactivées ; SMTP et Google OAuth non configurés. La stack Supabase complète recommande davantage de RAM ; seuls les services nécessaires sont lancés ici.
 
-Image privée actuellement déployée : `ghcr.io/spocsk/duoshot:cb14b4b67f1b65b10b3bc6635cf9eb52e3ee01ad`.
+Contrôle après sauvegarde : huit conteneurs sains, aucun service systemd en échec, zéro zombie, 28 Go libres sur la racine et swap inutilisée. Comptes, workspaces, travaux et objets Storage synthétiques : tous supprimés.
+
+Image applicative validée en charge : `ghcr.io/spocsk/duoshot:3a0570ff57ed111c4dac778d55f02856db51e71b`.
 
 ## Corrections et validation
 
@@ -37,7 +39,7 @@ Image privée actuellement déployée : `ghcr.io/spocsk/duoshot:cb14b4b67f1b65b1
 - SEO : langue HTML FR/EN, canonicals/sitemap du domaine final et noindex sur outil, compte et reviews. Voir [audit SEO/GEO](seo-geo-vps-2026-09-26.md). Le domaine public actuel conserve les anciennes erreurs jusqu'à la bascule.
 - Retrait de Vercel Web Analytics. Analytics métier soumis au consentement ; erreurs de livraison Mixpanel détectées.
 
-195 tests unitaires, TypeScript et lint réussis localement. CI applicative `36262616975` et image `36262613894` réussies pour `cb14b4b`. La CI précédente a également validé les 64 tests Cypress. Le contrôle Vercel de la PR échoue sur les limites de cron Hobby ; il ne représente pas le déploiement VPS.
+212 tests unitaires, TypeScript et lint réussis. CI applicative `36264877740` et image `36264875329` réussies pour `3a0570f`, avec 65 tests Cypress dont la récupération après rechargement sans nouvelle soumission. Le contrôle Vercel de la PR échoue sur les limites de cron Hobby ; il ne représente pas le déploiement VPS.
 
 ## Tests réels sur la cible privée
 
@@ -50,16 +52,28 @@ Image privée actuellement déployée : `ghcr.io/spocsk/duoshot:cb14b4b67f1b65b1
 
 Le générateur de charge s'exécute dans un conteneur séparé sur le même VPS, avec authentification réelle, upload, rendu et vérification CRC. Il partage donc le CPU du serveur. Les comptes, workspaces et fichiers synthétiques sont nettoyés. Le harnais refuse toute cible contenant déjà des utilisateurs et nécessite une activation explicite. Les premiers essais depuis le Mac étaient biaisés par le tunnel réseau ; ils ne servent pas à conclure sur la capacité CPU du serveur.
 
-**La file PostgreSQL durable reste à implémenter.** Le sémaphore actuel protège la mémoire d'un processus, mais perd l'attente au redémarrage et rejette après 45 secondes. Il ne constitue ni une file persistante ni une limite globale multi-réplicas. L'objectif de plusieurs dizaines de rendus lourds simultanés n'est pas encore validé.
+La file PostgreSQL durable est désormais implémentée et activée sur le VPS privé : admission bornée à 51 travaux, un par utilisateur, lease globale d'un traitement, trois tentatives maximum après interruption, clé de demande idempotente, quota/metadata/résultat validés dans une transaction. Le navigateur retrouve le statut après rechargement. Tests PostgreSQL réels : isolation RLS, limites, tokens de lease obsolètes, remboursement unique, reprise et révocation de reviews partielles.
+
+Premier test avec la file (`43206d3`), clients interrogeant leur statut chaque seconde : 5/5, 15/15, 30/30 et 50/50 réussis ; P95 de réception des demandes 1,9 / 2,8 / 5,5 / 5,4 s. Fin des rendus P95 24,9 / 75,1 / 185,4 / 330,1 s. Aucun rendu perdu, mais les lectures intensives d'authentification et de statut chargent le CPU. La version finale réduit ce coût : vérification JWT par JWKS cache, suppression du double contrôle dans le proxy et polling espacé pendant l'attente. Mesures finales sur `3a0570f`, avec uploads concurrents puis traitement :
+
+| Charge | Résultat | Réception P95 | Rendu P95 | Durée du lot |
+| --- | --- | --- | --- | --- |
+| 50 utilisateurs × 1 paire, 100 images HD | 50/50 succès | 8,3 s | 134,7 s | 143,1 s |
+| 30 utilisateurs × 3 paires, 180 images HD | 30/30 succès | 4,7 s | 188,0 s | 197,9 s |
+
+Les jobs sont traités progressivement, pas tous en parallèle sur les deux vCPU. Les sondes HTTP du second lot : 189 requêtes, zéro erreur, P95 143 ms. Pic mémoire application sur ces tests : 721 Mio, aucun OOM ni redémarrage non demandé. Les ZIP sont téléchargés intégralement et leur CRC est vérifié ; tous les comptes et objets de test sont nettoyés. Interruption réelle validée : redémarrage du conteneur web pendant un rendu de vingt images ; reprise à la deuxième tentative, résultat en 111,9 s après expiration du lease, ZIP 43 Mo vérifié et un seul essai consommé. Le rejeu de la même demande ne crée aucun export supplémentaire. Les objets synthétiques ont été supprimés.
 
 ## Sauvegarde et restauration
 
 Sauvegarde cohérente hors ligne : arrêt temporaire du web puis des services d'écriture Supabase, dumps PostgreSQL et rôles, Storage, clés, configuration API et application ; redémarrage garanti par trap. Chiffrement age, clé privée conservée uniquement sur le Mac.
 
-- Dernière archive : `20260926T182816Z.tar.gz.age`, présente sur le VPS et copiée dans `~/.config/duoshot/backups/` sur le Mac.
+- Dernière archive vérifiée : `20260926T192655Z.tar.gz.age`, copiée chiffrée sur le volume de l’ancien VPS. Cette copie hors hôte a été rapatriée dans `~/.config/duoshot/backups/` sur le Mac pour vérifier sa restauration.
 - Déchiffrement et restauration réelle dans une base temporaire réussis, tables Auth/Storage/application, nombres de lignes et activation RLS workspace vérifiés. Base temporaire supprimée ensuite.
 - Cette vérification utilise `--no-owner --no-privileges` : elle ne valide pas à elle seule une restauration complète des rôles, droits, objets Storage et parcours utilisateur.
-- Sauvegardes automatiques hors hôte avec rétention, alerte et exercice de reprise complet encore nécessaires. Les timers de maintenance ne sont pas des sauvegardes.
+- Service automatique exécuté avec succès puis timer activé : une copie réussie par jour UTC, première tentative à 03:00 UTC, nouvelles tentatives horaires jusqu’à 23:00 si des rendus sont en attente. Brève interruption du web et des services d’écriture pendant la capture cohérente ; ce n’est pas une sauvegarde sans interruption.
+- Sept dernières copies vérifiées conservées sur chaque VPS. Réception par clé SSH dédiée, limitée à l’IP DuoShot et à une commande de réception ; taille exacte, SHA-256 et publication atomique vérifiés. Une commande arbitraire via cette clé a été refusée.
+- Aucun nouveau stockage payant : destination sur le volume existant de 15 Go de l’ancien VPS. Limite de réception 5 Gio par archive et réserve libre de 2 Gio ; surveiller la capacité avant croissance. Les journaux signalent les échecs, mais aucune alerte externe n’est encore configurée.
+- Exercice de reprise complet des rôles/droits/Storage et parcours utilisateur encore nécessaire. Réappliquer les effacements intervenus après une sauvegarde avant de rouvrir une restauration. La clé de déchiffrement reste uniquement sur le Mac.
 
 ## Mixpanel et Stripe
 
@@ -69,12 +83,12 @@ Stripe : le connecteur expose uniquement **Tech Master en mode test** (`acct_1UE
 
 ## Ancien VPS hébergeant Coolify
 
-Ubuntu 24.04.4, noyau 6.8.0-110, redémarrage requis ; 22 conteneurs. Environ 2,5/3,7 Gio RAM utilisés, swap 1,9/2 Gio, racine 9,7 Go libres ; volume 15 Go presque vide. Trois zombies Node et échec cloud-init-hotplugd observés. Index APT rafraîchis ; aucune mise à niveau, suppression Docker ou relance des projets existants effectuée. Prévoir sauvegarde/restauration vérifiée et maintenance avant redémarrage. Ne pas tuer arbitrairement les parents des zombies.
+Ubuntu 24.04.4, noyau 6.8.0-110, redémarrage requis ; 22 conteneurs. Environ 2,5/3,7 Gio RAM utilisés, swap 1,9/2 Gio, racine 9,7 Go libres ; volume 15 Go presque vide. Trois zombies Node identifiés dans Umami (`umami-e107qp3wextcfcnfrubwefxr`), Postiz (`postiz-lms7f1jnmyafctfz8ufqud7q`) et l’application `cstkfox601t5jg25qir3wk9u-202909693424` ; échec cloud-init-hotplugd également observé. Index APT rafraîchis ; aucune mise à niveau, suppression Docker ou relance des projets existants effectuée. Prévoir sauvegarde/restauration vérifiée des autres projets et maintenance avant redémarrage. Le sudo non interactif de la connexion SSH n’est pas disponible ; ne pas interrompre leurs conteneurs pour trois zombies sans préparer leur maintenance. Ne pas tuer arbitrairement les parents des zombies.
 
 ## Étapes avant ouverture
 
-1. Finaliser capacité : file persistante, admission/idempotence, reprise après crash, remboursement unique, état récupérable côté client ; tests 30 utilisateurs puis pic de 50 avec plusieurs tailles de lots.
-2. Automatiser et vérifier les sauvegardes hors hôte ; migration Supabase des UUID/comptes/mots de passe/données et fichiers Storage séparément.
+1. Charge réelle 30/50 et reprise après interruption validées dans les scénarios ci-dessus. Prévoir les seuils de capacité disque et les alertes avant ouverture : ces tests ne garantissent pas un nombre illimité de lots maximum.
+2. Sauvegarde automatique hors hôte et restauration logique vérifiées. Préparer les alertes et la reprise complète ; migrer les UUID/comptes/mots de passe/données et les fichiers Storage séparément.
 3. **Accès source manquant** : fournir la connexion PostgreSQL source dans le fichier privé `~/.config/duoshot/source-database-url`, jamais dans le dépôt ou les logs. Configurer SMTP et Google OAuth.
 4. Donner accès au compte Stripe production DuoShot ; valider un parcours réel autorisé et le webhook avant ouverture des paiements.
 5. Vérifier la réception du funnel complet Mixpanel après consentement et le retrait du consentement. Renseigner l'identité légale réelle de l'éditeur avant publication.

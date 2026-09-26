@@ -144,7 +144,7 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Retention">
           <p>
-            Sources and ZIP files expire after 24 hours; review media after 7 days or revocation. Physical deletion is scheduled every 15 minutes and retried after failures. Local browser drafts remain on your device until you remove them. Account rows remain until you delete the account. Analytics events follow the Mixpanel
+            Sources and ZIP files expire after 24 hours; review media after 7 days or revocation. Physical deletion from active storage is scheduled every 15 minutes and retried after failures. Encrypted recovery backups retain the seven most recent successful copies; deleted data can remain in those isolated backups until rotation. Local browser drafts remain on your device until you remove them. Account rows remain until you delete the account. Analytics events follow the Mixpanel
             project retention setting and can be deleted upon request. Stripe keeps billing records as required by law.
           </p>
         </Block>
@@ -194,7 +194,7 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Durées">
         <p>
-          Sources et ZIP expirent après 24 h ; médias de revue après 7 jours ou révocation. La suppression physique est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les brouillons locaux restent sur votre appareil jusqu’à leur suppression. Lignes de compte jusqu’à suppression. Les événements analytiques suivent la durée configurée
+          Sources et ZIP expirent après 24 h ; médias de revue après 7 jours ou révocation. La suppression physique du stockage actif est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les sauvegardes chiffrées de reprise conservent les sept dernières copies réussies ; des données supprimées peuvent subsister dans ces copies isolées jusqu’à leur rotation. Les brouillons locaux restent sur votre appareil jusqu’à leur suppression. Lignes de compte jusqu’à suppression. Les événements analytiques suivent la durée configurée
           dans le projet Mixpanel et peuvent être effacés sur demande. Stripe conserve la facturation selon la loi.
         </p>
       </Block>

@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily DuoShot backup, retry hourly if renders were active
+
+[Timer]
+OnCalendar=*-*-* 03..23:00:00 UTC
+RandomizedDelaySec=120
+Persistent=true
+Unit=duoshot-backup.service
+
+[Install]
+WantedBy=timers.target
