@@ -129,7 +129,7 @@ describe("POST /api/stripe/webhook", () => {
     expect(insert).toHaveBeenCalled();
   });
   it("rejects test events at a production endpoint", async () => {
-    const {update,insert}=setup("active");vi.stubEnv("VERCEL_ENV","production");
+    const {update,insert}=setup("active");vi.stubEnv("VERCEL_ENV","");vi.stubEnv("APP_ENV","production");
     expect((await POST(request("valid"))).status).toBe(400);
     expect(update).not.toHaveBeenCalled();expect(insert).not.toHaveBeenCalled();
   });

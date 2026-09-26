@@ -69,6 +69,20 @@ describe("POST /api/stripe/checkout", () => {
     expect(body.error).toBe("BILLING_UNCONFIGURED");
   });
 
+  it("rejects a test key on the production VPS before any Stripe operation", async () => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    vi.stubEnv("APP_ENV", "production"); vi.stubEnv("VERCEL_ENV", "");
+    expect((await POST(request("indie_monthly"))).status).toBe(503);
+    expect(getStripe).not.toHaveBeenCalled();
+  });
+
+  it("enforces the rehearsal allowlist server-side", async () => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    vi.stubEnv("BILLING_ALLOWED_USER_IDS", "another-user");
+    expect((await POST(request("indie_monthly"))).status).toBe(503);
+    expect(getStripe).not.toHaveBeenCalled();
+  });
+
   it("uses the stable Indie price and linked customer", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
     const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });

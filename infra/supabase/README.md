@@ -10,7 +10,7 @@ The default stack runs PostgreSQL, Auth, PostgREST, Storage and Envoy.
 Studio/Meta are optional (`--profile admin`); Realtime, Edge Functions,
 image transformations and the connection pooler are not used by DuoShot.
 The API is bound to **127.0.0.1:8000**; PostgreSQL has no published port.
-Signup is disabled until SMTP, OAuth and migration checks are complete.
+Signup is disabled until SMTP, OAuth and migration checks are complete. The live API gateway now has an HTTPS route; direct ports remain loopback-only.
 No source production data is imported by this preparation.
 
 Passwords, JWT signing keys and API keys are generated on the host in a
@@ -40,8 +40,7 @@ directory when copying it; Coolify otherwise prefixes named volumes.
 `backup-offline.sh --offline <compose-directory>` creates an age-encrypted,
 consistent maintenance snapshot: logical database dumps, roles, keys, runtime
 configuration and Storage files. It stops the API/Auth/Storage temporarily and
-restarts them even after an error. Drain the app/worker first. It is **not yet
-scheduled for production**. A copy must leave the VPS before considering the
+restarts them even after an error. Drain the app/worker first. The daily off-host service and timer are installed on the private target; see `../systemd/README.md`. A copy must leave the VPS before considering the
 backup complete. The private age identity is on the Mac, outside this repo;
 only the public recipient is stored on the VPS.
 
