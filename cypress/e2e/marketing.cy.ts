@@ -5,7 +5,7 @@ describe("marketing", () => {
     cy.contains("h1", "Deux écrans.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("be.visible");
     cy.get(".studio-sequence-stage").should("not.be.visible");
-    cy.get(".studio-sequence-step-visual").should("have.length", 3);
+    cy.get(".studio-sequence-step-visual").should("have.length", 4);
     cy.get('[data-testid="zip-tree"]').scrollIntoView().should("be.visible");
     cy.get(".studio-review-preview").scrollIntoView().should("be.visible").and("contain", "Votre décision");
     cy.document().then((doc) => {
@@ -63,6 +63,8 @@ describe("marketing", () => {
       cy.get('.studio-sequence-stage > [data-sequence-scene="inspect"]').should("be.visible").should("contain", "83 / 100");
       cy.get(".studio-sequence-step").eq(2).scrollIntoView();
       cy.get('.studio-sequence-stage > [data-sequence-scene="report"]').should("be.visible");
+      cy.get(".studio-sequence-step").eq(3).scrollIntoView();
+      cy.get('.studio-sequence-stage > [data-sequence-scene="prevent"]').should("be.visible");
       cy.get(".studio-sequence-step").eq(1).scrollIntoView();
       cy.get('.studio-sequence-stage > [data-sequence-scene="inspect"]').should("be.visible");
     });
@@ -150,5 +152,42 @@ describe("marketing", () => {
       expect(response.body).not.to.include("<loc>http://localhost:3000/why-not-ai</loc>");
       expect(response.body).not.to.include("<loc>http://localhost:3000/rejection</loc>");
     });
+  });
+});
+
+
+describe("camera and review preparation", () => {
+  it("places the closed camera at the top right and leaves the third step intact", () => {
+    cy.viewport(1397, 920);
+    cy.visitFr("/");
+    cy.get(".studio-hero-object .device-camera").should("be.visible").then(($camera) => {
+      const camera = $camera[0].getBoundingClientRect();
+      const screen = $camera[0].parentElement!.getBoundingClientRect();
+      expect(camera.left).to.be.greaterThan(screen.left + screen.width * 0.8);
+      expect(camera.bottom).to.be.lessThan(screen.top + screen.height * 0.15);
+    });
+    cy.get(".studio-sequence-step").should("have.length", 4).eq(2).should("contain", "Sachez ce qui reste à vérifier.").and("contain", "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations.");
+    cy.get(".studio-sequence-step").eq(3).scrollIntoView({ offset: { top: -120, left: 0 } });
+    cy.get('.studio-sequence-stage > [data-sequence-scene="prevent"] .studio-prevent-outcome').should("be.visible");
+    cy.get('.studio-sequence-stage > [data-sequence-scene="prevent"] .studio-prevent-marker').should("have.length", 4).each(($marker) => cy.wrap($marker).should("have.css", "visibility", "visible").and("have.css", "opacity", "1"));
+    cy.contains("button", "DuoShot peut-il éviter des retards").click();
+    cy.contains("DuoShot ne garantit ni l’approbation ni un délai de validation").should("be.visible");
+  });
+
+  it("keeps the camera out of export-pixel previews", () => {
+    cy.viewport(1397, 920);
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get('[data-testid="tool-device-view"]').click();
+    cy.get('[data-testid="preview-outer"] .device-camera').should("have.css", "background-color", "rgb(8, 11, 16)").and("have.css", "z-index", "5");
+    cy.get('[data-testid="preview-inner"] .device-camera').should("not.exist");
+    cy.dropScreens();
+    cy.get('[data-testid="preview-outer"] img').should("be.visible");
+    cy.get('[data-testid="preview-outer"] .device-camera').should("have.css", "background-color", "rgb(8, 11, 16)").and("have.css", "z-index", "5");
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get('[data-testid="tool-pixel-view"]').click();
+    cy.get('[data-testid="preview-outer"] .device-camera').should("not.exist");
+    cy.get('[data-testid="tool-device-view"]').click();
+    cy.get('[data-testid="preview-outer"] .device-camera').should("have.css", "background-color", "rgb(8, 11, 16)").and("have.css", "z-index", "5");
   });
 });

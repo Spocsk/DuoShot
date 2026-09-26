@@ -17,6 +17,7 @@ export function LocaleSwitch({ locale, href }: { locale: Locale; href: string })
   return (
     <Link
       href={href}
+      prefetch={false}
       hrefLang={other}
       data-testid="locale-switch"
       className="ds-nav-link relative z-[60] inline-flex items-center gap-1.5 text-[0.68rem] font-semibold tracking-[0.04em] uppercase"

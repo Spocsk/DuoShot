@@ -1,5 +1,6 @@
 "use client";
 
+import { DeviceCamera } from "@/components/device-camera";
 import { useEffect, useState, type CSSProperties } from "react";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { connectPreviewStyle, duoSpec, type Locale, type Orientation } from "@/lib/specs";
@@ -183,6 +184,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.outer} alt={t(locale, "review_alt_outer")} />
+                      {viewMode === "device" ? <DeviceCamera /> : null}
                     </div>
                     <p className="studio-review-label studio-review-label-inner">{locale === "fr" ? "Écran ouvert" : "Open screen"}</p>
                     <div

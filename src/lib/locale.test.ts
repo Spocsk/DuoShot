@@ -17,7 +17,7 @@ describe("locale", () => {
   });
 
   it("parses Accept-Language with q values", () => {
-    expect(parseAcceptLanguage(null)).toBe("fr");
+    expect(parseAcceptLanguage(null)).toBe("en");
     expect(parseAcceptLanguage("en-US,en;q=0.9,fr;q=0.8")).toBe("en");
     expect(parseAcceptLanguage("fr-FR,fr;q=0.9,en;q=0.8")).toBe("fr");
     expect(parseAcceptLanguage("de,en;q=0.4")).toBe("en");
@@ -49,7 +49,7 @@ describe("locale", () => {
         cookie: undefined,
         acceptLanguage: "fr",
       }),
-    ).toBeNull();
+    ).toBe("/");
   });
 
   it("honors the locale cookie over Accept-Language", () => {
@@ -71,4 +71,26 @@ describe("locale", () => {
       }),
     ).toBe("/tool");
   });
+  it("uses English as fallback and ignores excluded or malformed preferences", () => {
+    for (const header of [null, "", "de-DE", "*", "fr;q=0", "fr;q=2", "fr;q=no", "french", "english"]) {
+      expect(parseAcceptLanguage(header)).toBe("en");
+    }
+    expect(parseAcceptLanguage("fr-CA,en;q=0.8")).toBe("fr");
+    expect(parseAcceptLanguage("en;q=0,fr;q=0.5")).toBe("fr");
+    expect(parseAcceptLanguage("en;q=0.5,fr;q=0.5")).toBe("en");
+  });
+
+  it("preserves paths and parameters in both directions without loops", () => {
+    expect(localeRedirectTarget({ pathname: "/en/tool", search: "?set=123", cookie: undefined, acceptLanguage: "fr-FR" })).toBe("/tool?set=123");
+    expect(localeRedirectTarget({ pathname: "/tool", search: "?set=123", cookie: undefined, acceptLanguage: "fr-FR" })).toBeNull();
+    expect(localeRedirectTarget({ pathname: "/tool", search: "", cookie: "invalid", acceptLanguage: "de" })).toBe("/en/tool");
+    expect(localeRedirectTarget({ pathname: "/en/why-not-ai", search: "", cookie: undefined, acceptLanguage: "fr" })).toBe("/pourquoi-pas-ia");
+  });
+
+  it("leaves static resources alone", () => {
+    for (const path of ["/sitemap.xml", "/robots.txt", "/font.woff2", "/_next/anything", "/api", "/auth"]) {
+      expect(shouldSkipLocaleRewrite(path)).toBe(true);
+    }
+  });
+
 });

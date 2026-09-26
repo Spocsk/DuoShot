@@ -1,3 +1,4 @@
+import { DeviceCamera } from "@/components/device-camera";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { HarborCover, HarborInnerMain, HarborInnerSide } from "@/components/harbor-ui";
@@ -14,6 +15,7 @@ export function DuoDevice({ locale }: { locale: Locale }) {
           <div className="duo-chassis">
             <div className="duo-screen">
               <HarborCover />
+              <DeviceCamera />
             </div>
           </div>
           <figcaption className="duo-caption">{t(locale, "closed_caption")}</figcaption>

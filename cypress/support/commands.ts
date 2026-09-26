@@ -64,7 +64,7 @@ function billing(plan: Plan, remaining: number | null) {
 }
 
 function visitLocalized(path: string, locale: "fr" | "en", options?: Partial<Cypress.VisitOptions>) {
-  cy.setCookie("duoshot_locale", locale, { path: "/" });
+  cy.setCookie("duoshot_locale_manual", locale, { path: "/" });
   const stored = e2eSession;
   cy.visit(path, {
     ...options,

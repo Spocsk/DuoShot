@@ -608,6 +608,10 @@ export function i18nKeys(): { fr: string[]; en: string[] } {
 export const FAQ: Record<Locale, { q: string; a: string }[]> = {
   fr: [
     {
+      q: "DuoShot peut-il éviter des retards lors de la validation Apple ?",
+      a: "Un problème de captures peut entraîner des corrections et des allers-retours avec Apple, et retarder votre publication de plusieurs jours. DuoShot contrôle les dimensions et le format des fichiers, signale les points de cadrage et de similarité à examiner et vous aide à vérifier la lisibilité près du pli avant soumission. Il ne détecte pas tous les problèmes : vous devez confirmer que les captures montrent fidèlement votre app en usage. DuoShot ne garantit ni l’approbation ni un délai de validation ; la décision reste celle d’Apple.",
+    },
+    {
       q: "Pourquoi une IA ne suffit-elle pas pour préparer ces captures ?",
       a: "Une IA peut aider à créer ou redimensionner une image, mais elle ne peut pas confirmer seule que les captures montrent l’app réelle en usage, que les écrans fermé et ouvert racontent la même séquence et que le texte reste lisible près du pli. DuoShot prépare et signale les points à examiner ; la validation du contenu reste humaine.",
     },
@@ -641,6 +645,10 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
   ],
   en: [
+    {
+      q: "Can DuoShot help avoid delays during Apple review?",
+      a: "Screenshot issues can lead to corrections and back-and-forth with Apple, delaying your release by days. DuoShot checks file dimensions and format, flags framing and similarity issues to examine, and helps you review legibility near the fold before submission. It cannot detect every issue: you must confirm that the screenshots accurately show your app in use. DuoShot guarantees neither approval nor a review time; Apple makes the final decision.",
+    },
     {
       q: "Why isn’t AI alone enough to prepare these screenshots?",
       a: "AI can help create or resize an image, but it cannot confirm on its own that the screenshots show the real app in use, that the closed and open screens tell the same story, and that text remains legible near the fold. DuoShot prepares the files and flags items to review; a person makes the final content decision.",

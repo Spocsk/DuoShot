@@ -360,7 +360,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
         <Block title="Strictly necessary">
           <p>
             Auth session cookies only (Supabase PKCE). They are required to keep you signed in and to download a ZIP. The
-            functional <code>duoshot_locale</code> cookie is set only if you click FR/EN; without it, the language follows
+            functional <code>duoshot_locale_manual</code> cookie is set only if you click FR/EN; without it, the language follows
             the browser <code>Accept-Language</code> header. Vercel Web Analytics measures aggregated traffic without
             cookies. Stripe may set its own cookies on Stripe Checkout, off this site.
           </p>
@@ -384,7 +384,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
       <Block title="Strictement nécessaires">
         <p>
           Cookies de session Auth seulement (Supabase PKCE). Ils servent à rester connecté et à télécharger un ZIP. Le
-          cookie fonctionnel <code>duoshot_locale</code> n’est posé que si tu cliques FR/EN ; sans lui, la langue suit
+          cookie fonctionnel <code>duoshot_locale_manual</code> n’est posé que si tu cliques FR/EN ; sans lui, la langue suit
           l’en-tête <code>Accept-Language</code> du navigateur. Vercel Web Analytics mesure le trafic agrégé sans cookie.
           Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de ce site.
         </p>

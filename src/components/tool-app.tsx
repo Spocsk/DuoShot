@@ -1,5 +1,6 @@
 "use client";
 
+import { DeviceCamera } from "@/components/device-camera";
 import {
   Suspense,
   useCallback,
@@ -2012,6 +2013,7 @@ function PreviewCard({
               <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${locale === "fr" ? "Importer" : "Import"} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
             </div>
           )}
+          {kind === "outer" && previewMode === "device" ? <DeviceCamera /> : null}
           {kind === "inner" ? <span className="division" aria-hidden="true" /> : null}
         </div>
       </div>

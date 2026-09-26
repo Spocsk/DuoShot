@@ -11,20 +11,28 @@ import { PricingSection } from "@/components/pricing-section";
 import { TrustLine } from "@/components/trust-line";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { DEMO_REVIEW_ID, EXAMPLE_ZIP_TREE } from "@/lib/pipeline/harbor";
-import { HarborCover, HarborInnerMain } from "@/components/harbor-ui";
+import { HarborCover, HarborInnerMain, ShelfInnerShot } from "@/components/harbor-ui";
 
-type SequencePhase = "import" | "inspect" | "report";
+type SequencePhase = "import" | "inspect" | "report" | "prevent";
 
 function SequenceScene({ locale, phase }: { locale: Locale; phase: SequencePhase }) {
   const fr = locale === "fr";
   return <div className={`studio-sequence-scene is-${phase}`} data-sequence-scene={phase}>
-    <div className="studio-sequence-device"><DuoDevice locale={locale} /></div>
+    <div className="studio-sequence-device">
+      <DuoDevice locale={locale} />
+      {phase === "prevent" ? <div className="studio-prevent-markers" aria-hidden="true">
+        <span className="studio-prevent-marker is-format">1</span>
+        <span className="studio-prevent-marker is-framing">2</span>
+        <span className="studio-prevent-marker is-similarity">3</span>
+        <span className="studio-prevent-marker is-fold">4</span>
+      </div> : null}
+    </div>
     {phase === "import" ? <div className="studio-sequence-import">
       <div className="studio-sequence-import-thumbs" aria-hidden="true">
         <div className="studio-sequence-thumb is-outer"><HarborCover /><span>{fr ? "Fermé" : "Closed"}</span></div>
-        <div className="studio-sequence-thumb is-inner"><HarborInnerMain /><span>{fr ? "Ouvert" : "Open"}</span></div>
+        <div className="studio-sequence-thumb is-inner"><ShelfInnerShot index={0} /><span>{fr ? "Ouvert" : "Open"}</span></div>
       </div>
-      <div className="studio-sequence-import-status"><span>{fr ? "Import des deux vues" : "Importing both views"}</span><strong>2 / 2</strong><i /></div>
+      <div className="studio-sequence-import-status"><span>{fr ? "2 vues importées" : "2 views imported"}</span><strong>2 / 2</strong><i /></div>
     </div> : null}
     {phase === "inspect" ? <div className="studio-sequence-info studio-sequence-analysis">
       <div><span>{fr ? "DÉMO HARBOR · RÉSULTAT" : "HARBOR DEMO · RESULT"}</span><strong>{fr ? "2 / 2 vues analysées" : "2 / 2 views analyzed"}</strong></div>
@@ -39,6 +47,17 @@ function SequenceScene({ locale, phase }: { locale: Locale; phase: SequencePhase
         <li><i className="studio-review-dot" />{fr ? "Cadrage à examiner" : "Framing to review"}</li>
         <li><i className="studio-human-dot" />{fr ? "App en usage à confirmer" : "App in use to confirm"}</li>
       </ul>
+    </div> : null}
+    {phase === "prevent" ? <div className="studio-sequence-info studio-sequence-prevent">
+      <strong>{fr ? "Avant de soumettre" : "Before you submit"}</strong>
+      <ol className="studio-prevent-checks">
+        <li><b>1</b><div>{fr ? "Dimensions et format" : "Dimensions and format"}<small>{fr ? "Contrôles automatiques" : "Automatic checks"}</small></div></li>
+        <li><b>2</b><div>{fr ? "Cadrage" : "Framing"}<small>{fr ? "Alertes à examiner" : "Warnings to review"}</small></div></li>
+        <li><b>3</b><div>{fr ? "Similarité des vues" : "View similarity"}<small>{fr ? "Comparaison à examiner" : "Comparison to review"}</small></div></li>
+        <li><b>4</b><div>{fr ? "Lisibilité près du pli" : "Legibility near the fold"}<small>{fr ? "Vérification humaine" : "Human review"}</small></div></li>
+      </ol>
+      <p className="studio-prevent-outcome">{fr ? "Corrigez avant de soumettre. Limitez les allers-retours." : "Fix issues before submitting. Reduce back-and-forth."}</p>
+      <small className="studio-prevent-note">{fr ? "Démonstration illustrative. La décision et les délais restent ceux d’Apple." : "Illustrative demo. Apple determines the outcome and review time."}</small>
     </div> : null}
   </div>;
 }
@@ -86,11 +105,14 @@ export function HomePage({ locale }: { locale: Locale }) {
 
           <section className="studio-intro" id="studio-story" data-reveal>
             <h2>{fr ? "Les deux vues, à leur juste place." : "Both views, exactly where they belong."}</h2>
+            <div className="studio-intro-copy">
             <p>
               {fr
                 ? "DuoShot réunit les captures fermé et ouvert dans un même flux de préparation, sans masquer ce qui demande votre jugement."
                 : "DuoShot brings closed and open screenshots into one preparation flow, while keeping human decisions visible."}
             </p>
+            <p className="studio-intro-benefit">{fr ? "Évitez qu’un problème de captures retarde votre publication de plusieurs jours." : "Avoid screenshot issues that could delay your release by days."}</p>
+            </div>
           </section>
 
           <section className="studio-sequence" aria-label={fr ? "Parcours de préparation" : "Preparation journey"}>
@@ -98,6 +120,7 @@ export function HomePage({ locale }: { locale: Locale }) {
               <SequenceScene locale={locale} phase="import" />
               <SequenceScene locale={locale} phase="inspect" />
               <SequenceScene locale={locale} phase="report" />
+              <SequenceScene locale={locale} phase="prevent" />
             </div>
             <div className="studio-sequence-steps">
               <div className="studio-sequence-step" data-sequence-step>
@@ -117,6 +140,12 @@ export function HomePage({ locale }: { locale: Locale }) {
                 <h2>{fr ? "Sachez ce qui reste à vérifier." : "Know what still needs review."}</h2>
                 <p>{fr ? "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations." : "The report separates technical checks, visual alerts, and your confirmations."}</p>
                 <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="report" /></div>
+              </div>
+              <div className="studio-sequence-step" data-sequence-step>
+                <span>04</span>
+                <h2>{fr ? "Repérez les problèmes avant Apple." : "Spot issues before Apple does."}</h2>
+                <p>{fr ? "DuoShot contrôle vos fichiers et signale les points à examiner dans vos captures. Les corriger avant la soumission peut éviter des allers-retours avec Apple et des jours de retard sur votre publication." : "DuoShot checks your files and flags screenshot issues to review. Fixing them before submission can avoid back-and-forth with Apple and days of delay to your release."}</p>
+                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="prevent" /></div>
               </div>
             </div>
           </section>

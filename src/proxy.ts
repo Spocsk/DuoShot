@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   LOCALE_COOKIE,
   isCrawler,
-  localeFromPath,
   localeRedirectTarget,
   shouldSkipLocaleRewrite,
 } from "@/lib/locale";
@@ -33,11 +32,8 @@ export async function proxy(request: NextRequest) {
       url.pathname = dest.pathname;
       url.search = dest.search;
       const redirect = NextResponse.redirect(url);
-      redirect.cookies.set(LOCALE_COOKIE, localeFromPath(dest.pathname), {
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 365,
-      });
+      redirect.headers.set("Cache-Control", "private, no-store");
+      redirect.headers.set("Vary", "Accept-Language, Cookie");
       return redirect;
     }
   }

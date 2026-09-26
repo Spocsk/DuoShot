@@ -2513,3 +2513,26 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Camera belongs to the chassis, never to output pixels. */
+.duo-closed .duo-screen { position: relative; }
+.device-camera {
+  position: absolute;
+  top: 5%;
+  right: 8%;
+  width: 4.8%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #080b10;
+  box-shadow: inset 0 0 0 1px #28303a;
+  z-index: 5;
+  pointer-events: none;
+}
+.preview-duo.is-landscape .device-camera,
+.review-pair.is-landscape .device-camera {
+  top: auto;
+  bottom: 8%;
+  right: 5%;
+  width: auto;
+  height: 4.8%;
+}
