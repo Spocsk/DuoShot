@@ -1,5 +1,7 @@
 # Migration, Auth et facturation — suivi du 26 septembre 2026
 
+> Mise à jour après décision utilisateur : le domaine public a été basculé sur la base neuve du VPS. Le bilan ci-dessous décrit les préparatifs antérieurs ; l’état courant est documenté dans [production-cutover-2026-09-26.md](production-cutover-2026-09-26.md).
+
 ## État et limites
 
 Le front reste privé sur le VPS. Le site `duoshot.site` reste chez Vercel. L’API `https://api.duoshot.site` pointe désormais sur le VPS, via Coolify/Traefik et HTTPS. PostgreSQL et le port API direct restent privés. Les inscriptions restent désactivées et aucun compte source n’a été migré.
