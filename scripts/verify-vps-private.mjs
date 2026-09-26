@@ -41,12 +41,12 @@ async function awaitRender(u,response){
  const {jobId}=await response.json();assert.match(jobId,/^[a-f0-9-]{36}$/);
  const deadline=Date.now()+31*60_000;
  while(Date.now()<deadline){
-  const stateResponse=await u.request(`/api/render-jobs/${jobId}`);
+  let stateResponse;try{stateResponse=await u.request(`/api/render-jobs/${jobId}`);}catch{await new Promise(r=>setTimeout(r,1000));continue;}
   if(stateResponse.status>=500){await new Promise(r=>setTimeout(r,1000));continue;}
   assert.equal(stateResponse.status,200);const state=await stateResponse.json();
   if(state.state==='completed')return Response.json({...state.result,jobId});
   if(state.state==='failed')return Response.json({error:state.error,jobId},{status:400});
-  await new Promise(r=>setTimeout(r,1000));
+  await new Promise(r=>setTimeout(r,state.state==='running'?2000:5000+Math.random()*1000));
  }
  throw new Error('JOB_WAIT_TIMEOUT');
 }

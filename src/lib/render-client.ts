@@ -33,7 +33,7 @@ async function run(key: string, kind: Kind, pending: Pending, progress: Progress
     if (payload.state === "completed") { save(key, null); return Response.json(payload.result); }
     if (payload.state === "failed") { save(key, null); return Response.json({ error: payload.error }, { status: 400 }); }
     progress(payload.state === "running" ? "running" : "queued");
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, payload.state === "running" ? 2000 : 5000 + Math.random() * 1000));
   }
   throw new Error("RENDER_PENDING");
 }
