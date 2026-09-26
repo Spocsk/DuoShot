@@ -1,6 +1,7 @@
 export const MAX_SOURCE_BYTES = 50 * 1024 * 1024;
 export const MAX_BATCH_BYTES = 200 * 1024 * 1024;
 export const MAX_SOURCE_PIXELS = 40_000_000;
+export const MAX_RENDER_PIXELS = 40_000_000;
 export const MAX_ZIP_BYTES = 100 * 1024 * 1024;
 
 export function assertBatchSize(files: readonly { size: number }[]) {

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import sharp from "sharp";
+import sharp, { type OutputInfo, type OverlayOptions } from "sharp";
+import { MAX_RENDER_PIXELS } from "./limits";
 import { parseHexColor } from "./geometry";
 import type { CropTransform, RenderOptions, SizeSpec, TitleFont } from "../specs";
 import { hingeBand, JPEG_QUALITY, normalizeCropTransform, textOverlayLayout } from "../specs";
@@ -110,14 +111,19 @@ export async function renderScreenshot(
   const meta = await sharp(input, { failOn: "none" }).metadata();
   assertPngOrJpeg(meta.format);
 
-  const background = await makeBackground(input, spec, options);
   const swapDimensions = Boolean(meta.orientation && meta.orientation >= 5 && meta.orientation <= 8);
   const sourceWidth = swapDimensions ? meta.height : meta.width;
   const sourceHeight = swapDimensions ? meta.width : meta.height;
   if (!sourceWidth || !sourceHeight) throw new Error("INPUT_DIMENSIONS");
   const transform = normalizeCropTransform(cropTransform, options.fit);
   const metrics = compositionMetrics(sourceWidth, sourceHeight, spec.width, spec.height, transform);
-  let foreground: Buffer;
+  // A very thin source can be small in pixels but expand enormously in cover mode.
+  // Bound that intermediate before allocating it, including resize rounding.
+  if (metrics.fit === "cover" && (Math.ceil(metrics.rect.width) + 1) * (Math.ceil(metrics.rect.height) + 1) > MAX_RENDER_PIXELS) {
+    throw new Error("RENDER_GEOMETRY_TOO_LARGE");
+  }
+  const background = await makeBackground(input, spec, options);
+  let foreground: { data: Buffer; info: OutputInfo };
   if (metrics.fit === "contain") {
     foreground = await sharp(input, { failOn: "none" })
       .rotate()
@@ -129,8 +135,8 @@ export async function renderScreenshot(
         background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
       .toColourspace("srgb")
-      .png()
-      .toBuffer();
+      .raw()
+      .toBuffer({ resolveWithObject: true });
   } else {
     const widthControlsScale = sourceWidth / sourceHeight <= spec.width / spec.height;
     const resized = await sharp(input, { failOn: "none" })
@@ -138,19 +144,22 @@ export async function renderScreenshot(
       .resize(widthControlsScale
         ? { width: Math.max(spec.width, Math.ceil(metrics.rect.width)) }
         : { height: Math.max(spec.height, Math.ceil(metrics.rect.height)) })
-      .png()
+      .toColourspace("srgb")
+      .raw()
       .toBuffer({ resolveWithObject: true });
     const left = Math.min(resized.info.width - spec.width, Math.max(0, Math.round((resized.info.width - spec.width) * transform.x)));
     const top = Math.min(resized.info.height - spec.height, Math.max(0, Math.round((resized.info.height - spec.height) * transform.y)));
-    foreground = await sharp(resized.data)
+    // OutputInfo.premultiplied describes processing, not the returned raw bytes.
+    foreground = await sharp(resized.data, { raw: { width: resized.info.width, height: resized.info.height, channels: resized.info.channels } })
       .extract({ left, top, width: spec.width, height: spec.height })
       .toColourspace("srgb")
-      .png()
-      .toBuffer();
+      .raw()
+      .toBuffer({ resolveWithObject: true });
   }
 
-  const composites: { input: Buffer; top?: number; left?: number; gravity?: "centre" }[] = [
-    { input: foreground, gravity: "centre" },
+  // Raw intermediates avoid PNG compression/decompression before the final encode.
+  const composites: OverlayOptions[] = [
+    { input: foreground.data, raw: { width: foreground.info.width, height: foreground.info.height, channels: foreground.info.channels }, gravity: "centre" },
   ];
   const overlay = titleSvg(spec, options);
   if (overlay) {

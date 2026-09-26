@@ -79,7 +79,7 @@ export function renderErrorStatus(code: string) {
   if (code === "RENDER_BUSY") return 503;
   if (code === "REQUEST_CANCELLED") return 499;
   if (["PATH_FORBIDDEN", "CLONE_RISK"].includes(code)) return 403;
-  if (["INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "EXPORT_TOO_LARGE"].includes(code)) return 413;
+  if (["INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "EXPORT_TOO_LARGE", "RENDER_GEOMETRY_TOO_LARGE"].includes(code)) return 413;
   if (code.endsWith("_UNAVAILABLE")) return 503;
   if (code.endsWith("_FAILED")) return 500;
   return 400;

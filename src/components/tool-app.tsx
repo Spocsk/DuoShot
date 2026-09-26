@@ -631,6 +631,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (code === "NO_IMAGES") return t(locale, "error_no_images");
     if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
     if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduis le nombre de paires ou choisis JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
+    if (code === "RENDER_GEOMETRY_TOO_LARGE") return locale === "fr" ? "Cette capture est trop allongée pour ce recadrage. Choisis le mode Contenir ou réduis le zoom." : "This screenshot is too narrow or wide for this crop. Choose Contain or reduce the zoom.";
     if (code === "INPUT_TOO_LARGE" || code === "BATCH_TOO_LARGE") return locale === "fr" ? "Limite dépassée : 50 Mo et 40 mégapixels par capture, 200 Mo par lot." : "Limit exceeded: 50 MB and 40 megapixels per screenshot, 200 MB per batch.";
     if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
     return t(locale, "error_export");

@@ -150,7 +150,7 @@ export async function POST(request: Request) {
     }
     if (typeof slides === "string") {
       await revokeIncompleteReview();
-      const status = slides === "PATH_FORBIDDEN" ? 403 : slides === "UPLOAD_MISSING" ? 400 : 500;
+      const status = renderErrorStatus(slides);
       return NextResponse.json({ error: slides }, { status });
     }
     const { error: slideError } = await writer.from("review_slides").insert(slides);
