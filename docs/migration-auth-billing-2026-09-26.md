@@ -16,6 +16,7 @@ Les buckets source uploads/exports sont privés ; **reviews est public à la sou
 - Domaine Resend `duoshot.site` vérifié en région UE. Clé limitée à l’envoi pour ce domaine ; suivi des clics et ouvertures désactivé, TLS de livraison requis. Offre existante : 100 emails/jour et 3 000/mois partagés entre projets, 3 domaines utilisés sur 3. Aucun nouvel abonnement.
 - Test SMTP depuis le VPS livré à la boîte du propriétaire : reçu Resend `01a0df51-4183-74dc-8b63-925b26c69c96`. Ce test valide transport/authentification/livraison ; il ne remplace pas la recette des comptes migrés et callbacks sur le front final.
 - Callbacks applicatifs corrigés : origine publique configurée, destination interne uniquement, erreurs et codes manquants/expirés explicites, tokens exclus des redirections d’erreur. Cookies Secure en HTTPS et SameSite=Lax sur navigateur, serveur et proxy.
+- Recette API Auth réelle sur cible vide : confirmation et récupération acceptées, réutilisation des deux jetons refusée. Emails GoTrue de récupération et invitation livrés à deux alias de la boîte du propriétaire (reçus `01a0df5c-0b94-774f-ad5a-a48178259a37` et `01a0df5c-14e7-728e-b290-1206bfc008c9`). Comptes et workspaces temporaires supprimés. Cela ne valide pas encore le parcours navigateur complet, Google avec comptes migrés ou les invitations d’équipe applicatives.
 - Pages FR/EN de demande et saisie d’un nouveau mot de passe, avec réponse de demande non révélatrice de l’existence du compte. Pages non indexables.
 
 ## Stripe
@@ -48,3 +49,11 @@ Le DMARC initial surveille sans rejeter ; aucune boîte de rapports n’est inve
 4. Synchroniser les données finales, vérifier les comptes/objets/reviews, sauvegarder, puis basculer le domaine principal. Reconnexion nécessaire avec les nouvelles clés Auth.
 5. Avant réouverture, retour source possible ; après nouvelles écritures sur le VPS, réconciliation préalable obligatoire. Aucun simple retour DNS vers des données anciennes.
 6. Commencer les 48 heures d’observation après la bascule effective, pas à la création de cette API. Ne résilier aucun service avant validation.
+
+## Validation du déploiement
+
+Image `e1df7ca94d2f91dd2f01f56bf5a6ba9ff8213abd`, déployée via Coolify activité 171. CI `36268783512` : 243 tests unitaires, 68 tests Cypress, lint, build et tests du récepteur de sauvegarde réussis. Image construite dans `36268780965`. HTTPS API, activation Google, callback et scopes `email profile` vérifiés. Le front conserve son accès privé et Checkout fermé.
+
+Les fichiers `runtime-env/*.env` sont les paramètres effectifs du service Coolify. Ils sont inclus dans les sauvegardes ; ne pas relancer `export-coolify.py` depuis les anciennes valeurs de `.env` sans réconcilier SMTP/OAuth et les URL publiques.
+
+Sauvegarde finale `20260926T201746Z.tar.gz.age` : copie hors VPS confirmée, récupérée depuis le serveur de sauvegarde puis déchiffrée sur le Mac. Restauration logique dans une base temporaire réussie, schémas Auth/Storage, comptes de lignes et RLS vérifiés ; base temporaire supprimée. Les propriétaires, privilèges et parcours Storage complets restent à éprouver lors de la répétition de migration. Après sauvegarde, front sain, worker et trois timers actifs. Redirections invalides testées sur l’image déployée : retour aux pages de connexion FR/EN avec erreur explicite et `Cache-Control: no-store`.
