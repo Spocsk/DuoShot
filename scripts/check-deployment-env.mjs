@@ -18,6 +18,7 @@ if (process.env.STRIPE_CHECKOUT_ENABLED === 'true') {
 }
 console.log(JSON.stringify({
   configured: missing.length === 0, missing,
+  renderQueueEnabled: process.env.RENDER_QUEUE_ENABLED === 'true',
   checkoutEnabled: process.env.STRIPE_CHECKOUT_ENABLED === 'true',
   mixpanelConfigured: Boolean(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN),
   erasureConfigured: Boolean(process.env.MIXPANEL_GDPR_OAUTH_TOKEN),

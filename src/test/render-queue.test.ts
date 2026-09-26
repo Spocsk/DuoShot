@@ -76,6 +76,17 @@ describe("durable render queue on real PostgreSQL", () => {
     await db.query("select complete_render($1,$2,$3::jsonb)",[job.id,job.lease_token,JSON.stringify(result)]);
     expect((await db.query<{result:unknown}>("select result from render_jobs where id=$1",[job.id])).rows[0].result).toEqual(result);
   });
+  it("rejects admission at the global queue bound without charging a trial", async () => {
+    await db.query("insert into render_jobs(user_id,workspace_id,kind,request_key,payload) select $1,$2,'review',gen_random_uuid(),'{}'::jsonb from generate_series(1,51)",[uid,workspace]);
+    await expect(enqueue()).rejects.toThrow("RENDER_BUSY");expect(await used()).toBe(0);
+  });
+  it("revokes partial reviews before retrying a crashed attempt", async () => {
+    await enqueue(randomUUID(),body,"review");const job=(await claim())!;
+    await db.query("insert into review_links(public_id,workspace_id,created_by,set_name,orientation,render_job_id) values('partial-review',$1,$2,'Partial','portrait',$3)",[workspace,uid,job.id]);
+    await db.query("update render_jobs set lease_until=now()-interval '1 second' where id=$1",[job.id]);
+    await claim();
+    expect((await db.query<{status:string}>("select status from review_links where render_job_id=$1",[job.id])).rows[0].status).toBe("revoked");
+  });
   it("allows users to read only their own status and denies queue mutations", async () => {
     const id=await enqueue();
     await db.query("select set_config('test.uid',$1,false)",[uid]);await db.exec("set role authenticated");

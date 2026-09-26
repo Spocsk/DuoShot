@@ -109,6 +109,7 @@ export function ToolApp({ locale }: Props) {
 }
 
 function ToolAppInner({ locale, owner }: Props & { owner: string }) {
+  const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
   const { loadSetMetas, saveSetMetas, loadActiveId, saveActiveId, loadSetFiles, saveSetFiles, deleteSetFiles } = useMemo(() => createSetStore(owner, () => setStorageError(true)), [owner]);
@@ -358,6 +359,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         if (!cancelled) {
           setSets([first]);
           setActiveId(first.id);
+          setDraftsLoaded(true);
         }
         return;
       }
@@ -371,6 +373,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       if (cancelled) return;
       setOuterFiles((prev) => (prev.length > 0 ? prev : outer));
       setInnerFiles((prev) => (prev.length > 0 ? prev : inner));
+      setDraftsLoaded(true);
     })();
     return () => {
       cancelled = true;
@@ -642,7 +645,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   useEffect(() => {
-    if (owner === "guest") return;
+    if (owner === "guest" || !draftsLoaded) return;
     let mounted = true;
     const progress = (state: "queued" | "running") => {
       if (!mounted) return;
@@ -664,6 +667,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           setReviewUrl(new URL(payload.url, window.location.origin).href);
           setReviewStatus(t(locale, "tool_review_ready"));
         }
+        setToolPanel("review");
         setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
         void refreshBilling();
       }).catch(() => {
@@ -671,7 +675,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
     }
     return () => { mounted = false; };
-  }, [owner, locale, refreshBilling]);
+  }, [owner, locale, refreshBilling, draftsLoaded]);
 
   async function uploadSide(userId: string, files: File[], onProgress: () => void) {
     const supabase = createBrowserSupabase();
