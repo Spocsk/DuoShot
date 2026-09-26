@@ -1,5 +1,7 @@
 "use client";
 
+import { assertBatchSize, MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
+
 import { DeviceCamera } from "@/components/device-camera";
 import {
   Suspense,
@@ -527,11 +529,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
     const selected = takeFiles(list);
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
-      if (!isAllowedImage(file) || file.size > 50 * 1024 * 1024) return null;
-      try { const bitmap = await createImageBitmap(file); bitmap.close(); return file; } catch { return null; }
+      if (!isAllowedImage(file) || file.size > MAX_SOURCE_BYTES) return null;
+      try { const metadata = await inspectFile(file); if (metadata.width * metadata.height > MAX_SOURCE_PIXELS) return null; const bitmap = await createImageBitmap(file); const allowed = bitmap.width * bitmap.height <= MAX_SOURCE_PIXELS; bitmap.close(); return allowed ? file : null; } catch { return null; }
     }));
     const incoming = checked.filter((file): file is File => file !== null);
-    if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo maximum et 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 10 screenshots per side.", "err");
+    if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo et 40 mégapixels maximum, 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 40 megapixels, 10 screenshots per side.", "err");
     const current = side === "outer" ? outerFiles : innerFiles;
     const next = mergeSideFiles(current, incoming);
     if (next.length > current.length) {
@@ -625,9 +627,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (code === "CLONE_RISK") return t(locale, "error_clone");
     if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
     if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
+    if (code === "RENDER_BUSY") return locale === "fr" ? "Le serveur traite déjà plusieurs lots. Réessaie dans quelques secondes ; aucun quota n’a été consommé." : "The server is processing other batches. Retry shortly; no quota was consumed.";
     if (code === "NO_IMAGES") return t(locale, "error_no_images");
     if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
     if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduis le nombre de paires ou choisis JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
+    if (code === "INPUT_TOO_LARGE" || code === "BATCH_TOO_LARGE") return locale === "fr" ? "Limite dépassée : 50 Mo et 40 mégapixels par capture, 200 Mo par lot." : "Limit exceeded: 50 MB and 40 megapixels per screenshot, 200 MB per batch.";
     if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
     return t(locale, "error_export");
   }
@@ -678,6 +682,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         return;
       }
       const extra = sameSet ? [] : innerFiles;
+      assertBatchSize([...outerFiles, ...extra]);
       const total = outerFiles.length + extra.length;
       let done = 0;
       const tick = () => {
@@ -816,6 +821,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     flashStatus(t(locale, "tool_review_preparing"), "busy");
     try {
       const extra = sameSet ? [] : innerFiles;
+      assertBatchSize([...outerFiles, ...extra]);
       const total = outerFiles.length + extra.length;
       let done = 0;
       const tick = () => {
@@ -847,6 +853,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       });
       const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
       if (!response.ok) {
+        void trackProduct("review_failed", { reason: ["STUDIO_REQUIRED", "INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "UPLOAD_MISSING"].includes(payload.error ?? "") ? payload.error! : "other" });
         if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
         flashStatus(explainError(payload.error || "STUDIO_REQUIRED"), "err");
         return;

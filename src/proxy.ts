@@ -8,6 +8,7 @@ import {
 import { updateSession } from "@/lib/supabase/proxy";
 
 function needsSessionRefresh(pathname: string) {
+  if (pathname === "/api/health") return false;
   return /^\/(?:en\/)?(?:tool|account)(?:\/|$)/.test(pathname) || pathname.startsWith("/auth/") || pathname.startsWith("/api/");
 }
 

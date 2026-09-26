@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://supabase.example.invalid
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-public-placeholder
+  NEXT_PUBLIC_MIXPANEL_TOKEN: ci-public-placeholder
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -12,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -24,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npx cypress install

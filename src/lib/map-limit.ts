@@ -7,14 +7,23 @@ export async function mapLimit<T, R>(
   const results = new Array<R>(items.length);
   let cursor = 0;
   const workers = Math.min(Math.max(1, limit), items.length);
+  let failed = false;
+  let failure: unknown;
   await Promise.all(
     Array.from({ length: workers }, async () => {
-      while (cursor < items.length) {
+      while (!failed && cursor < items.length) {
         const index = cursor;
         cursor += 1;
-        results[index] = await mapper(items[index] as T, index);
+        try {
+          results[index] = await mapper(items[index] as T, index);
+        } catch (error) {
+          if (!failed) failure = error;
+          failed = true;
+        }
       }
     }),
   );
+  // Do not start cleanup/refunds while another worker can still write files.
+  if (failed) throw failure;
   return results;
 }

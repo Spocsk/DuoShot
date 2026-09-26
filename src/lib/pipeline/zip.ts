@@ -1,3 +1,4 @@
+import { MAX_ZIP_BYTES } from "./limits";
 import JSZip from "jszip";
 import type { DeviceSlot, Orientation, RenderOptions, SizeSpec } from "../specs";
 import { specPixels, zipFolderName } from "../specs";
@@ -140,7 +141,10 @@ export async function buildZip(options: {
       compositionWarnings: options.compositionWarnings,
     }),
   );
+  let imageBytes = 0;
   for (const image of options.images) {
+    imageBytes += image.buffer.length;
+    if (imageBytes > MAX_ZIP_BYTES) throw new Error("EXPORT_TOO_LARGE");
     zip.file(
       zipEntryPath({
         appName: options.appName,

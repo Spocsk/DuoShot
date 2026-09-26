@@ -19,7 +19,7 @@ describe("consent-gated server analytics", () => {
 
   it("sends only allowlisted event data to the EU endpoint after consent", async () => {
     vi.stubEnv("NEXT_PUBLIC_MIXPANEL_TOKEN", "test-token");
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 1 }) });
     vi.stubGlobal("fetch", fetchMock);
     const query = {
       select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),

@@ -13,8 +13,9 @@ import {
 } from "../specs";
 import { compositionMetrics } from "./geometry";
 import type { ZipImage } from "./zip";
+import { MAX_ZIP_BYTES } from "./limits";
 
-const COMPOSE_CONCURRENCY = 4;
+const COMPOSE_CONCURRENCY = 2;
 
 export function slotTargets(targets: SizeSpec[], slot: DeviceSlot) {
   return targets.filter((spec) => spec.slot === slot);
@@ -36,6 +37,7 @@ export async function composeZipImages(input: {
   let flattenAlpha = false;
   const images: ZipImage[] = [];
   const compositionWarnings: string[] = [];
+  let renderedBytes = 0;
 
   async function renderSide(buffers: Buffer[], slot: DeviceSlot, transforms: CropTransform[] = []) {
     const specs = slotTargets(targets, slot);
@@ -51,10 +53,13 @@ export async function composeZipImages(input: {
           `${job.spec.slot} ${seq}: crop ${metrics.cropPercent.toFixed(1)}%, upscale ${metrics.scale.toFixed(2)}x (${metrics.severity})`,
         );
       }
+      const buffer = await renderScreenshot(job.buffer, job.spec, input.options, transform);
+      renderedBytes += buffer.length;
+      if (renderedBytes > MAX_ZIP_BYTES) throw new Error("EXPORT_TOO_LARGE");
       return {
         spec: job.spec,
         index: job.index,
-        buffer: await renderScreenshot(job.buffer, job.spec, input.options, transform),
+        buffer,
       };
     });
     images.push(...rendered);

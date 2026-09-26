@@ -1,3 +1,4 @@
+import { renderSlots } from "@/lib/pipeline/render-slots";
 import { NextResponse } from "next/server";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { mapLimit } from "@/lib/map-limit";
@@ -7,12 +8,14 @@ import { slugify } from "@/lib/pipeline/geometry";
 import { scorePair, worstCloneLabel, type CloneResult } from "@/lib/pipeline/clone-score";
 import { composeZipImages } from "@/lib/pipeline/compose";
 import { buildZip } from "@/lib/pipeline/zip";
+import { loadSources } from "@/lib/pipeline/sources";
+import { parseRenderBody, renderErrorStatus, type RenderBody } from "@/lib/pipeline/request";
+import { MAX_ZIP_BYTES } from "@/lib/pipeline/limits";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import {
   DEFAULT_RENDER_OPTIONS,
   canUse69,
   targetsFor,
-  type CropTransforms,
   type RenderOptions,
 } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -21,34 +24,6 @@ import { trackServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-type Body = {
-  paths?: string[];
-  outerPaths?: string[];
-  innerPaths?: string[];
-  appName?: string;
-  clientName?: string;
-  include69?: boolean;
-  assumeCloneRisk?: boolean;
-  sameSet?: boolean;
-  options?: Partial<RenderOptions>;
-  transforms?: Partial<CropTransforms>;
-};
-
-async function downloadOwned(
-  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
-  userId: string,
-  storagePath: string,
-) {
-  if (!storagePath.startsWith(`${userId}/`)) {
-    throw new Error("PATH_FORBIDDEN");
-  }
-  const { data: file, error } = await supabase.storage.from("uploads").download(storagePath);
-  if (error || !file) {
-    throw new Error("UPLOAD_MISSING");
-  }
-  return Buffer.from(await file.arrayBuffer());
-}
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabase();
@@ -59,8 +34,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as Body | null;
-  if (!body) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
+  let body: RenderBody;
+  try { body = parseRenderBody(await request.json(), user.id); } catch (error) {
+    const code = error instanceof SyntaxError ? "INVALID_REQUEST" : error instanceof Error ? error.message : "INVALID_REQUEST";
+    return NextResponse.json({ error: code }, { status: renderErrorStatus(code) });
+  }
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? body.paths ?? [];
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? body.paths ?? []);
@@ -111,6 +89,12 @@ export async function POST(request: Request) {
     );
   }
 
+  let release: () => void;
+  try { release = await renderSlots.acquire(request.signal); } catch (error) {
+    const code = error instanceof Error ? error.message : "RENDER_BUSY";
+    return NextResponse.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
+  }
+
   try {
     const { data: reserved, error: reserveError } = await admin.rpc("reserve_export", {
       p_workspace_id: membership.workspace_id, p_user_id: user.id,
@@ -120,10 +104,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: code ?? "EXPORT_UNAVAILABLE" }, { status: code ? 402 : 503 });
     }
     reservation = reserved as string;
-    const [outerBuffers, innerBuffers] = await Promise.all([
-      mapLimit(outerPaths, 4, (storagePath) => downloadOwned(supabase, user.id, storagePath)),
-      mapLimit(innerPaths, 4, (storagePath) => downloadOwned(supabase, user.id, storagePath)),
-    ]);
+    const sources = await loadSources(supabase, user.id, [...outerPaths, ...innerPaths]);
+    const outerBuffers = outerPaths.map((path) => sources.get(path)!);
+    const innerBuffers = innerPaths.map((path) => sources.get(path)!);
 
     const pairCount = Math.min(outerBuffers.length, innerBuffers.length);
     const cloneScores: CloneResult[] = await mapLimit(
@@ -165,7 +148,8 @@ export async function POST(request: Request) {
     });
 
     const zipPath = `${user.id}/${crypto.randomUUID()}.zip`;
-    const zipBytes = new Uint8Array(zip);
+    if (zip.byteLength > MAX_ZIP_BYTES) throw new Error("EXPORT_TOO_LARGE");
+    const zipBytes = zip;
     const exportsBucket = supabase.storage.from("exports");
     const { error: uploadError } = await exportsBucket.upload(zipPath, zipBytes, {
       contentType: "application/zip",
@@ -175,7 +159,7 @@ export async function POST(request: Request) {
       console.error("export_storage_upload_failed", { bytes: zipBytes.byteLength, message: uploadError.message });
       throw new Error(/size|too large|payload/i.test(uploadError.message) ? "EXPORT_TOO_LARGE" : "STORAGE_UNAVAILABLE");
     }
-    const { data: stored, error: readError } = await exportsBucket.download(zipPath);
+    const { data: stored, error: readError } = await exportsBucket.info(zipPath);
     if (readError || !stored || stored.size !== zipBytes.byteLength) {
       console.error("export_storage_verify_failed", { bytes: zipBytes.byteLength, storedBytes: stored?.size, message: readError?.message });
       throw new Error("STORAGE_UNAVAILABLE");
@@ -223,7 +207,9 @@ export async function POST(request: Request) {
       if (refundError) console.error("export_refund_failed", { reservation });
     }
     const code = error instanceof Error ? error.message : "EXPORT_FAILED";
-    const status = ["PATH_FORBIDDEN", "CLONE_RISK"].includes(code) ? 403 : code === "EXPORT_TOO_LARGE" ? 413 : code.endsWith("_UNAVAILABLE") ? 503 : code.endsWith("_FAILED") ? 500 : 400;
+    const status = renderErrorStatus(code);
     return NextResponse.json({ error: code }, { status });
+  } finally {
+    release();
   }
 }
