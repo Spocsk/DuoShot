@@ -61,8 +61,13 @@ header.sticky .site-wordmark { font-family: var(--font-sans), sans-serif; font-s
 .studio-hero { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; min-height: calc(100svh - var(--header-h)); overflow: clip; padding: clamp(2.5rem, 5vh, 4rem) 1.25rem 1.25rem; background: linear-gradient(180deg, #fcfdfd 0%, #f4f7f8 45%, #e9eff1 100%); }
 .studio-hero::before { content: ""; position: absolute; z-index: -1; width: min(85vw, 82rem); aspect-ratio: 1.8; bottom: -30%; left: 50%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, #d9e5e8 0%, transparent 72%); opacity: 0.7; }
 .studio-hero-copy { position: relative; z-index: 2; max-width: 56rem; text-align: center; }
-.studio-hero h1 { font-family: var(--font-sans), sans-serif; font-size: clamp(3.15rem, 6.5vw, 6rem); font-weight: 640; letter-spacing: -0.065em; line-height: 0.98; text-wrap: balance; }
+.studio-hero h1 { font-family: var(--font-sans), sans-serif; font-size: clamp(2.5rem, 5.3vw, 4.7rem); font-weight: 640; letter-spacing: -0.065em; line-height: 1.04; text-wrap: balance; }
 .studio-hero h1 span { color: #617b84; }
+.studio-hero-dimensions { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem 2.5rem; margin-top: 1.5rem; }
+.studio-hero-dimensions dt { color: #4f6068; font-size: 0.85rem; }
+.studio-hero-dimensions dd { margin-top: 0.2rem; font-family: var(--font-mono), monospace; font-size: clamp(1.1rem, 2vw, 1.4rem); font-weight: 500; white-space: nowrap; }
+.studio-hero-dimensions small { display: block; margin-top: 0.2rem; color: #4f6068; font-family: var(--font-sans), sans-serif; font-size: 0.75rem; font-weight: 400; }
+.studio-hero-copy > [data-testid="apple-availability"] { max-width: 43rem; font-size: 0.82rem; line-height: 1.5; }
 .studio-hero-copy > p { max-width: 39rem; margin: 1.3rem auto 0; font-size: clamp(1rem, 1.5vw, 1.16rem); line-height: 1.5; color: #4f6068; text-wrap: balance; }
 .studio-hero-actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1rem 1.6rem; margin-top: 1.55rem; }
 .studio-inline-link { display: inline-flex; min-height: 2.8rem; align-items: center; gap: 0.6rem; }
@@ -418,7 +423,8 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 
 @media (max-width: 640px) {
   .studio-hero { padding-top: 2.9rem; }
-  .studio-hero h1 { font-size: clamp(2.75rem, 11vw, 4.2rem); letter-spacing: -0.06em; }
+  .studio-hero h1 { font-size: clamp(2rem, 8.5vw, 3.5rem); letter-spacing: -0.06em; }
+  .studio-hero-dimensions { gap: 0.9rem 1.3rem; }
   .studio-hero-copy > p { max-width: 22rem; margin-top: 1.2rem; }
   .studio-hero-actions { gap: 0.3rem 1rem; }
   .studio-hero-object { width: 100%; max-width: none; margin-top: 2.4rem; }

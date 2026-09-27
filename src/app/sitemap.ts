@@ -14,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${base}${route.en}`,
       alternates: { languages: { fr: `${base}${route.fr}`, en: `${base}${route.en}`, "x-default": `${base}${route.fr}` } },
       changeFrequency: "weekly",
-      priority: Math.max(0.3, Math.round((route.priority - 0.1) * 10) / 10),
+      priority: route.priority,
     },
   ]);
 }

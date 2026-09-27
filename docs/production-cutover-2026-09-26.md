@@ -72,3 +72,10 @@ Les fronts répondent HTTP 200 depuis le Mac et le VPS ; API Auth 200 avec la cl
 Depuis 09:19 UTC, trois rejets de Server Reference ID au format invalide sont groupés à 09:49:12–13, identiques aux rejets déjà observés. Aucun autre indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx relevé dans les journaux contrôlés, sans impact actuel constaté. Aucun changement de configuration ou test utilisateur effectué.
 
 Disque stable : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde quotidienne `20260927T030114Z.tar.gz.age` toujours vérifiée localement et hors serveur (118 679 octets, SHA-256 identique `775bace7e52faa57309b354dfc81c3158e350d4ee82a226b00bf36a306c54b28`) ; destination avec cinq archives et 13,9 Gio libres. Auth et fermeture volontaire de Checkout inchangées. Aucune alerte requise ; observation maintenue jusqu’au 28 septembre à 20:39 UTC.
+
+
+## Suivi — 27 septembre 2026, 18:59 UTC
+
+Disponibilité confirmée : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec la clé publique, TLS valide sur les trois domaines (89 jours restants). Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs ; maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 18:01 UTC. Aucun nouvel indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés sur cet intervalle.
+
+Disque : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde `20260927T030114Z.tar.gz.age` confirmée sur les deux serveurs : 118 679 octets, SHA-256 identique à celui consigné précédemment. Cinq archives distantes, 13,9 Gio libres, succès quotidien daté du 27 septembre. Inscriptions et Google ouverts avec confirmation email ; Checkout reste volontairement fermé. Situation stable, aucune intervention ni alerte ; suivi maintenu.

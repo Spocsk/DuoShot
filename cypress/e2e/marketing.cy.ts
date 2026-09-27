@@ -2,7 +2,7 @@ describe("marketing", () => {
   it("keeps the closed/open example and CTA readable on mobile", () => {
     cy.viewport(390, 844);
     cy.visitFr("/");
-    cy.contains("h1", "Deux écrans.").should("be.visible");
+    cy.contains("h1", "Captures iPhone Duo.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("be.visible");
     cy.get(".studio-sequence-stage").should("not.be.visible");
     cy.get(".studio-sequence-step-visual").should("have.length", 4);
@@ -15,7 +15,7 @@ describe("marketing", () => {
 
   it("renders the French home, pricing, and primary CTAs", () => {
     cy.visitFr("/");
-    cy.contains("h1", "Deux écrans.").should("be.visible");
+    cy.contains("h1", "Captures iPhone Duo.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="cta-example"]').should("have.attr", "href").and("include", "/api/example-zip");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
@@ -92,7 +92,7 @@ describe("marketing", () => {
 
   it("renders the English home", () => {
     cy.visitEn("/en");
-    cy.contains("h1", "Two screens.").should("be.visible");
+    cy.contains("h1", "iPhone Duo screenshots.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
     cy.contains("Harbor · fictional app").should("be.visible");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/en/r/harbor");
@@ -115,15 +115,15 @@ describe("marketing", () => {
 
   it("serves content and legal pages", () => {
     cy.visitFr("/specs");
-    cy.contains("h1", "Pixels iPhone Duo").should("be.visible");
+    cy.contains("h1", "Tailles des captures iPhone Duo").should("be.visible");
     cy.visitFr("/pourquoi-pas-ia");
     cy.contains("h1", "Pourquoi pas ton IA").should("be.visible");
     cy.visitFr("/why-not-ai");
     cy.contains("h1", "Pourquoi pas ton IA").should("be.visible");
     cy.visitFr("/rejet");
-    cy.contains("h1", "Points à vérifier").should("be.visible");
+    cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
     cy.visitFr("/rejection");
-    cy.contains("h1", "Points à vérifier").should("be.visible");
+    cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
     cy.visitFr("/privacy");
     cy.contains("h1", "Confidentialité").should("be.visible");
     cy.visitFr("/terms");
@@ -190,4 +190,70 @@ describe("camera and review preparation", () => {
     cy.get('[data-testid="tool-device-view"]').click();
     cy.get('[data-testid="preview-outer"] .device-camera').should("have.css", "background-color", "rgb(8, 11, 16)").and("have.css", "z-index", "5");
   });
+});
+
+
+describe("screenshot dimensions and search intent", () => {
+  for (const locale of ["fr", "en"] as const) {
+    const prefix = locale === "fr" ? "" : "/en";
+    const visit = (path: string) => locale === "fr" ? cy.visitFr(path) : cy.visitEn(path);
+
+    it(`shows dimensions, availability and localized CTAs in ${locale}`, () => {
+      cy.viewport(390, 844);
+      visit(prefix || "/");
+      cy.get('[data-testid="hero-dimensions"]').should("be.visible")
+        .and("contain", "1398 × 2034").and("contain", "2007 × 2853").and("contain", "portrait");
+      cy.get('[data-testid="apple-availability"]').should("be.visible")
+        .and("contain", locale === "fr" ? "plus tard dans l’année" : "later this year");
+      cy.get('[data-testid="cta-tool"]').should("be.visible").and("have.attr", "href", `${prefix}/tool`);
+      cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
+      cy.location("pathname").should("eq", `${prefix}/specs`);
+      cy.get("table").first().find("tbody tr").should("have.length", 4);
+      for (const size of ["1398 × 2034", "2034 × 1398", "2007 × 2853", "2853 × 2007"]) {
+        cy.get("table").first().should("contain", size);
+      }
+      cy.get("table").first().should("not.contain", "Indie").and("not.contain", "6.9");
+      cy.get("#panel-vs-connect").parent().should("contain", "1878 × 2670").and("contain", "2007 × 2853");
+      cy.get('[data-testid="specs-cta-tool"]').should("have.attr", "href", `${prefix}/tool`);
+      cy.document().then((doc) => {
+        expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
+        const graph = JSON.parse(doc.querySelector('script[type="application/ld+json"]')!.textContent!)["@graph"];
+        const faq = graph.find((item: { "@type": string }) => item["@type"] === "FAQPage");
+        const rows = Array.from(doc.querySelectorAll(".t-acc"));
+        expect(faq.mainEntity).to.have.length(rows.length);
+        rows.forEach((row, index) => {
+          expect(faq.mainEntity[index].name).to.eq(row.querySelector("button > span")!.textContent);
+          expect(faq.mainEntity[index].acceptedAnswer.text).to.eq(row.querySelector("p")!.textContent);
+        });
+      });
+      cy.get(".t-acc").eq(3).find("button").click().should("have.attr", "aria-expanded", "true");
+      cy.get(".t-acc").eq(3).find("p").should("be.visible");
+    });
+
+    it(`renders crawlable specs and prioritizes file errors in ${locale}`, () => {
+      visit(`${prefix}/specs`);
+      cy.request(`${prefix}/specs`).then(({ body }) => {
+        const doc = new DOMParser().parseFromString(body, "text/html");
+        expect(doc.querySelector("h1")!.textContent).to.contain("App Store Connect");
+        expect(doc.title).to.contain("1398×2034").and.to.contain("2007×2853");
+        expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.contain("2007 × 2853");
+        const image = doc.querySelector('meta[property="og:image"]')!.getAttribute("content")!;
+        expect(doc.querySelector('meta[name="twitter:image"]')!.getAttribute("content")).to.eq(image);
+        cy.setCookie("duoshot_locale_manual", locale === "fr" ? "en" : "fr");
+        cy.request({ url: new URL(image).pathname, followRedirect: false }).then((response) => {
+          expect(response.status).to.eq(200);
+          expect(response.headers["content-type"]).to.include("image/png");
+        });
+        expect(doc.querySelector('link[rel="canonical"]')!.getAttribute("href")).to.match(new RegExp(`${prefix}/specs$`));
+        expect(doc.querySelector('link[hreflang="en"]')!.getAttribute("href")).to.match(/\/en\/specs$/);
+        expect(doc.querySelector('link[hreflang="fr"]')!.getAttribute("href")).to.match(/\/specs$/);
+        for (const size of ["1398 × 2034", "2034 × 1398", "2007 × 2853", "2853 × 2007"]) {
+          expect(doc.querySelector("table")!.textContent).to.contain(size);
+        }
+      });
+      visit(locale === "fr" ? "/rejet" : "/en/rejection");
+      cy.get("article").eq(0).should("contain", "image dimensions are not valid");
+      cy.get("article").eq(1).should("contain", "alpha");
+    });
+  }
 });

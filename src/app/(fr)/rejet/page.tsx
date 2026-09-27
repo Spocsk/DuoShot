@@ -4,8 +4,8 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   locale: "fr",
   path: "/rejet",
-  title: "Décodeur de rejet App Store",
-  description: "2.3.3, mauvais pixels, alpha, set incomplet. Traduction DuoShot, sans coller le mail Apple.",
+  title: "Erreurs de captures App Store : dimensions et canal alpha",
+  description: "Dimensions de capture invalides ou canal alpha : vérifiez les formats iPhone Duo et préparez des fichiers PNG/JPEG opaques pour App Store Connect.",
 });
 
 export default function Page() {

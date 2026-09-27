@@ -1,3 +1,4 @@
+import { OUTER_PORTRAIT, INNER_PORTRAIT } from "@/lib/screenshot-copy";
 import { AppleAvailability } from "./apple-availability";
 import Link from "next/link";
 import { FaqList } from "@/components/faq-list";
@@ -75,23 +76,27 @@ export function HomePage({ locale }: { locale: Locale }) {
           <section className="studio-hero" aria-labelledby="studio-hero-title">
             <div className="studio-hero-copy">
               <h1 id="studio-hero-title">
-                {fr ? "Deux écrans." : "Two screens."}<br />
-                <span>{fr ? "Une seule histoire." : "One story."}</span>
+                {fr ? "Captures iPhone Duo." : "iPhone Duo screenshots."}<br />
+                <span>{fr ? "Aux dimensions App Store." : "Exact App Store sizes."}</span>
               </h1>
+              <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
+                <div><dt>{fr ? "Écran externe" : "Outer display"}</dt><dd>{OUTER_PORTRAIT}<small>px · portrait</small></dd></div>
+                <div><dt>{fr ? "Écran interne" : "Inner display"}</dt><dd>{INNER_PORTRAIT}<small>px · portrait</small></dd></div>
+              </dl>
               <p>
                 {fr
-                  ? "Préparez vos captures iPhone Duo, vérifiez chaque détail et exportez deux séries d’images dans un ZIP."
-                  : "Prepare your iPhone Duo screenshots, check every detail, and export both image sets in a ZIP."}
+                  ? "Préparez deux séries à partir des captures de votre app, vérifiez les fichiers et exportez-les en PNG ou JPEG opaque pour App Store Connect."
+                  : "Prepare both sets from your app screenshots, check the files, and export opaque PNG or JPEG images for App Store Connect."}
               </p>
               <AppleAvailability locale={locale} />
               <div className="studio-hero-actions">
                 <Link href={`${prefix}/tool`} data-testid="cta-tool" className="ds-cta">
-                  {t(locale, "cta_tool")}
+                  {fr ? "Préparer vos captures" : "Prepare your screenshots"}
                 </Link>
-                <a href="#studio-story" className="studio-inline-link">
-                  {fr ? "Découvrir l’atelier" : "Explore the studio"}
-                  <span aria-hidden="true">↘</span>
-                </a>
+                <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link">
+                  {fr ? "Voir les dimensions" : "See screenshot sizes"}
+                  <span aria-hidden="true">↗</span>
+                </Link>
               </div>
             </div>
             <div className="studio-hero-object">

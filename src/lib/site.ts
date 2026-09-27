@@ -1,11 +1,12 @@
 import type { Locale } from "./specs";
+import { OUTER_PORTRAIT, INNER_PORTRAIT } from "./screenshot-copy";
 
 export const SITE_NAME = "DuoShot";
-export const SITE_DESCRIPTOR = "App Store Screenshot QA";
+export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
 export const SITE_PITCH_FR =
-  "Prépare les captures fermé et ouvert de ta vraie app. DuoShot vérifie les fichiers, signale les points à examiner et livre deux séries d’images dans un ZIP à décompresser.";
+  `Préparez vos captures iPhone Duo pour App Store Connect : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px en portrait, export PNG/JPEG opaque.`;
 export const SITE_PITCH_EN =
-  "Prepare closed and open screenshots of your real app. DuoShot checks the files, flags what needs review, and delivers two image sets in a ZIP to unzip.";
+  `Prepare iPhone Duo screenshots for App Store Connect: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px in portrait, with opaque PNG/JPEG export.`;
 
 export function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");

@@ -2,9 +2,9 @@ import { CHECKOUT_CATALOG } from "./plans";
 import { FAQ } from "./i18n";
 import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, getSiteUrl } from "./site";
 import type { Locale } from "./specs";
+import type { FaqItem } from "./screenshot-copy";
 
-export function jsonLdGraph(locale: Locale) {
-  const faq = FAQ[locale];
+export function jsonLdGraph(locale: Locale, faq: FaqItem[] = FAQ[locale]) {
   const url = getSiteUrl();
   return {
     "@context": "https://schema.org",
@@ -43,8 +43,8 @@ export function jsonLdGraph(locale: Locale) {
   };
 }
 
-export function JsonLd({ locale }: { locale: Locale }) {
-  const json = JSON.stringify(jsonLdGraph(locale));
+export function JsonLd({ locale, faq }: { locale: Locale; faq?: FaqItem[] }) {
+  const json = JSON.stringify(jsonLdGraph(locale, faq));
   return (
     <script
       type="application/ld+json"

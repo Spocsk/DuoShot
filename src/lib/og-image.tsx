@@ -2,14 +2,14 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Locale } from "@/lib/specs";
-import { SITE_PITCH_EN, SITE_PITCH_FR } from "@/lib/site";
+import { OUTER_PORTRAIT, INNER_PORTRAIT } from "@/lib/screenshot-copy";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export async function ogImage(locale: Locale) {
   const serif = await readFile(path.join(process.cwd(), "src/lib/pipeline/fonts/serif-bold.ttf"));
-  const pitch = locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN;
+  const pitch = locale === "fr" ? "Captures iPhone Duo. Aux dimensions App Store." : "iPhone Duo screenshots. Exact App Store sizes.";
   return new ImageResponse(
     (
       <div
@@ -26,7 +26,11 @@ export async function ogImage(locale: Locale) {
         <div style={{ display: "flex", flexDirection: "column", width: 540, justifyContent: "space-between" }}>
           <div style={{ fontSize: 36 }}>DuoShot</div>
           <div style={{ fontSize: 36, lineHeight: 1.18, letterSpacing: "-0.03em" }}>{pitch}</div>
-          <div style={{ fontSize: 22, color: "#6b645c" }}>1398×2034 · 2007×2853 · duo-outer-portrait/</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 22, color: "#6b645c" }}>
+            <div>{`${locale === "fr" ? "Externe" : "Outer"} · ${OUTER_PORTRAIT} px`}</div>
+            <div>{`${locale === "fr" ? "Interne" : "Inner"} · ${INNER_PORTRAIT} px`}</div>
+            <div style={{ fontSize: 18 }}>Portrait · App Store Connect</div>
+          </div>
         </div>
         <div style={{ display: "flex", flex: 1, alignItems: "flex-end", justifyContent: "flex-end", gap: 24 }}>
           <div

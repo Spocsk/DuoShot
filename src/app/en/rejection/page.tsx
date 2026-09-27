@@ -4,8 +4,8 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   locale: "en",
   path: "/rejection",
-  title: "App Store rejection decoder",
-  description: "2.3.3, wrong pixels, alpha, incomplete set. DuoShot translation — no pasted Apple mail.",
+  title: "App Store screenshot errors: dimensions & alpha channel",
+  description: "Fix wrong screenshot dimensions, “image dimensions are not valid”, and alpha channel issues. Check iPhone Duo sizes before preparing your files.",
 });
 
 export default function Page() {

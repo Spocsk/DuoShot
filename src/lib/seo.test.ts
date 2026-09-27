@@ -1,3 +1,6 @@
+import { SPECS_FAQ } from "./screenshot-copy";
+import { FAQ } from "./i18n";
+import sitemap from "@/app/sitemap";
 import { describe, expect, it, vi } from "vitest";
 import { localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
 import { pageMetadata } from "./seo";
@@ -10,4 +13,26 @@ describe("public routes and crawler metadata",()=>{
  it("lets crawlers read private page noindex and uses one bot policy",()=>{expect(robots().rules).toEqual([{userAgent:"*",allow:"/",disallow:["/api/","/auth/"]}]);});
  it("includes annual and monthly prices in structured offers",()=>{const app=jsonLdGraph("en")["@graph"][1]; expect(app.offers?.map(o=>o.price)).toEqual(["0","12","49","120","490"]);});
  it("puts the product name first in both home titles and uses the final domain",()=>{vi.stubEnv("NEXT_PUBLIC_SITE_URL","https://duoshot.site"); try {for(const locale of ["fr","en"] as const){const metadata=pageMetadata({locale,path:"/",title:locale==="fr"?"captures iPhone Duo pour l’App Store":"iPhone Duo screenshots for the App Store",description:"DuoShot"}); expect(metadata.title).toEqual({absolute:expect.stringMatching(/^DuoShot — /)}); expect(metadata.alternates?.canonical).toBe(`https://duoshot.site${locale==="fr"?"/":"/en"}`);}} finally {vi.unstubAllEnvs();}});
+});
+
+
+describe("screenshot acquisition metadata", () => {
+  it("keeps custom specs FAQs aligned without replacing the default FAQ", () => {
+    for (const locale of ["fr", "en"] as const) {
+      const custom = jsonLdGraph(locale, SPECS_FAQ[locale])["@graph"].find((item) => item["@type"] === "FAQPage");
+      expect(custom?.mainEntity).toEqual(SPECS_FAQ[locale].map(({ q, a }) => ({
+        "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a },
+      })));
+      const fallback = jsonLdGraph(locale)["@graph"].find((item) => item["@type"] === "FAQPage");
+      expect(fallback?.mainEntity?.map((item) => item.name)).toEqual(FAQ[locale].map((item) => item.q));
+    }
+  });
+
+  it("gives reciprocal language versions the same sitemap priority", () => {
+    const entries = sitemap();
+    for (let i = 0; i < entries.length; i += 2) {
+      expect(entries[i].priority).toBe(entries[i + 1].priority);
+      expect(entries[i].alternates).toEqual(entries[i + 1].alternates);
+    }
+  });
 });

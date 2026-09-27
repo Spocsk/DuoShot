@@ -39,6 +39,7 @@ export function shouldSkipLocaleRewrite(pathname: string): boolean {
   return (
     MARKETING_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en) ||
     pathname.startsWith("/_next/") ||
+    /\/(?:opengraph-image|twitter-image)(?:-[^/]+)?$/.test(pathname) ||
     /\.[^/]+$/.test(pathname) ||
     pathname === "/api" ||
     pathname === "/auth" ||
