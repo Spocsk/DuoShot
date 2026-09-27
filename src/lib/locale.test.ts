@@ -23,7 +23,10 @@ describe("locale", () => {
     expect(parseAcceptLanguage("de,en;q=0.4")).toBe("en");
   });
 
-  it("skips api, auth and crawlers", () => {
+  it("skips public sitemap pages, api, auth and crawlers", () => {
+    for (const path of ["/", "/en", "/pricing", "/en/pricing", "/pourquoi-pas-ia", "/en/why-not-ai"]) {
+      expect(shouldSkipLocaleRewrite(path)).toBe(true);
+    }
     expect(shouldSkipLocaleRewrite("/api/export")).toBe(true);
     expect(shouldSkipLocaleRewrite("/auth/callback")).toBe(true);
     expect(shouldSkipLocaleRewrite("/r/abc123")).toBe(true);

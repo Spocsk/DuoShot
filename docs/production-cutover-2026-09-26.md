@@ -39,3 +39,36 @@ Suivi horaire programmé pendant 48 heures, jusqu’au 28 septembre 2026 à 20:3
 Stripe live reste à configurer et à éprouver avec un paiement expressément autorisé. Le parcours Google complet avec le compte du propriétaire, les invitations d’équipe applicatives et la fiscalité restent à valider. Ne pas présenter les paiements comme opérationnels.
 
 Les fichiers `runtime-env/*.env` sont les paramètres effectifs de Coolify. Ne pas régénérer ces fichiers depuis les anciennes valeurs de `.env` sans réconcilier les URL, SMTP, Google et l’ouverture des inscriptions.
+
+
+## Suivi — 27 septembre 2026, 06:08–06:11 UTC
+
+Contrôle effectivement exécuté à cette heure (le déclenchement initial était horodaté le 26 septembre à 21:44 UTC) ; ces constats ne représentent pas une mesure continue pendant l’intervalle.
+
+- Les deux fronts répondent HTTP 200 ; API Auth HTTP 200 avec la clé publique (401 attendu sans clé). TLS validé sur les trois domaines, certificats encore valides 89 jours.
+- Huit conteneurs sains, aucun OOM ni redémarrage signalé. Image web toujours `919b630b042d08d6599db53e99bc1fd3b39429e9`. Worker actif, trois timers actifs, aucune unité systemd en échec.
+- File de rendu : aucun job en attente ou en cours, aucun bail expiré ni attente supérieure à trente minutes ; aucun rendu échoué dans l’heure précédente.
+- Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux disponibles depuis la bascule. Deux messages Storage « Connection terminated » concordent exactement avec les arrêts de sauvegarde à 20:39:10 et 03:01:15 ; aucun symptôme persistant ni erreur dans les 65 dernières minutes.
+- Inscriptions et Google toujours ouverts, confirmation email requise, Checkout volontairement fermé. Maintenance Storage réussie à 06:00 UTC et effacement analytics exécuté avec succès à 04:03 UTC.
+- Disque VPS : 23,2 % utilisés, 27,1 Gio libres. Destination de sauvegarde : 13,9 Gio libres, cinq archives conservées.
+- Sauvegarde automatique `20260927T030114Z.tar.gz.age` présente localement et hors serveur : 118 679 octets et SHA-256 identique `775bace7e52faa57309b354dfc81c3158e350d4ee82a226b00bf36a306c54b28`. Marqueur de succès au 27 septembre. Aucun arrêt ou test de restauration supplémentaire déclenché.
+
+Situation stable : aucune intervention de production et aucune alerte requise. Suivi maintenu jusqu’à l’échéance prévue.
+
+
+## Suivi — 27 septembre 2026, 09:20 UTC
+
+Contrôle réalisé à 09:20 UTC pour le déclenchement horodaté 07:27 UTC. Les deux fronts répondent 200 depuis le Mac et le VPS ; API Auth 200 avec la clé publique. TLS valide sur les trois domaines (89 jours restants). Les huit conteneurs sont sains, sans OOM ni redémarrage signalé ; image web de référence inchangée. Worker, timers et dernières maintenances sains, aucune unité systemd en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis le précédent contrôle.
+
+Journaux depuis 06:08 UTC : trois rejets « Server Reference ID did not match the expected format » groupés à 06:22:52, sans récurrence ultérieure observée ni impact actuel. Aucun échec SMTP/webhook ou Auth relevé. Le signal initialement classé 5xx par une recherche textuelle dans Envoy est un faux positif : réponse HTTP 200, avec la valeur 529 dans un autre champ du journal. Aucun incident durable établi, aucune modification de production.
+
+Disque : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde `20260927T030114Z.tar.gz.age` toujours présente des deux côtés, 118 679 octets et SHA-256 identique à celui consigné précédemment ; copie distante avec 13,9 Gio libres et cinq archives. Inscriptions/Google et confirmation email inchangés ; Checkout volontairement fermé. Suivi poursuivi, sans alerte.
+
+
+## Suivi — 27 septembre 2026, 18:01 UTC
+
+Les fronts répondent HTTP 200 depuis le Mac et le VPS ; API Auth 200 avec la clé publique. TLS valide sur les trois domaines, 89 jours restants. Huit conteneurs sains, aucun OOM ni redémarrage signalé, image applicative de référence inchangée. Worker et timers actifs ; maintenances réussies et aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis le précédent contrôle.
+
+Depuis 09:19 UTC, trois rejets de Server Reference ID au format invalide sont groupés à 09:49:12–13, identiques aux rejets déjà observés. Aucun autre indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx relevé dans les journaux contrôlés, sans impact actuel constaté. Aucun changement de configuration ou test utilisateur effectué.
+
+Disque stable : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde quotidienne `20260927T030114Z.tar.gz.age` toujours vérifiée localement et hors serveur (118 679 octets, SHA-256 identique `775bace7e52faa57309b354dfc81c3158e350d4ee82a226b00bf36a306c54b28`) ; destination avec cinq archives et 13,9 Gio libres. Auth et fermeture volontaire de Checkout inchangées. Aucune alerte requise ; observation maintenue jusqu’au 28 septembre à 20:39 UTC.

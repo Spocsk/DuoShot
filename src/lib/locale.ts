@@ -1,5 +1,5 @@
 import type { Locale } from "./specs";
-import { localizedPath } from "./site";
+import { localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
 
 // The legacy cookie also stored automatic redirects; only explicit choices persist now.
 export const LOCALE_COOKIE = "duoshot_locale_manual";
@@ -37,6 +37,7 @@ export function isCrawler(userAgent: string | null): boolean {
 
 export function shouldSkipLocaleRewrite(pathname: string): boolean {
   return (
+    MARKETING_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en) ||
     pathname.startsWith("/_next/") ||
     /\.[^/]+$/.test(pathname) ||
     pathname === "/api" ||

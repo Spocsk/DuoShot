@@ -20,17 +20,17 @@ describe("locale", () => {
 
 
 describe("browser language detection", () => {
-  it("follows browser preferences both ways, ignoring the legacy automatic cookie", () => {
+  it("keeps sitemap pages on their canonical URL regardless of browser language", () => {
     cy.setCookie("duoshot_locale", "en");
     cy.request({ url: "/en?campaign=demo", headers: { "Accept-Language": "fr-FR" }, followRedirect: false }).then((response) => {
-      expect(response.status).to.eq(307);
-      expect(response.headers.location).to.match(/\/\?campaign=demo$/);
+      expect(response.status).to.eq(200);
       expect(response.headers["set-cookie"]).to.be.undefined;
     });
     cy.request({ url: "/?campaign=demo", headers: { "Accept-Language": "de-DE" }, followRedirect: false }).then((response) => {
-      expect(response.status).to.eq(307);
-      expect(response.headers.location).to.match(/\/en\?campaign=demo$/);
+      expect(response.status).to.eq(200);
     });
+    cy.request({ url: "/pricing", headers: { "Accept-Language": "en" }, followRedirect: false }).its("status").should("eq", 200);
+    cy.request({ url: "/en/pricing", headers: { "Accept-Language": "fr" }, followRedirect: false }).its("status").should("eq", 200);
   });
 
   it("does not redirect crawlers or sitemap requests", () => {
