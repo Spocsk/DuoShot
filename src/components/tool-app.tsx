@@ -1059,11 +1059,6 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         <div className="tool-command-set">
           <div className="ds-set-bar">
           <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
-            <p className="mb-2 text-xs text-[var(--muted)]">{locale === "fr" ? "Brouillons sur cet appareil · sans synchronisation" : "Drafts on this device · no synchronization"}</p>
-            {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Garde cet onglet ouvert et libère de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
-            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{locale === "fr" ? "Récupérer explicitement les brouillons anonymes ou anciens dans ce compte" : "Import anonymous or older drafts into this account"}</button> : null}
-            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{locale === "fr" ? "Réessayer le statut" : "Retry status"}</button> : null}
-            {activationTimedOut ? <button className="ds-text-btn" onClick={() => { setActivationTimedOut(false); setActivationAttempt((n) => n + 1); }}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
             <p className="ds-label" id="tool-sets-label">
               {t(locale, "tool_sets")}
             </p>
@@ -1086,6 +1081,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
                 aria-expanded={setsOpen}
                 aria-controls="tool-sets-menu"
                 aria-labelledby="tool-sets-label"
+                aria-describedby="tool-sets-description"
                 onClick={(event) => {
                   if (setsRef.current?.open) {
                     event.preventDefault();
@@ -1142,7 +1138,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             ) : null}
           </div>
         </div>
-</div>
+          <div className="tool-command-notes">
+            <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{locale === "fr" ? "Brouillons sur cet appareil · sans synchronisation" : "Drafts on this device · no synchronization"}</p>
+            {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Garde cet onglet ouvert et libère de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
+            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{locale === "fr" ? "Récupérer explicitement les brouillons anonymes ou anciens dans ce compte" : "Import anonymous or older drafts into this account"}</button> : null}
+            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{locale === "fr" ? "Réessayer le statut" : "Retry status"}</button> : null}
+            {activationTimedOut ? <button className="ds-text-btn" onClick={() => { setActivationTimedOut(false); setActivationAttempt((n) => n + 1); }}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
+          </div>
+        </div>
         <div className="tool-command-orientation">
           <Seg
           label={t(locale, "tool_label_orientation")}

@@ -79,3 +79,26 @@ Disque stable : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde quotidienne `20260
 Disponibilité confirmée : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec la clé publique, TLS valide sur les trois domaines (89 jours restants). Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs ; maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 18:01 UTC. Aucun nouvel indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés sur cet intervalle.
 
 Disque : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde `20260927T030114Z.tar.gz.age` confirmée sur les deux serveurs : 118 679 octets, SHA-256 identique à celui consigné précédemment. Cinq archives distantes, 13,9 Gio libres, succès quotidien daté du 27 septembre. Inscriptions et Google ouverts avec confirmation email ; Checkout reste volontairement fermé. Situation stable, aucune intervention ni alerte ; suivi maintenu.
+
+
+## Suivi — 28 septembre 2026, 05:53–05:55 UTC — accès SSH bloqué
+
+Contrôle exécuté à cette heure pour le déclenchement horodaté le 27 septembre à 19:57 UTC. Les fronts restent accessibles depuis le Mac (HTTP 200, validation TLS réussie) ; les certificats des trois domaines sont valides, avec expiration le 25 décembre. L’API Auth est accessible mais exige sa clé publique ; ce contrôle externe ne remplace pas sa sonde authentifiée.
+
+Nouveau blocage de surveillance : authentification SSH refusée sur les deux VPS avec la clé habituelle. Une tentative diagnostique confirme que le serveur DuoShot reconnaît la clé publique, mais l’authentification n’aboutit pas. Le chargement non interactif de la clé privée depuis le trousseau macOS a également échoué. Aucun paramètre SSH, DNS, compte ou service n’a été modifié.
+
+L’état actuel des conteneurs, du worker, des rendus, des journaux, du disque et de la sauvegarde du 28 septembre n’a donc pas pu être vérifié. Dernier contrôle interne complet : 27 septembre à 18:59 UTC. Blocage SSH signalé une seule fois à l’utilisateur, avec demande de charger la clé dans son Terminal ; ne pas répéter cette notification tant que la cause et les symptômes restent inchangés. Surveillance externe maintenue jusqu’à l’échéance prévue.
+
+
+## Suivi — 28 septembre 2026, 06:14 UTC
+
+Contrôles externes stables : les deux fronts répondent HTTP 200, API Auth HTTP 401 attendu sans clé, validation TLS réussie sur les trois domaines (88 jours restants). Checkout reste volontairement fermé. Une tentative SSH non interactive sur chacun des deux VPS confirme le même refus d’authentification par clé ; aucune nouvelle tentative de déverrouillage ni modification n’a été effectuée. Les contrôles internes et la sauvegarde du 28 septembre restent non vérifiables. Blocage déjà signalé à 05:55 UTC : aucune notification répétée. Suivi externe maintenu jusqu’à l’échéance prévue.
+
+
+## Suivi — 28 septembre 2026, 07:15–07:16 UTC — accès SSH rétabli
+
+L’authentification habituelle fonctionne de nouveau sur les deux VPS sans changement de configuration effectué par ce suivi. Le blocage précédemment signalé est résolu ; les contrôles internes ont repris.
+
+Fronts HTTP 200 depuis le Mac, API Auth HTTP 200 avec la clé publique ; TLS valide sur les trois domaines (88 jours restants). Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, dernières maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis le dernier contrôle interne complet du 27 septembre à 18:59 UTC. Les journaux de cet intervalle ne montrent aucun indicateur d’erreur Auth/SMTP/webhook ou HTTP 5xx ; un message Storage « Connection terminated » à 03:01:27 correspond à la sauvegarde de 03:01:26.
+
+Sauvegarde du 28 septembre désormais vérifiée : `20260928T030126Z.tar.gz.age`, 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique sur les deux serveurs. Marqueur de succès au 28 septembre ; six archives distantes et 13,9 Gio libres. Disque VPS stable à 23,2 % utilisés et 27,0 Gio libres. Inscriptions/Google ouverts, confirmation email requise, Checkout volontairement fermé. Aucun test utilisateur ni aucune modification de production ; suivi maintenu jusqu’à 20:39 UTC.

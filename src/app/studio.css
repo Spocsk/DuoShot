@@ -274,10 +274,12 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 
 /* Tool: a persistent canvas with a quiet, contextual command surface. */
 .studio-tool-shell { max-width: 92rem; display: block; padding-block: 1.15rem 5rem; }
-.tool-command-bar { display: grid; grid-template-columns: auto minmax(15rem, 1fr) auto auto; align-items: center; gap: clamp(1rem, 2vw, 2rem); min-height: 4.2rem; padding: 0.55rem 0 1rem; border-bottom: 1px solid var(--line); }
+.tool-command-bar { display: grid; grid-template-columns: auto minmax(15rem, 1fr) auto auto; grid-template-rows: auto auto; align-items: center; column-gap: clamp(1rem, 2vw, 2rem); row-gap: 0.5rem; min-height: 4.2rem; padding: 0.55rem 0 1rem; border-bottom: 1px solid var(--line); }
 .tool-command-brand { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; }
 .tool-command-dot { width: 0.65rem; height: 0.65rem; border-radius: 50%; background: #2c6571; box-shadow: 0 0 0 0.24rem #e6f0f1; }
-.tool-command-set { min-width: 0; }
+.tool-command-brand, .tool-command-orientation, .tool-command-account { grid-row: 1; }
+.tool-command-set { min-width: 0; display: grid; grid-template-rows: subgrid; grid-row: 1 / span 2; }
+.tool-command-notes { max-width: 16rem; }
 .tool-command-set .ds-set-bar { margin: 0; align-items: center; }
 .tool-command-set .ds-field { max-width: 16rem; }
 .tool-command-set .ds-label, .tool-command-orientation .ds-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -362,22 +364,22 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
   .tool-workspace { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
   .studio-tool-main { position: static; }
   .tool-command-bar { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .tool-command-orientation { grid-column: 2; grid-row: 2; }
+  .tool-command-orientation { grid-column: 2; grid-row: 3; }
   .tool-command-account { grid-column: 3; grid-row: 1; }
-  .tool-command-set { grid-column: 2; grid-row: 1; }
+  .tool-command-set { grid-column: 2; grid-row: 1 / span 2; }
   .tool-command-brand { grid-column: 1; grid-row: 1; }
 }
 @media (max-width: 639px) {
   .studio-tool-shell { padding-inline: 1rem; padding-top: 0.5rem; }
   .tool-command-bar { grid-template-columns: minmax(0, 1fr) auto; gap: 0.65rem; }
   .tool-command-brand { display: none; }
-  .tool-command-set { grid-column: 1; grid-row: 1; }
+  .tool-command-set { grid-column: 1; grid-row: 1 / span 2; }
   .tool-command-set .ds-set-bar { flex-wrap: nowrap; }
   .tool-command-set .ds-field { min-width: 0; flex-basis: auto; }
   .tool-command-set .ds-set-actions .ds-cta-ghost { font-size: 0.7rem; }
   .tool-command-set .ds-set-actions .ds-text-btn { font-size: 0.7rem; }
   .tool-command-account { grid-column: 2; grid-row: 1; }
-  .tool-command-orientation { grid-column: 1 / -1; grid-row: 2; }
+  .tool-command-orientation { grid-column: 1 / -1; grid-row: 3; }
   .tool-command-orientation .ds-seg { width: 100%; }
   .tool-workspace { padding-top: 1.3rem; gap: 1.65rem; }
   .tool-canvas-heading h1 { font-size: 1.6rem; }
