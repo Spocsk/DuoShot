@@ -6,7 +6,7 @@ export const metadata = pageMetadata({
   locale: "fr",
   path: "/tool",
   title: "Outil",
-  description: "Compose tes screenshots Duo : drop, preview dual, ZIP.",
+  description: "Composez vos captures Duo : import, double aperçu, ZIP.",
 });
 
 

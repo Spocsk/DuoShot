@@ -7,13 +7,13 @@ export { PRO_CHECKOUT_KIND };
 
 function checkoutMessage(code: string | undefined, english: boolean): string {
   const messages: Record<string, [string, string]> = {
-    AUTH_REQUIRED: ["Reconnecte-toi avant de choisir une offre.", "Sign in again before choosing a plan."],
+    AUTH_REQUIRED: ["Reconnectez-vous avant de choisir une offre.", "Sign in again before choosing a plan."],
     BILLING_OWNER_REQUIRED: ["Le propriétaire de l’espace doit gérer l’abonnement.", "The workspace owner must manage the subscription."],
-    BILLING_UNCONFIGURED: ["Les paiements ne sont pas encore ouverts. Tes droits actuels restent disponibles.", "Payments are not open yet. Your current access remains available."],
-    ACTIVATION_PENDING: ["L’activation est en cours. Vérifie ton compte avant de réessayer un paiement.", "Activation is pending. Check your account before attempting another payment."],
-    CHECKOUT_EXPIRED: ["La session de paiement a expiré. Sélectionne à nouveau ton offre.", "The checkout session expired. Select your plan again."],
+    BILLING_UNCONFIGURED: ["Les paiements ne sont pas encore ouverts. Vos droits actuels restent disponibles.", "Payments are not open yet. Your current access remains available."],
+    ACTIVATION_PENDING: ["L’activation est en cours. Vérifiez votre compte avant de réessayer un paiement.", "Activation is pending. Check your account before attempting another payment."],
+    CHECKOUT_EXPIRED: ["La session de paiement a expiré. Sélectionnez à nouveau votre offre.", "The checkout session expired. Select your plan again."],
   };
-  return messages[code ?? ""]?.[english ? 1 : 0] ?? (english ? "Billing is temporarily unavailable. Please retry in a moment." : "La facturation est temporairement indisponible. Réessaie dans un instant.");
+  return messages[code ?? ""]?.[english ? 1 : 0] ?? (english ? "Billing is temporarily unavailable. Please retry in a moment." : "La facturation est temporairement indisponible. Réessayez dans un instant.");
 }
 
 export async function startCheckout(kind: CheckoutKind, nextPath: string): Promise<void> {

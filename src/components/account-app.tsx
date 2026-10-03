@@ -276,7 +276,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
     const payload = (await response.json()) as { error?: string; emailSent?: boolean; acceptPath?: string };
     if (response.ok) {
       setInviteEmail("");
-      setStudioMessage(payload.emailSent ? (locale === "fr" ? "Invitation envoyée." : "Invitation sent.") : `${locale === "fr" ? "Invitation créée, e-mail non envoyé. Partage ce lien : " : "Invitation created, email not sent. Share this link: "}${window.location.origin}${payload.acceptPath ?? ""}`);
+      setStudioMessage(payload.emailSent ? (locale === "fr" ? "Invitation envoyée." : "Invitation sent.") : `${locale === "fr" ? "Invitation créée, e-mail non envoyé. Partagez ce lien : " : "Invitation created, email not sent. Share this link: "}${window.location.origin}${payload.acceptPath ?? ""}`);
       await refreshStudio();
     } else {
       setStudioMessage(
@@ -308,7 +308,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
       <p className="ds-label">Studio</p>
       <h2 className="font-display mt-2 text-3xl">{locale === "fr" ? "Équipe et reviews" : "Team and reviews"}</h2>
       <p className="mt-3 text-sm text-[var(--muted)]">
-        {locale === "fr" ? "Trois sièges inclus. Les médias de review expirent après sept jours." : "Three seats included. Review media expires after seven days."}
+        {locale === "fr" ? "Trois sièges inclus. Les médias de validation expirent après sept jours." : "Three seats included. Review media expires after seven days."}
       </p>
       <div className="mt-6 flex gap-3">
         <label className="min-w-0 flex-1">
@@ -364,7 +364,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
           ))}
         </ul>
       ) : null}
-      <h3 className="font-display mt-10 text-2xl">{locale === "fr" ? "Reviews récentes" : "Recent reviews"}</h3>
+      <h3 className="font-display mt-10 text-2xl">{locale === "fr" ? "Validations récentes" : "Recent reviews"}</h3>
       {reviews.length ? (
         <ul className="mt-3 divide-y divide-[var(--line)]">
           {reviews.map((review) => (
@@ -387,7 +387,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
             </li>
           ))}
         </ul>
-      ) : <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Aucune review créée." : "No reviews yet."}</p>}
+      ) : <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Aucun lien de validation créé." : "No reviews yet."}</p>}
     </section>
   );
 }

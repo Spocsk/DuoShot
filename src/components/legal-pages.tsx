@@ -385,7 +385,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
       <Block title="Strictement nécessaires">
         <p>
           Cookies de session Auth seulement (Supabase PKCE). Ils servent à rester connecté et à télécharger un ZIP. Le
-          cookie fonctionnel <code>duoshot_locale_manual</code> n’est posé que si tu cliques FR/EN. Les pages publiques utilisent
+          cookie fonctionnel <code>duoshot_locale_manual</code> n’est posé que si vous cliquez sur FR/EN. Les pages publiques utilisent
           la langue de leur URL ; les autres pages peuvent suivre l’en-tête <code>Accept-Language</code> du navigateur.
           Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de ce site.
         </p>

@@ -41,7 +41,7 @@ export async function GET() {
       await sendTransactionalEmail({
         to: user.email,
         subject: "Export DuoShot",
-        text: "Ton export JSON compte est disponible dans le navigateur (téléchargement immédiat).",
+        text: "Votre export JSON de compte est disponible dans le navigateur (téléchargement immédiat).",
       });
     } catch {
       // Delivery is best-effort; the JSON download still proceeds.

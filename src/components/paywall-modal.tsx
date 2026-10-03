@@ -24,7 +24,7 @@ export function PaywallModal({
 }) {
   const yearly = preferredKind?.endsWith("_yearly") ?? false;
   return (
-    <Overlay onClose={onClose} labelledBy="paywall-title">
+    <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={locale === "fr" ? "Fermer" : "Close"}>
       <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
         {reason === "69" ? t(locale, "paywall_69") : t(locale, "paywall_title")}
       </h2>

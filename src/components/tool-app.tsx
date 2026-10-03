@@ -28,6 +28,7 @@ import {
   connectPreviewStyle,
   duoChassisAspect,
   duoSpec,
+  overlayTextColor,
   textOverlayLayout,
   zipFolderName,
   type CropTransform,
@@ -179,7 +180,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     checkoutFlag === "success"
       ? billing?.source === "stripe" && billing.plan !== "free"
         ? t(locale, "checkout_success")
-        : locale === "fr" ? (activationTimedOut ? "Activation non confirmée. Vérifie à nouveau le statut de l’abonnement." : "Retour du paiement. Vérification de l’activation en cours…") : (activationTimedOut ? "Activation not confirmed. Check your subscription status again." : "Returned from checkout. Checking activation…")
+        : locale === "fr" ? (activationTimedOut ? "Activation non confirmée. Vérifiez à nouveau le statut de l’abonnement." : "Retour du paiement. Vérification de l’activation en cours…") : (activationTimedOut ? "Activation not confirmed. Check your subscription status again." : "Returned from checkout. Checking activation…")
       : checkoutFlag === "cancel"
         ? t(locale, "checkout_cancel")
         : null;
@@ -305,6 +306,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     Boolean(zipUrl && exportImages.length),
   ];
   const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
+  // Mirrors the Check panel's "To do" list so the export action says what is still open.
+  const missingSteps = [
+    unpaired ? (locale === "fr" ? "compléter les vues fermé et ouvert" : "complete the closed and open views") : null,
+    severeQualityCount > 0 || cloneAlert ? (locale === "fr" ? "examiner les alertes de cadrage et de similarité" : "review framing and similarity alerts") : null,
+    !appUsageConfirmed ? (locale === "fr" ? "confirmer le contenu de l’app" : "confirm the app content") : null,
+  ].filter((step): step is string => step !== null);
 
   const warning = useMemo(() => {
     const count = Math.max(outerFiles.length, effectiveInner.length);
@@ -666,14 +673,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (code === "CLONE_RISK") return t(locale, "error_clone");
     if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
     if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
-    if (code === "RENDER_BUSY") return locale === "fr" ? "Le serveur traite déjà plusieurs lots. Réessaie dans quelques secondes ; aucun quota n’a été consommé." : "The server is processing other batches. Retry shortly; no quota was consumed.";
+    if (code === "RENDER_BUSY") return locale === "fr" ? "Le serveur traite déjà plusieurs lots. Réessayez dans quelques secondes ; aucun quota n’a été consommé." : "The server is processing other batches. Retry shortly; no quota was consumed.";
     if (code === "NO_IMAGES") return t(locale, "error_no_images");
     if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
-    if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduis le nombre de paires ou choisis JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
-    if (code === "RENDER_PENDING") return locale === "fr" ? "Le rendu continue sur le serveur. Reviens sur cette page pour récupérer le résultat." : "Rendering continues on the server. Return to this page to retrieve it.";
-    if (code === "RENDER_ALREADY_PENDING") return locale === "fr" ? "Un rendu est déjà en cours sur ce compte. Recharge la page pour le retrouver." : "A render is already pending for this account. Reload to recover it.";
-    if (code === "RENDER_INTERRUPTED") return locale === "fr" ? "Ce rendu a été interrompu. Ton essai a été restitué ; tu peux réessayer." : "This render was interrupted. Your trial was restored; you can retry.";
-    if (code === "RENDER_GEOMETRY_TOO_LARGE") return locale === "fr" ? "Cette capture est trop allongée pour ce recadrage. Choisis le mode Contenir ou réduis le zoom." : "This screenshot is too narrow or wide for this crop. Choose Contain or reduce the zoom.";
+    if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduisez le nombre de paires ou choisissez JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
+    if (code === "RENDER_PENDING") return locale === "fr" ? "Le rendu continue sur le serveur. Revenez sur cette page pour récupérer le résultat." : "Rendering continues on the server. Return to this page to retrieve it.";
+    if (code === "RENDER_ALREADY_PENDING") return locale === "fr" ? "Un rendu est déjà en cours sur ce compte. Rechargez la page pour le retrouver." : "A render is already pending for this account. Reload to recover it.";
+    if (code === "RENDER_INTERRUPTED") return locale === "fr" ? "Ce rendu a été interrompu. Votre essai a été restitué ; vous pouvez réessayer." : "This render was interrupted. Your trial was restored; you can retry.";
+    if (code === "RENDER_GEOMETRY_TOO_LARGE") return locale === "fr" ? "Cette capture est trop allongée pour ce recadrage. Choisissez le mode Tout afficher ou réduisez le zoom." : "This screenshot is too narrow or wide for this crop. Choose Contain or reduce the zoom.";
     if (code === "INPUT_TOO_LARGE" || code === "BATCH_TOO_LARGE") return locale === "fr" ? "Limite dépassée : 50 Mo et 40 mégapixels par capture, 200 Mo par lot." : "Limit exceeded: 50 MB and 40 megapixels per screenshot, 200 MB per batch.";
     if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
     return t(locale, "error_export");
@@ -685,7 +692,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     const progress = (state: "queued" | "running") => {
       if (!mounted) return;
       setStatusKind("busy");
-      setStatus(state === "queued" ? (locale === "fr" ? "Ton rendu est en attente…" : "Your render is queued…") : t(locale, "tool_progress_compose"));
+      setStatus(state === "queued" ? (locale === "fr" ? "Votre rendu est en attente…" : "Your render is queued…") : t(locale, "tool_progress_compose"));
     };
     for (const kind of ["export", "review"] as const) {
       const pending = resumeRender(owner, kind, progress);
@@ -708,7 +715,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
         void refreshBilling();
       }).catch(() => {
-        if (mounted) { setStatusKind("err"); setStatus(locale === "fr" ? "Récupération du rendu indisponible. Recharge la page pour réessayer sans créer une nouvelle demande." : "Render recovery unavailable. Reload to retry without creating a new request."); }
+        if (mounted) { setStatusKind("err"); setStatus(locale === "fr" ? "Récupération du rendu indisponible. Rechargez la page pour réessayer sans créer une nouvelle demande." : "Render recovery unavailable. Reload to retry without creating a new request."); }
       }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
     }
     return () => { mounted = false; };
@@ -787,7 +794,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Tu peux revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
+        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as {
         url?: string; error?: string; warning?: string; filename?: string; exportId?: string; expiresAt?: string;
@@ -851,17 +858,17 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       const payload = await response.json() as { url?: string; error?: string };
       if (!response.ok || !payload.url) {
         const messages: Record<string, [string, string]> = {
-          EXPORT_EXPIRED: ["Ce ZIP a expiré après 24 h. Tes captures locales restent disponibles.", "This ZIP expired after 24 hours. Your local screenshots remain available."],
+          EXPORT_EXPIRED: ["Ce ZIP a expiré après 24 h. Vos captures locales restent disponibles.", "This ZIP expired after 24 hours. Your local screenshots remain available."],
           EXPORT_DELETED: ["Ce fichier a été supprimé du serveur.", "This file has been removed from the server."],
-          AUTH_REQUIRED: ["Reconnecte-toi pour récupérer ce fichier.", "Sign in again to retrieve this file."],
+          AUTH_REQUIRED: ["Reconnectez-vous pour récupérer ce fichier.", "Sign in again to retrieve this file."],
         };
         const message = messages[payload.error ?? ""];
-        flashStatus(message ? message[locale === "fr" ? 0 : 1] : locale === "fr" ? "Téléchargement indisponible. Réessaie sans générer un nouvel export." : "Download unavailable. Retry without generating another export.", "err");
+        flashStatus(message ? message[locale === "fr" ? 0 : 1] : locale === "fr" ? "Téléchargement indisponible. Réessayez sans générer un nouvel export." : "Download unavailable. Retry without generating another export.", "err");
         return;
       }
       setZipUrl(payload.url);
       window.location.assign(payload.url);
-    } catch { flashStatus(locale === "fr" ? "Erreur réseau. Réessaie le téléchargement ; aucun essai supplémentaire n’est consommé." : "Network error. Retry the download; no additional trial is consumed.", "err"); }
+    } catch { flashStatus(locale === "fr" ? "Erreur réseau. Réessayez le téléchargement ; aucun essai supplémentaire n’est consommé." : "Network error. Retry the download; no additional trial is consumed.", "err"); }
   }
 
   async function onReview() {
@@ -927,7 +934,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Tu peux revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
+        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
       if (!response.ok) {
@@ -1182,7 +1189,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         </div>
           <div className="tool-command-notes">
             <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{locale === "fr" ? "Brouillons sur cet appareil · sans synchronisation" : "Drafts on this device · no synchronization"}</p>
-            {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Garde cet onglet ouvert et libère de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
+            {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Gardez cet onglet ouvert et libérez de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
             {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{locale === "fr" ? "Récupérer explicitement les brouillons anonymes ou anciens dans ce compte" : "Import anonymous or older drafts into this account"}</button> : null}
             {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{locale === "fr" ? "Réessayer le statut" : "Retry status"}</button> : null}
             {activationTimedOut ? <button className="ds-text-btn" onClick={() => { setActivationTimedOut(false); setActivationAttempt((n) => n + 1); }}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
@@ -1621,6 +1628,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           />
         </div>
               </div>
+        {!zipUrl && hasExportable && missingSteps.length ? (
+          <p className="tool-missing-steps mt-6 text-sm text-[var(--warn)]" data-testid="tool-missing-steps" role="status">
+            {locale === "fr" ? "Avant de préparer les fichiers : " : "Before preparing files: "}{missingSteps.join(locale === "fr" ? " ; " : "; ")}.
+          </p>
+        ) : null}
         {!zipUrl ? <button
           type="button"
           disabled={busyExport || !hasExportable}
@@ -1691,7 +1703,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           <a href={downloadId ? `/api/exports/${downloadId}/download` : zipUrl} download={zipName} data-testid="tool-zip-link" className="ds-cta mt-4 inline-flex" onClick={(event) => { event.preventDefault(); void onDownload(); }}>
               {locale === "fr" ? "Télécharger le ZIP" : "Download ZIP"}
             </a>
-            <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Décompresse le ZIP pour obtenir les deux séries d’images. Le fichier reste récupérable pendant 24 h, sans nouvel essai. Le clic demande le téléchargement ; vérifie ensuite le fichier dans ton navigateur. Le dépôt manuel dépend de l’ouverture des emplacements Duo dans App Store Connect." : "Unzip the archive to get both image sets. Retrieve it again within 24 hours without another trial. Clicking requests a download; check the file in your browser. Manual upload depends on Duo slots becoming available in App Store Connect."}</p>
+            <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Décompressez le ZIP pour obtenir les deux séries d’images. Le fichier reste récupérable pendant 24 h, sans nouvel essai. Le clic demande le téléchargement ; vérifiez ensuite le fichier dans votre navigateur. Le dépôt manuel dépend de l’ouverture des emplacements Duo dans App Store Connect." : "Unzip the archive to get both image sets. Retrieve it again within 24 hours without another trial. Clicking requests a download; check the file in your browser. Manual upload depends on Duo slots becoming available in App Store Connect."}</p>
           </div>
         ) : null}
         {visibleReviewUrl ? (
@@ -1721,6 +1733,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             setUpgradeDismissed(true);
           }}
           labelledBy="auth-modal-title"
+          closeLabel={locale === "fr" ? "Fermer" : "Close"}
         >
           <AuthForm
             locale={locale}
@@ -2315,7 +2328,7 @@ function drawTarget(
   ctx.drawImage(bitmap, rect.left, rect.top, rect.width, rect.height);
   const layout = textOverlayLayout(spec, options.titlePosition);
   if (options.title || options.subtitle) {
-    ctx.fillStyle = "#F4F1EA";
+    ctx.fillStyle = overlayTextColor(options);
     ctx.textAlign = "center";
     const family = options.titleFont === "serif" ? "Georgia, serif" : "system-ui";
     if (options.title) {

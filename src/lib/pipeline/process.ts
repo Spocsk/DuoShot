@@ -4,7 +4,7 @@ import sharp, { type OutputInfo, type OverlayOptions } from "sharp";
 import { MAX_RENDER_PIXELS } from "./limits";
 import { parseHexColor } from "./geometry";
 import type { CropTransform, RenderOptions, SizeSpec, TitleFont } from "../specs";
-import { hingeBand, JPEG_QUALITY, normalizeCropTransform, textOverlayLayout } from "../specs";
+import { hingeBand, JPEG_QUALITY, normalizeCropTransform, overlayTextColor, textOverlayLayout } from "../specs";
 import { compositionMetrics } from "./geometry";
 
 const FONT_SANS = path.join(process.cwd(), "src/lib/pipeline/fonts/sans-bold.ttf");
@@ -87,7 +87,7 @@ function titleSvg(spec: SizeSpec, options: RenderOptions): string | null {
       : "";
   return `<svg width="${spec.width}" height="${spec.height}" xmlns="http://www.w3.org/2000/svg">
     <style>${fontFaceCss(options.titleFont)}
-      .t{font-family:'${family}','${systemFamily}';fill:#F4F1EA;text-anchor:middle;}
+      .t{font-family:'${family}','${systemFamily}';fill:${overlayTextColor(options)};text-anchor:middle;}
     </style>
     ${title ? `<text class="t" x="${layout.x}" y="${layout.yTitle}" font-size="${layout.titleSize}" font-weight="700"${fitted(title, layout.titleSize)}>${escapeXml(title)}</text>` : ""}
     ${subtitle ? `<text class="t" x="${layout.x}" y="${layout.ySubtitle}" font-size="${layout.subtitleSize}" opacity="0.82"${fitted(subtitle, layout.subtitleSize)}>${escapeXml(subtitle)}</text>` : ""}

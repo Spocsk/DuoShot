@@ -33,7 +33,7 @@ export function AuthForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [privacy, setPrivacy] = useState(false);
-  const [message, setMessage] = useState<string | null>(initialError ? (locale === "fr" ? "Ce lien de connexion est invalide ou a expiré. Demande un nouveau lien ou reconnecte-toi." : "This sign-in link is invalid or expired. Request a new link or sign in again.") : null);
+  const [message, setMessage] = useState<string | null>(initialError ? (locale === "fr" ? "Ce lien de connexion est invalide ou a expiré. Demandez un nouveau lien ou reconnectez-vous." : "This sign-in link is invalid or expired. Request a new link or sign in again.") : null);
   const [messageOk, setMessageOk] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -98,7 +98,7 @@ export function AuthForm({
     try {
       if (mode === "signup") {
         if (!privacy) {
-          fail(locale === "fr" ? "Accepte les conditions générales et la confidentialité." : "Please accept the terms and privacy policy.");
+          fail(locale === "fr" ? "Acceptez les conditions générales et la politique de confidentialité." : "Please accept the terms and privacy policy.");
           return;
         }
         const { data, error } = await supabase.auth.signUp({
@@ -118,7 +118,7 @@ export function AuthForm({
         setMessageOk(true);
         setMessage(
           locale === "fr"
-            ? "Compte créé. Vérifie tes e-mails si une confirmation est demandée."
+            ? "Compte créé. Consultez vos e-mails si une confirmation est demandée."
             : "Account created. Check your email if confirmation is required.",
         );
         if (data.session) {

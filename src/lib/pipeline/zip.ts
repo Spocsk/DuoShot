@@ -93,7 +93,7 @@ export function buildReadme(options: {
     for (const warning of options.compositionWarnings) lines.push(`- ${warning}`);
   }
   if (options.branded) {
-    lines.push("", "Préparé avec DuoShot — vérifie chaque image avant le dépôt dans App Store Connect.");
+    lines.push("", "Préparé avec DuoShot — vérifiez chaque image avant le dépôt dans App Store Connect.");
   }
   return `${lines.join("\n")}\n`;
 }
