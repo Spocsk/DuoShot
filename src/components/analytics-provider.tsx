@@ -135,8 +135,8 @@ export function AnalyticsProvider() {
         <div className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-xl border border-[var(--line)] bg-[var(--background)] p-5 shadow-2xl" role="dialog" aria-label={fr ? "Préférences statistiques" : "Analytics preferences"}>
           <p className="font-display text-lg">{fr ? "Mesure des parcours" : "Product analytics"}</p>
           <p className="mt-2 text-sm text-[var(--muted)]">{fr
-            ? "Avec votre accord, Mixpanel mesure les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
-            : "With your permission, Mixpanel measures pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
+            ? "Avec votre accord, Datafast et Mixpanel mesurent les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
+            : "With your permission, Datafast and Mixpanel measure pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
           {choiceError ? <p className="mt-2 text-sm text-[var(--warn)]" role="alert">{fr ? "Choix non enregistré. Réessayez." : "Preference not saved. Please retry."}</p> : null}
           <div className="mt-4 flex flex-wrap gap-3">
             <button type="button" className="ds-cta" onClick={() => void choose("accepted")}>{fr ? "Accepter" : "Accept"}</button>

@@ -1,14 +1,16 @@
 "use client";
 
 import type Mixpanel from "mixpanel-browser";
+import { ANALYTICS_CHOICE_KEY, analyticsChoice, syncAnalyticsConsentCookie, type AnalyticsChoice } from "./analytics-consent";
+import { setDatafastAudience, setDatafastChoice, trackDatafast } from "./datafast-client";
+import { DATAFAST_WEBSITE_ID } from "./datafast-config";
 
-export type AnalyticsChoice = "accepted" | "rejected" | null;
+export { analyticsChoice, type AnalyticsChoice };
 export type ProductEvent =
   | "page_viewed" | "page_engagement" | "auth_succeeded" | "account_created"
   | "captures_added" | "export_requested" | "export_failed" | "zip_download_clicked"
   | "checkout_started" | "review_requested" | "review_failed";
 
-const KEY = "duoshot_analytics_choice_v1";
 const AUTH_INTENT_KEY = "duoshot_analytics_auth_intent";
 const TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
 let audience = "anonymous";
@@ -17,17 +19,7 @@ let sdk: typeof Mixpanel | null = null;
 let loading: Promise<typeof Mixpanel | null> | null = null;
 
 export function analyticsConfigured() {
-  return Boolean(TOKEN);
-}
-
-export function analyticsChoice(): AnalyticsChoice {
-  if (typeof window === "undefined") return null;
-  try {
-    const value = window.localStorage.getItem(KEY);
-    return value === "accepted" || value === "rejected" ? value : null;
-  } catch {
-    return null;
-  }
+  return Boolean(TOKEN || DATAFAST_WEBSITE_ID);
 }
 
 function removeSensitiveProperties(properties: Record<string, unknown>) {
@@ -67,7 +59,8 @@ async function getSdk(): Promise<typeof Mixpanel | null> {
 }
 
 export async function setAnalyticsChoice(choice: Exclude<AnalyticsChoice, null>): Promise<boolean> {
-  try { window.localStorage.setItem(KEY, choice); } catch { return false; }
+  try { window.localStorage.setItem(ANALYTICS_CHOICE_KEY, choice); } catch { return false; }
+  syncAnalyticsConsentCookie(choice);
   if (choice === "rejected") {
     sdk?.opt_out_tracking();
     sdk = null;
@@ -75,19 +68,24 @@ export async function setAnalyticsChoice(choice: Exclude<AnalyticsChoice, null>)
   } else {
     await getSdk();
   }
+  await setDatafastChoice(choice);
   window.dispatchEvent(new CustomEvent("duoshot:analytics-choice", { detail: choice }));
   return true;
 }
 
 export async function trackProduct(event: ProductEvent, properties: Record<string, string | number | boolean> = {}) {
-  const mixpanel = await getSdk();
-  if (mixpanel && analyticsChoice() === "accepted") mixpanel.track(event, { ...properties, audience });
+  await Promise.allSettled([
+    trackDatafast(event, { ...properties, audience }),
+    getSdk().then((mixpanel) => {
+      if (mixpanel && analyticsChoice() === "accepted") mixpanel.track(event, { ...properties, audience });
+    }),
+  ]);
 }
 
 export async function identifyAnalyticsUser(userId: string) {
   const revision = ++identityRevision;
   const mixpanel = await getSdk();
-  if (mixpanel && analyticsChoice() === "accepted") {
+  if (analyticsChoice() === "accepted") {
     try {
       const response = await fetch("/api/billing/status", { cache: "no-store" });
       const status = response.ok ? await response.json() : null;
@@ -95,14 +93,16 @@ export async function identifyAnalyticsUser(userId: string) {
       audience = status?.audience === "internal" ? "internal" : status?.audience === "external" ? "external" : "unknown";
     } catch { if (revision !== identityRevision) return; audience = "unknown"; }
     if (revision !== identityRevision || analyticsChoice() !== "accepted") return;
-    mixpanel.identify(userId);
-    mixpanel.people.set({ audience });
+    setDatafastAudience(audience);
+    mixpanel?.identify(userId);
+    mixpanel?.people.set({ audience });
   }
 }
 
 export function resetAnalyticsUser() {
   identityRevision++;
   audience = "anonymous";
+  setDatafastAudience(audience);
   sdk?.reset();
 }
 

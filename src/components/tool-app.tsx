@@ -48,6 +48,7 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, isCheckoutKind, startCheckout } from "@/lib/checkout";
 import { trackProduct } from "@/lib/analytics-client";
+import { trackDatafastConversion } from "@/lib/datafast-client";
 import type { CheckoutKind } from "@/lib/plans";
 import {
   defaultSet,
@@ -334,6 +335,17 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     const timeout = window.setTimeout(() => { window.clearInterval(timer); setActivationTimedOut(true); }, 60000);
     return () => { window.clearInterval(timer); window.clearTimeout(timeout); };
   }, [billing?.plan, billing?.source, checkoutFlag, refreshBilling, activationAttempt]);
+
+  useEffect(() => {
+    const sessionId = searchParams.get("session_id");
+    const plan = billing?.plan;
+    if (checkoutFlag === "success" && sessionId?.startsWith("cs_") && billing?.source === "stripe" && (plan === "indie" || plan === "studio")) {
+      const report = () => { void trackDatafastConversion("subscription_activated", sessionId, { plan }); };
+      report();
+      window.addEventListener("duoshot:analytics-choice", report);
+      return () => window.removeEventListener("duoshot:analytics-choice", report);
+    }
+  }, [billing?.plan, billing?.source, checkoutFlag, searchParams]);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -663,9 +675,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         if (kind === "export") {
           setZipUrl(payload.url); setZipName(payload.filename ?? "app.zip");
           setDownloadId(payload.exportId ?? null); setExportImages(payload.images ?? []);
+          if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId);
         } else {
           setReviewUrl(new URL(payload.url, window.location.origin).href);
           setReviewStatus(t(locale, "tool_review_ready"));
+          void trackDatafastConversion("review_created", payload.id ?? payload.url.split("/").filter(Boolean).pop());
         }
         setToolPanel("review");
         setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
@@ -780,6 +794,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         return;
       }
       if (!payload.url) throw new Error("STORAGE_UNAVAILABLE");
+      if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId, {
+        image_count: Math.max(outerFiles.length, effectiveInner.length),
+        plan: billing?.plan ?? "unknown",
+      });
       const warning = payload.warning ?? "";
       setZipName(payload.filename || "app.zip");
       setZipUrl(payload.url);
@@ -896,6 +914,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         return;
       }
       const publicId = payload.id ?? payload.url?.split("/").filter(Boolean).pop();
+      if (publicId) void trackDatafastConversion("review_created", publicId, { slide_count: Math.max(outerFiles.length, effectiveInner.length) });
       if (publicId) patchActive({ lastReviewId: publicId, lastReviewStatus: "pending" });
       const path = payload.url || (publicId ? reviewPath(locale, publicId) : "");
       const absolute = path.startsWith("http") ? path : `${window.location.origin}${path}`;

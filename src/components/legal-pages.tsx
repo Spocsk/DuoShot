@@ -122,13 +122,13 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
           <p>
             Account data (email, auth identifiers), consent logs, workspace membership, export metadata, and the
             screenshot files you upload. If you
-            agree, Mixpanel records pseudonymous product events, pages visited and visible time, without screenshots or email addresses.
+            agree, Datafast and Mixpanel record pseudonymous product events, pages visited and visible time, without screenshots or email addresses.
           </p>
         </Block>
         <Block title="Legal bases">
           <p>
             Contract (GDPR Art. 6.1.b) for the tool and ZIP. Legal obligation + contract for Stripe invoices. Contract
-            for magic-link email and receipts. Consent for optional Mixpanel product analytics; you can change this
+            for magic-link email and receipts. Consent for optional Datafast and Mixpanel product analytics; you can change this
             choice at any time via Analytics preferences in the footer.
           </p>
         </Block>
@@ -172,13 +172,13 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         <p>
           E-mail et identifiants Auth, journaux de consentement, membership workspace, métadonnées d’export, fichiers de
           captures que vous déposez. Avec
-          votre accord, Mixpanel mesure des événements produit pseudonymes, les pages et leur temps visible, sans captures ni e-mail.
+          votre accord, Datafast et Mixpanel mesurent des événements produit pseudonymes, les pages et leur temps visible, sans captures ni e-mail.
         </p>
       </Block>
       <Block title="Bases légales">
         <p>
           Contrat (art. 6.1.b RGPD) pour l’outil et le ZIP. Obligation légale + contrat pour la facturation Stripe.
-          Contrat pour le magic link et les reçus. Consentement pour les statistiques produit facultatives Mixpanel,
+          Contrat pour le magic link et les reçus. Consentement pour les statistiques produit facultatives Datafast et Mixpanel,
           modifiable à tout moment depuis les préférences statistiques en pied de page.
         </p>
       </Block>
@@ -368,7 +368,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Optional product analytics">
           <p>
-            Mixpanel loads only after you accept product analytics. Its storage supports pseudonymous journeys. You
+            Datafast and Mixpanel load only after you accept product analytics. Datafast uses visitor cookies with a maximum lifetime of 365 days and a session cookie renewed after 30 minutes. Their storage supports pseudonymous journeys. You
             can refuse or change your choice through Analytics preferences in the footer. Details on{" "}
             <Link href={`${prefix}/privacy`} className="ds-link">
               privacy
@@ -392,7 +392,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Statistiques produit facultatives">
         <p>
-          Mixpanel ne se charge qu’après votre acceptation. Son stockage permet de suivre des parcours pseudonymes.
+          Datafast et Mixpanel ne se chargent qu’après votre acceptation. Datafast utilise des cookies visiteur pendant au maximum 365 jours et un cookie de session renouvelé après 30 minutes. Leur stockage permet de suivre des parcours pseudonymes.
           Vous pouvez refuser ou modifier votre choix depuis les préférences statistiques en pied de page. Détail :{" "}
           <Link href={`${prefix}/privacy`} className="ds-link">
             confidentialité
@@ -412,6 +412,7 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
         <li>{locale === "fr" ? "Hetzner — hébergement de l’application, PostgreSQL, Auth et Storage Supabase auto-hébergés — Falkenstein, Allemagne" : "Hetzner — application hosting and self-hosted Supabase PostgreSQL, Auth and Storage — Falkenstein, Germany"}</li>
         <li>{locale === "fr" ? "Vercel — enregistrement du domaine et DNS" : "Vercel — domain registration and DNS"}</li>
         <li>Mixpanel — optional product analytics — EU project</li>
+        <li>Datafast — optional traffic and product analytics</li>
         <li>Stripe — payments — US/EU</li>
         <li>Resend — transactional email — US</li>
         <li>Google — OAuth sign-in — US</li>
