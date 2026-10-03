@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, IBM_Plex_Mono } from "next/font/google";
+import Script from "next/script";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import "@/app/transitions-root.css";
 import "@/app/transitions-dev.css";
@@ -38,6 +39,12 @@ export function DocumentLayout({ children, locale }: { children: React.ReactNode
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <Script
+          src="https://datafa.st/js/script.js"
+          data-website-id="dfid_DliBSHc6MXbO4ktr5mKn8"
+          data-domain="duoshot.site"
+          strategy="afterInteractive"
+        />
         <AnalyticsProvider />
       </body>
     </html>
