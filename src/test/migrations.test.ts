@@ -164,6 +164,29 @@ describe("real PostgreSQL migration contracts", () => {
     await db.query(`select complete_render($1,$2,'{"uploaded":1}'::jsonb)`, [job, lease]);
     expect((await db.query("select state,result from render_jobs where id=$1", [job])).rows).toEqual([{ state: "completed", result: { uploaded: 1 } }]);
   });
+  it("runs App Store Connect uploads in their own lane, never blocking renders", async () => {
+    const user = "77777777-0000-4000-8000-000000000007";
+    await db.query("insert into auth.users values($1,'lanes@example.invalid')", [user]);
+    const ws = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [user])).rows[0]!.workspace_id;
+    const enqueue = async (kind: string) => (await db.query<{ enqueue_render: string }>("select enqueue_render($1,$2,$3,gen_random_uuid(),'{}'::jsonb)", [user, ws, kind])).rows[0]!.enqueue_render;
+    type Claimed = { id: string; kind: string } | null;
+    const claim = async (fn: string) => (await db.query<{ claimed: Claimed }>(`select ${fn}() as claimed`)).rows[0]!.claimed;
+
+    const upload = await enqueue("asc_upload");
+    await expect(enqueue("asc_upload")).rejects.toThrow("RENDER_ALREADY_PENDING");
+    expect((await claim("claim_asc_upload"))?.id).toBe(upload);
+    // The same user can still render, and the render lane ignores the running upload.
+    const review = await enqueue("review");
+    expect(await claim("claim_asc_upload")).toBeNull();
+    const rendered = await claim("claim_render");
+    expect(rendered).toMatchObject({ id: review, kind: "review" });
+
+    // An upload whose lease expired is failed, never requeued (Apple may already hold its files).
+    await db.query("update render_jobs set lease_until=now()-interval '1 second' where id=$1", [upload]);
+    expect(await claim("claim_asc_upload")).toBeNull();
+    expect((await db.query("select state,error_code from render_jobs where id=$1", [upload])).rows).toEqual([{ state: "failed", error_code: "ASC_INTERRUPTED" }]);
+    expect((await db.query<{ ok: boolean }>("select has_function_privilege('authenticated','public.claim_asc_upload()','execute') as ok")).rows[0]?.ok).toBe(false);
+  });
 });
 
 describe("one-time pass and waitlist contracts", () => {

@@ -18,7 +18,11 @@ export async function POST(request: Request) {
   if (process.env.RENDER_QUEUE_ENABLED !== "true") return NextResponse.json({ error: "QUEUE_DISABLED" }, { status: 503 });
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
-  const claimed = await admin.rpc("claim_render");
+  // Two lanes with their own slot: renders (export, review) and App Store Connect
+  // uploads, so a long upload never holds up an export. The worker polls each lane.
+  const lane = new URL(request.url).searchParams.get("lane") === "asc" ? "asc" : "render";
+  if (lane === "asc" && process.env.ASC_CONNECTOR_ENABLED !== "true") return NextResponse.json({ idle: true });
+  const claimed = await admin.rpc(lane === "asc" ? "claim_asc_upload" : "claim_render");
   if (claimed.error) return NextResponse.json({ error: "QUEUE_UNAVAILABLE" }, { status: 503 });
   const job = claimed.data as RenderJob | null;
   if (!job) return NextResponse.json({ idle: true });

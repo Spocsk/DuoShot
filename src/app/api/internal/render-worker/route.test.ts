@@ -33,11 +33,11 @@ describe("private worker access",()=>{
 const JOB={id:"job-1",user_id:"user-1",workspace_id:"ws-1",kind:"export",payload:{},reservation_id:"res-1",lease_token:"lease-1"};
 function worker(job:Record<string,unknown>,complete:{data:unknown;error:unknown}={data:null,error:null}){
   vi.stubEnv("CRON_SECRET","private");vi.stubEnv("RENDER_QUEUE_ENABLED","true");
-  const rpc=vi.fn(async(name:string)=>name==="claim_render"?{data:job,error:null}:complete);
+  const rpc=vi.fn(async(name:string)=>name==="claim_render"||name==="claim_asc_upload"?{data:job,error:null}:complete);
   vi.mocked(createAdminSupabase).mockReturnValue({rpc} as never);
   return rpc;
 }
-const tick=()=>POST(new Request("http://localhost/api/internal/render-worker",{method:"POST",headers:{authorization:"Bearer private"}}));
+const tick=(lane="")=>POST(new Request(`http://localhost/api/internal/render-worker${lane}`,{method:"POST",headers:{authorization:"Bearer private"}}));
 const completions=(rpc:ReturnType<typeof vi.fn>)=>rpc.mock.calls.filter(([name])=>name==="complete_render");
 describe("lost render leases",()=>{
   it("does not complete again when the export reports a lost lease",async()=>{
@@ -77,13 +77,24 @@ describe("lost render leases",()=>{
 
 describe("job kind dispatch",()=>{
   it("runs App Store Connect uploads with the heartbeat's abort signal and records their failure code",async()=>{
-    const rpc=worker({...JOB,kind:"asc_upload",reservation_id:null});
+    const rpc=worker({...JOB,kind:"asc_upload",reservation_id:null});vi.stubEnv("ASC_CONNECTOR_ENABLED","true");
     vi.mocked(executeAscUpload).mockResolvedValue(NextResponse.json({error:"ASC_RETRY_UNSAFE"},{status:400}));
-    expect((await tick()).status).toBe(200);
+    expect((await tick("?lane=asc")).status).toBe(200);
+    expect(rpc.mock.calls[0]![0]).toBe("claim_asc_upload");
     expect(vi.mocked(executeAscUpload).mock.calls[0]![2]!.signal).toBeInstanceOf(AbortSignal);
     expect(executeExport).not.toHaveBeenCalled();
     expect(executeReview).not.toHaveBeenCalled();
     expect(completions(rpc)[0]![1]).toMatchObject({p_error:"ASC_RETRY_UNSAFE"});
+  });
+  it("claims renders and uploads from separate lanes",async()=>{
+    const rpc=worker(JOB);
+    vi.mocked(executeExport).mockResolvedValue(NextResponse.json({ok:true}) as never);
+    await tick();
+    expect(rpc.mock.calls[0]![0]).toBe("claim_render");
+    rpc.mockClear();
+    // The upload lane stays idle without claiming while the connector is off.
+    expect(await (await tick("?lane=asc")).json()).toEqual({idle:true});
+    expect(rpc).not.toHaveBeenCalled();
   });
   it("fails an unknown kind instead of treating it as a review",async()=>{
     const rpc=worker({...JOB,kind:"mystery"});
