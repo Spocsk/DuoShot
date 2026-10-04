@@ -53,6 +53,6 @@ Pour chaque réponse conserver : date UTC, moteur/version si affichée, pays/lan
 
 ## Bilan J30
 
-Présenter séparément : trafic agrégé Vercel ; utilisateurs consentants externes Mixpanel ; comptes/exports Supabase ; paiements nets Stripe ; réutilisation J7/J30 des cohortes arrivées à maturité ; observations qualitatives. Afficher effectifs et dénominateurs à chaque conversion, remboursements et essais internes exclus. Une cohorte trop récente doit porter « pas encore observable », pas 0 % de rétention. Les conversions historiques sans instrumentation restent inconnues.
+Présenter séparément : trafic agrégé Vercel ; utilisateurs consentants externes DataFast (Mixpanel avant le 4 octobre 2026) ; comptes/exports Supabase ; paiements nets Stripe ; réutilisation J7/J30 des cohortes arrivées à maturité ; observations qualitatives. Afficher effectifs et dénominateurs à chaque conversion, remboursements et essais internes exclus. Une cohorte trop récente doit porter « pas encore observable », pas 0 % de rétention. Les conversions historiques sans instrumentation restent inconnues.
 
 Actions au bilan : conserver/corriger la proposition, décider d’une expérience payante par projet, décider si les preuves justifient synchronisation, versions, localisation et App Store Connect. Aucun développement de ces extensions n’est engagé par ce document.

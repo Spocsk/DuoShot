@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
-import { trackServerEvent } from "@/lib/analytics-server";
 import { billingEventMatches } from "@/lib/billing-environment";
 
 export const runtime = "nodejs";
@@ -52,15 +51,6 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string): Promise
     subscription_cancel_at_period_end: subscription.cancel_at_period_end,
   }).eq("id", workspaceId).eq("stripe_sync_version", workspace.stripe_sync_version).select("id").maybeSingle();
   if (error || !updated) throw new Error("SUBSCRIPTION_SYNC_CONFLICT");
-  if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN && active && plan !== "free" &&
-      (workspace.plan === "free" || workspace.stripe_subscription_id !== subscription.id ||
-        !["active", "trialing"].includes(workspace.subscription_status ?? ""))) {
-    const { data: owner } = await admin.from("workspace_members")
-      .select("user_id").eq("workspace_id", workspaceId).eq("role", "owner").limit(1).maybeSingle();
-    if (owner?.user_id) {
-      await trackServerEvent(admin, owner.user_id, "subscription_activated", `${subscription.id}:activated`, { plan });
-    }
-  }
   return "synced";
 }
 

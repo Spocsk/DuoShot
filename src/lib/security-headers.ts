@@ -18,7 +18,7 @@ export function contentSecurityPolicy({ supabaseUrl, dev = false }: Options): st
     `img-src ${list("'self'", "data:", "blob:", supabase)}`,
     `media-src ${list("'self'", "blob:", supabase)}`,
     "font-src 'self' data:",
-    `connect-src ${list("'self'", supabase, supabaseSocket, "https://api-eu.mixpanel.com", dev && "ws:")}`,
+    `connect-src ${list("'self'", supabase, supabaseSocket, dev && "ws:")}`,
     "worker-src 'self' blob:",
     "frame-src 'none'",
     "object-src 'none'",

@@ -18,9 +18,24 @@ describe("analytics erasure cron", () => {
     expect(createAdminSupabase).not.toHaveBeenCalled();
   });
 
+  it("keeps jobs queued without the server-side Mixpanel project token", async () => {
+    vi.stubEnv("CRON_SECRET", "secret");
+    vi.stubEnv("NEXT_PUBLIC_MIXPANEL_TOKEN", "legacy-public-token");
+    vi.stubEnv("MIXPANEL_PROJECT_TOKEN", "");
+    vi.stubEnv("MIXPANEL_GDPR_OAUTH_TOKEN", "oauth-token");
+    vi.mocked(createAdminSupabase).mockReturnValue({ from: vi.fn() } as never);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await GET(new Request("https://duoshot.test/api/cron/analytics-erasure", {
+      headers: { authorization: "Bearer secret" },
+    }));
+    expect(await response.json()).toEqual({ processed: 0, configured: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("submits a pending EU deletion and saves its tracking ID", async () => {
     vi.stubEnv("CRON_SECRET", "secret");
-    vi.stubEnv("NEXT_PUBLIC_MIXPANEL_TOKEN", "project-token");
+    vi.stubEnv("MIXPANEL_PROJECT_TOKEN", "project-token");
     vi.stubEnv("MIXPANEL_GDPR_OAUTH_TOKEN", "oauth-token");
     const update = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) });
     const select = vi.fn().mockReturnValue({

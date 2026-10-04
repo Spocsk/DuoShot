@@ -9,7 +9,6 @@ import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
 import { reviewPairJpegs } from "@/lib/pipeline/compose";
 import { createReviewWriter } from "@/lib/supabase/admin";
-import { trackServerEvent } from "@/lib/analytics-server";
 import { reviewPath } from "@/lib/site";
 import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
 import { reviewExpiresAt } from "@/lib/reviews";
@@ -157,7 +156,6 @@ export async function executeReview(request: Request, supabase: SupabaseClient, 
 
     const result = { id: publicId, url: reviewPath(locale, publicId), expiresAt };
     if (job) await completeRender(writer, job, result);
-    await trackServerEvent(supabase, user.id, "review_created", review.id, { slide_count: pairCount });
 
     return NextResponse.json(result);
   } finally {

@@ -1,6 +1,6 @@
 # Registre des traitements (art. 30 RGPD) — DuoShot v1.0
 
-Date : 2026-09-24. Responsable : exploitant DuoShot (FR / CNIL). Notice interne, pas un avis d’avocat.
+Date : 2026-09-24, mise à jour 2026-10-04 (DataFast seul outil d’analytics). Responsable : exploitant DuoShot (FR / CNIL). Notice interne, pas un avis d’avocat.
 
 | Traitement | Finalité | Base | Données | Destinataires | Durée | Transferts |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -11,6 +11,7 @@ Date : 2026-09-24. Responsable : exploitant DuoShot (FR / CNIL). Notice interne,
 | Facturation | Encaisser Indie/Studio/pack | Contrat + obligation légale | e-mail, ids Stripe | Stripe | Légal comptable | US/EU DPF-CCT |
 | Magic link / reçus | Délivrer le service | Contrat | e-mail | Supabase SMTP / Resend | Transactionnel | US possible |
 | DSAR | Accès / effacement | Obligation légale | export JSON, statut | Supabase | Preuve courte | — |
-| Analytics produit facultatives | Parcours, funnels, engagement | Consentement | ID pseudonyme, événements, pages normalisées, temps visible | Mixpanel UE | Selon rétention configurée dans le projet ; effacement sur demande | UE |
+| Analytics produit facultatives | Parcours, funnels, engagement | Consentement | ID pseudonyme, événements, pages normalisées, temps visible | DataFast | Selon rétention DataFast ; effacement sur demande | Voir `/legal/subprocessors` |
+| Analytics historiques Mixpanel (collecte arrêtée le 2026-10-04) | Effacement des événements déjà reçus | Obligation légale (art. 17) | ID pseudonyme, événements antérieurs | Mixpanel UE | Jusqu’à effacement (file `analytics_erasure_jobs`) ou suppression du projet | UE |
 
-Vercel Web Analytics mesure le trafic agrégé. Mixpanel ne démarre qu’après acceptation ; pas de marketing en v1. Sous-traitants : `/legal/subprocessors`. Violation : notifier la CNIL sous 72 h si risque élevé. Pas de DPO art. 37 en solo — à réévaluer.
+DataFast ne démarre qu’après acceptation ; Mixpanel ne reçoit plus de données ; pas de marketing en v1. Sous-traitants : `/legal/subprocessors`. Violation : notifier la CNIL sous 72 h si risque élevé. Pas de DPO art. 37 en solo — à réévaluer.

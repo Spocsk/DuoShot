@@ -122,20 +122,20 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
           <p>
             Account data (email, auth identifiers), consent logs, workspace membership, export metadata, and the
             screenshot files you upload. If you
-            agree, Datafast and Mixpanel record pseudonymous product events, pages visited and visible time, without screenshots or email addresses.
+            agree, Datafast records pseudonymous product events, pages visited and visible time, without screenshots or email addresses.
           </p>
         </Block>
         <Block title="Legal bases">
           <p>
             Contract (GDPR Art. 6.1.b) for the tool and ZIP. Legal obligation + contract for Stripe invoices. Contract
-            for magic-link email and receipts. Consent for optional Datafast and Mixpanel product analytics; you can change this
+            for magic-link email and receipts. Consent for optional Datafast product analytics; you can change this
             choice at any time via Analytics preferences in the footer.
           </p>
         </Block>
         <Block title="Transfers">
           <p>
             Captures and profile data are stored primarily in Falkenstein, Germany, on Hetzner infrastructure with self-hosted Supabase. Stripe, Resend and
-            Google OAuth may process data in the US under the Data Privacy Framework / SCCs. Mixpanel analytics use an EU project. List:{" "}
+            Google OAuth may process data in the US under the Data Privacy Framework / SCCs. List:{" "}
             <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
               sub-processors
             </Link>
@@ -144,8 +144,9 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Retention">
           <p>
-            Sources and ZIP files expire after 24 hours; review media after 7 days or revocation. Physical deletion from active storage is scheduled every 15 minutes and retried after failures. Encrypted recovery backups retain the seven most recent successful copies; deleted data can remain in those isolated backups until rotation. Local browser drafts remain on your device until you remove them. Account rows remain until you delete the account. Analytics events follow the Mixpanel
-            project retention setting and can be deleted upon request. Stripe keeps billing records as required by law.
+            Sources and ZIP files expire after 24 hours; review media after 7 days or revocation. Physical deletion from active storage is scheduled every 15 minutes and retried after failures. Encrypted recovery backups retain the seven most recent successful copies; deleted data can remain in those isolated backups until rotation. Local browser drafts remain on your device until you remove them. Account rows remain until you delete the account. Analytics events can be deleted upon request.
+            Mixpanel no longer receives any data; pseudonymous events it received earlier stay in its EU
+            project only until erased, and deleting your account queues their erasure. Stripe keeps billing records as required by law.
           </p>
         </Block>
         <Block title="Your rights">
@@ -172,20 +173,20 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
         <p>
           E-mail et identifiants Auth, journaux de consentement, membership workspace, métadonnées d’export, fichiers de
           captures que vous déposez. Avec
-          votre accord, Datafast et Mixpanel mesurent des événements produit pseudonymes, les pages et leur temps visible, sans captures ni e-mail.
+          votre accord, Datafast mesure des événements produit pseudonymes, les pages et leur temps visible, sans captures ni e-mail.
         </p>
       </Block>
       <Block title="Bases légales">
         <p>
           Contrat (art. 6.1.b RGPD) pour l’outil et le ZIP. Obligation légale + contrat pour la facturation Stripe.
-          Contrat pour le magic link et les reçus. Consentement pour les statistiques produit facultatives Datafast et Mixpanel,
+          Contrat pour le magic link et les reçus. Consentement pour les statistiques produit facultatives Datafast,
           modifiable à tout moment depuis les préférences statistiques en pied de page.
         </p>
       </Block>
       <Block title="Transferts">
         <p>
           Captures et profils stockés en primaire à Falkenstein, en Allemagne, sur l’infrastructure Hetzner avec Supabase auto-hébergé. Stripe, Resend et Google OAuth peuvent
-          traiter aux États-Unis (DPF / CCT). Les données analytiques Mixpanel utilisent un projet UE. Liste :{" "}
+          traiter aux États-Unis (DPF / CCT). Liste :{" "}
           <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
             sous-traitants
           </Link>
@@ -194,8 +195,9 @@ export function PrivacyContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Durées">
         <p>
-          Sources et ZIP expirent après 24 h ; médias de revue après 7 jours ou révocation. La suppression physique du stockage actif est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les sauvegardes chiffrées de reprise conservent les sept dernières copies réussies ; des données supprimées peuvent subsister dans ces copies isolées jusqu’à leur rotation. Les brouillons locaux restent sur votre appareil jusqu’à leur suppression. Lignes de compte jusqu’à suppression. Les événements analytiques suivent la durée configurée
-          dans le projet Mixpanel et peuvent être effacés sur demande. Stripe conserve la facturation selon la loi.
+          Sources et ZIP expirent après 24 h ; médias de revue après 7 jours ou révocation. La suppression physique du stockage actif est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les sauvegardes chiffrées de reprise conservent les sept dernières copies réussies ; des données supprimées peuvent subsister dans ces copies isolées jusqu’à leur rotation. Les brouillons locaux restent sur votre appareil jusqu’à leur suppression. Lignes de compte jusqu’à suppression. Les événements analytiques peuvent être effacés sur demande.
+          Mixpanel ne reçoit plus aucune donnée ; les événements pseudonymes reçus auparavant restent dans son
+          projet UE seulement jusqu’à leur effacement, déclenché par la suppression du compte. Stripe conserve la facturation selon la loi.
         </p>
       </Block>
       <Block title="Vos droits">
@@ -368,7 +370,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Optional product analytics">
           <p>
-            Datafast and Mixpanel load only after you accept product analytics. Datafast uses visitor cookies with a maximum lifetime of 365 days and a session cookie renewed after 30 minutes. Their storage supports pseudonymous journeys. You
+            Datafast loads only after you accept product analytics. It uses visitor cookies with a maximum lifetime of 365 days and a session cookie renewed after 30 minutes. This storage supports pseudonymous journeys. You
             can refuse or change your choice through Analytics preferences in the footer. Details on{" "}
             <Link href={`${prefix}/privacy`} className="ds-link">
               privacy
@@ -392,7 +394,7 @@ export function CookiesContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Statistiques produit facultatives">
         <p>
-          Datafast et Mixpanel ne se chargent qu’après votre acceptation. Datafast utilise des cookies visiteur pendant au maximum 365 jours et un cookie de session renouvelé après 30 minutes. Leur stockage permet de suivre des parcours pseudonymes.
+          Datafast ne se charge qu’après votre acceptation. Il utilise des cookies visiteur pendant au maximum 365 jours et un cookie de session renouvelé après 30 minutes. Ce stockage permet de suivre des parcours pseudonymes.
           Vous pouvez refuser ou modifier votre choix depuis les préférences statistiques en pied de page. Détail :{" "}
           <Link href={`${prefix}/privacy`} className="ds-link">
             confidentialité
@@ -411,8 +413,8 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
       <ul className="list-disc pl-5">
         <li>{locale === "fr" ? "Hetzner — hébergement de l’application, PostgreSQL, Auth et Storage Supabase auto-hébergés — Falkenstein, Allemagne" : "Hetzner — application hosting and self-hosted Supabase PostgreSQL, Auth and Storage — Falkenstein, Germany"}</li>
         <li>{locale === "fr" ? "Vercel — enregistrement du domaine et DNS" : "Vercel — domain registration and DNS"}</li>
-        <li>Mixpanel — optional product analytics — EU project</li>
         <li>Datafast — optional traffic and product analytics</li>
+        <li>{locale === "fr" ? "Mixpanel — plus de collecte ; conservation des événements antérieurs jusqu’à leur effacement — projet UE" : "Mixpanel — no longer collects data; holds earlier events only until erased — EU project"}</li>
         <li>Stripe — payments — US/EU</li>
         <li>Resend — transactional email — US</li>
         <li>Google — OAuth sign-in — US</li>

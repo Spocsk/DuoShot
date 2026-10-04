@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { analyticsPath } from "@/lib/analytics-path";
 import {
-  analyticsChoice, analyticsConfigured, identifyAnalyticsUser, resetAnalyticsUser,
+  analyticsChoice, analyticsConfigured, refreshAnalyticsAudience, resetAnalyticsUser,
   setAnalyticsChoice, trackProduct, consumeAnalyticsAuthIntent, type AnalyticsChoice,
 } from "@/lib/analytics-client";
 import { createBrowserSupabase } from "@/lib/supabase/client";
@@ -32,8 +32,8 @@ async function syncAccountChoice(userId: string, choice: Exclude<AnalyticsChoice
   return !error;
 }
 
-async function reportAuthIfPending(userId: string) {
-  await identifyAnalyticsUser(userId);
+async function reportAuthIfPending() {
+  await refreshAnalyticsAudience();
   const method = consumeAnalyticsAuthIntent();
   if (method && analyticsChoice() === "accepted") {
     void trackProduct("auth_succeeded", { method });
@@ -65,7 +65,7 @@ export function AnalyticsProvider() {
       if (!active || !data.user) return;
       const current = analyticsChoice();
       if (current) void syncAccountChoice(data.user.id, current);
-      reportAuthIfPending(data.user.id);
+      reportAuthIfPending();
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
@@ -75,7 +75,7 @@ export function AnalyticsProvider() {
       if (event === "SIGNED_IN" && session?.user) {
         const current = analyticsChoice();
         if (current) void syncAccountChoice(session.user.id, current);
-        reportAuthIfPending(session.user.id);
+        reportAuthIfPending();
       }
     });
     return () => { active = false; data.subscription.unsubscribe(); };
@@ -124,7 +124,7 @@ export function AnalyticsProvider() {
         setSettingsOpen(true);
         return;
       }
-      if (next === "accepted") await identifyAnalyticsUser(data.user.id);
+      if (next === "accepted") await refreshAnalyticsAudience();
     }
     setSettingsOpen(false);
   }
@@ -135,8 +135,8 @@ export function AnalyticsProvider() {
         <div className="fixed inset-x-3 bottom-3 z-[100] mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 shadow-xl sm:flex-row sm:items-center sm:gap-5" role="dialog" aria-label={fr ? "Préférences statistiques" : "Analytics preferences"}>
           <div className="min-w-0 flex-1">
             <p className="text-xs leading-snug text-[var(--muted)] sm:text-sm"><strong className="font-semibold text-[var(--foreground)]">{fr ? "Mesure des parcours. " : "Product analytics. "}</strong>{fr
-              ? "Avec votre accord, Datafast et Mixpanel mesurent les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
-              : "With your permission, Datafast and Mixpanel measure pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
+              ? "Avec votre accord, Datafast mesure les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
+              : "With your permission, Datafast measures pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
             {choiceError ? <p className="mt-1 text-xs text-[var(--warn)] sm:text-sm" role="alert">{fr ? "Choix non enregistré. Réessayez." : "Preference not saved. Please retry."}</p> : null}
           </div>
           <div className="flex shrink-0 gap-2">

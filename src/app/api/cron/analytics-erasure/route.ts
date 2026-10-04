@@ -9,7 +9,9 @@ export async function GET(request: Request) {
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
-  const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
+  // Mixpanel no longer collects anything; this job only erases data sent before DataFast became
+  // the single analytics tool. The GDPR API still needs the project token, now a runtime-only secret.
+  const token = process.env.MIXPANEL_PROJECT_TOKEN;
   const oauthToken = process.env.MIXPANEL_GDPR_OAUTH_TOKEN;
   const admin = createAdminSupabase();
   if (!token || !oauthToken || !admin) return NextResponse.json({ processed: 0, configured: false });

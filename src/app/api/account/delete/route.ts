@@ -45,21 +45,16 @@ export async function POST() {
     return NextResponse.json({ error: "STORAGE_DELETE_FAILED" }, { status: 503 });
   }
 
-  if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
-    const admin = createAdminSupabase();
-    if (!admin) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
-    const { error: queueError } = await admin.from("analytics_erasure_jobs")
-      .upsert({ distinct_id: user.id, status: "pending" }, { onConflict: "distinct_id" });
-    if (queueError) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
-  }
+  // Always queue erasure of historical Mixpanel data. Collection stopped, but events sent earlier
+  // still exist there; the cron processes the queue once its server-side Mixpanel secrets are set.
+  const { error: queueError } = await storageAdmin.from("analytics_erasure_jobs")
+    .upsert({ distinct_id: user.id, status: "pending" }, { onConflict: "distinct_id" });
+  if (queueError) return NextResponse.json({ error: "ANALYTICS_ERASURE_UNAVAILABLE" }, { status: 503 });
 
   const { error } = await storageAdmin.rpc("erase_account", { p_user_id: user.id });
   if (error) {
-    if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
-      const admin = createAdminSupabase();
-      await admin?.from("analytics_erasure_jobs").delete()
-        .eq("distinct_id", user.id).eq("status", "pending").is("tracking_id", null);
-    }
+    await storageAdmin.from("analytics_erasure_jobs").delete()
+      .eq("distinct_id", user.id).eq("status", "pending").is("tracking_id", null);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   await supabase.auth.signOut();

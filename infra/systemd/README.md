@@ -14,7 +14,9 @@ with `systemctl start`, inspect their result, then enable the timers with
 The scripts read the existing CRON_SECRET inside the application container.
 No secrets are stored in systemd units or command arguments. Inspect failures
 with `journalctl -u 'duoshot-maintenance@*'`. A successful analytics HTTP response
-with an empty queue does not validate Mixpanel credentials or remote deletion.
+with an empty queue does not validate Mixpanel credentials or remote deletion. Mixpanel no longer collects
+data; this job only erases historical events and needs `MIXPANEL_PROJECT_TOKEN` and `MIXPANEL_GDPR_OAUTH_TOKEN`
+at runtime (see `docs/analytics.md`).
 
 Backups are separate. These timers do not create or replace off-host backups.
 

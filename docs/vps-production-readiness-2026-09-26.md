@@ -1,5 +1,7 @@
 # Production et migration VPS — état au 26 septembre 2026
 
+> **Note (4 octobre 2026)** : Mixpanel a été retiré ; DataFast est l’unique outil d’analytics. Ce document décrit l’état à sa date. État actuel : [`analytics.md`](analytics.md).
+
 ## Décision et état réel
 
 Nouveau **CX23 dédié à DuoShot**, autorisé à **7,19 € TTC/mois** (serveur + IPv4), sans sauvegardes Hetzner payantes. Le VPS existant conserve Coolify et ses autres projets.
