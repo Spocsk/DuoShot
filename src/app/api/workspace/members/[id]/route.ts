@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { readActiveMembership } from "@/lib/active-membership";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -11,13 +12,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const { data: owner } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const lookup = await readActiveMembership(supabase, user.id);
+  if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
+  const owner = lookup.membership;
   if (!owner || owner.role !== "owner") {
     return NextResponse.json({ error: "OWNER_REQUIRED" }, { status: 403 });
   }

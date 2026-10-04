@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminSupabase, createPublicSupabase, createReviewWriter } from "@/lib/supabase/admin";
 import { harborReviewPayload, isDemoReview } from "@/lib/pipeline/harbor";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { readActiveMembership } from "@/lib/active-membership";
 import { reviewState } from "@/lib/reviews";
 
 export const runtime = "nodejs";
@@ -79,13 +80,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const lookup = await readActiveMembership(supabase, user.id);
+  if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
+  const membership = lookup.membership;
   if (!membership) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   const writer = createReviewWriter(supabase);
   const revokedAt = new Date().toISOString();

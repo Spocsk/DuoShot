@@ -55,6 +55,14 @@ describe("POST /api/apps", () => {
     expect(status).toBe(401);
   });
 
+  it.each([
+    [{ data: null, error: null }, 409, "NO_WORKSPACE"],
+    [{ data: null, error: { message: "timeout" } }, 503, "WORKSPACE_UNAVAILABLE"],
+  ])("answers a missing or unreadable workspace with %#", async (lookup, status, error) => {
+    vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({ user: USER, from: () => createQueryBuilder(lookup) }) as never);
+    expect(await readJson(await post({ name: "Harbor" }))).toEqual({ status, body: { error } });
+  });
+
   it("creates an app by slug when the set has no app yet", async () => {
     const apps = appsMock([{ data: { id: APP_ID, name: "Harbor" } }]);
     mockSession(apps);

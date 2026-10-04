@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { readActiveMembership } from "@/lib/active-membership";
 import { slugify } from "@/lib/pipeline/geometry";
 
 export const runtime = "nodejs";
@@ -14,13 +15,9 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ apps: [] });
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  const lookup = await readActiveMembership(supabase, user.id);
+  if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
+  const membership = lookup.membership;
   if (!membership) return NextResponse.json({ apps: [] });
   const { data } = await supabase
     .from("apps")
@@ -36,14 +33,10 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
-  if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 400 });
+  const lookup = await readActiveMembership(supabase, user.id);
+  if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
+  const membership = lookup.membership;
+  if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 409 });
   const body = (await request.json().catch(() => null)) as {
     id?: unknown;
     name?: unknown;
