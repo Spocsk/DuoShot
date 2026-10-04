@@ -128,6 +128,29 @@ describe("POST /api/stripe/webhook", () => {
     expect(update).not.toHaveBeenCalled();
     expect(insert).toHaveBeenCalled();
   });
+  it("acknowledges a subscription that DuoShot checkout did not create", async () => {
+    const {retrieve,update,insert}=setup("active","customer.subscription.updated");
+    retrieve.mockResolvedValue({id:"sub_1",customer:"cus_other",status:"active",metadata:{}});
+    const { status, body } = await readJson(await POST(request("valid")));
+    expect(status).toBe(200);
+    expect(body.ignored).toBe("SUBSCRIPTION_UNLINKED");
+    expect(update).not.toHaveBeenCalled();
+    expect(insert).toHaveBeenCalled();
+  });
+  it.each([
+    ["WORKSPACE_LOOKUP_FAILED", { data: null, error: { message: "connection reset" } }],
+    ["WORKSPACE_NOT_FOUND", { data: null, error: null }],
+    ["CUSTOMER_MISMATCH", { data: { stripe_customer_id: "cus_2", stripe_subscription_id: null, stripe_sync_version: 0 }, error: null }],
+  ])("keeps a DuoShot subscription it cannot apply as a failed delivery (%s)", async (reason, lookup) => {
+    const {from,update,insert}=setup("active");
+    const original=from.getMockImplementation()!;
+    from.mockImplementation((table)=>table==="workspaces" ? {...createQueryBuilder(lookup),update} : original(table));
+    const { status, body } = await readJson(await POST(request("valid")));
+    expect(status).toBe(500);
+    expect(body.error).toBe(reason);
+    expect(update).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
+  });
   it("rejects test events at a production endpoint", async () => {
     const {update,insert}=setup("active");vi.stubEnv("VERCEL_ENV","");vi.stubEnv("APP_ENV","production");
     expect((await POST(request("valid"))).status).toBe(400);

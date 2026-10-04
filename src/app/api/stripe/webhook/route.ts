@@ -13,24 +13,30 @@ function planForPrice(priceId: string | undefined): "indie" | "studio" | "free" 
   return "free";
 }
 
-async function syncSubscription(stripe: Stripe, subscriptionId: string) {
+/** Returns "unlinked" for a subscription DuoShot checkout did not create. */
+async function syncSubscription(stripe: Stripe, subscriptionId: string): Promise<"synced" | "unlinked"> {
   const admin = createAdminSupabase();
   if (!admin) throw new Error("SUPABASE_ADMIN_REQUIRED");
   const linked = await stripe.subscriptions.retrieve(subscriptionId);
   const workspaceId = linked.metadata.workspace_id;
   const customerId = typeof linked.customer === "string" ? linked.customer : linked.customer.id;
-  if (!workspaceId || !customerId) throw new Error("SUBSCRIPTION_UNLINKED");
+  // The Stripe account can bill other products; retrying their events would only
+  // pile up failed deliveries on this endpoint.
+  if (!workspaceId || !customerId) return "unlinked";
   const { data: workspace, error: lookupError } = await admin.from("workspaces")
     .select("stripe_customer_id, stripe_subscription_id, plan, subscription_status, stripe_sync_version")
-    .eq("id", workspaceId).single();
-  if (lookupError || !workspace || workspace.stripe_customer_id !== customerId) throw new Error("CUSTOMER_MISMATCH");
+    .eq("id", workspaceId).maybeSingle();
+  if (lookupError) throw new Error("WORKSPACE_LOOKUP_FAILED");
+  // A DuoShot subscription that cannot be applied stays a failed delivery, so it is noticed.
+  if (!workspace) throw new Error("WORKSPACE_NOT_FOUND");
+  if (workspace.stripe_customer_id !== customerId) throw new Error("CUSTOMER_MISMATCH");
   // Read the revision before fetching the authoritative state. Otherwise a stale
   // Stripe response could be paired with a newer database revision and overwrite it.
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const currentCustomer = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
   if (subscription.metadata.workspace_id !== workspaceId || currentCustomer !== customerId) throw new Error("CUSTOMER_MISMATCH");
   // A late event for an older subscription cannot overwrite the current one.
-  if (workspace.stripe_subscription_id && workspace.stripe_subscription_id !== subscription.id) return;
+  if (workspace.stripe_subscription_id && workspace.stripe_subscription_id !== subscription.id) return "synced";
   const priceId = subscription.items.data[0]?.price.id;
   const active = ["active", "trialing"].includes(subscription.status);
   const plan = active ? planForPrice(priceId) : "free";
@@ -55,7 +61,11 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string) {
       await trackServerEvent(admin, owner.user_id, "subscription_activated", `${subscription.id}:activated`, { plan });
     }
   }
+  return "synced";
 }
+
+/** Failure codes surfaced in the Stripe delivery log; anything else is generic. */
+const REPORTED_FAILURES = new Set(["WORKSPACE_LOOKUP_FAILED", "WORKSPACE_NOT_FOUND", "CUSTOMER_MISMATCH", "SUBSCRIPTION_SYNC_CONFLICT", "EVENT_STORE_FAILED"]);
 
 export async function POST(request: Request) {
   const stripe = getStripe();
@@ -90,11 +100,17 @@ export async function POST(request: Request) {
       const invoiceSubscription = invoice.parent?.subscription_details?.subscription;
       subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
     }
-    if (subscriptionId) await syncSubscription(stripe, subscriptionId);
+    const outcome = subscriptionId ? await syncSubscription(stripe, subscriptionId) : "synced";
     const { error: markerError } = await admin.from("stripe_events").insert({ id: event.id, type: event.type });
     if (markerError && markerError.code !== "23505") throw new Error("EVENT_STORE_FAILED");
+    if (outcome === "unlinked") {
+      console.warn(`[stripe-webhook] ignored ${event.id} (${event.type}): SUBSCRIPTION_UNLINKED`);
+      return NextResponse.json({ received: true, ignored: "SUBSCRIPTION_UNLINKED" });
+    }
     return NextResponse.json({ received: true });
-  } catch {
-    return NextResponse.json({ error: "EVENT_PROCESSING_FAILED" }, { status: 500 });
+  } catch (error) {
+    const reason = error instanceof Error && REPORTED_FAILURES.has(error.message) ? error.message : "EVENT_PROCESSING_FAILED";
+    console.error(`[stripe-webhook] failed ${event.id} (${event.type}): ${reason}`);
+    return NextResponse.json({ error: reason }, { status: 500 });
   }
 }
