@@ -89,9 +89,10 @@ function SequenceStage({ locale }: { locale: Locale }) {
   const fr = locale === "fr";
   return <div className="studio-sequence-scene">
     <div className="studio-sequence-device">
-      <DuoDevice locale={locale} />
-      <div className="studio-frame-guide"><i /><i /><i /><i /></div>
-      <span className="studio-hinge-glow" />
+      <DuoDevice locale={locale} openOverlay={<>
+        <div className="studio-frame-guide"><i /><i /><i /><i /></div>
+        <span className="studio-hinge-glow" />
+      </>} />
       <PreventMarkers />
     </div>
     <div className="studio-stage-panels">
