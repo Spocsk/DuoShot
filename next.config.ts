@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { securityHeaders } from "./src/lib/security-headers";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -11,6 +12,13 @@ const nextConfig: NextConfig = {
     "/api/reviews/[id]/media": ["./src/lib/pipeline/fonts/**/*"],
     "/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
     "/en/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
+  },
+  poweredByHeader: false,
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: securityHeaders({ supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, dev: process.env.NODE_ENV === "development" }),
+    }];
   },
   async redirects() {
     return [
