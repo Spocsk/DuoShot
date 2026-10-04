@@ -63,6 +63,8 @@ import { Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
 import { PairStrip, ToolCanvas, ToolStepBar, type ToolPanel } from "@/components/tool/canvas";
 import { PreviewCard } from "@/components/tool/preview-card";
 import { SetTitle } from "@/components/tool/set-title";
+import { AscToolAction } from "@/components/asc/asc-tool-action";
+import { useAscUpload } from "@/components/asc/use-asc-upload";
 
 type Props = { locale: Locale };
 
@@ -194,6 +196,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
 
   const { billing, setBilling, billingError, session, activationTimedOut, retryActivation, refreshBilling, urlStatus } = useBilling(locale, searchParams);
   const signedIn = session === "in";
+  // Owned here, not by the Export step, so an App Store Connect upload keeps polling across steps.
+  const ascUpload = useAscUpload();
 
   useEffect(() => {
     let cancelled = false;
@@ -357,6 +361,15 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   function goToPanel(panel: ToolPanel) {
     if (panel === "adjust") setAdjustSeen(true);
     setToolPanel(panel);
+  }
+  /** From the App Store Connect dialog: Adjust, advanced settings open, focus on the 6.9″ toggle. */
+  function showSetting69() {
+    goToPanel("adjust");
+    window.setTimeout(() => {
+      const details = document.querySelector<HTMLDetailsElement>("details.tool-advanced");
+      if (details) details.open = true;
+      document.querySelector<HTMLElement>('[data-testid="toggle-69"]')?.focus();
+    }, 60);
   }
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
     const selected = takeFiles(list);
@@ -757,6 +770,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
                 <SwapLabel text={primary.label} />
               </button>
             )}
+            {toolPanel === "export" && zipUrl && jobs.downloadId && signedIn && !isDemo ? (
+              <AscToolAction
+                key={jobs.downloadId} locale={locale} prefix={prefix} exportId={jobs.downloadId} images={jobs.exportImages}
+                orientation={orientation} onEnable69={showSetting69} upload={ascUpload}
+              />
+            ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
               <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
                 {t(locale, "tool_create_account")}

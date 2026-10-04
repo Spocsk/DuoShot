@@ -45,6 +45,12 @@ export function AscConnectionPanel({ locale }: { locale: Locale }) {
     return () => { live = false; };
   }, []);
 
+  // The section appears after the status fetch, too late for the browser's own jump to #connexions.
+  const shown = status !== null;
+  useEffect(() => {
+    if (shown && window.location.hash === "#connexions") document.getElementById("connexions")?.scrollIntoView();
+  }, [shown]);
+
   if (!status) return null;
 
   async function readKey(file: File | undefined) {
@@ -106,7 +112,7 @@ export function AscConnectionPanel({ locale }: { locale: Locale }) {
     : "";
 
   return (
-    <section className="mt-12 border-t border-[var(--line)] pt-10" aria-labelledby={`${ids}-title`} data-testid="asc-connection">
+    <section id="connexions" className="mt-12 scroll-mt-24 border-t border-[var(--line)] pt-10" aria-labelledby={`${ids}-title`} data-testid="asc-connection">
       <p className="ds-label">{t(locale, "asc_section_label")}</p>
       <h2 id={`${ids}-title`} className="font-display mt-2 text-3xl">{t(locale, "asc_title")}</h2>
       <p className="mt-3 text-sm text-[var(--muted)]">{t(locale, "asc_lead")}</p>

@@ -1,15 +1,18 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type AscApp = { id: string; name: string; bundleId: string };
 export type AscVersion = { id: string; versionString: string; state: string; platform: string };
 export type AscLocalization = { id: string; locale: string };
 export type AscFileProgress = { slot: string; index: number; displayType: string; state: "pending" | "uploading" | "processing" | "complete" | "failed"; error?: string };
+export type AscUploadResult = {
+  appId?: string; uploaded: number; replaced?: number; reordered?: boolean; files: AscFileProgress[]; skipped: string[];
+};
 export type AscUploadState =
   | { phase: "idle" }
   | { phase: "queued" | "running"; progress?: { total: number; done: number; files: AscFileProgress[] } }
-  | { phase: "completed"; result: { uploaded: number; files: AscFileProgress[]; skipped: string[] } }
+  | { phase: "completed"; result: AscUploadResult }
   | { phase: "failed"; error: string; progress?: { total: number; done: number; files: AscFileProgress[] } };
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -24,6 +27,8 @@ async function readJson<T>(response: Response): Promise<T> {
  */
 export function useAscUpload() {
   const [state, setState] = useState<AscUploadState>({ phase: "idle" });
+  /** Export the current state belongs to, so a newer export starts from idle. */
+  const [exportId, setExportId] = useState<string | null>(null);
   const cancelled = useRef(false);
 
   const listApps = useCallback(async () => (await readJson<{ apps: AscApp[] }>(await fetch("/api/asc/apps"))).apps, []);
@@ -34,6 +39,7 @@ export function useAscUpload() {
 
   const upload = useCallback(async (input: { exportId: string; appId: string; versionId: string; localizationId: string; replaceExisting?: boolean }) => {
     cancelled.current = false;
+    setExportId(input.exportId);
     setState({ phase: "queued" });
     try {
       const { jobId } = await readJson<{ jobId: string }>(await fetch("/api/asc/uploads", {
@@ -46,7 +52,7 @@ export function useAscUpload() {
         const response = await fetch(`/api/render-jobs/${jobId}`, { cache: "no-store" });
         if (response.status >= 500) { await new Promise((resolve) => setTimeout(resolve, 3000)); continue; }
         const payload = await readJson<{ state: string; error?: string; result?: unknown; progress?: { total: number; done: number; files: AscFileProgress[] } }>(response);
-        if (payload.state === "completed") { setState({ phase: "completed", result: payload.result as never }); return; }
+        if (payload.state === "completed") { setState({ phase: "completed", result: payload.result as AscUploadResult }); return; }
         if (payload.state === "failed") { setState({ phase: "failed", error: payload.error ?? "ASC_UPLOAD_FAILED", progress: payload.progress }); return; }
         setState({ phase: payload.state === "running" ? "running" : "queued", progress: payload.progress });
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -58,5 +64,11 @@ export function useAscUpload() {
   }, []);
 
   const stop = useCallback(() => { cancelled.current = true; }, []);
-  return { state, listApps, listVersions, listLocalizations, upload, stop };
+  /** Back to idle after a finished or failed upload; a running job keeps being polled. */
+  const reset = useCallback(() => {
+    setState((current) => (current.phase === "completed" || current.phase === "failed" ? { phase: "idle" } : current));
+  }, []);
+  // The job keeps running server-side; only the polling stops with the component.
+  useEffect(() => () => { cancelled.current = true; }, []);
+  return { state, exportId, listApps, listVersions, listLocalizations, upload, stop, reset };
 }

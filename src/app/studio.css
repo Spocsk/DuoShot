@@ -640,7 +640,22 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 .tool-dock-missing button:hover, .tool-review-actions li button:hover { text-decoration-color: currentColor; }
 .tool-dock-missing button:focus-visible, .tool-review-actions li button:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; border-radius: 0.2rem; }
 .tool-dock-secondary { justify-self: center; font-size: 0.8rem; }
-.tool-dock-score { color: var(--muted); font-size: 0.72rem; line-height: 1.4; text-align: center; }
+.tool-asc { display: grid; gap: 0.4rem; }
+.tool-asc .ds-cta-ghost { justify-content: center; text-align: center; }
+.tool-asc-note { color: var(--muted); font-size: 0.78rem; line-height: 1.45; text-align: center; }
+.tool-asc-note .ds-link { display: inline-flex; min-height: 1.5rem; align-items: center; }
+.tool-asc-dialog { max-height: min(78vh, 44rem); overflow-y: auto; }
+.tool-asc-dialog h2:focus { outline: none; }
+.tool-asc-dialog h2:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 3px; border-radius: 0.3rem; }
+.tool-asc-dialog .ds-cta { justify-content: center; text-align: center; }
+.tool-asc-files { display: grid; gap: 0.25rem; font-size: 0.8rem; }
+.tool-asc-files code { font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.74rem; overflow-wrap: anywhere; }
+.tool-asc-files li { display: flex; justify-content: space-between; gap: 0.75rem; }
+.tool-asc-files li[data-state="complete"] .tool-asc-file-state { color: var(--studio-ok); }
+.tool-asc-files li[data-state="failed"] .tool-asc-file-state { color: var(--warn); }
+.tool-asc-file-state { color: var(--muted); text-align: right; }
+.tool-asc-progress { width: 100%; height: 0.4rem; accent-color: var(--studio-sea); }
+.tool-dock-score {color: var(--muted); font-size: 0.72rem; line-height: 1.4; text-align: center; }
 .tool-other-actions { margin-top: 1.25rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
 .tool-other-actions > summary { cursor: pointer; color: #355b66; font-size: 0.84rem; font-weight: 620; }
 .tool-other-actions-body { padding-top: 0.9rem; }
