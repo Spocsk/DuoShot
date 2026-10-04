@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { checkoutAvailable, passCheckoutAvailable } from "./billing-availability";
+import { checkoutAvailable, checkoutDisplayAvailable, passCheckoutAvailable } from "./billing-availability";
 
 const PRICE_IDS = [
   "STRIPE_INDIE_PRICE_ID",
@@ -130,5 +130,27 @@ describe("passCheckoutAvailable", () => {
     vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
     vi.stubEnv("STRIPE_CHECKOUT_ENABLED", "false");
     expect(passCheckoutAvailable()).toBe(false);
+  });
+});
+
+describe("checkoutDisplayAvailable", () => {
+  it("follows checkoutAvailable without the e2e flag", () => {
+    expect(checkoutDisplayAvailable()).toBe(true);
+    vi.stubEnv("STRIPE_CHECKOUT_ENABLED", "false");
+    expect(checkoutDisplayAvailable()).toBe(false);
+  });
+
+  it("lets only a non-production e2e run show the buttons without Stripe", () => {
+    vi.stubEnv("STRIPE_CHECKOUT_ENABLED", "false");
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    vi.stubEnv("APP_ENV", "");
+    vi.stubEnv("E2E_CHECKOUT_DISPLAY", "true");
+    expect(checkoutDisplayAvailable()).toBe(true);
+    expect(checkoutAvailable()).toBe(false);
+    vi.stubEnv("APP_ENV", "production");
+    expect(checkoutDisplayAvailable()).toBe(false);
+    vi.stubEnv("APP_ENV", "");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_example");
+    expect(checkoutDisplayAvailable()).toBe(false);
   });
 });

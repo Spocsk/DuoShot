@@ -10,6 +10,7 @@ for (const name of required) {
   catch { missing.push(`${name} (invalid URL)`); }
 }
 if (process.env.APP_ENV !== 'production') missing.push('APP_ENV (production required on the VPS)');
+if (process.env.E2E_CHECKOUT_DISPLAY) missing.push('E2E_CHECKOUT_DISPLAY (CI only, must be unset)');
 if (process.env.STRIPE_CHECKOUT_ENABLED === 'true') {
   for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_INDIE_PRICE_ID', 'STRIPE_STUDIO_PRICE_ID', 'STRIPE_INDIE_YEARLY_PRICE_ID', 'STRIPE_STUDIO_YEARLY_PRICE_ID']) {
     if (!process.env[name]) missing.push(name);

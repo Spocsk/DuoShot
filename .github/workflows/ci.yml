@@ -53,6 +53,9 @@ jobs:
           browser: chrome
         env:
           NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          # /pricing renders checkout availability on the server; with no Stripe here,
+          # this enables the buttons only (specs stub /api/stripe/checkout).
+          E2E_CHECKOUT_DISPLAY: "true"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
