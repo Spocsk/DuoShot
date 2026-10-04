@@ -37,6 +37,8 @@ begin
   insert into public.workspace_passes(workspace_id, stripe_checkout_session_id, days, expires_at)
     values (p_workspace_id, p_session_id, p_days, expiry);
   update public.workspaces set pass_expires_at = expiry where id = p_workspace_id;
+  -- Release the completed Checkout attempt so the workspace can start a new purchase now.
+  update public.checkout_attempts set expires_at = now() where workspace_id = p_workspace_id and session_id = p_session_id;
   return jsonb_build_object('granted', true, 'expires_at', expiry);
 end $$;
 revoke all on function public.grant_workspace_pass(uuid, text, text, integer) from public, anon, authenticated;

@@ -123,6 +123,14 @@ describe("one-time pass and waitlist contracts", () => {
     const days = (await db.query<{ d: number }>("select round(extract(epoch from pass_expires_at-now())/86400)::int d from workspaces where id=$1", [passWorkspace])).rows[0].d;
     expect(days).toBe(60);
   });
+  it("releases the completed pass Checkout attempt so a new purchase can start", async () => {
+    type Attempt = { begin_checkout: { attempt_id: string } };
+    const first = (await db.query<Attempt>("select begin_checkout($1,'pass30','/tool')", [passWorkspace])).rows[0].begin_checkout.attempt_id;
+    await db.query("update checkout_attempts set session_id='cs_pass_3' where workspace_id=$1", [passWorkspace]);
+    await grant("cs_pass_3");
+    const next = (await db.query<Attempt>("select begin_checkout($1,'indie_monthly','/tool')", [passWorkspace])).rows[0].begin_checkout.attempt_id;
+    expect(next).not.toBe(first);
+  });
   it("rejects a session for another customer and stops counting an expired pass", async () => {
     await expect(grant("cs_pass_other", "cus_other")).rejects.toThrow("CUSTOMER_MISMATCH");
     await db.query("update workspaces set pass_expires_at=now()-interval '1 second' where id=$1", [passWorkspace]);
