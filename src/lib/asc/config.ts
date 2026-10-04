@@ -1,8 +1,9 @@
 import type { DeviceSlot, Orientation } from "../specs";
+import { serverEnv } from "../env";
 
 /** Every App Store Connect surface stays hidden until the operator opts in. */
 export function ascConnectorEnabled(): boolean {
-  return process.env.ASC_CONNECTOR_ENABLED === "true";
+  return serverEnv.asc.enabled;
 }
 
 export const ASC_API_BASE = "https://api.appstoreconnect.apple.com";

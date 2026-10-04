@@ -7,6 +7,7 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
 import { createHash } from "node:crypto";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -21,10 +22,10 @@ function isPurchaseKind(value: unknown): value is PurchaseKind {
 function priceIdFor(kind: PurchaseKind): string | undefined {
   switch (kind) {
     case "pass30": return pass30PriceId();
-    case "indie_monthly": return process.env.STRIPE_INDIE_PRICE_ID;
-    case "studio_monthly": return process.env.STRIPE_STUDIO_PRICE_ID;
-    case "indie_yearly": return process.env.STRIPE_INDIE_YEARLY_PRICE_ID;
-    case "studio_yearly": return process.env.STRIPE_STUDIO_YEARLY_PRICE_ID;
+    case "indie_monthly": return serverEnv.stripe.prices.indieMonthly;
+    case "studio_monthly": return serverEnv.stripe.prices.studioMonthly;
+    case "indie_yearly": return serverEnv.stripe.prices.indieYearly;
+    case "studio_yearly": return serverEnv.stripe.prices.studioYearly;
   }
 }
 
@@ -112,7 +113,7 @@ async function checkout(request: Request) {
     billing_address_collection: "required",
     customer_update: { address: "auto", name: "auto" },
     tax_id_collection: { enabled: true },
-    ...(process.env.STRIPE_TAX_ENABLED === "true" ? { automatic_tax: { enabled: true } } : {}),
+    ...(serverEnv.stripe.taxEnabled ? { automatic_tax: { enabled: true } } : {}),
     success_url: `${origin}${nextPath}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${nextPath}?checkout=cancel`,
     metadata,

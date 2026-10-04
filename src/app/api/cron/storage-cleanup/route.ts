@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { removeStorageObjects } from "@/lib/storage-cleanup";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  if (!verifyBearer(request, process.env.CRON_SECRET)) {
+  if (!verifyBearer(request, serverEnv.cronSecret)) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
   const admin = createAdminSupabase();

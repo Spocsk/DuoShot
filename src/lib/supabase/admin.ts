@@ -1,8 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerUrl } from "./server-env";
+import { serverEnv } from "../env";
 
 export function createAdminSupabase() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  const key = serverEnv.supabase.adminKey;
   if (!key) {
     if (process.env.NODE_ENV !== "production") {
       console.warn(

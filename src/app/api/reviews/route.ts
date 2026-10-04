@@ -5,13 +5,14 @@ import { createReviewWriter } from "@/lib/supabase/admin";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { reviewState } from "@/lib/reviews";
 import { NextResponse } from "next/server";
+import { serverEnv } from "@/lib/env";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(request: Request) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  return process.env.RENDER_QUEUE_ENABLED === "true"
+  return serverEnv.render.queueEnabled
     ? enqueueRender(request, supabase, user.id, "review")
     : executeReview(request, supabase, user);
 }

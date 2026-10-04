@@ -1,5 +1,6 @@
 import type { Locale } from "./specs";
 import { OUTER_PORTRAIT, INNER_PORTRAIT } from "./screenshot-copy";
+import { publicEnv } from "./env-public";
 
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
@@ -9,7 +10,7 @@ export const SITE_PITCH_EN =
   `Prepare iPhone Duo screenshots for App Store Connect: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px in portrait, with opaque PNG/JPEG export.`;
 
 export function getSiteUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const explicit = publicEnv.siteUrl;
   if (explicit) return explicit;
   return "http://localhost:3000";
 }

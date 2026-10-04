@@ -3,6 +3,7 @@ import { executeExport } from "./export";
 import { executeReview } from "./review";
 import { executeAscUpload } from "../asc/upload-job";
 import { completeRender, type RenderJob } from "./jobs";
+import { serverEnv } from "../env";
 
 /**
  * One claim → execute → complete cycle of the durable render queue, shared by the
@@ -43,7 +44,7 @@ export const HEARTBEAT_MS = 15_000;
 export const TIMEOUT_CODES: Record<RenderLane, string> = { render: "RENDER_INTERRUPTED", asc: "ASC_INTERRUPTED" };
 
 export function laneEnabled(lane: RenderLane) {
-  return lane === "render" || process.env.ASC_CONNECTOR_ENABLED === "true";
+  return lane === "render" || serverEnv.asc.enabled;
 }
 
 async function execute(admin: SupabaseClient, job: RenderJob, signal: AbortSignal): Promise<Response> {

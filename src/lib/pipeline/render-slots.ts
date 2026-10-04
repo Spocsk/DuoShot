@@ -1,3 +1,4 @@
+import { serverEnv } from "../env";
 type Waiter = { enter: () => void; fail: () => void };
 
 /** Shared by export and review routes in one Node process, including separate Next bundles.
@@ -44,5 +45,5 @@ export class RenderSlots {
 const state = globalThis as typeof globalThis & { duoshotRenderSlots?: RenderSlots };
 // Start conservatively on the dedicated 4 GB CX23. Enable a second render only
 // after measuring peak RSS with the database and storage services running.
-const capacity = process.env.RENDER_CONCURRENCY === "2" ? 2 : 1;
+const capacity = serverEnv.render.concurrency;
 export const renderSlots = state.duoshotRenderSlots ??= new RenderSlots(capacity);
