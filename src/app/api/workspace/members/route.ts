@@ -33,7 +33,7 @@ export async function GET() {
     return NextResponse.json({ error: "MEMBERS_UNAVAILABLE" }, { status: 503 });
   }
   const emailById = new Map(
-    ((emails.data ?? []) as Array<{ user_id: string; email: string | null }>).map((row) => [row.user_id, row.email]),
+    (emails.data ?? []).map((row) => [row.user_id, row.email]),
   );
   const hydrated = (members.data ?? []).map((member) => ({ ...member, email: emailById.get(member.user_id) ?? null }));
   return NextResponse.json({ members: hydrated, limit: STUDIO_SEATS });

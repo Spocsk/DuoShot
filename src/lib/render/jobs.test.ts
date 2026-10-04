@@ -17,7 +17,7 @@ describe("completeRender", () => {
     const { client: supabase, rpc } = client({ error: null });
     await expect(completeRender(supabase, JOB, { exportId: "res-1" })).resolves.toBeUndefined();
     expect(rpc).toHaveBeenCalledWith("complete_render", {
-      p_job: "job-1", p_lease: "lease-1", p_result: { exportId: "res-1" }, p_export: null, p_error: null,
+      p_job: "job-1", p_lease: "lease-1", p_result: { exportId: "res-1" }, p_export: null, p_error: undefined,
     });
   });
 

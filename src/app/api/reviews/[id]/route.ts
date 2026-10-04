@@ -62,7 +62,7 @@ export async function GET(_request: Request, { params }: Params) {
     .select("slide_index, clone_label")
     .eq("review_id", review.id)
     .order("slide_index");
-  return reviewJson(id, review as ReviewRow, (slides ?? []) as SlideRow[]);
+  return reviewJson(id, review, slides ?? []);
 }
 
 export async function DELETE(_request: Request, { params }: Params) {

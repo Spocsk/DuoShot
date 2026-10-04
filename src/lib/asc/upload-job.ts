@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import type { DeviceSlot, Orientation } from "../specs";
 import { completeRender, type RenderJob } from "../render/jobs";
 import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
@@ -99,7 +99,7 @@ const fail = (code: string) => Response.json({ error: code }, { status: 400 });
  * Worker entry for `asc_upload`. Returns a Response like the other executors:
  * success commits the job; an error response is committed by the worker.
  */
-export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, options: Options = {}): Promise<Response> {
+export async function executeAscUpload(admin: DbClient, job: RenderJob, options: Options = {}): Promise<Response> {
   // A reclaimed attempt cannot know which screenshots Apple already accepted;
   // retrying would duplicate them in the user's listing.
   if ((job.attempts ?? 1) > 1) return fail("ASC_RETRY_UNSAFE");

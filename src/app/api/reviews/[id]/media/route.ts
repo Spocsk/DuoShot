@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { harborReviewJpeg, isDemoReview } from "@/lib/pipeline/harbor";
-import { reviewState, type ReviewLifecycle } from "@/lib/reviews";
+import { reviewState } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,12 +25,11 @@ export async function GET(request: Request, { params }: Params) {
   }
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
-  const { data } = await admin
+  const { data: review } = await admin
     .from("review_links")
     .select("status, expires_at, revoked_at")
     .eq("public_id", id)
     .maybeSingle();
-  const review = data as ReviewLifecycle | null;
   if (!review) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   const state = reviewState(review);
   if (state.expired || state.revoked) {

@@ -1,5 +1,5 @@
 import { readRenderBody } from "./read-body";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "../supabase/admin";
 import { readWorkspaceBilling } from "../workspace-billing";
@@ -9,7 +9,7 @@ import { canUse69 } from "../specs";
 /** Codes thrown by body reading and validation; anything else is an internal failure. */
 const CLIENT_ERROR_CODES = new Set(["INVALID_REQUEST", "INPUT_TOO_LARGE", "INVALID_PAIRS", "PATH_FORBIDDEN", "INVALID_OPTIONS", "INVALID_TRANSFORMS"]);
 
-export async function enqueueRender(request: Request, client: SupabaseClient, userId: string, kind: "export" | "review") {
+export async function enqueueRender(request: Request, client: DbClient, userId: string, kind: "export" | "review") {
   try {
     const key = request.headers.get("idempotency-key");
     if (!key || !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(key)) {

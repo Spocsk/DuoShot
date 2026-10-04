@@ -83,7 +83,7 @@ describe("executeExport for a queued job", () => {
     const names = rpc.mock.calls.map(([name]) => name);
     expect(names).toEqual(["complete_render"]);
     expect(rpc).toHaveBeenCalledWith("complete_render", expect.objectContaining({
-      p_job: "job-1", p_lease: "lease-1", p_error: null,
+      p_job: "job-1", p_lease: "lease-1", p_error: undefined,
       p_result: expect.objectContaining({ exportId: "res-1", url: "https://storage.example/app.zip" }),
       p_export: expect.objectContaining({ filename: "app.zip", image_count: 1, format: "png" }),
     }));

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { createServerSupabase } from "../supabase/server";
 import { createAdminSupabase } from "../supabase/admin";
 import { readWorkspaceBilling } from "../workspace-billing";
@@ -14,7 +14,7 @@ export { loadAscCredentials };
 export const NO_STORE = { "Cache-Control": "private, no-store" };
 
 export type AscContext = {
-  userId: string; workspaceId: string; role: string; plan: PlanId; paid: boolean; admin: SupabaseClient;
+  userId: string; workspaceId: string; role: string; plan: PlanId; paid: boolean; admin: DbClient;
 };
 
 const fail = (error: string, status: number) => ({ ok: false as const, response: NextResponse.json({ error }, { status, headers: NO_STORE }) });

@@ -20,13 +20,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const progress = job.progress ? { progress: job.progress } : {};
   if (job.state === "failed") return NextResponse.json({ state: job.state, error: job.error_code, ...progress }, { headers });
   if (job.state !== "completed") return NextResponse.json({ state: job.state, ...progress }, { headers });
-  const result = { ...job.result };
+  const result: Record<string, unknown> = job.result && typeof job.result === "object" && !Array.isArray(job.result) ? { ...job.result } : {};
   if (job.kind === "export") {
+    if (!job.reservation_id) return NextResponse.json({ error: "DOWNLOAD_UNAVAILABLE" }, { status: 503 });
     const { data: exported, error: readError } = await supabase.from("export_sets").select("storage_path,filename,created_at")
       .eq("id", job.reservation_id).eq("created_by", userId).maybeSingle();
     if (readError) return NextResponse.json({ error: "DOWNLOAD_UNAVAILABLE" }, { status: 503 });
     const remaining = exported ? Math.floor((Date.parse(exported.created_at) + 86_400_000 - Date.now()) / 1000) : 0;
-    if (!exported || remaining <= 0) return NextResponse.json({ state: "failed", error: "EXPORT_EXPIRED" }, { headers });
+    if (!exported?.storage_path || remaining <= 0) return NextResponse.json({ state: "failed", error: "EXPORT_EXPIRED" }, { headers });
     const ttl = Math.min(600, remaining);
     const { data: signed, error: signError } = await supabase.storage.from("exports").createSignedUrl(exported.storage_path, ttl, { download: exported.filename });
     if (signError || !signed) return NextResponse.json({ error: "DOWNLOAD_UNAVAILABLE" }, { status: 503 });

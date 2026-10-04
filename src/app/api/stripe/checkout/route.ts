@@ -5,6 +5,7 @@ import { checkoutAvailable, passCheckoutAvailable } from "@/lib/billing-availabi
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import type { Tables } from "@/lib/supabase/types";
 import { getSiteUrl } from "@/lib/site";
 import { createHash } from "node:crypto";
 
@@ -77,9 +78,11 @@ async function checkout(request: Request) {
     return NextResponse.json({ error: "SUBSCRIPTION_EXISTS", manageUrl: "/api/stripe/portal" }, { status: 409 });
   }
 
-  const { data: attempt, error: attemptError } = await admin.rpc("begin_checkout", {
+  const { data: attemptJson, error: attemptError } = await admin.rpc("begin_checkout", {
     p_workspace_id: membership.workspace_id, p_kind: kind, p_return_path: safeNextPath(body.next),
   });
+  // begin_checkout returns to_jsonb() of the checkout_attempts row.
+  const attempt = attemptJson as Tables<"checkout_attempts"> | null;
   if (attemptError || !attempt) return NextResponse.json({ error: "CHECKOUT_UNAVAILABLE" }, { status: 503 });
   if (attempt.session_id) {
     const existing = await stripe.checkout.sessions.retrieve(attempt.session_id);
