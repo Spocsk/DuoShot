@@ -140,4 +140,63 @@ describe("POST /api/stripe/checkout", () => {
     expect(body.error).toBe("SUBSCRIPTION_EXISTS");
     expect(create).not.toHaveBeenCalled();
   });
+
+  describe("one-time pass", () => {
+    function stripeWith(create: ReturnType<typeof vi.fn>) {
+      vi.mocked(getStripe).mockReturnValue({
+        subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
+        checkout: { sessions: { create } },
+      } as never);
+    }
+
+    it("is hidden when STRIPE_PRICE_PASS30 is not configured", async () => {
+      vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+      vi.stubEnv("STRIPE_PRICE_PASS30", "");
+      const create = vi.fn();
+      stripeWith(create);
+      const { status, body } = await readJson(await POST(request("pass30")));
+      expect(status).toBe(503);
+      expect(body.error).toBe("BILLING_UNCONFIGURED");
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it("opens a one-time payment Checkout without subscription data", async () => {
+      vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+      vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+      const create = vi.fn().mockResolvedValue({ id: "cs_pass", url: "https://checkout.stripe.test/pass" });
+      stripeWith(create);
+      const { status, body } = await readJson(await POST(request("pass30")));
+      expect(status).toBe(200);
+      expect(body.url).toBe("https://checkout.stripe.test/pass");
+      const params = create.mock.calls[0][0];
+      expect(params).toEqual(expect.objectContaining({
+        mode: "payment",
+        customer: "cus_1",
+        client_reference_id: "ws-1",
+        line_items: [{ price: "price_pass30", quantity: 1 }],
+        metadata: { kind: "pass30", workspace_id: "ws-1" },
+        payment_intent_data: { metadata: { kind: "pass30", workspace_id: "ws-1" } },
+      }));
+      expect(params).not.toHaveProperty("subscription_data");
+    });
+
+    it("keeps subscriptions in subscription mode when the pass is configured", async () => {
+      vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+      vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+      const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });
+      stripeWith(create);
+      expect((await POST(request("indie_monthly"))).status).toBe(200);
+      expect(create.mock.calls[0][0]).toEqual(expect.objectContaining({ mode: "subscription", subscription_data: expect.any(Object) }));
+      expect(create.mock.calls[0][0]).not.toHaveProperty("payment_intent_data");
+    });
+
+    it("does not sell a pass to a workspace that already subscribes", async () => {
+      vi.mocked(createServerSupabase).mockResolvedValue(workspace("sub_1"));
+      vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+      const create = vi.fn();
+      stripeWith(create);
+      expect((await POST(request("pass30"))).status).toBe(409);
+      expect(create).not.toHaveBeenCalled();
+    });
+  });
 });

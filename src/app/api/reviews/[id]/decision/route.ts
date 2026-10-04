@@ -7,6 +7,8 @@ export const runtime = "nodejs";
 
 type Params = { params: Promise<{ id: string }> };
 
+const MAX_COMMENT_LENGTH = 2000;
+
 export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
   if (isDemoReview(id)) {
@@ -16,6 +18,10 @@ export async function POST(request: Request, { params }: Params) {
   const status = body.action === "approve" ? "approved" : body.action === "redo" ? "changes_requested" : null;
   if (!status) return NextResponse.json({ error: "INVALID_ACTION" }, { status: 400 });
   const comment = typeof body.comment === "string" ? body.comment.trim() || null : null;
+  // Counted in code points to match the char_length CHECK on review_links.comment.
+  if (comment && [...comment].length > MAX_COMMENT_LENGTH) {
+    return NextResponse.json({ error: "COMMENT_TOO_LONG", max: MAX_COMMENT_LENGTH }, { status: 400 });
+  }
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
   const { data: review } = await admin

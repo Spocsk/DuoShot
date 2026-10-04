@@ -1,6 +1,9 @@
 import type { PlanId } from "./specs";
 
 export type CheckoutKind = "indie_monthly" | "studio_monthly" | "indie_yearly" | "studio_yearly";
+/** One-time purchases (Stripe Checkout mode "payment"); kept apart from subscriptions. */
+export type OneTimeKind = "pass30";
+export type PurchaseKind = CheckoutKind | OneTimeKind;
 
 export const FREE_EXPORTS = 2;
 export const PRO_CHECKOUT_KIND: CheckoutKind = "indie_monthly";
@@ -31,6 +34,32 @@ export const PLANS = {
     yearlyEur: 490,
   },
 };
+
+/**
+ * "Pass 30 jours": Indie quotas for a fixed period, paid once. The display price is
+ * configuration, read everywhere from here; the Stripe price (STRIPE_PRICE_PASS30)
+ * must match it. Hidden entirely when that price is not configured.
+ */
+export const PASS30 = {
+  kind: "pass30" as const,
+  name: "DuoShot Pass 30 jours",
+  plan: "indie" as const,
+  days: 30,
+  priceEur: 19,
+  mode: "payment" as const,
+};
+
+export const ONE_TIME_CATALOG: Record<OneTimeKind, typeof PASS30 & { amountCents: number }> = {
+  pass30: { ...PASS30, amountCents: PASS30.priceEur * 100 },
+};
+
+export function isOneTimeKind(value: unknown): value is OneTimeKind {
+  return value === "pass30";
+}
+
+export function pass30PriceId(): string | undefined {
+  return process.env.STRIPE_PRICE_PASS30 || undefined;
+}
 
 export const CHECKOUT_CATALOG: Record<
   CheckoutKind,

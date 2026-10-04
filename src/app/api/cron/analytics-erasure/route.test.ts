@@ -15,6 +15,11 @@ describe("analytics erasure cron", () => {
     vi.stubEnv("CRON_SECRET", "secret");
     const response = await GET(new Request("https://duoshot.test/api/cron/analytics-erasure"));
     expect(response.status).toBe(401);
+    vi.stubEnv("RENDER_WORKER_SECRET", "worker");
+    const workerSecret = await GET(new Request("https://duoshot.test/api/cron/analytics-erasure", {
+      headers: { authorization: "Bearer worker" },
+    }));
+    expect(workerSecret.status).toBe(401);
     expect(createAdminSupabase).not.toHaveBeenCalled();
   });
 

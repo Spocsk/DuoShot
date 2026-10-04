@@ -3,9 +3,17 @@
 Production runs only on the VPS (see [`../deploy.md`](../deploy.md)). These
 systemd timers run the scheduled jobs: Storage every 15 minutes,
 analytics erasure daily at 04:00 UTC. Run only after the compatible application
-and schema have been installed. The container names (`web-i9qtpe5bpyig86s1aljxr5gv`,
-`render-i9qtpe5bpyig86s1aljxr5gv`) are pinned to the current compose project;
-update the units if those containers are renamed.
+and schema have been installed. The units find their containers by compose
+project and service labels (`com.docker.compose.project=$DUOSHOT_COMPOSE_PROJECT`
+plus `com.docker.compose.service=web` or `=render`), so a recreated or renamed
+container needs no unit change and a staging stack on the same host (another
+project) is never matched. They fail instead of guessing when zero or several
+running containers match. `DUOSHOT_COMPOSE_PROJECT` defaults to
+`i9qtpe5bpyig86s1aljxr5gv` in each unit (and in `nightly-backup.sh`); override it
+in `/etc/duoshot/compose.env` if the project is ever renamed.
+
+`infra/host/test_systemd_units.py` runs every `ExecStart`/`ExecStop` against a
+stub `docker`, the way systemd unescapes them (`$$` is a literal `$`).
 
 Install the three unit files in `/etc/systemd/system/`, then validate with
 `systemd-analyze verify` and run `systemctl daemon-reload`.
@@ -13,7 +21,7 @@ Test both `duoshot-maintenance@storage` and `duoshot-maintenance@analytics`
 with `systemctl start`, inspect their result, then enable the timers with
 `systemctl enable --now duoshot-storage.timer duoshot-analytics.timer`.
 
-The scripts read the existing CRON_SECRET inside the application container.
+The maintenance script reads CRON_SECRET inside the application container.
 No secrets are stored in systemd units or command arguments. Inspect failures
 with `journalctl -u 'duoshot-maintenance@*'`. A successful analytics HTTP response
 with an empty queue does not validate Mixpanel credentials or remote deletion. Mixpanel no longer collects
@@ -28,16 +36,25 @@ After applying `20260926190000_render_jobs.sql`, deploy the compatible image,
 set `RENDER_QUEUE_ENABLED=true` in the private application environment and keep
 `RENDER_CONCURRENCY=1`. Install `duoshot-render-worker.service`, reload systemd,
 then enable/start it. It calls the protected loopback worker endpoint and reads
-the existing CRON_SECRET inside the container. No user access tokens are stored.
+RENDER_WORKER_SECRET inside the container (a value distinct from CRON_SECRET, so
+a leaked cron secret cannot drive renders). Until RENDER_WORKER_SECRET is set,
+the worker and the route fall back to CRON_SECRET and log
+`render_worker_secret_fallback`. No user access tokens are stored.
 
-The worker runs in the dedicated `render` compose service
-(`render-i9qtpe5bpyig86s1aljxr5gv`, same image and `/data/duoshot/app.env` as
-web, not routed by Traefik, 1280 MiB / 1.5 CPU / 256 PIDs; see
-[`../deploy.md`](../deploy.md)). `ExecStart` runs
-`docker exec render-i9qtpe5bpyig86s1aljxr5gv node scripts/run-render-worker.mjs`.
+`/api/internal/*` answers 404 unless the request reaches Next directly from the
+container loopback or the private Docker network: the proxy refuses any request
+carrying `X-Real-Ip` (set by Traefik), any non-internal `X-Forwarded-For` hop, and
+any `Host` other than an internal IP literal or `localhost`. Internal callers must
+therefore use `http://127.0.0.1:3000` (or another IP literal), not a Docker DNS name.
+
+The worker runs in the dedicated `render` compose service (same image and
+`/data/duoshot/app.env` as web, not routed by Traefik, 1280 MiB / 1.5 CPU /
+256 PIDs; see [`../deploy.md`](../deploy.md)). `ExecStart` resolves the single
+running container labelled `com.docker.compose.service=render` and runs
+`node scripts/run-render-worker.mjs` in it with `docker exec`.
 `docker exec` does not forward the stop signal to the process it started, so
 `ExecStop` sends SIGTERM to every `run-render-worker` process found with
-`docker top` in the render **and** web containers (the latter catches a worker
+`docker top` in the render **and** web containers (both found by label) (the latter catches a worker
 left over from before the move). The worker finishes its current tick and exits;
 a restart therefore never leaves a second worker looping. Stop the unit before
 recreating the render container and start it again afterwards.
@@ -58,7 +75,7 @@ are removed by the existing Storage cleanup timer.
 The browser persists the request key and job ID under the signed-in user's key,
 polls status and resumes on reload. Completed export URLs are signed afresh.
 Backups defer while any render job is queued or running, then stop the web
-container before stopping Supabase writes. The render container keeps running
+container (found by label, its ID kept to restart it) before stopping Supabase writes. The render container keeps running
 during the backup; its worker logs failed ticks and retries every 2 seconds until Supabase is back.
 Restart the worker with the web after maintenance.
 

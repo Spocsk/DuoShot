@@ -28,4 +28,14 @@ The billing migration was applied to the correct Supabase project `jvhqcmqwrihbt
 
 Create separate live products with monthly and annual prices and a live webhook, then set live keys and all four live price IDs in the production environment. Both `STRIPE_CHECKOUT_ENABLED=true` and `STRIPE_LIVE_ENABLED=true` are required to start live Checkout. Confirm tax behavior and perform one controlled real purchase before opening paid CTAs publicly. Keep Stripe test and live identifiers separate.
 
+## Optional one-time offer: Pass 30 jours (added 4 October 2026)
+
+- What it is: a single Checkout payment (`mode: "payment"`, kind `pass30`) that grants Indie entitlements (100 HD sets per day, 6.9″ sizes, multiple sets) for 30 days. No subscription is created and nothing renews. A second pass extends from the later of now and the current expiry.
+- Display price: 19 € by default, configured once in `PASS30.priceEur` in `src/lib/plans.ts`. Create the Stripe price with the **same amount** (one-time, EUR); the app never reads the amount from Stripe.
+- Configuration: set `STRIPE_PRICE_PASS30` to that one-time price ID. When it is empty the pass is hidden everywhere (pricing page, `/api/billing/availability`, Checkout returns `BILLING_UNCONFIGURED`). It also requires the normal Checkout gate (`STRIPE_CHECKOUT_ENABLED`, live flags, the four subscription prices). `scripts/check-deployment-env.mjs` reports `pass30Configured` and never fails on its absence.
+- Webhook: no new event type. `checkout.session.completed` with `payment_status=paid` (or `checkout.session.async_payment_succeeded` for delayed methods) calls the service-only RPC `grant_workspace_pass`, which is idempotent on the Checkout session id (`workspace_passes.stripe_checkout_session_id` is unique) and checks the session customer against the workspace. Payment sessions without DuoShot metadata are acknowledged and ignored (`PAYMENT_UNLINKED`).
+- Entitlements: `workspaces.pass_expires_at` is compared with the current time when entitlements are read (`resolveEntitlements`) and inside `reserve_export`; there is no cron. A workspace with an active subscription cannot buy a pass (`SUBSCRIPTION_EXISTS`).
+- Migration: `20261004183100_workspace_passes.sql` must be applied **before** deploying the image that reads `pass_expires_at`, otherwise billing reads fail.
+- Refunds: refunding a pass in Stripe does not revoke it automatically; set `pass_expires_at` to `now()` for that workspace if access should stop.
+
 References: [Stripe Checkout](https://docs.stripe.com/billing/subscriptions/build-subscriptions?platform=web&ui=stripe-hosted), [customer portal](https://docs.stripe.com/customer-management/integrate-customer-portal), [subscription webhooks](https://docs.stripe.com/billing/subscriptions/webhooks), [Stripe Tax setup](https://docs.stripe.com/tax/set-up).
