@@ -1,9 +1,11 @@
 # Application maintenance on the dedicated VPS
 
-These systemd timers replace the former Vercel crons (Vercel git deployments are disabled in `vercel.json`): Storage every 15 minutes,
+Production runs only on the VPS (see [`../deploy.md`](../deploy.md)). These
+systemd timers run the scheduled jobs: Storage every 15 minutes,
 analytics erasure daily at 04:00 UTC. Run only after the compatible application
-and schema have been installed. The container name is pinned to the current
-Coolify service; update it if that resource is recreated.
+and schema have been installed. The container names (`web-i9qtpe5bpyig86s1aljxr5gv`,
+`render-i9qtpe5bpyig86s1aljxr5gv`) are pinned to the current compose project;
+update the units if those containers are renamed.
 
 Install the three unit files in `/etc/systemd/system/`, then validate with
 `systemd-analyze verify` and run `systemctl daemon-reload`.
@@ -28,6 +30,23 @@ set `RENDER_QUEUE_ENABLED=true` in the private application environment and keep
 then enable/start it. It calls the protected loopback worker endpoint and reads
 the existing CRON_SECRET inside the container. No user access tokens are stored.
 
+The worker runs in the dedicated `render` compose service
+(`render-i9qtpe5bpyig86s1aljxr5gv`, same image and `/data/duoshot/app.env` as
+web, not routed by Traefik, 1280 MiB / 1.5 CPU / 256 PIDs; see
+[`../deploy.md`](../deploy.md)). `ExecStart` runs
+`docker exec render-i9qtpe5bpyig86s1aljxr5gv node scripts/run-render-worker.mjs`.
+`docker exec` does not forward the stop signal to the process it started, so
+`ExecStop` sends SIGTERM to every `run-render-worker` process found with
+`docker top` in the render **and** web containers (the latter catches a worker
+left over from before the move). The worker finishes its current tick and exits;
+a restart therefore never leaves a second worker looping. Stop the unit before
+recreating the render container and start it again afterwards.
+
+This unit file includes what was first applied live as the drop-in
+`/etc/systemd/system/duoshot-render-worker.service.d/render-container.conf`.
+Once this file is installed, that drop-in is redundant: remove it, then run
+`systemctl daemon-reload` and `systemctl restart duoshot-render-worker.service`.
+
 PostgreSQL admits at most 51 pending jobs globally and one per user. A lease
 expires after 90 seconds without a heartbeat; queued work survives restarts and
 interrupted work retries up to three attempts with the same export reservation.
@@ -38,8 +57,10 @@ are removed by the existing Storage cleanup timer.
 
 The browser persists the request key and job ID under the signed-in user's key,
 polls status and resumes on reload. Completed export URLs are signed afresh.
-Backups must drain/stop the web container (which also stops active render work)
-before stopping Supabase writes. Restart the worker with the web after maintenance.
+Backups defer while any render job is queued or running, then stop the web
+container before stopping Supabase writes. The render container keeps running
+during the backup; its worker logs failed ticks and retries every 2 seconds until Supabase is back.
+Restart the worker with the web after maintenance.
 
 Rollback: stop admission (`RENDER_QUEUE_ENABLED=false`) only after draining all
 queued/running jobs, then stop the worker. Keep the queue schema and metadata

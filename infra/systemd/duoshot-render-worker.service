@@ -1,11 +1,14 @@
 [Unit]
-Description=DuoShot durable render worker
+Description=DuoShot durable render worker (dedicated render container)
 After=docker.service network-online.target
 Requires=docker.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/docker exec web-i9qtpe5bpyig86s1aljxr5gv node scripts/run-render-worker.mjs
+ExecStart=/usr/bin/docker exec render-i9qtpe5bpyig86s1aljxr5gv node scripts/run-render-worker.mjs
+# docker exec does not forward the stop to the process it started; signal it directly
+# so a restart never leaves a second worker looping inside the container.
+ExecStop=/bin/sh -c 'for c in render-i9qtpe5bpyig86s1aljxr5gv web-i9qtpe5bpyig86s1aljxr5gv; do docker top $c -o pid,args 2>/dev/null | awk "/run-render-worker/ {print \\$1}" | xargs -r kill -TERM; done'
 Restart=always
 RestartSec=5
 TimeoutStopSec=20
