@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, IBM_Plex_Mono } from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
+import { LANDING_MOTION_QUERY } from "@/lib/motion";
 import "@/app/transitions-root.css";
 import "@/app/transitions-dev.css";
 import "@/app/globals.css";
@@ -29,13 +30,18 @@ export const metadata: Metadata = {
   verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
 };
 
+/** The landing picks its scroll layout before first paint, so loading GSAP never shifts it. */
+const MOTION_FLAG = `try{if(matchMedia(${JSON.stringify(LANDING_MOTION_QUERY)}).matches)document.documentElement.classList.add("duo-motion")}catch(e){}`;
+
 export function DocumentLayout({ children, locale }: { children: React.ReactNode; locale: "fr" | "en" }) {
   return (
     <html
       lang={locale}
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
         {children}
         <AnalyticsProvider />
       </body>

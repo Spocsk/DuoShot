@@ -3,26 +3,26 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import gsap from "gsap";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { HeaderAuth } from "@/components/header-auth";
-import { prefersReducedMotion } from "@/lib/motion";
 import { pricingPath, rejectionPath } from "@/lib/site";
 
 type Props = {
   locale: Locale;
   prefix: string;
+  /** Localized path of the current page, for aria-current. */
+  current?: string;
 };
 
-const CLIP_OPEN = "circle(150% at calc(100% - 2.1rem) 1.85rem)";
-const CLIP_CLOSED = "circle(0% at calc(100% - 2.1rem) 1.85rem)";
 const subscribeNever = () => () => {};
 
-export function SiteNav({ locale, prefix }: Props) {
+export function SiteNav({ locale, prefix, current }: Props) {
   const [open, setOpen] = useState(false);
   const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
   const panel = useRef<HTMLDivElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -47,46 +47,42 @@ export function SiteNav({ locale, prefix }: Props) {
     };
   }, [open]);
 
+  // Focus moves into the menu on open and back to the toggle on close.
   useEffect(() => {
-    const node = panel.current;
-    if (!node) return;
-    const reduced = prefersReducedMotion();
-    if (reduced) {
-      gsap.set(node, {
-        clipPath: open ? CLIP_OPEN : CLIP_CLOSED,
-        pointerEvents: open ? "auto" : "none",
-      });
-      return;
+    if (open) {
+      wasOpen.current = true;
+      panel.current?.querySelector<HTMLElement>("a, button")?.focus();
+    } else if (wasOpen.current) {
+      wasOpen.current = false;
+      toggle.current?.focus();
     }
-    const tween = gsap.to(node, {
-      clipPath: open ? CLIP_OPEN : CLIP_CLOSED,
-      duration: open ? 0.7 : 0.45,
-      ease: open ? "power3.out" : "power2.in",
-      pointerEvents: open ? "auto" : "none",
-    });
-    return () => {
-      tween.kill();
-    };
   }, [open, mounted]);
 
   function close() {
     setOpen(false);
   }
 
+  const links = [
+    { href: `${prefix}/tool`, label: t(locale, "nav_tool") },
+    { href: `${prefix}/specs`, label: t(locale, "nav_specs") },
+    { href: rejectionPath(locale), label: t(locale, "nav_rejection") },
+    { href: pricingPath(locale), label: t(locale, "nav_pricing") },
+  ];
+
   const menu = (
     <div
       ref={panel}
       id="site-menu"
-      className="ds-menu md:hidden"
+      className={`ds-menu md:hidden${open ? " is-open" : ""}`}
       aria-hidden={!open}
       inert={!open}
-      style={{ pointerEvents: open ? "auto" : "none" }}
     >
       <nav className="flex flex-col text-[var(--foreground)]" onClick={close}>
-        <Link href={`${prefix}/tool`}>{t(locale, "nav_tool")}</Link>
-        <Link href={`${prefix}/specs`}>{t(locale, "nav_specs")}</Link>
-        <Link href={rejectionPath(locale)}>{t(locale, "nav_rejection")}</Link>
-        <Link href={pricingPath(locale)}>{t(locale, "nav_pricing")}</Link>
+        {links.map((link) => (
+          <Link key={link.href} href={link.href} aria-current={current === link.href ? "page" : undefined}>
+            {link.label}
+          </Link>
+        ))}
         <div className="mt-6 flex flex-col gap-4 text-base font-sans">
           <HeaderAuth locale={locale} variant="menu" />
         </div>
@@ -97,6 +93,7 @@ export function SiteNav({ locale, prefix }: Props) {
   return (
     <>
       <button
+        ref={toggle}
         type="button"
         className={`ds-burger md:hidden ${open ? "is-open" : ""}`}
         aria-expanded={open}

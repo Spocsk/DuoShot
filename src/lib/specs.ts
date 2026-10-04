@@ -158,6 +158,22 @@ export function connectPreviewStyle(
   };
 }
 
+/** Display size for people: "5,4″" in French, "5.4\"" in English. Accepts '5.4"' or 5.4. */
+export function formatInches(inches: string | number, locale: Locale): string {
+  const value = typeof inches === "number" ? inches : Number.parseFloat(inches);
+  if (!Number.isFinite(value)) return String(inches);
+  const text = new Intl.NumberFormat(locale === "fr" ? "fr-FR" : "en-US", { maximumFractionDigits: 1 }).format(value);
+  return locale === "fr" ? `${text}\u2033` : `${text}"`;
+}
+
+/** Row precision for the specs tables: the three iPhone 6.9″ formats share a label, so name each by its width. */
+export function specRowDetail(spec: Pick<SizeSpec, "slot" | "inches" | "width" | "height" | "orientation">, locale: Locale): string {
+  const size = formatInches(spec.inches, locale);
+  if (spec.slot !== "iphone-69") return size;
+  const shortSide = Math.min(spec.width, spec.height);
+  return locale === "fr" ? `${size} · format ${shortSide} px` : `${size} · ${shortSide} px format`;
+}
+
 export function specPixels(spec: Pick<SizeSpec, "width" | "height">): string {
   return `${spec.width}x${spec.height}`;
 }

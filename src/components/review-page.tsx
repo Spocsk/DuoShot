@@ -4,7 +4,7 @@ import { DeviceCamera } from "@/components/device-camera";
 import { useEffect, useState, type CSSProperties } from "react";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { connectPreviewStyle, duoSpec, type Locale, type Orientation } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { t, tf } from "@/lib/i18n";
 
 type Slide = { index: number; clone: string; outer: string; inner: string };
 type Payload = {
@@ -183,7 +183,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                       data-aspect={viewMode === "pixels" ? `${outerSpec.width}/${outerSpec.height}` : undefined}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.outer} alt={t(locale, "review_alt_outer")} />
+                      <img src={slide.outer} alt={tf(locale, "review_alt_numbered_outer", { n: slide.index + 1, total: data.slides.length })} />
                       {viewMode === "device" ? <DeviceCamera /> : null}
                     </div>
                     <p className="studio-review-label studio-review-label-inner">{locale === "fr" ? "Écran ouvert" : "Open screen"}</p>
@@ -192,7 +192,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                       data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.inner} alt={t(locale, "review_alt_inner")} />
+                      <img src={slide.inner} alt={tf(locale, "review_alt_numbered_inner", { n: slide.index + 1, total: data.slides.length })} />
                       <span className="division" aria-hidden="true" />
                     </div>
                   </div>
