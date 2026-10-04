@@ -8,6 +8,8 @@ import { isWaitlistTopic, localeOf, normalizeEmail, type WaitlistTopic } from ".
 export const runtime = "nodejs";
 
 const MAX_BODY_BYTES = 2048;
+/** A pending address gets at most one confirmation e-mail per window. */
+export const RESEND_COOLDOWN_MS = 10 * 60_000;
 
 function confirmationEmail(locale: "fr" | "en", topic: WaitlistTopic, confirmUrl: string, unsubscribeUrl: string) {
   if (locale === "en") {
@@ -55,6 +57,14 @@ export async function POST(request: Request) {
   if (existing?.confirmed_at) return accepted;
 
   let token = existing?.token as string | undefined;
+  if (existing) {
+    // Claim the resend atomically; within the cooldown nothing is sent, same answer.
+    const cutoff = new Date(Date.now() - RESEND_COOLDOWN_MS).toISOString();
+    const { data: claimed, error } = await admin.from("waitlist").update({ last_sent_at: new Date().toISOString() })
+      .eq("id", existing.id).is("confirmed_at", null).lt("last_sent_at", cutoff).select("id").maybeSingle();
+    if (error) return NextResponse.json({ error: "WAITLIST_UNAVAILABLE" }, { status: 503 });
+    if (!claimed) return accepted;
+  }
   if (!token) {
     token = randomBytes(32).toString("base64url");
     const { error } = await admin.from("waitlist").insert({ email, topic, locale, token });

@@ -10,14 +10,14 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: vi.fn() }));
 vi.mock("@/lib/email", () => ({ sendTransactionalEmail: vi.fn() }));
 vi.mock("@/lib/site", () => ({ getSiteUrl: () => "https://duoshot.example" }));
 
-type Row = { id: string; email: string; topic: string; locale: string; token: string; confirmed_at: string | null };
+type Row = { id: string; email: string; topic: string; locale: string; token: string; confirmed_at: string | null; last_sent_at?: string };
 
 /** In-memory stand-in for the waitlist table with the filters the routes use. */
 function table(rows: Row[], options: { insertError?: unknown; lookupError?: unknown } = {}) {
   const calls = { insert: vi.fn(), update: vi.fn(), delete: vi.fn() };
   function query(action: "select" | "update" | "delete", payload?: Partial<Row>) {
-    const filters: [keyof Row, unknown][] = [];
-    const matches = () => rows.filter((row) => filters.every(([key, value]) => row[key] === value));
+    const filters: ((row: Row) => boolean)[] = [];
+    const matches = () => rows.filter((row) => filters.every((test) => test(row)));
     const run = () => {
       if (options.lookupError) return { data: null, error: options.lookupError };
       const found = matches();
@@ -26,8 +26,9 @@ function table(rows: Row[], options: { insertError?: unknown; lookupError?: unkn
       return { data: found, error: null };
     };
     const builder = {
-      eq: (key: keyof Row, value: unknown) => { filters.push([key, value]); return builder; },
-      is: (key: keyof Row, value: unknown) => { filters.push([key, value]); return builder; },
+      eq: (key: keyof Row, value: unknown) => { filters.push((row) => row[key] === value); return builder; },
+      is: (key: keyof Row, value: unknown) => { filters.push((row) => row[key] === value); return builder; },
+      lt: (key: keyof Row, value: string) => { filters.push((row) => String(row[key] ?? "") < value); return builder; },
       select: () => builder,
       maybeSingle: async () => { const result = run(); return { data: result.data?.[0] ?? null, error: result.error }; },
       then: (resolve: (value: unknown) => unknown) => Promise.resolve(run()).then(resolve),
@@ -42,7 +43,7 @@ function table(rows: Row[], options: { insertError?: unknown; lookupError?: unkn
       insert: async (row: Omit<Row, "id" | "confirmed_at">) => {
         calls.insert(row);
         if (options.insertError) return { error: options.insertError };
-        rows.push({ id: `row-${rows.length + 1}`, confirmed_at: null, ...row });
+        rows.push({ id: `row-${rows.length + 1}`, confirmed_at: null, last_sent_at: new Date().toISOString(), ...row });
         return { error: null };
       },
     }),
@@ -115,11 +116,24 @@ describe("POST /api/waitlist", () => {
     expect(sendTransactionalEmail).not.toHaveBeenCalled();
   });
 
-  it("resends the existing link for a pending address instead of duplicating it", async () => {
-    const calls = table([{ id: "row-1", email: "dev@example.com", topic: "apple_duo_open", locale: "fr", token: TOKEN, confirmed_at: null }]);
+  it("resends the existing link for a pending address after the cooldown, without duplicating it", async () => {
+    const rows: Row[] = [{ id: "row-1", email: "dev@example.com", topic: "apple_duo_open", locale: "fr", token: TOKEN, confirmed_at: null, last_sent_at: "2026-10-01T00:00:00.000Z" }];
+    const calls = table(rows);
     expect((await signup({ email: "dev@example.com" })).status).toBe(202);
     expect(calls.insert).not.toHaveBeenCalled();
     expect(vi.mocked(sendTransactionalEmail).mock.calls[0][0].text).toContain(TOKEN);
+    expect(Date.parse(rows[0].last_sent_at!)).toBeGreaterThan(Date.parse("2026-10-02T00:00:00Z"));
+  });
+
+  it("does not resend to a pending address within the cooldown and answers the same", async () => {
+    const rows: Row[] = [];
+    table(rows);
+    expect((await readJson(await signup({ email: "dev@example.com" }))).body).toEqual({ ok: true });
+    const repeated = await readJson(await signup({ email: "dev@example.com" }));
+    expect(repeated.status).toBe(202);
+    expect(repeated.body).toEqual({ ok: true });
+    expect(sendTransactionalEmail).toHaveBeenCalledTimes(1);
+    expect(rows).toHaveLength(1);
   });
 
   it("silently drops honeypot submissions", async () => {

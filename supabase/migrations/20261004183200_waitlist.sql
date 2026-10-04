@@ -9,6 +9,8 @@ create table if not exists public.waitlist (
   locale text not null default 'fr' check (locale in ('fr', 'en')),
   token text not null unique check (char_length(token) between 32 and 128),
   confirmed_at timestamptz,
+  -- Last confirmation e-mail; resends for a pending address wait out a cooldown.
+  last_sent_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   unique (email, topic)
 );
