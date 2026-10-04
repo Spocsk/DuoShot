@@ -26,7 +26,6 @@ export const metadata: Metadata = {
   },
   description: SITE_PITCH_FR,
   applicationName: SITE_NAME,
-  robots: process.env.VERCEL_ENV === "preview" ? { index: false, follow: false } : undefined,
   verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
 };
 
