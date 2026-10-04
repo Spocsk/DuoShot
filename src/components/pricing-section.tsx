@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { t } from "@/lib/i18n";
-import type { CheckoutKind } from "@/lib/plans";
+import { t, tf } from "@/lib/i18n";
+import { ONE_TIME_CATALOG, formatEurFromCents, type CheckoutKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { PricingCta } from "@/components/pricing-cta";
@@ -65,8 +65,22 @@ type PlanCard = {
   price: string;
   intro: string;
   foot: string;
+  /** Short factual line under the foot, e.g. a current product limit. */
+  note?: string;
   cta: PlanCta | null;
 };
+
+/** One-time offer shown beside the plans; priced from ONE_TIME_CATALOG only. */
+function passOffer(locale: Locale) {
+  const price = formatEurFromCents(ONE_TIME_CATALOG.pass30.amountCents, locale);
+  return {
+    kind: ONE_TIME_CATALOG.pass30.kind,
+    title: t(locale, "pricing_pass_title"),
+    price: tf(locale, "pricing_pass_price", { price }),
+    intro: t(locale, "pricing_pass_body"),
+    cta: tf(locale, "pricing_pass_cta", { price }),
+  };
+}
 
 function pricingPlans(locale: Locale, yearly: boolean): Record<(typeof PLAN_ORDER)[number], PlanCard> {
   const prefix = localePrefix(locale);
@@ -98,12 +112,25 @@ function pricingPlans(locale: Locale, yearly: boolean): Record<(typeof PLAN_ORDE
       price: yearly ? (locale === "fr" ? "490 € / an" : "€490 / year") : t(locale, "pricing_studio_price"),
       intro: t(locale, "pricing_studio_body"),
       foot: `${t(locale, "pricing_seats_soon")} · ${t(locale, "pricing_note")}`,
+      note: t(locale, "pricing_local_projects"),
       cta: { kind: yearly ? "studio_yearly" : "studio_monthly", label: yearly ? (locale === "fr" ? "Studio — 490 €/an" : "Studio — €490/year") : t(locale, "pricing_studio_cta"), ghost: true },
     },
   };
 }
 
-export function PricingSection({ locale, heading = "h2" }: { locale: Locale; heading?: "h1" | "h2" }) {
+export function PricingSection({
+  locale,
+  heading = "h2",
+  checkoutAvailable,
+  passAvailable = false,
+}: {
+  locale: Locale;
+  heading?: "h1" | "h2";
+  /** Server-read availability so the first HTML shows the right buttons; omitted = checked after mount. */
+  checkoutAvailable?: boolean;
+  /** The one-time pass renders only when the server says its Stripe price is configured. */
+  passAvailable?: boolean;
+}) {
   const [yearly, setYearly] = useState(false);
   const rows = pricingRows(locale);
   const plans = pricingPlans(locale, yearly);
@@ -151,7 +178,11 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
                   </div>
                 ))}
               </dl>
-              <p className="pricing-foot">{plan.foot || "\u00a0"}</p>
+              {/* One element only: each column is a 13-track subgrid. */}
+              <p className="pricing-foot">
+                {plan.foot || "\u00a0"}
+                {plan.note ? <span className="mt-2 block" data-testid={`pricing-note-${id}`}>{plan.note}</span> : null}
+              </p>
               <div className="pricing-cta-slot">
                 {plan.cta?.kind ? (
                   <PricingCta
@@ -159,6 +190,7 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
                     kind={plan.cta.kind}
                     label={plan.cta.label}
                     className={plan.cta.ghost ? "ds-cta-ghost" : "ds-cta"}
+                    initialAvailable={checkoutAvailable}
                   />
                 ) : plan.cta?.href ? (
                   <Link
@@ -179,6 +211,22 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
           );
         })}
       </div>
+      {passAvailable ? <PassOffer locale={locale} available={checkoutAvailable} /> : null}
     </section>
+  );
+}
+
+function PassOffer({ locale, available }: { locale: Locale; available?: boolean }) {
+  const pass = passOffer(locale);
+  return (
+    <aside className="pricing-pass mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] pt-6" data-testid="pricing-pass30">
+      <div className="max-w-xl">
+        <p className="font-display text-2xl">
+          {pass.title} <span className="text-lg text-[var(--muted)]">· {pass.price}</span>
+        </p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{pass.intro}</p>
+      </div>
+      <PricingCta locale={locale} kind={pass.kind} label={pass.cta} className="ds-cta-ghost" initialAvailable={available} />
+    </aside>
   );
 }

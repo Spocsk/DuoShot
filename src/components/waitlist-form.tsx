@@ -18,6 +18,7 @@ export function WaitlistForm({
   className = "",
   buttonClassName = "ds-cta-ghost",
   hint,
+  compact = false,
 }: {
   locale: Locale;
   topic?: WaitlistTopic;
@@ -26,12 +27,14 @@ export function WaitlistForm({
   buttonClassName?: string;
   /** Replaces the default one-line explanation; pass "" to hide it. */
   hint?: string;
+  /** One row: the label stays for screen readers only and the hint is hidden. */
+  compact?: boolean;
 }) {
   const id = useId();
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
-  const hintText = hint ?? t(locale, topic === "launch" ? "waitlist_hint_launch" : "waitlist_hint_apple_duo_open");
+  const hintText = compact ? "" : hint ?? t(locale, topic === "launch" ? "waitlist_hint_launch" : "waitlist_hint_apple_duo_open");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,8 +74,8 @@ export function WaitlistForm({
     <form noValidate onSubmit={(event) => void onSubmit(event)} className={className} data-testid={`waitlist-form-${topic}`}>
       {hintText ? <p id={`${id}-hint`} className="mb-2 text-sm text-[var(--muted)]">{hintText}</p> : null}
       <div className="flex flex-wrap items-end gap-2">
-        <div className="min-w-0 flex-[1_1_14rem]">
-          <label className="ds-label" htmlFor={`${id}-email`}>{t(locale, "waitlist_email_label")}</label>
+        <div className={`min-w-0 ${compact ? "flex-[1_1_10rem]" : "flex-[1_1_14rem]"}`}>
+          <label className={compact ? "sr-only" : "ds-label"} htmlFor={`${id}-email`}>{t(locale, "waitlist_email_label")}</label>
           <input
             id={`${id}-email`}
             type="email"

@@ -8,6 +8,11 @@ export function AppleAvailability({ locale, state = APPLE_UPLOAD_STATE }: { loca
       {appleUploadStatus(locale, state)}{" "}
       <a className="ds-link" href={APPLE_SCREENSHOT_SOURCE}>{locale === "fr" ? "Spécifications Apple" : "Apple specifications"}</a>
     </p>
-    {state === "pending" ? <WaitlistForm locale={locale} topic="apple_duo_open" className="mt-3 max-w-xl" /> : null}
+    {state === "pending" ? (
+      // inline-block follows the parent's text alignment: centered in the hero, start-aligned elsewhere.
+      <div className="mt-3 inline-block w-full max-w-md text-left align-top">
+        <WaitlistForm locale={locale} topic="apple_duo_open" compact />
+      </div>
+    ) : null}
   </div>;
 }

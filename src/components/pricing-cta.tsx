@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CheckoutKind } from "@/lib/plans";
+import type { PurchaseKind } from "@/lib/plans";
 import { startCheckout } from "@/lib/checkout";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { toolPath } from "@/lib/site";
@@ -13,16 +13,23 @@ export function PricingCta({
   kind,
   label,
   className = "ds-cta",
+  initialAvailable,
 }: {
   locale: Locale;
-  kind: CheckoutKind;
+  kind: PurchaseKind;
   label: string;
   className?: string;
+  /** Server-rendered checkout availability; when omitted the button asks the API after mount. */
+  initialAvailable?: boolean;
 }) {
   const router = useRouter();
   const dest = `${toolPath(locale)}?upgrade=1&plan=${kind}`;
-  const [available, setAvailable] = useState(false);
-  useEffect(() => { void fetch("/api/billing/availability").then((r) => r.ok ? r.json() : null).then((data) => setAvailable(data?.checkoutAvailable === true)).catch(() => setAvailable(false)); }, []);
+  const [available, setAvailable] = useState(initialAvailable ?? false);
+  useEffect(() => {
+    if (initialAvailable !== undefined) return;
+    const field = kind === "pass30" ? "passAvailable" : "checkoutAvailable";
+    void fetch("/api/billing/availability").then((r) => r.ok ? r.json() : null).then((data) => setAvailable(data?.[field] === true)).catch(() => setAvailable(false));
+  }, [initialAvailable, kind]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
