@@ -6,7 +6,8 @@ describe("review", () => {
       inner: "cypress/fixtures/inner.png",
     });
     cy.get('[data-testid="tool-tab-review"]').click();
-    cy.get('[data-testid="tool-review"]').click();
+    cy.get('[data-testid="tool-other-actions"] summary').click();
+    cy.get('[data-testid="tool-review"]').click({ scrollBehavior: "center" });
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
 
@@ -20,7 +21,8 @@ describe("review", () => {
       inner: "cypress/fixtures/inner.png",
     });
     cy.get('[data-testid="tool-tab-review"]').click();
-    cy.get('[data-testid="tool-review"]').click();
+    cy.get('[data-testid="tool-other-actions"] summary').click();
+    cy.get('[data-testid="tool-review"]').click({ scrollBehavior: "center" });
     cy.get('[data-testid="tool-status"]').should("contain", "réservé à Studio");
     cy.get('[data-testid="tool-review-upgrade"]').should("contain", "Studio");
     cy.get("@reviews.all").should("have.length", 0);
@@ -44,7 +46,8 @@ describe("review", () => {
       slides: [],
     }).as("reviewStatus");
     cy.acknowledgeQuality();
-    cy.get('[data-testid="tool-review"]').click();
+    cy.get('[data-testid="tool-other-actions"] summary').click();
+    cy.get('[data-testid="tool-review"]').click({ scrollBehavior: "center" });
     cy.wait("@createReview");
     cy.get('[data-testid="review-url"]').should("contain", "/r/revtest12ab");
     cy.get('[data-testid="tool-review-set-status"]').should("contain", "pending");
@@ -127,7 +130,8 @@ describe("review", () => {
       slides: [],
     });
     cy.acknowledgeQuality();
-    cy.get('[data-testid="tool-review"]').click();
+    cy.get('[data-testid="tool-other-actions"] summary').click();
+    cy.get('[data-testid="tool-review"]').click({ scrollBehavior: "center" });
     cy.wait("@createReview");
     cy.get('[data-testid="review-url"]').should("contain", "/r/revclip12ab");
     cy.get('[data-testid="review-copied"]').should("contain", "Lien prêt");

@@ -71,9 +71,7 @@ export function DropZone({
         className="absolute inset-0 cursor-pointer opacity-0"
       />
       <span>{label}</span>
-      <span className="t-shimmer mt-2 text-sm text-[var(--muted)]" data-text={hint}>
-        {hint}
-      </span>
+      <span className="ds-drop-hint mt-2 text-sm">{hint}</span>
       <span className="mt-2 text-sm text-[var(--muted)]">
         <DigitCount value={`${count}`} /> / {MAX_IMAGES}
       </span>

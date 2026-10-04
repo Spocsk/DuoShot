@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: Params) {
   const slide = Number(url.searchParams.get("slide") ?? "0");
   const side = url.searchParams.get("side") === "inner" ? "inner" : "outer";
   if (isDemoReview(id)) {
-    const jpeg = await harborReviewJpeg(slide, side);
+    const jpeg = await harborReviewJpeg(slide, side, url.searchParams.get("locale") === "fr" ? "fr" : "en");
     if (!jpeg) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
     return new NextResponse(new Uint8Array(jpeg), {
       headers: {

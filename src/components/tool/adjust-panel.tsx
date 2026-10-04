@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { CropTransform, FitMode, Locale, OutputFormat, RenderOptions, SizeSpec } from "@/lib/specs";
+import { overlayTextColor, type CropTransform, type FitMode, type Locale, type OutputFormat, type RenderOptions, type SizeSpec, type TextColor } from "@/lib/specs";
 import { t } from "@/lib/i18n";
 import type { SourceInspect } from "@/lib/pipeline/source-inspect";
 import type { SetMeta } from "@/lib/sets-store";
@@ -189,6 +189,7 @@ export function AdvancedSettings({
       ]}
       onChange={(value) => updateOptions({ titleFont: value as RenderOptions["titleFont"] })}
     />
+    <TextColorField locale={locale} options={options} updateOptions={updateOptions} />
     <Seg
       label={t(locale, "tool_label_format")}
       value={options.format}
@@ -238,4 +239,34 @@ export function AdvancedSettings({
       </div>
     </details>
   );
+}
+
+/** Burned-in text colour: Auto keeps the contrast rule from specs.ts; the choice is saved with the set and sent to the renderer. */
+function TextColorField({ locale, options, updateOptions }: { locale: Locale; options: RenderOptions; updateOptions: (patch: Partial<RenderOptions>) => void }) {
+  const current = options.textColor ?? "auto";
+  const mode = current.startsWith("#") ? "custom" : current;
+  const resolved = overlayTextColor(options);
+  return <>
+    <Seg
+      label={t(locale, "tool_text_color")}
+      value={mode}
+      options={[
+        { value: "auto", label: t(locale, "tool_text_color_auto") },
+        { value: "ink", label: t(locale, "tool_text_color_ink") },
+        { value: "white", label: t(locale, "tool_text_color_white") },
+        { value: "custom", label: t(locale, "tool_text_color_custom") },
+      ]}
+      onChange={(value) => updateOptions({ textColor: value === "custom" ? (resolved.toLowerCase() as TextColor) : (value as TextColor) })}
+    />
+    <div className="tool-text-color-readout" data-testid="tool-text-color">
+      <span className="tool-text-color-chip" style={{ background: resolved }} aria-hidden="true" />
+      <code>{resolved}</code>
+      {mode === "custom" ? (
+        <label className="tool-text-color-custom">
+          <span>{t(locale, "tool_text_color_pick")}</span>
+          <input type="color" value={resolved.toLowerCase()} data-testid="tool-text-color-input" onChange={(event) => updateOptions({ textColor: event.target.value as TextColor })} />
+        </label>
+      ) : null}
+    </div>
+  </>;
 }
