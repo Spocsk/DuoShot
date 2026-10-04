@@ -60,7 +60,7 @@ jobs:
           # /pricing renders checkout availability on the server; with no Stripe here,
           # this enables the buttons only (specs stub /api/stripe/checkout).
           E2E_CHECKOUT_DISPLAY: "true"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: cypress-artifacts
