@@ -6,6 +6,7 @@ import {
   shouldSkipLocaleRewrite,
 } from "@/lib/locale";
 import { updateSession } from "@/lib/supabase/proxy";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
 function needsSessionRefresh(pathname: string) {
   // Status handlers authenticate and refresh their own cookies. Repeating that
@@ -16,6 +17,14 @@ function needsSessionRefresh(pathname: string) {
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  const rate = checkRateLimit(request.method, pathname, clientIp(request.headers));
+  if (rate.limited) {
+    return NextResponse.json({ error: "RATE_LIMITED" }, {
+      status: 429,
+      headers: { "Retry-After": String(rate.retryAfterSeconds), "Cache-Control": "no-store" },
+    });
+  }
 
   const skip =
     (request.method !== "GET" && request.method !== "HEAD") ||
