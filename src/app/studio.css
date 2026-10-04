@@ -676,3 +676,9 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 .tool-set-rename { color: #315f69; font-size: 0.78rem; font-weight: 620; text-decoration: underline; text-decoration-color: rgb(36 87 101 / 0.35); text-underline-offset: 0.2em; }
 .tool-set-rename:hover { text-decoration-color: currentColor; }
 .tool-set-rename:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; border-radius: 0.2rem; }
+.tool-command-set .ds-listbox-trigger { min-width: 0; }
+.tool-command-set .ds-listbox-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 639px) {
+  .tool-command-set .ds-listbox-trigger .tool-demo-badge { display: none; }
+  .tool-command-set .ds-set-bar { min-width: 0; }
+}
