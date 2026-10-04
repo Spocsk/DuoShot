@@ -242,7 +242,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
         </Block>
         <Block title="Trial and plans">
           <p>
-            Trial: 2 HD ZIPs (outer + inner), no card, Duo sizes only. Indie: €12/month or €120/year billed annually, up to 100 ZIP exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €49/month or €490/year billed annually, everything in Indie plus
+            Trial: 2 HD ZIPs (closed and open screens), no card, Duo sizes only. Indie: €12/month or €120/year billed annually, up to 100 ZIP exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €49/month or €490/year billed annually, everything in Indie plus
             three seats and client reviews retained for seven days. Prices include VAT where applicable.
             Billing via Stripe, cancel from Stripe.
           </p>
@@ -293,7 +293,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
       </p>
       <Block title="Service">
         <p>
-          DuoShot génère des screenshots App Store sans chassis pour iPhone Duo (outer 5,4″ et inner 7,6″, 6,9″ en
+          DuoShot génère des captures App Store sans coque d’appareil pour iPhone Duo (écran fermé 5,4″ et écran ouvert 7,6″, 6,9″ en
           option). Vous devez détenir les droits sur chaque fichier déposé. Les sorties restent soumises à la guideline
           2.3.3 — nous n’inventons pas de fonctionnalités. Aucune garantie d’acceptation Apple.
         </p>
@@ -309,7 +309,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
       </Block>
       <Block title="Essai et offres">
         <p>
-          Essai : 2 ZIP HD (outer + inner), sans carte, tailles Duo seulement. Indie : 12 €/mois ou 120 €/an facturés annuellement, 100 exports ZIP par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois ou 490 €/an facturés annuellement, tout Indie plus trois
+          Essai : 2 ZIP HD (écrans fermé et ouvert), sans carte, tailles Duo seulement. Indie : 12 €/mois ou 120 €/an facturés annuellement, 100 exports ZIP par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois ou 490 €/an facturés annuellement, tout Indie plus trois
           sièges et des reviews client conservées sept jours. Prix TTC le cas échéant. Paiement via Stripe, résiliation
           depuis Stripe.
         </p>

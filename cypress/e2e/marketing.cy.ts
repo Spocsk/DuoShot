@@ -17,6 +17,7 @@ describe("marketing", () => {
     cy.visitFr("/");
     cy.contains("h1", "Captures iPhone Duo.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
+    cy.get('[data-testid="cta-demo"]').should("have.attr", "href", "/tool?demo=harbor");
     cy.get('[data-testid="cta-example"]').should("have.attr", "href").and("include", "/api/example-zip");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-inner-portrait/01.png");
@@ -66,7 +67,7 @@ describe("marketing", () => {
       cy.get(".studio-sequence-step").eq(2).scrollIntoView();
       layer("report").should("be.visible");
       layer("analysis").should("not.be.visible");
-      cy.get(".studio-sequence-step").eq(3).scrollIntoView();
+      cy.get(".studio-sequence-step").eq(3).scrollIntoView({ offset: { top: -120, left: 0 } });
       layer("prevent").should("be.visible");
       layer("report").should("not.be.visible");
       // Scrolling back up replays the transitions in reverse.
@@ -112,6 +113,8 @@ describe("marketing", () => {
   it("serves a dedicated pricing page", () => {
     cy.visitFr("/pricing");
     cy.contains("h1", "Essai, Indie, Studio.").should("be.visible");
+    cy.get('[data-testid="nav-pricing"]').should("have.attr", "aria-current", "page");
+    cy.contains("Paiement sécurisé par Stripe").should("be.visible");
     cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/signup");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.contains("3 sièges").should("be.visible");
@@ -176,7 +179,7 @@ describe("camera and review preparation", () => {
     cy.get(".studio-sequence-step").should("have.length", 4).eq(2).should("contain", "Sachez ce qui reste à vérifier.").and("contain", "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations.");
     cy.get(".studio-sequence-step").eq(3).scrollIntoView({ offset: { top: -120, left: 0 } });
     cy.get(".studio-sequence-stage .studio-prevent-outcome").should("be.visible");
-    cy.get(".studio-sequence-stage .studio-prevent-marker").should("have.length", 4).each(($marker) => cy.wrap($marker).should("have.css", "visibility", "visible").and("have.css", "opacity", "1"));
+    cy.get(".studio-sequence-stage .studio-prevent-checks li").should("have.length", 4).each(($check) => cy.wrap($check).should("have.css", "visibility", "visible"));
     cy.contains("button", "DuoShot peut-il éviter des retards").click();
     cy.contains("DuoShot ne garantit ni l’approbation ni un délai de validation").should("be.visible");
   });
@@ -241,7 +244,7 @@ describe("screenshot dimensions and search intent", () => {
       visit(`${prefix}/specs`);
       cy.request(`${prefix}/specs`).then(({ body }) => {
         const doc = new DOMParser().parseFromString(body, "text/html");
-        expect(doc.querySelector("h1")!.textContent).to.contain("App Store Connect");
+        expect(doc.querySelector("h1")!.textContent!.replace(/\u00a0/g, " ")).to.contain("App Store Connect");
         expect(doc.title).to.contain("1398×2034").and.to.contain("2007×2853");
         expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.contain("2007 × 2853");
         const image = doc.querySelector('meta[property="og:image"]')!.getAttribute("content")!;

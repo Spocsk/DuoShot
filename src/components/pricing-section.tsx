@@ -1,232 +1,286 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { t, tf } from "@/lib/i18n";
-import { ONE_TIME_CATALOG, formatEurFromCents, type CheckoutKind } from "@/lib/plans";
+import { i18nKeys, t, tf } from "@/lib/i18n";
+import { CHECKOUT_CATALOG, ONE_TIME_CATALOG, PLANS, type CheckoutKind, type OneTimeKind, type PurchaseKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
-import { localePrefix, reviewPath } from "@/lib/site";
+import { appleUploadStatus } from "@/lib/apple-screenshot-status";
+import { localePrefix, pricingPath, reviewPath } from "@/lib/site";
 import { PricingCta } from "@/components/pricing-cta";
+import { FaqList } from "@/components/faq-list";
 
-const PLAN_ORDER = ["trial", "indie", "studio"] as const;
+/**
+ * Plans are read from PLANS and one-time offers from ONE_TIME_CATALOG, so a new offer appears
+ * without touching this layout. Individual plans and passes are cards; the plan with several
+ * seats becomes the full-width team band. Passes render only when the server says their
+ * Stripe price is configured (passAvailable).
+ */
+const PREFERRED_ORDER = ["free", "pass30", "indie", "studio"];
+const RECOMMENDED = "indie";
 
-function pricingRows(locale: Locale) {
-  return [
-    {
-      label: t(locale, "pricing_feat_zip"),
-      trial: t(locale, "pricing_val_quota_trial"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_quota"),
-      trial: t(locale, "pricing_val_quota_trial"),
-      indie: t(locale, "pricing_val_daily_quota"),
-      studio: t(locale, "pricing_val_daily_quota"),
-    },
-    {
-      label: t(locale, "pricing_feat_69"),
-      trial: t(locale, "pricing_val_no"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_sets"),
-      trial: t(locale, "pricing_val_yes"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_prefix"),
-      trial: t(locale, "pricing_val_no"),
-      indie: t(locale, "pricing_val_yes"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-    {
-      label: t(locale, "pricing_feat_review"),
-      trial: t(locale, "pricing_val_no"),
-      indie: t(locale, "pricing_val_no"),
-      studio: t(locale, "pricing_val_yes"),
-    },
-  ];
+type PlanRecord = Record<string, unknown>;
+type PlanId = string;
+
+const planRecords = PLANS as unknown as Record<PlanId, PlanRecord>;
+const num = (plan: PlanRecord, key: string) => (typeof plan[key] === "number" ? (plan[key] as number) : null);
+const hasKey = (key: string) => i18nKeys().fr.includes(key);
+const text = (locale: Locale, key: string, fallback: string) => (hasKey(key) ? t(locale, key) : fallback);
+
+function isPass(id: PlanId): id is OneTimeKind {
+  return id in ONE_TIME_CATALOG;
 }
 
-type PlanCta = {
-  kind?: CheckoutKind;
-  href?: string;
-  label: string;
-  ghost?: boolean;
-  testId?: string;
-};
+/** Entitlements of a plan or pass: a pass carries the quotas of the plan it grants. */
+function entitlements(id: PlanId): PlanRecord {
+  return isPass(id) ? planRecords[ONE_TIME_CATALOG[id].plan]! : planRecords[id]!;
+}
 
-type PlanCard = {
-  featured: boolean;
-  title: string;
+function orderedPlans(withPasses: boolean): PlanId[] {
+  const ids = [...Object.keys(planRecords), ...(withPasses ? Object.keys(ONE_TIME_CATALOG) : [])];
+  const rank = (id: string) => {
+    const index = PREFERRED_ORDER.indexOf(id);
+    return index === -1 ? PREFERRED_ORDER.length - 1 : index;
+  };
+  return ids.sort((a, b) => rank(a) - rank(b));
+}
+
+function isTeam(id: PlanId) {
+  return !isPass(id) && (num(planRecords[id]!, "seats") ?? 1) > 1;
+}
+
+function eur(value: number, locale: Locale) {
+  const formatted = new Intl.NumberFormat(locale === "fr" ? "fr-FR" : "en-US", { maximumFractionDigits: 2 }).format(value);
+  return locale === "fr" ? `${formatted} €` : `€${formatted}`;
+}
+
+/** Subscription kinds that belong to a plan: `${id}_monthly` and `${id}_yearly`. */
+function kindsFor(id: PlanId): CheckoutKind[] {
+  return (Object.keys(CHECKOUT_CATALOG) as CheckoutKind[]).filter((kind) => kind.startsWith(`${id}_`));
+}
+
+type Offer = {
   price: string;
-  intro: string;
-  foot: string;
-  /** Short factual line under the foot, e.g. a current product limit. */
-  note?: string;
-  cta: PlanCta | null;
+  note: string;
+  cta: { kind: PurchaseKind; label: string } | { href: string; label: string; testId: string } | null;
 };
 
-/** One-time offer shown beside the plans; priced from ONE_TIME_CATALOG only. */
-function passOffer(locale: Locale) {
-  const price = formatEurFromCents(ONE_TIME_CATALOG.pass30.amountCents, locale);
-  return {
-    kind: ONE_TIME_CATALOG.pass30.kind,
-    title: t(locale, "pricing_pass_title"),
-    price: tf(locale, "pricing_pass_price", { price }),
-    intro: t(locale, "pricing_pass_body"),
-    cta: tf(locale, "pricing_pass_cta", { price }),
-  };
+function offerFor(id: PlanId, locale: Locale, yearly: boolean): Offer {
+  const fr = locale === "fr";
+  if (isPass(id)) {
+    const pass = ONE_TIME_CATALOG[id];
+    const price = eur(pass.amountCents / 100, locale);
+    return {
+      price,
+      note: tf(locale, "pricing_pass_price", { price }).replace(price, "").trim(),
+      cta: { kind: pass.kind, label: tf(locale, "pricing_pass_cta", { price: eur(pass.amountCents / 100, locale).replace("\u00a0", " ") }) },
+    };
+  }
+  const plan = planRecords[id]!;
+  const title = planTitle(id, locale);
+  if (id === "free") {
+    return {
+      price: t(locale, "pricing_trial_price"),
+      note: " ",
+      cta: { href: `${localePrefix(locale)}/signup`, label: t(locale, "pricing_trial_cta"), testId: "pricing-cta-trial" },
+    };
+  }
+  const monthly = num(plan, "monthlyEur");
+  const annual = num(plan, "yearlyEur");
+  if (monthly !== null) {
+    const showYear = yearly && annual !== null;
+    const value = showYear ? annual! : monthly;
+    const kind = kindsFor(id).find((item) => item.endsWith(showYear ? "_yearly" : "_monthly"));
+    const per = showYear ? t(locale, "pricing_per_year") : t(locale, "pricing_per_month");
+    const note = showYear
+      ? `≈ ${eur(Math.round((annual! / 12) * 100) / 100, locale)} ${t(locale, "pricing_per_month")} · ${fr ? "2 mois offerts" : "2 months free"}`
+      : " ";
+    return {
+      price: `${eur(value, locale)} ${per}`,
+      note,
+      cta: kind ? { kind, label: `${title} — ${eur(value, locale).replace(" ", " ")}/${showYear ? (fr ? "an" : "year") : (fr ? "mois" : "month")}` } : null,
+    };
+  }
+  return { price: "—", note: "\u00a0", cta: null };
 }
 
-function pricingPlans(locale: Locale, yearly: boolean): Record<(typeof PLAN_ORDER)[number], PlanCard> {
-  const prefix = localePrefix(locale);
-  return {
-    trial: {
-      featured: false,
-      title: t(locale, "pricing_trial_title"),
-      price: t(locale, "pricing_trial_price"),
-      intro: t(locale, "pricing_trial_body"),
-      foot: "",
-      cta: {
-        href: `${prefix}/signup`,
-        label: t(locale, "pricing_trial_cta"),
-        ghost: true,
-        testId: "pricing-cta-trial",
-      },
-    },
-    indie: {
-      featured: true,
-      title: t(locale, "pricing_indie_title"),
-      price: yearly ? (locale === "fr" ? "120 € / an" : "€120 / year") : t(locale, "pricing_indie_price"),
-      intro: t(locale, "pricing_indie_body"),
-      foot: "",
-      cta: { kind: yearly ? "indie_yearly" : "indie_monthly", label: yearly ? (locale === "fr" ? "Indie — 120 €/an" : "Indie — €120/year") : t(locale, "pricing_indie_cta") },
-    },
-    studio: {
-      featured: false,
-      title: t(locale, "pricing_studio_title"),
-      price: yearly ? (locale === "fr" ? "490 € / an" : "€490 / year") : t(locale, "pricing_studio_price"),
-      intro: t(locale, "pricing_studio_body"),
-      foot: `${t(locale, "pricing_seats_soon")} · ${t(locale, "pricing_note")}`,
-      note: t(locale, "pricing_local_projects"),
-      cta: { kind: yearly ? "studio_yearly" : "studio_monthly", label: yearly ? (locale === "fr" ? "Studio — 490 €/an" : "Studio — €490/year") : t(locale, "pricing_studio_cta"), ghost: true },
-    },
+function planTitle(id: PlanId, locale: Locale) {
+  if (id === "free") return t(locale, "pricing_trial_title");
+  if (isPass(id)) return t(locale, "pricing_pass_title");
+  return text(locale, `pricing_${id}_title`, id.charAt(0).toUpperCase() + id.slice(1));
+}
+
+function planBody(id: PlanId, locale: Locale) {
+  if (id === "free") return t(locale, "pricing_trial_body");
+  if (isPass(id)) return t(locale, "pricing_pass_body");
+  return text(locale, `pricing_${id}_body`, "");
+}
+
+/** Comparison rows derived from plan fields. */
+function comparisonRows(locale: Locale, ids: PlanId[]) {
+  const yes = t(locale, "pricing_val_yes");
+  const no = t(locale, "pricing_val_no");
+  const fr = locale === "fr";
+  const value = (id: PlanId, pick: (plan: PlanRecord) => string) => pick(entitlements(id));
+  const quota = (plan: PlanRecord) => {
+    const free = num(plan, "freeExports");
+    const daily = num(plan, "dailyHdSets");
+    if (free !== null) return `${free} ${fr ? "ZIP HD" : "HD ZIPs"}`;
+    if (daily !== null) return `${daily} / ${fr ? "jour" : "day"}`;
+    return "—";
   };
+  const fullFormats = (plan: PlanRecord) => (plan.duoOnly === false ? yes : no);
+  const rows: { label: string; pick: (plan: PlanRecord) => string }[] = [
+    { label: t(locale, "pricing_feat_zip"), pick: (plan) => (num(plan, "freeExports") !== null ? quota(plan) : yes) },
+    { label: t(locale, "pricing_feat_quota"), pick: quota },
+    { label: t(locale, "pricing_feat_69"), pick: fullFormats },
+    { label: t(locale, "pricing_feat_sets"), pick: () => yes },
+    { label: t(locale, "pricing_feat_prefix"), pick: fullFormats },
+    { label: fr ? "Sièges" : "Seats", pick: (plan) => String(num(plan, "seats") ?? 1) },
+    { label: t(locale, "pricing_feat_review"), pick: (plan) => ((num(plan, "seats") ?? 1) > 1 ? yes : no) },
+  ];
+  return rows.map((row) => ({ label: row.label, cells: ids.map((id) => value(id, row.pick)) }));
+}
+
+function OfferCta({ locale, offer, featured, available }: { locale: Locale; offer: Offer; featured: boolean; available?: boolean }) {
+  if (!offer.cta) return null;
+  const className = featured ? "ds-cta" : "ds-cta-ghost";
+  if ("kind" in offer.cta) {
+    return <PricingCta locale={locale} kind={offer.cta.kind} label={offer.cta.label} className={className} initialAvailable={available} />;
+  }
+  return <Link href={offer.cta.href} data-testid={offer.cta.testId} className={className}>{offer.cta.label}</Link>;
 }
 
 export function PricingSection({
   locale,
   heading = "h2",
+  compact = false,
   checkoutAvailable,
   passAvailable = false,
 }: {
   locale: Locale;
   heading?: "h1" | "h2";
+  /** Home page: cards and reassurance only, with a link to the full comparison. */
+  compact?: boolean;
   /** Server-read availability so the first HTML shows the right buttons; omitted = checked after mount. */
   checkoutAvailable?: boolean;
-  /** The one-time pass renders only when the server says its Stripe price is configured. */
+  /** One-time passes render only when the server says their Stripe price is configured. */
   passAvailable?: boolean;
 }) {
   const [yearly, setYearly] = useState(false);
-  const rows = pricingRows(locale);
-  const plans = pricingPlans(locale, yearly);
+  const fr = locale === "fr";
+  const ids = orderedPlans(passAvailable);
+  const cards = ids.filter((id) => !isTeam(id));
+  const teams = ids.filter(isTeam);
   const Title = heading;
-  const titleClass = heading === "h1" ? "font-display text-5xl" : "font-display text-4xl";
+  // Local projects are covered by the Studio question in the general FAQ below the section.
+  const faq = [
+    { q: t(locale, "pricing_faq_refund_q"), a: t(locale, "pricing_faq_refund_a") },
+    { q: t(locale, "pricing_faq_apple_q"), a: appleUploadStatus(locale) },
+  ];
+
   return (
-    <section id="pricing" data-testid="pricing" className="studio-pricing mx-auto max-w-6xl scroll-mt-24 px-5 py-16" data-reveal>
-      <Title className={titleClass}>{t(locale, "pricing_title")}</Title>
-      <p className="mt-4 max-w-xl text-[var(--muted)]">{t(locale, "pricing_lead")}</p>
-      <p className="mt-4 max-w-2xl border-l border-[var(--ink)] pl-4 text-sm text-[var(--muted)]">
-        {t(locale, "pricing_free_body")}
-      </p>
-      <div className="studio-billing-switch mt-8" role="group" aria-label={locale === "fr" ? "Période de facturation" : "Billing period"}>
-        <button type="button" aria-pressed={!yearly} onClick={() => setYearly(false)} data-testid="billing-monthly">
-          {locale === "fr" ? "Mensuel" : "Monthly"}
-        </button>
-        <button type="button" aria-pressed={yearly} onClick={() => setYearly(true)} data-testid="billing-yearly">
-          {locale === "fr" ? "Annuel" : "Yearly"}
-          <span className="studio-billing-saving">{locale === "fr" ? "2 mois offerts" : "2 months free"}</span>
-        </button>
+    <section id="pricing" data-testid="pricing" className={`studio-pricing scroll-mt-24${compact ? " is-compact" : ""}`} data-reveal>
+      <div className="studio-pricing-head">
+        <div>
+          <Title>{t(locale, "pricing_title")}</Title>
+          <p className="studio-pricing-lead">{t(locale, "pricing_lead")}</p>
+          <p className="studio-pricing-free">{t(locale, "pricing_free_body")}</p>
+        </div>
+        <div className="studio-billing-switch" role="group" aria-label={fr ? "Période de facturation" : "Billing period"}>
+          <button type="button" aria-pressed={!yearly} onClick={() => setYearly(false)} data-testid="billing-monthly">
+            {fr ? "Mensuel" : "Monthly"}
+          </button>
+          <button type="button" aria-pressed={yearly} onClick={() => setYearly(true)} data-testid="billing-yearly">
+            {fr ? "Annuel" : "Yearly"}
+            <span className="studio-billing-saving">{fr ? "2 mois offerts" : "2 months free"}</span>
+          </button>
+        </div>
       </div>
-      <div className="pricing-grid mt-12">
-        {PLAN_ORDER.map((id) => {
-          const plan = plans[id];
+
+      <div className="studio-plan-grid" style={{ "--plan-count": cards.length } as CSSProperties}>
+        {cards.map((id) => {
+          const offer = offerFor(id, locale, yearly);
+          const featured = id === RECOMMENDED;
           return (
-            <article key={id} className={`pricing-col${plan.featured ? " is-featured" : ""}`}>
-              <p className="pricing-stamp">
-                {plan.featured ? <span className="ds-pill ds-pill-ink">{t(locale, "pricing_featured")}</span> : null}
-              </p>
-              <p className="font-display text-3xl">{plan.title}</p>
-              <p className="mt-2 text-2xl">{plan.price}</p>
-              <p className="pricing-period-note">
-                {yearly && id !== "trial"
-                  ? id === "indie"
-                    ? locale === "fr" ? "Soit 10 € / mois · 2 mois offerts" : "Equivalent to €10 / month · 2 months free"
-                    : locale === "fr" ? "≈ 40,83 € / mois · 2 mois offerts" : "≈ €40.83 / month · 2 months free"
-                  : "\u00a0"}
-              </p>
-              <p className="pricing-intro">{plan.intro || "\u00a0"}</p>
-              <dl className="pricing-feats">
-                {rows.map((row) => (
-                  <div key={row.label} className="pricing-feat">
-                    <dt>{row.label}</dt>
-                    <dd>{row[id]}</dd>
-                  </div>
-                ))}
-              </dl>
-              {/* One element only: each column is a 13-track subgrid. */}
-              <p className="pricing-foot">
-                {plan.foot || "\u00a0"}
-                {plan.note ? <span className="mt-2 block" data-testid={`pricing-note-${id}`}>{plan.note}</span> : null}
-              </p>
-              <div className="pricing-cta-slot">
-                {plan.cta?.kind ? (
-                  <PricingCta
-                    locale={locale}
-                    kind={plan.cta.kind}
-                    label={plan.cta.label}
-                    className={plan.cta.ghost ? "ds-cta-ghost" : "ds-cta"}
-                    initialAvailable={checkoutAvailable}
-                  />
-                ) : plan.cta?.href ? (
-                  <Link
-                    href={plan.cta.href}
-                    data-testid={plan.cta.testId}
-                    className={plan.cta.ghost ? "ds-cta-ghost" : "ds-cta"}
-                  >
-                    {plan.cta.label}
-                  </Link>
-                ) : null}
-                {id === "studio" ? (
-                  <Link href={reviewPath(locale, "harbor")} data-testid="pricing-review-demo" className="ds-text-btn mt-3">
-                    {t(locale, "cta_review_demo")}
-                  </Link>
-                ) : null}
+            <article key={id} className={`studio-plan${featured ? " is-featured" : ""}`} data-plan={id} data-testid={isPass(id) ? `pricing-${id}` : undefined}>
+              <div className="studio-plan-title">
+                <h3>{planTitle(id, locale)}</h3>
+                {featured ? <span className="studio-plan-badge">{t(locale, "pricing_featured")}</span> : null}
               </div>
+              <p className="studio-plan-price">{offer.price}</p>
+              <p className="studio-plan-note">{offer.note}</p>
+              <p className="studio-plan-body">{planBody(id, locale)}</p>
+              <div className="studio-plan-cta"><OfferCta locale={locale} offer={offer} featured={featured} available={checkoutAvailable} /></div>
             </article>
           );
         })}
       </div>
-      {passAvailable ? <PassOffer locale={locale} available={checkoutAvailable} /> : null}
-    </section>
-  );
-}
 
-function PassOffer({ locale, available }: { locale: Locale; available?: boolean }) {
-  const pass = passOffer(locale);
-  return (
-    <aside className="pricing-pass mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] pt-6" data-testid="pricing-pass30">
-      <div className="max-w-xl">
-        <p className="font-display text-2xl">
-          {pass.title} <span className="text-lg text-[var(--muted)]">· {pass.price}</span>
-        </p>
-        <p className="mt-1 text-sm text-[var(--muted)]">{pass.intro}</p>
-      </div>
-      <PricingCta locale={locale} kind={pass.kind} label={pass.cta} className="ds-cta-ghost" initialAvailable={available} />
-    </aside>
+      {teams.map((id) => {
+        const offer = offerFor(id, locale, yearly);
+        return (
+          <article key={id} className="studio-plan-team" data-plan={id}>
+            <div className="studio-plan-team-copy">
+              <p className="studio-eyebrow">{t(locale, "pricing_team_kicker")}</p>
+              <h3>{planTitle(id, locale)}</h3>
+              <p className="studio-plan-body">{planBody(id, locale)}</p>
+              <p className="studio-plan-seats">{t(locale, "pricing_seats_soon")}</p>
+              <p className="studio-plan-local" data-testid={`pricing-note-${id}`}>{t(locale, "pricing_local_projects")}</p>
+            </div>
+            <div className="studio-plan-team-offer">
+              <p className="studio-plan-price">{offer.price}</p>
+              <p className="studio-plan-note">{offer.note}</p>
+              <OfferCta locale={locale} offer={offer} featured={false} available={checkoutAvailable} />
+              <Link href={reviewPath(locale, "harbor")} data-testid="pricing-review-demo" className="studio-inline-link">
+                {t(locale, "cta_review_demo")} <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+          </article>
+        );
+      })}
+
+      <ul className="studio-reassurance" aria-label={fr ? "Paiement" : "Payment"}>
+        <li>{t(locale, "pricing_reassurance_stripe")}</li>
+        <li>{t(locale, "pricing_reassurance_cancel")}</li>
+        <li>{t(locale, "pricing_reassurance_invoice")}</li>
+      </ul>
+      <p className="studio-pricing-note">{t(locale, "pricing_note")}</p>
+
+      {compact ? (
+        <Link href={pricingPath(locale)} className="studio-inline-link studio-pricing-more">
+          {t(locale, "pricing_compare_link")} <span aria-hidden="true">↗</span>
+        </Link>
+      ) : (
+        <>
+          <div className="studio-compare">
+            <h2>{t(locale, "pricing_compare_title")}</h2>
+            <div className="studio-compare-scroll">
+              <table>
+                <caption className="sr-only">{t(locale, "pricing_compare_title")}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">{t(locale, "pricing_compare_feature")}</th>
+                    {ids.map((id) => <th key={id} scope="col" className={id === RECOMMENDED ? "is-featured" : undefined}>{planTitle(id, locale)}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonRows(locale, ids).map((row) => (
+                    <tr key={row.label}>
+                      <th scope="row">{row.label}</th>
+                      {row.cells.map((cell, index) => <td key={ids[index]} className={ids[index] === RECOMMENDED ? "is-featured" : undefined}>{cell}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="studio-pricing-faq">
+            <h2>{t(locale, "pricing_faq_title")}</h2>
+            <FaqList items={faq} />
+          </div>
+        </>
+      )}
+    </section>
   );
 }

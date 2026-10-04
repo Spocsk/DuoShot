@@ -16,7 +16,7 @@ export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay
         <figure className="duo-closed">
           <div className="duo-chassis">
             <div className="duo-screen">
-              <HarborCover />
+              <HarborCover locale={locale} />
               <DeviceCamera />
             </div>
           </div>
@@ -29,12 +29,12 @@ export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay
                 <div className="duo-book-inner">
                   <div className="duo-leaf duo-leaf-left">
                     <div className="duo-screen harbor-skin harbor-skin-left">
-                      <HarborInnerMain />
+                      <HarborInnerMain locale={locale} />
                     </div>
                   </div>
                   <div className="duo-leaf duo-leaf-right">
                     <div className="duo-screen harbor-skin harbor-skin-right">
-                      <HarborInnerSide />
+                      <HarborInnerSide locale={locale} />
                     </div>
                   </div>
                   <span className="duo-crease" />
@@ -47,12 +47,12 @@ export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay
               <div className="duo-book-inner">
                 <div className="duo-leaf duo-leaf-left">
                   <div className="duo-screen harbor-skin harbor-skin-left">
-                    <HarborInnerMain />
+                    <HarborInnerMain locale={locale} />
                   </div>
                 </div>
                 <div className="duo-leaf duo-leaf-right">
                   <div className="duo-screen harbor-skin harbor-skin-right">
-                    <HarborInnerSide />
+                    <HarborInnerSide locale={locale} />
                   </div>
                 </div>
                 <span className="duo-crease" />
