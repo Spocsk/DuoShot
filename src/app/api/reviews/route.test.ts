@@ -15,7 +15,6 @@ vi.mock("@/lib/supabase/admin", () => {
   const createAdminSupabase = vi.fn();
   return {
     createAdminSupabase,
-    createReviewWriter: (client: unknown) => createAdminSupabase() ?? client,
   };
 });
 vi.mock("@/lib/billing", () => ({
@@ -84,7 +83,7 @@ describe("POST /api/reviews", () => {
     expect(body.error).toBe("STUDIO_REQUIRED");
   });
 
-  it("falls back to the user client without an admin key", async () => {
+  it("answers 503 without an admin key: reviews are service-role only", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(
       createSupabaseMock({
         user: USER,
@@ -97,8 +96,8 @@ describe("POST /api/reviews", () => {
     vi.mocked(resolveEntitlements).mockReturnValue(STUDIO);
     vi.mocked(createAdminSupabase).mockReturnValue(null);
     const { status, body } = await readJson(await POST(jsonRequest({})));
-    expect(status).toBe(400);
-    expect(body.error).toBe("NO_IMAGES");
+    expect(status).toBe(503);
+    expect(body.error).toBe("UNAVAILABLE");
   });
 
   it("returns 400 without images", async () => {

@@ -1,13 +1,12 @@
-import { readRenderBody } from "./read-body";
-import { renderSlots } from "@/lib/pipeline/render-slots";
+import { admitRenderBody, admitRenderSlot } from "./admission";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { loadSources } from "@/lib/pipeline/sources";
-import { parseRenderBody, renderErrorStatus, type RenderBody } from "@/lib/pipeline/request";
+import { renderErrorStatus } from "@/lib/pipeline/request";
 import { mapLimit } from "@/lib/map-limit";
 import { hashFromBuffer } from "@/lib/pipeline/clone-hash";
 import { scorePair, type CloneLabel } from "@/lib/pipeline/clone-score";
 import { reviewPairJpegs } from "@/lib/pipeline/compose";
-import { createReviewWriter } from "@/lib/supabase/admin";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { reviewPath } from "@/lib/site";
 import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
 import { reviewExpiresAt } from "@/lib/reviews";
@@ -24,13 +23,14 @@ export async function executeReview(request: Request, supabase: DbClient, user: 
     return Response.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
   }
 
-  const writer = createReviewWriter(supabase);
+  // review_links, review_slides and the reviews bucket are service-role only.
+  const admin = createAdminSupabase();
+  if (!admin) return Response.json({ error: "UNAVAILABLE" }, { status: 503 });
+  const writer: DbClient = admin;
 
-  let body: RenderBody;
-  try { body = parseRenderBody(await readRenderBody(request), user.id); } catch (error) {
-    const code = error instanceof SyntaxError ? "INVALID_JSON" : error instanceof Error ? error.message : "INVALID_REQUEST";
-    return Response.json({ error: code }, { status: renderErrorStatus(code) });
-  }
+  const admitted = await admitRenderBody(request, user.id, "INVALID_JSON");
+  if (!admitted.ok) return admitted.response;
+  const body = admitted.value;
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? [];
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? []);
@@ -52,11 +52,9 @@ export async function executeReview(request: Request, supabase: DbClient, user: 
     burnHinge: Boolean(body.options?.burnHinge),
   };
 
-  let release: () => void;
-  try { release = await renderSlots.acquire(request.signal); } catch (error) {
-    const code = error instanceof Error ? error.message : "RENDER_BUSY";
-    return Response.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
-  }
+  const slot = await admitRenderSlot(request.signal);
+  if (!slot.ok) return slot.response;
+  const release = slot.value;
   try {
     let sources: Map<string, Buffer>;
     try { sources = await loadSources(supabase, user.id, [...outerPaths, ...innerPaths]); } catch (error) {
