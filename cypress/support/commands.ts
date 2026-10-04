@@ -170,12 +170,17 @@ Cypress.Commands.add("dropScreens", (sides?: { outer?: string | string[]; inner?
   }
 });
 
+// Clears the Check list so "Prepare files" is enabled: flagged crops, flagged similarity, human confirmation.
 Cypress.Commands.add("acknowledgeQuality", () => {
   cy.get('[data-testid="tool-tab-review"]').click();
-  cy.get("body").then(($body) => {
-    const button = $body.find('[data-testid="quality-acknowledge"]');
-    if (button.length && button.attr("aria-pressed") !== "true") cy.wrap(button).click();
-  });
+  cy.get('[data-testid="tool-checklist"]').should("exist");
+  for (const id of ["quality-acknowledge", "clone-acknowledge"]) {
+    cy.get("body").then(($body) => {
+      const button = $body.find(`[data-testid="${id}"]`);
+      if (button.length && button.attr("aria-pressed") !== "true") cy.wrap(button).click();
+    });
+  }
+  cy.get('[data-testid="confirm-app-usage"]').check();
 });
 
 declare global {

@@ -39,7 +39,7 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.get('[data-testid="paywall"]').should("contain", "2 sets gratuits");
   });

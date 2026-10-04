@@ -34,7 +34,9 @@ describe("tool guest", () => {
     cy.get('[data-testid="warn-clone"]').should("be.visible");
     cy.get('[data-testid="same-set-details"]').should("have.attr", "data-open", "true");
     cy.get('[data-testid="tool-tab-review"]').click();
-    cy.get('[data-testid="clone-badges"]').should("contain", "Similarité forte");
+    cy.get('[data-testid="clone-badges"]').should("contain", "Similarité forte").and("contain", "même capture des deux côtés");
+    cy.get('[data-testid="tool-download"]').should("be.disabled");
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').should("not.be.disabled");
   });
 
@@ -68,7 +70,7 @@ describe("tool guest", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
-    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
@@ -168,11 +170,74 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-tab-adjust"]').should('have.attr', 'aria-selected', 'true').and('be.focused');
     cy.get('[data-testid="tool-tab-adjust"]').type('{rightarrow}');
     cy.get('[data-testid="tool-tab-review"]').should('have.attr', 'aria-selected', 'true').and('be.focused');
+    cy.get('[data-testid="tool-tab-review"]').type('{end}');
+    cy.get('[data-testid="tool-tab-export"]').should('have.attr', 'aria-selected', 'true').and('be.focused');
+  });
+
+  it("tracks Importer → Ajuster → Vérifier → Exporter with one primary action", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-steps"]').should("have.attr", "role", "tablist");
+    cy.get('[data-testid="tool-tab-captures"]').should("have.attr", "data-status", "current");
+    cy.get('[data-testid="tool-primary"]').should("contain", "Importer des captures");
+    cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
+    cy.get('[data-testid="tool-primary"]').should("contain", "Continuer vers Ajuster").click();
+    cy.get('[data-testid="tool-tab-captures"]').should("have.attr", "data-status", "done");
+    cy.get('[data-testid="tool-tab-adjust"]').should("have.attr", "aria-selected", "true");
+    cy.get('[data-testid="tool-primary"]').should("contain", "Continuer vers Vérifier").click();
+    cy.get('[data-testid="tool-tab-review"]').should("have.attr", "aria-selected", "true");
+    cy.get('[data-testid="tool-tab-adjust"]').should("have.attr", "data-status", "done");
+    cy.get('[data-testid="tool-download"]').should("be.disabled").and("contain", "Préparer les fichiers");
+    cy.get('[data-testid="tool-missing-steps"]').contains("button", "Confirmer le contenu de l’app").click();
+    cy.focused().should("have.attr", "data-testid", "confirm-app-usage");
+    cy.get('[data-testid="tool-other-actions"]').should("not.have.attr", "open");
+    cy.get('[data-testid="readiness-score"]').should("contain", "/100");
+  });
+
+  it("does not flag two clearly different screens as strongly similar", () => {
+    cy.visitFr("/tool");
+    cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="clone-badge-0"]').should("have.attr", "data-clone", "ok").and("contain", "vues distinctes");
+    cy.get('[data-testid="clone-gate"]').should("not.exist");
+  });
+
+  it("loads the Harbor example in one click and lets the user replace it", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-demo"]').should("contain", "Essayer avec l’exemple Harbor").click();
+    cy.get('[data-testid="tool-demo-banner"]').should("contain", "app fictive");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Harbor (exemple)");
+    cy.get('[data-testid="preview-outer"] img').should("exist");
+    cy.get('.tool-pair-select').should("have.length", 3);
+    cy.get('[data-testid="tool-tab-adjust"]').should("have.attr", "aria-selected", "true");
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="tool-demo-zip"]').should("be.disabled");
+    cy.acknowledgeQuality();
+    cy.get('[data-testid="tool-demo-zip"]').should("not.be.disabled");
+    cy.get('[data-testid="tool-demo-replace"]').click();
+    cy.get('[data-testid="tool-demo-banner"]').should("not.exist");
+    cy.get('[data-testid="preview-outer"] img').should("not.exist");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Composition");
+  });
+
+  it("opens the Harbor example from /tool?demo=harbor once", () => {
+    cy.visitFr("/tool?demo=harbor");
+    cy.get('[data-testid="tool-demo-banner"]').should("be.visible");
+    cy.location("search").should("not.include", "demo=");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]').click();
+    cy.get('[data-testid="tool-sets-menu"] [role="option"]').should("have.length", 1);
+  });
+
+  it("names new sets Composition 01, 02 and keeps the app name separate", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]').should("contain", "Composition 01");
+    cy.get('[data-testid="tool-set-new"]').click();
+    cy.get('[data-testid="tool-sets"]').should("contain", "Composition 02");
+    cy.get('label[for="tool-input-app"]').should("contain", "Nom de l’app");
   });
   it("offers existing-account login without losing the imported pair", () => {
     cy.visitFr("/tool");
     cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
-    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.contains("button", "Déjà un compte ? Se connecter").click();
     cy.get('[data-testid="auth-form"]').should("contain", "Connexion");
