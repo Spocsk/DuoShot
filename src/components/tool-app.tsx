@@ -247,7 +247,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       const next = sets.map((item) => (item.id === active.id ? { ...item, ...patch } : item));
       setSets(next);
       saveSetMetas(next);
-      const touchesApp = "name" in patch || "clientName" in patch || "orientation" in patch;
+      // Leaving the Harbor demo resets names locally; it is not an app rename worth syncing.
+      const touchesApp = patch.demo !== false && ("appName" in patch || "clientName" in patch || "orientation" in patch);
       if (session === "in" && touchesApp) {
         const current = next.find((item) => item.id === active.id);
         if (current) syncApp(current);
@@ -329,7 +330,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
   const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
   const checklist: CheckItem[] = [
-    { id: "pairs", done: hasExportable && !unpaired, label: t(locale, "tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}"]`) },
+    { id: "pairs", done: hasExportable && !unpaired, label: t(locale, "tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
     { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t(locale, "tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
     { id: "similarity", done: !cloneAlert || assumeClone, label: t(locale, "tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
     { id: "confirm", done: appUsageConfirmed, label: t(locale, "tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
@@ -374,6 +375,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
+    setAssumeClone(false);
     setZipUrl(null);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
@@ -399,6 +401,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
+    setAssumeClone(false);
     setZipUrl(null);
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
@@ -407,6 +410,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     patchActive({ renderOptions: { ...options, ...patch } });
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
+    setAssumeClone(false);
     setZipUrl(null);
   }
 
@@ -422,6 +426,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     saveSetMetas(nextSets);
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
+    setAssumeClone(false);
     setZipUrl(null);
   }
 
@@ -439,6 +444,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     saveSetMetas(nextSets);
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
+    setAssumeClone(false);
     setZipUrl(null);
   }
 
@@ -470,6 +476,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setMobileView("outer");
     setQualityAcknowledged(false);
     setAppUsageConfirmed(false);
+    setAssumeClone(false);
     setOuterFiles(await loadSetFiles(id, "outer"));
     setInnerFiles(await loadSetFiles(id, "inner"));
     setZipUrl(null);
@@ -620,6 +627,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             patchActive({ orientation: value as Orientation });
             setQualityAcknowledged(false);
             setAppUsageConfirmed(false);
+            setAssumeClone(false);
             setZipUrl(null);
           }}
         />
