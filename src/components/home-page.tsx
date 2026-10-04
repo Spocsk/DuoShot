@@ -93,6 +93,8 @@ function ProofSection({ locale }: { locale: Locale }) {
       </div>
     </div>
     <div className="studio-proof-actions">
+      {/* A file download from an API route, not a page: the rule reads app/[locale] as matching every path. */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t("cta_example")}</a>
       <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
         {t("home_open_example_in_tool")} <span aria-hidden="true">↗</span>
