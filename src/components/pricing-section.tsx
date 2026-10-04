@@ -21,8 +21,8 @@ function pricingRows(locale: Locale) {
     {
       label: t(locale, "pricing_feat_quota"),
       trial: t(locale, "pricing_val_quota_trial"),
-      indie: t(locale, "pricing_val_unlimited"),
-      studio: t(locale, "pricing_val_unlimited"),
+      indie: t(locale, "pricing_val_daily_quota"),
+      studio: t(locale, "pricing_val_daily_quota"),
     },
     {
       label: t(locale, "pricing_feat_69"),
