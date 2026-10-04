@@ -1,18 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isAlreadyExists, sha256Hex, sourceUploadPath, uploadSource, type SourceBucket } from "./source-upload";
+import { REUSE_MAX_AGE_MS, isAlreadyExists, sha256Hex, sourceUploadPath, uploadSource, type SourceBucket } from "./source-upload";
 
 const USER = "00000000-0000-4000-8000-000000000001";
 // SHA-256("abc"), from FIPS 180-2.
 const ABC = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
 const png = (text = "abc") => new File([text], "shot.png", { type: "image/png" });
 
-function bucket(options: { exists?: boolean | Error; uploadError?: Record<string, unknown> | null } = {}) {
+const NOW = Date.parse("2026-10-04T12:00:00Z");
+const ago = (ms: number) => new Date(NOW - ms).toISOString();
+
+/** `existing` is the canonical object's createdAt, or an Error thrown by the lookup. */
+function bucket(options: { existing?: string | Error; uploadError?: Record<string, unknown> | null } = {}) {
   const upload = vi.fn(async () => ({ error: (options.uploadError ?? null) as never }));
-  const exists = vi.fn(async () => {
-    if (options.exists instanceof Error) throw options.exists;
-    return { data: Boolean(options.exists), error: null };
+  const info = vi.fn(async () => {
+    if (options.existing instanceof Error) throw options.existing;
+    return options.existing ? { data: { createdAt: options.existing }, error: null } : { data: null, error: { status: 404 } };
   });
-  return { bucket: { exists, upload } as SourceBucket, upload, exists };
+  return { bucket: { info, upload } as SourceBucket, upload, info };
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -44,10 +48,19 @@ describe("source upload paths", () => {
 });
 
 describe("uploadSource", () => {
-  it("skips the transfer when the object already exists", async () => {
-    const { bucket: target, upload } = bucket({ exists: true });
-    expect(await uploadSource(target, USER, png())).toBe(`${USER}/${ABC}.png`);
+  it("skips the transfer when a recent copy already exists", async () => {
+    const { bucket: target, upload } = bucket({ existing: ago(REUSE_MAX_AGE_MS - 60_000) });
+    expect(await uploadSource(target, USER, png(), NOW)).toBe(`${USER}/${ABC}.png`);
     expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("uploads to a fresh path when the stored copy is close to the 24-hour sweep", async () => {
+    for (const createdAt of [ago(REUSE_MAX_AGE_MS), ago(23.9 * 60 * 60 * 1000), "not a date"]) {
+      const { bucket: target, upload } = bucket({ existing: createdAt });
+      const file = png();
+      expect(await uploadSource(target, USER, file, NOW)).toBe(`${USER}/${ABC}-${NOW}.png`);
+      expect(upload).toHaveBeenCalledWith(`${USER}/${ABC}-${NOW}.png`, file, { contentType: "image/png", upsert: false });
+    }
   });
 
   it("uploads without overwriting when the object is new", async () => {
@@ -58,7 +71,7 @@ describe("uploadSource", () => {
   });
 
   it("treats a concurrent duplicate as success and a failed existence check as 'upload'", async () => {
-    const { bucket: target, upload } = bucket({ exists: new Error("network"), uploadError: { status: 409, message: "The resource already exists" } });
+    const { bucket: target, upload } = bucket({ existing: new Error("network"), uploadError: { status: 409, message: "The resource already exists" } });
     expect(await uploadSource(target, USER, png())).toBe(`${USER}/${ABC}.png`);
     expect(upload).toHaveBeenCalledTimes(1);
   });
