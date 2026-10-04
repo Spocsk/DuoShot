@@ -23,10 +23,16 @@ if (process.env.STRIPE_CHECKOUT_ENABLED === 'true') {
   if (!/^(sk|rk)_live_.+/.test(process.env.STRIPE_SECRET_KEY ?? '')) missing.push('STRIPE_SECRET_KEY (live required)');
   if (process.env.STRIPE_LIVE_ENABLED !== 'true') missing.push('STRIPE_LIVE_ENABLED');
 }
+if (process.env.ASC_CONNECTOR_ENABLED === 'true') {
+  const key = process.env.ASC_ENCRYPTION_KEY?.trim() ?? '';
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(key) || Buffer.from(key, 'base64').length !== 32) missing.push('ASC_ENCRYPTION_KEY (32 bytes base64)');
+  if (process.env.RENDER_QUEUE_ENABLED !== 'true') missing.push('RENDER_QUEUE_ENABLED (App Store Connect uploads run on the queue)');
+}
 console.log(JSON.stringify({
   configured: missing.length === 0, missing,
   renderQueueEnabled: process.env.RENDER_QUEUE_ENABLED === 'true',
   checkoutEnabled: process.env.STRIPE_CHECKOUT_ENABLED === 'true',
+  ascConnectorEnabled: process.env.ASC_CONNECTOR_ENABLED === 'true',
   // Optional: the one-time pass is hidden unless its Stripe price is set.
   pass30Configured: Boolean(process.env.STRIPE_PRICE_PASS30),
   mixpanelErasureConfigured: Boolean(process.env.MIXPANEL_PROJECT_TOKEN && process.env.MIXPANEL_GDPR_OAUTH_TOKEN),

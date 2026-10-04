@@ -22,6 +22,10 @@ export const RATE_LIMIT_RULES: Rule[] = [
   { name: "oauth-check", methods: ["POST"], pattern: /^\/api\/auth\/oauth-check$/, limit: 30, windowMs: 10 * MINUTE },
   { name: "example-zip", methods: ["GET"], pattern: /^\/api\/example-zip$/, limit: 10, windowMs: 10 * MINUTE },
   { name: "review-decision", methods: ["POST"], pattern: /^\/api\/reviews\/[^/]+\/decision$/, limit: 30, windowMs: 10 * MINUTE },
+  // App Store Connect: each call reaches Apple with the workspace key, whose quota is shared.
+  { name: "asc-connection", methods: ["POST", "DELETE"], pattern: /^\/api\/asc\/connection$/, limit: 10, windowMs: 10 * MINUTE },
+  { name: "asc-upload", methods: ["POST"], pattern: /^\/api\/asc\/uploads$/, limit: 20, windowMs: 10 * MINUTE },
+  { name: "asc-read", methods: ["GET"], pattern: /^\/api\/asc\/(?:apps|versions)(?:\/|$)/, limit: 60, windowMs: MINUTE },
   { name: "render", methods: ["POST"], pattern: /^\/api\/(?:export|reviews)$/, limit: 60, windowMs: 10 * MINUTE },
   { name: "analytics", methods: ["POST"], pattern: /^\/api\/datafast\/events$/, limit: 120, windowMs: MINUTE },
   // Render status polling and review media are frequent by design.

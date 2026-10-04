@@ -3,6 +3,7 @@ import { renderWorkerSecret, verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { executeExport } from "@/lib/render/export";
 import { executeReview } from "@/lib/render/review";
+import { executeAscUpload } from "@/lib/asc/upload-job";
 import { completeRender, type RenderJob } from "@/lib/render/jobs";
 export const runtime = "nodejs";
 const LEASE_LOST = "RENDER_LEASE_LOST";
@@ -17,7 +18,11 @@ export async function POST(request: Request) {
   if (process.env.RENDER_QUEUE_ENABLED !== "true") return NextResponse.json({ error: "QUEUE_DISABLED" }, { status: 503 });
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
-  const claimed = await admin.rpc("claim_render");
+  // Two lanes with their own slot: renders (export, review) and App Store Connect
+  // uploads, so a long upload never holds up an export. The worker polls each lane.
+  const lane = new URL(request.url).searchParams.get("lane") === "asc" ? "asc" : "render";
+  if (lane === "asc" && process.env.ASC_CONNECTOR_ENABLED !== "true") return NextResponse.json({ idle: true });
+  const claimed = await admin.rpc(lane === "asc" ? "claim_asc_upload" : "claim_render");
   if (claimed.error) return NextResponse.json({ error: "QUEUE_UNAVAILABLE" }, { status: 503 });
   const job = claimed.data as RenderJob | null;
   if (!job) return NextResponse.json({ idle: true });
@@ -29,7 +34,10 @@ export async function POST(request: Request) {
   }, 15_000);
   try {
     const input = new Request("http://localhost/render", { method: "POST", body: JSON.stringify(job.payload), signal: controller.signal });
-    const response = await (job.kind === "export" ? executeExport : executeReview)(input, admin, { id: job.user_id }, job);
+    const response = job.kind === "export" ? await executeExport(input, admin, { id: job.user_id }, job)
+      : job.kind === "review" ? await executeReview(input, admin, { id: job.user_id }, job)
+      : job.kind === "asc_upload" ? await executeAscUpload(admin, job, { signal: controller.signal })
+      : NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
     if (!response.ok) {
       const result = await response.json() as { error?: string };
       if (result.error === LEASE_LOST) return leaseLost(job);

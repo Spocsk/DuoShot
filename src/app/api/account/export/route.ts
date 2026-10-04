@@ -11,6 +11,8 @@ const APP_COLUMNS = "id, workspace_id, name, slug, client_name, orientation, cre
 const RENDER_JOB_COLUMNS = "id, workspace_id, kind, state, payload, attempts, error_code, created_at, finished_at";
 const REVIEW_LINK_COLUMNS = "id, public_id, workspace_id, app_id, set_name, client_name, orientation, status, comment, created_at, updated_at, expires_at, revoked_at";
 const INVITATION_COLUMNS = "id, workspace_id, email, role, invited_by, created_at, expires_at, accepted_at, revoked_at";
+// App Store Connect: metadata only, never the sealed key.
+const ASC_COLUMNS = "workspace_id, issuer_id, key_id, created_at, last_verified_at";
 
 function exportFailed(stage: string) {
   console.error("account_export_failed", { stage });
@@ -32,7 +34,7 @@ export async function GET() {
   if (!admin) return exportFailed("admin_unavailable");
   const email = user.email?.trim().toLowerCase() ?? null;
 
-  const [workspaceMembers, consents, exports, dsar, renderJobs, reviewLinks, sentInvitations, receivedInvitations] = await Promise.all([
+  const [workspaceMembers, consents, exports, dsar, renderJobs, reviewLinks, sentInvitations, receivedInvitations, ascConnections] = await Promise.all([
     supabase.from("workspace_members").select("*").eq("user_id", user.id),
     supabase.from("consent_events").select("*").eq("user_id", user.id),
     supabase.from("export_sets").select("*").eq("created_by", user.id),
@@ -42,8 +44,9 @@ export async function GET() {
     admin.from("workspace_invitations").select(INVITATION_COLUMNS).eq("invited_by", user.id),
     // Invitations are stored lower-cased (create_workspace_invitation).
     email ? admin.from("workspace_invitations").select(INVITATION_COLUMNS).eq("email", email) : Promise.resolve({ data: [], error: null }),
+    admin.from("asc_connections").select(ASC_COLUMNS).eq("created_by", user.id),
   ]);
-  const firstPass = { workspaceMembers, consents, exports, dsar, renderJobs, reviewLinks, sentInvitations, receivedInvitations };
+  const firstPass = { workspaceMembers, consents, exports, dsar, renderJobs, reviewLinks, sentInvitations, receivedInvitations, ascConnections };
   const failed = Object.entries(firstPass).find(([, result]) => result.error);
   // A partial file would look like a complete export, so fail instead.
   if (failed) return exportFailed(failed[0]);
@@ -82,6 +85,7 @@ export async function GET() {
     review_links: reviewLinks.data,
     workspace_invitations: [...invitations.values()],
     dsar_requests: dsar.data,
+    asc_connections: ascConnections.data,
   };
 
   if (user.email) {

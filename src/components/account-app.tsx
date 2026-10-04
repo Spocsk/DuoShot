@@ -10,6 +10,7 @@ import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
 import type { CheckoutKind } from "@/lib/plans";
 import type { PlanId } from "@/lib/specs";
 import { localePrefix, reviewPath } from "@/lib/site";
+import { AscConnectionPanel } from "@/components/asc/asc-connection-panel";
 
 type Status = {
   plan?: PlanId;
@@ -189,6 +190,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
           ) : null}
         </section>
         {plan === "studio" ? <StudioWorkspace locale={locale} /> : null}
+        <AscConnectionPanel locale={locale} />
         <div className="studio-account-settings mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
           <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
             {t(locale, "export_data")}

@@ -1,8 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RenderBody } from "../pipeline/request";
+import type { AscUploadPayload } from "../asc/upload-job";
 export type RenderJob = {
-  id: string; user_id: string; workspace_id: string; kind: "export" | "review";
-  payload: RenderBody; reservation_id: string | null; lease_token: string;
+  id: string; user_id: string; workspace_id: string; kind: "export" | "review" | "asc_upload";
+  payload: RenderBody | AscUploadPayload; reservation_id: string | null; lease_token: string;
+  /** Claim count, including the current one. */
+  attempts?: number;
 };
 export async function completeRender(client: SupabaseClient, job: RenderJob, result: unknown, exported: unknown = null, error: string | null = null) {
   const response = await client.rpc("complete_render", {

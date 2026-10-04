@@ -18,6 +18,7 @@ const rows: Record<string, unknown[]> = {
   render_jobs: [{ id: "job-1", state: "completed" }],
   review_links: [{ id: "review-1", public_id: "abc" }],
   dsar_requests: [{ id: "dsar-1", type: "export" }],
+  asc_connections: [{ workspace_id: "ws-1", key_id: "2X9R4HXF34" }],
 };
 const invitationsByFilter: Record<string, unknown[]> = {
   invited_by: [{ id: "inv-1", email: "client@example.com" }],
@@ -84,12 +85,13 @@ describe("GET /api/account/export", () => {
       ["admin", "review_links", "eq:created_by", "user-1"],
       ["admin", "workspace_invitations", "eq:invited_by", "user-1"],
       ["admin", "workspace_invitations", "eq:email", "a@example.com"],
+      ["admin", "asc_connections", "eq:created_by", "user-1"],
       ["user", "workspaces", "in:id", ["ws-1"]],
       ["user", "apps", "in:workspace_id", ["ws-1"]],
     ]);
     // Secrets never leave the database.
     const columns = reads.map(([, , selected]) => selected).join(",");
-    expect(columns).not.toMatch(/token_hash|lease_token|stripe/);
+    expect(columns).not.toMatch(/token_hash|lease_token|stripe|encrypted_private_key|auth_tag/);
     expect(insert).toHaveBeenCalledWith("dsar_requests", {
       user_id: "user-1", type: "export", status: "done", processed_at: expect.any(String),
     });
@@ -115,6 +117,7 @@ describe("GET /api/account/export", () => {
     ["user", "consent_events"],
     ["user", "render_jobs"],
     ["admin", "review_links"],
+    ["admin", "asc_connections"],
     ["admin", "workspace_invitations"],
     ["user", "workspaces"],
     ["user", "apps"],

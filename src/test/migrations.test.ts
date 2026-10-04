@@ -119,6 +119,74 @@ describe("real PostgreSQL migration contracts", () => {
     expect((await db.query("select public from storage.buckets where id='reviews'")).rows).toEqual([{ public: false }]);
     expect((await db.query("select policyname from pg_policies where schemaname='storage' and policyname like 'reviews_%'")).rows).toEqual([]);
   });
+  it("keeps App Store Connect keys service-role only and erases them with the workspace or the user", async () => {
+    const row = (await db.query<{ relrowsecurity: boolean }>("select relrowsecurity from pg_class where oid='public.asc_connections'::regclass")).rows[0];
+    expect(row?.relrowsecurity).toBe(true);
+    expect((await db.query("select policyname from pg_policies where tablename='asc_connections'")).rows).toEqual([]);
+    const privileges = (await db.query<Record<string, boolean>>(`select
+      has_table_privilege('anon','public.asc_connections','select') as anon_select,
+      has_table_privilege('authenticated','public.asc_connections','select') as auth_select,
+      has_table_privilege('authenticated','public.asc_connections','insert') as auth_insert,
+      has_table_privilege('authenticated','public.asc_connections','update') as auth_update,
+      has_table_privilege('authenticated','public.asc_connections','delete') as auth_delete,
+      has_function_privilege('authenticated','public.report_render_progress(uuid,uuid,jsonb)','execute') as progress`)).rows[0]!;
+    expect(Object.entries(privileges).filter(([, granted]) => granted).map(([name]) => name)).toEqual([]);
+    expect((await db.query<{ ok: boolean }>("select has_table_privilege('service_role','public.asc_connections','insert') as ok")).rows[0]?.ok).toBe(true);
+
+    const owner = "33333333-0000-4000-8000-000000000003";
+    await db.query("insert into auth.users values($1,'asc@example.invalid')", [owner]);
+    const ws = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [owner])).rows[0]!.workspace_id;
+    const insert = (workspaceId: string) => db.query("insert into asc_connections(workspace_id,issuer_id,key_id,encrypted_private_key,iv,auth_tag,created_by) values($1,'57246542-96fe-1a63-e053-0824d011072a','2X9R4HXF34','c2VhbGVk','aXY=','dGFn',$2)", [workspaceId, owner]);
+    await insert(ws);
+    await expect(insert(ws)).rejects.toThrow();
+    await db.query("delete from workspaces where id=$1", [ws]);
+    expect((await db.query("select 1 from asc_connections where created_by=$1", [owner])).rows).toHaveLength(0);
+    await insert(workspace);
+    await db.query("delete from auth.users where id=$1", [owner]);
+    expect((await db.query("select 1 from asc_connections where created_by=$1", [owner])).rows).toHaveLength(0);
+  });
+  it("queues asc_upload jobs without a quota reservation and records progress only under a live lease", async () => {
+    const user = "44444444-0000-4000-8000-000000000004";
+    await db.query("insert into auth.users values($1,'queue@example.invalid')", [user]);
+    const ws = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [user])).rows[0]!.workspace_id;
+    const used = async () => (await db.query<{ free_exports_used: number }>("select free_exports_used from workspaces where id=$1", [ws])).rows[0]!.free_exports_used;
+    const before = await used();
+    const job = (await db.query<{ enqueue_render: string }>("select enqueue_render($1,$2,'asc_upload',gen_random_uuid(),'{}'::jsonb)", [user, ws])).rows[0]!.enqueue_render;
+    expect((await db.query("select reservation_id from render_jobs where id=$1", [job])).rows).toEqual([{ reservation_id: null }]);
+    expect(await used()).toBe(before);
+    await expect(db.query("select enqueue_render($1,$2,'upload_everything',gen_random_uuid(),'{}'::jsonb)", [user, ws])).rejects.toThrow("INVALID_REQUEST");
+    const lease = "55555555-0000-4000-8000-000000000005";
+    await db.query("update render_jobs set state='running',lease_token=$2,lease_until=now()+interval '90 seconds' where id=$1", [job, lease]);
+    const report = (token: string) => db.query<{ report_render_progress: boolean }>(`select report_render_progress($1,$2,'{"done":1}'::jsonb)`, [job, token]);
+    expect((await report("66666666-0000-4000-8000-000000000006")).rows[0]!.report_render_progress).toBe(false);
+    expect((await report(lease)).rows[0]!.report_render_progress).toBe(true);
+    expect((await db.query("select progress from render_jobs where id=$1", [job])).rows).toEqual([{ progress: { done: 1 } }]);
+    await db.query(`select complete_render($1,$2,'{"uploaded":1}'::jsonb)`, [job, lease]);
+    expect((await db.query("select state,result from render_jobs where id=$1", [job])).rows).toEqual([{ state: "completed", result: { uploaded: 1 } }]);
+  });
+  it("runs App Store Connect uploads in their own lane, never blocking renders", async () => {
+    const user = "77777777-0000-4000-8000-000000000007";
+    await db.query("insert into auth.users values($1,'lanes@example.invalid')", [user]);
+    const ws = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [user])).rows[0]!.workspace_id;
+    const enqueue = async (kind: string) => (await db.query<{ enqueue_render: string }>("select enqueue_render($1,$2,$3,gen_random_uuid(),'{}'::jsonb)", [user, ws, kind])).rows[0]!.enqueue_render;
+    type Claimed = { id: string; kind: string } | null;
+    const claim = async (fn: string) => (await db.query<{ claimed: Claimed }>(`select ${fn}() as claimed`)).rows[0]!.claimed;
+
+    const upload = await enqueue("asc_upload");
+    await expect(enqueue("asc_upload")).rejects.toThrow("RENDER_ALREADY_PENDING");
+    expect((await claim("claim_asc_upload"))?.id).toBe(upload);
+    // The same user can still render, and the render lane ignores the running upload.
+    const review = await enqueue("review");
+    expect(await claim("claim_asc_upload")).toBeNull();
+    const rendered = await claim("claim_render");
+    expect(rendered).toMatchObject({ id: review, kind: "review" });
+
+    // An upload whose lease expired is failed, never requeued (Apple may already hold its files).
+    await db.query("update render_jobs set lease_until=now()-interval '1 second' where id=$1", [upload]);
+    expect(await claim("claim_asc_upload")).toBeNull();
+    expect((await db.query("select state,error_code from render_jobs where id=$1", [upload])).rows).toEqual([{ state: "failed", error_code: "ASC_INTERRUPTED" }]);
+    expect((await db.query<{ ok: boolean }>("select has_function_privilege('authenticated','public.claim_asc_upload()','execute') as ok")).rows[0]?.ok).toBe(false);
+  });
 });
 
 describe("one-time pass and waitlist contracts", () => {
