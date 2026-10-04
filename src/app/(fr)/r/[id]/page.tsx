@@ -1,8 +1,7 @@
 import { cookies, headers } from "next/headers";
-import { I18nProvider } from "@/components/i18n-provider";
+import { MessagesScope } from "@/components/messages-scope";
 import { ReviewPage } from "@/components/review-page";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { getMessages } from "@/lib/i18n";
 import { LOCALE_COOKIE, cookieLocale, parseAcceptLanguage } from "@/lib/locale";
 import { isDemoReview } from "@/lib/pipeline/harbor";
 import { reviewPath } from "@/lib/site";
@@ -16,7 +15,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     cookieLocale(jar.get(LOCALE_COOKIE)?.value) ?? parseAcceptLanguage((await headers()).get("accept-language"));
   // The unprefixed review link serves the reader's language, so it overrides the French layout's messages.
   return (
-    <I18nProvider locale={locale} messages={getMessages(locale)}>
+    <MessagesScope locale={locale} scope="app">
       <ReviewPage
         id={id}
         locale={locale}
@@ -24,6 +23,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         header={<SiteHeader locale={locale} path={reviewPath(locale, id)} />}
         footer={<SiteFooter locale={locale} />}
       />
-    </I18nProvider>
+    </MessagesScope>
   );
 }

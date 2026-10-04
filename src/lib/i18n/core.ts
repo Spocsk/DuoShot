@@ -7,7 +7,13 @@ import type { MessageKey, Messages, Translator } from "./types";
  */
 export function createTranslator(locale: Locale, messages: Messages): Translator {
   const rules = new Intl.PluralRules(locale);
-  const t = (key: MessageKey) => messages[key];
+  const t = (key: MessageKey) => {
+    const value = messages[key] as string | undefined;
+    if (value !== undefined) return value;
+    // A client scope without this key: see CLIENT_KEYS in client-keys.ts.
+    if (process.env.NODE_ENV !== "production") console.error(`Missing ${locale} message "${key}"`);
+    return key;
+  };
   const pluralKey = (key: MessageKey, n: unknown): MessageKey => {
     if (typeof n !== "number" || rules.select(n) !== "one") return key;
     const one = `${key}_one`;
