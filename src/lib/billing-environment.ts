@@ -4,7 +4,7 @@ export function billingEnvironmentMatches(): boolean {
   const environment = process.env.APP_ENV;
   if (environment === "production") return /^(sk|rk)_live_.+/.test(key);
   if (environment === "test" || environment === "development") {
-    return process.env.VERCEL_ENV !== "production" && /^(sk|rk)_test_.+/.test(key);
+    return /^(sk|rk)_test_.+/.test(key);
   }
   return false;
 }
