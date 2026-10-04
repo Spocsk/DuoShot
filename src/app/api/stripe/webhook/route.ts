@@ -4,12 +4,13 @@ import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { billingEventMatches } from "@/lib/billing-environment";
 import { ONE_TIME_CATALOG, PLANS, isOneTimeKind } from "@/lib/plans";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
 function planForPrice(priceId: string | undefined): "indie" | "studio" | "free" {
-  if (priceId && (priceId === process.env.STRIPE_STUDIO_PRICE_ID || priceId === process.env.STRIPE_STUDIO_YEARLY_PRICE_ID)) return "studio";
-  if (priceId && (priceId === process.env.STRIPE_INDIE_PRICE_ID || priceId === process.env.STRIPE_INDIE_YEARLY_PRICE_ID)) return "indie";
+  if (priceId && (priceId === serverEnv.stripe.prices.studioMonthly || priceId === serverEnv.stripe.prices.studioYearly)) return "studio";
+  if (priceId && (priceId === serverEnv.stripe.prices.indieMonthly || priceId === serverEnv.stripe.prices.indieYearly)) return "indie";
   return "free";
 }
 
@@ -85,7 +86,7 @@ const REPORTED_FAILURES = new Set(["WORKSPACE_LOOKUP_FAILED", "WORKSPACE_NOT_FOU
 
 export async function POST(request: Request) {
   const stripe = getStripe();
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = serverEnv.stripe.webhookSecret;
   const admin = createAdminSupabase();
   if (!stripe || !secret || !admin) return NextResponse.json({ error: "WEBHOOK_UNCONFIGURED" }, { status: 503 });
   const signature = request.headers.get("stripe-signature");

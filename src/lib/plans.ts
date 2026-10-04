@@ -1,4 +1,5 @@
 import type { PlanId } from "./specs";
+import { serverEnv } from "./env";
 
 export type CheckoutKind = "indie_monthly" | "studio_monthly" | "indie_yearly" | "studio_yearly";
 /** One-time purchases (Stripe Checkout mode "payment"); kept apart from subscriptions. */
@@ -58,7 +59,7 @@ export function isOneTimeKind(value: unknown): value is OneTimeKind {
 }
 
 export function pass30PriceId(): string | undefined {
-  return process.env.STRIPE_PRICE_PASS30 || undefined;
+  return serverEnv.stripe.prices.pass30;
 }
 
 export const CHECKOUT_CATALOG: Record<

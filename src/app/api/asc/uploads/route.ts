@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ascContext, NO_STORE } from "@/lib/asc/server";
 import { ascTargetsForExport, EXPORT_MAX_AGE_MS, parseAscUploadPayload, type AscUploadPayload } from "@/lib/asc/upload-job";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   if (!gate.ok) return gate.response;
   const { admin, workspaceId, userId, role } = gate.context;
   // Without the worker the job would only wait and expire.
-  if (process.env.RENDER_QUEUE_ENABLED !== "true") return json({ error: "QUEUE_DISABLED" }, 503);
+  if (!serverEnv.render.queueEnabled) return json({ error: "QUEUE_DISABLED" }, 503);
   const key = request.headers.get("idempotency-key");
   if (!key || !KEY.test(key)) return json({ error: "IDEMPOTENCY_KEY_REQUIRED" }, 400);
   const text = await request.text();

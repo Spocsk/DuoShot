@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { renderWorkerSecret, verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { runRenderTick } from "@/lib/render/worker";
+import { serverEnv } from "@/lib/env";
 export const runtime = "nodejs";
 export const maxDuration = 900;
 /**
@@ -11,7 +12,7 @@ export const maxDuration = 900;
  */
 export async function POST(request: Request) {
   if (!verifyBearer(request, renderWorkerSecret())) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-  if (process.env.RENDER_QUEUE_ENABLED !== "true") return NextResponse.json({ error: "QUEUE_DISABLED" }, { status: 503 });
+  if (!serverEnv.render.queueEnabled) return NextResponse.json({ error: "QUEUE_DISABLED" }, { status: 503 });
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
   // Two lanes with their own slot: renders (export, review) and App Store Connect
