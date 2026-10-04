@@ -7,7 +7,7 @@ import { signAscToken, type AscCredentials } from "./jwt";
 export type AscErrorCode =
   | "ASC_BAD_REQUEST" | "ASC_UNAUTHORIZED" | "ASC_FORBIDDEN" | "ASC_NOT_FOUND" | "ASC_CONFLICT"
   | "ASC_INVALID" | "ASC_RATE_LIMITED" | "ASC_UNAVAILABLE" | "ASC_UNREACHABLE"
-  | "ASC_UPLOAD_FAILED" | "ASC_PROCESSING_FAILED" | "ASC_PROCESSING_TIMEOUT" | "ASC_ABORTED";
+  | "ASC_UPLOAD_FAILED" | "ASC_UPLOAD_OPERATION_INVALID" | "ASC_PROCESSING_FAILED" | "ASC_PROCESSING_TIMEOUT" | "ASC_ABORTED";
 
 export class AscError extends Error {
   constructor(public code: AscErrorCode, public status = 0, public appleCode?: string) { super(code); }
@@ -58,6 +58,17 @@ export type AscClientOptions = {
 const ID = /^[A-Za-z0-9-]{1,64}$/;
 export function isAscId(value: unknown): value is string {
   return typeof value === "string" && ID.test(value);
+}
+
+/** Bytes only ever go to Apple's own blob store, with the method Apple documents (PUT). */
+export function isAllowedUploadOperation(operation: Pick<UploadOperation, "method" | "url">): boolean {
+  if (typeof operation.method !== "string" || operation.method.toUpperCase() !== "PUT") return false;
+  try {
+    const url = new URL(operation.url);
+    return url.protocol === "https:" && url.hostname.endsWith(".apple.com") && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }
 
 export function md5Hex(bytes: Uint8Array): string {
@@ -159,12 +170,17 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
       return localizations.map((item) => ({ id: item.id, locale: item.attributes?.locale ?? "" }));
     },
 
-    async ensureScreenshotSet(localizationId: string, displayType: string): Promise<string> {
+    /** Read-only: the localization's set for this display type, if Apple already has one. */
+    async findScreenshotSet(localizationId: string, displayType: string): Promise<string | null> {
       const sets = await list<{ screenshotDisplayType?: string }>(
         `/v1/appStoreVersionLocalizations/${encodeURIComponent(localizationId)}/appScreenshotSets?limit=50&fields[appScreenshotSets]=screenshotDisplayType`,
       );
-      const existing = sets.find((set) => set.attributes?.screenshotDisplayType === displayType);
-      if (existing) return existing.id;
+      return sets.find((set) => set.attributes?.screenshotDisplayType === displayType)?.id ?? null;
+    },
+
+    async ensureScreenshotSet(localizationId: string, displayType: string): Promise<string> {
+      const existing = await client.findScreenshotSet(localizationId, displayType);
+      if (existing) return existing;
       const created = await single("POST", "/v1/appScreenshotSets", {
         data: {
           type: "appScreenshotSets",
@@ -201,15 +217,17 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
 
     /** PUTs each part exactly as Apple describes it: method, URL, headers and byte range. No JWT. */
     async uploadParts(operations: UploadOperation[], bytes: Uint8Array) {
+      // Validate every operation before sending any byte.
+      if (!operations.every(isAllowedUploadOperation)) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
       await mapLimit(operations, 3, async (operation) => {
         const end = operation.offset + operation.length;
-        if (!operation.url.startsWith("https://") || operation.offset < 0 || end > bytes.byteLength) throw new AscError("ASC_UPLOAD_FAILED");
+        if (operation.offset < 0 || operation.length < 0 || end > bytes.byteLength) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
         const headers = Object.fromEntries((operation.requestHeaders ?? []).map(({ name, value }) => [name, value]));
         const body = bytes.subarray(operation.offset, end);
         for (let attempt = 0; ; attempt++) {
           let status = 0;
           try {
-            const response = await send(operation.url, { method: operation.method, headers, body: body as BodyInit });
+            const response = await send(operation.url, { method: "PUT", headers, body: body as BodyInit });
             status = response.status;
             if (response.ok) return;
           } catch (error) {

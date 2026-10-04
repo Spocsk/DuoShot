@@ -6,6 +6,8 @@ import { completeRender, type RenderJob } from "../render/jobs";
 import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
 import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor } from "./config";
 import { loadAscCredentials } from "./server";
+import { readWorkspaceBilling } from "../workspace-billing";
+import { isProPlan } from "../plans";
 
 export type AscTarget = { slot: DeviceSlot; displayType: string };
 
@@ -31,6 +33,8 @@ const UUID = /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 export const ASC_JOB_BUDGET_MS = 10 * 60_000;
 /** ZIPs and sources are purged after 24 hours. */
 export const EXPORT_MAX_AGE_MS = 24 * 3_600_000;
+/** Rollback deletes run after an abort, so they get their own short timeout. */
+const CLEANUP_TIMEOUT_MS = 10_000;
 
 export function parseAscUploadPayload(input: unknown): AscUploadPayload {
   const value = input as Partial<AscUploadPayload> | null;
@@ -105,6 +109,13 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
   const now = options.now ?? Date.now;
   const started = now();
 
+  // The job may have waited in the queue: membership, plan and role are checked again now.
+  const billing = await readWorkspaceBilling(admin, job.user_id);
+  if (!billing.ok) return fail(billing.error);
+  if (billing.membership.workspace_id !== job.workspace_id) return fail("NO_WORKSPACE");
+  if (!isProPlan(billing.entitlements.plan)) return fail("PAID_PLAN_REQUIRED");
+  if (payload.replaceExisting && billing.membership.role !== "owner") return fail("OWNER_REQUIRED");
+
   const { data: exported, error: exportError } = await admin.from("export_sets")
     .select("storage_path, created_at").eq("id", payload.exportId).eq("workspace_id", job.workspace_id).maybeSingle();
   if (exportError) return fail("ASC_UNAVAILABLE");
@@ -121,6 +132,9 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
   }
   if (!credentials) return fail("ASC_NOT_CONNECTED");
   const client = createAscClient(credentials, options);
+  // Rollback must still reach Apple after the heartbeat aborted the job: no abort
+  // signal, short per-request timeout.
+  const cleanup = createAscClient(credentials, { ...options, signal: undefined, requestTimeoutMs: CLEANUP_TIMEOUT_MS });
 
   const progress: AscProgress = {
     total: planned.length, done: 0,
@@ -135,23 +149,25 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
   const assetIds: string[] = [];
   try {
     await report();
-    const sets = new Map<DeviceSlot, { id: string; kept: string[]; uploaded: string[] }>();
+    // Capacity first, read-only: Apple holds at most ten screenshots per set and the
+    // previous ones are only removed after the new ones are live, so both must fit.
+    const sets = new Map<DeviceSlot, { id: string | null; displayType: string; previous: string[]; uploaded: string[] }>();
     for (const target of payload.targets) {
-      if (!planned.some((file) => file.slot === target.slot)) continue;
-      const id = await client.ensureScreenshotSet(payload.localizationId, target.displayType);
-      if (payload.replaceExisting) await client.deleteExistingScreenshots(id);
-      const kept = payload.replaceExisting ? [] : await client.listScreenshotIds(id);
       const incoming = planned.filter((file) => file.slot === target.slot).length;
-      if (kept.length + incoming > ASC_MAX_SCREENSHOTS_PER_SET) throw new AscError("ASC_CONFLICT", 409, "SET_FULL");
-      sets.set(target.slot, { id, kept, uploaded: [] });
+      if (!incoming) continue;
+      const id = await client.findScreenshotSet(payload.localizationId, target.displayType);
+      const previous = id ? await client.listScreenshotIds(id) : [];
+      if (previous.length + incoming > ASC_MAX_SCREENSHOTS_PER_SET) throw new AscError("ASC_CONFLICT", 409, "SET_FULL");
+      sets.set(target.slot, { id, displayType: target.displayType, previous, uploaded: [] });
     }
+    for (const set of sets.values()) set.id ??= await client.ensureScreenshotSet(payload.localizationId, set.displayType);
 
     for (const [position, file] of planned.entries()) {
       const set = sets.get(file.slot)!;
       progress.files[position]!.state = "uploading";
       await report();
       const bytes = new Uint8Array(await zip.file(file.path)!.async("uint8array"));
-      const { id, operations } = await client.reserveScreenshot(set.id, file.fileName, bytes.byteLength);
+      const { id, operations } = await client.reserveScreenshot(set.id!, file.fileName, bytes.byteLength);
       // Known from the reservation on, so a failure can remove it from the user's set.
       assetIds[position] = id;
       await client.uploadParts(operations, bytes);
@@ -171,19 +187,25 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
       },
     });
     const failed = Object.values(states).filter((state) => state !== "COMPLETE");
-    if (!failed.length) await report();
-    if (failed.length) {
-      throw new AscError(failed.includes("FAILED") ? "ASC_PROCESSING_FAILED" : "ASC_PROCESSING_TIMEOUT");
-    }
+    if (failed.length) throw new AscError(failed.includes("FAILED") ? "ASC_PROCESSING_FAILED" : "ASC_PROCESSING_TIMEOUT");
+    await report();
 
-    // Uploads are sequential, but make the listing order explicit: kept shots first, then ours by slide index.
+    // The new set is live: only now remove what it replaces, then make the order explicit
+    // (kept shots first, then ours by slide index).
+    let replaced = 0;
     let reordered = true;
     for (const set of sets.values()) {
-      try { await client.reorderScreenshots(set.id, [...set.kept, ...set.uploaded]); } catch { reordered = false; }
+      if (payload.replaceExisting) {
+        for (const id of set.previous) {
+          try { await client.deleteScreenshot(id); replaced++; } catch { reordered = false; }
+        }
+      }
+      const order = payload.replaceExisting ? set.uploaded : [...set.previous, ...set.uploaded];
+      try { await client.reorderScreenshots(set.id!, order); } catch { reordered = false; }
     }
     const result = {
       appId: payload.appId, versionId: payload.versionId, localizationId: payload.localizationId,
-      uploaded: assetIds.length, reordered, files: progress.files,
+      uploaded: assetIds.length, replaced, reordered, files: progress.files,
       skipped: ascTargetsForExport(true).skipped,
     };
     await completeRender(admin, job, result);
@@ -195,6 +217,7 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
       : "ASC_UPLOAD_FAILED";
     // All or nothing: remove every asset this job created (stuck reservations, FAILED
     // or slow ones too) so a retry neither duplicates screenshots nor fills the set.
+    // The previous screenshots were never touched.
     for (const [position, id] of assetIds.entries()) {
       if (!id) continue;
       const file = progress.files[position]!;
@@ -202,7 +225,7 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
       if (file.state === "uploading" || (file.state === "processing" && code === "ASC_PROCESSING_TIMEOUT")) file.error = code;
       else if (file.state !== "failed") file.error = "ASC_ROLLED_BACK";
       file.state = "failed";
-      try { await client.deleteScreenshot(id); } catch { file.error = "ASC_CLEANUP_FAILED"; }
+      try { await cleanup.deleteScreenshot(id); } catch { file.error = "ASC_CLEANUP_FAILED"; }
     }
     try { await report(); } catch { /* the failure code below is what matters */ }
     if (!(error instanceof AscError)) console.error("asc_upload_failed", { jobId: job.id, message: error instanceof Error ? error.message : String(error) });

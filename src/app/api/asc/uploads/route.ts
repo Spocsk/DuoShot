@@ -14,7 +14,7 @@ const json = (body: unknown, status: number) => NextResponse.json(body, { status
 export async function POST(request: Request) {
   const gate = await ascContext();
   if (!gate.ok) return gate.response;
-  const { admin, workspaceId, userId } = gate.context;
+  const { admin, workspaceId, userId, role } = gate.context;
   // Without the worker the job would only wait and expire.
   if (process.env.RENDER_QUEUE_ENABLED !== "true") return json({ error: "QUEUE_DISABLED" }, 503);
   const key = request.headers.get("idempotency-key");
@@ -23,6 +23,8 @@ export async function POST(request: Request) {
   if (text.length > 4096) return json({ error: "INPUT_TOO_LARGE" }, 413);
   let body: Partial<AscUploadPayload>;
   try { body = JSON.parse(text); } catch { return json({ error: "INVALID_REQUEST" }, 400); }
+  // Replacing deletes the workspace's live screenshots: an owner decision.
+  if (body.replaceExisting === true && role !== "owner") return json({ error: "OWNER_REQUIRED" }, 403);
 
   const connection = await admin.from("asc_connections").select("id").eq("workspace_id", workspaceId).maybeSingle();
   if (connection.error) return json({ error: "ASC_UNAVAILABLE" }, 503);

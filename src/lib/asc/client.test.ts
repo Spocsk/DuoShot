@@ -1,7 +1,7 @@
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { fakeApple } from "@/test/asc-apple-mock";
-import { AscError, ascErrorStatus, createAscClient } from "./client";
+import { AscError, ascErrorStatus, createAscClient, isAllowedUploadOperation } from "./client";
 
 const pem = generateKeyPairSync("ec", { namedCurve: "prime256v1" }).privateKey.export({ format: "pem", type: "pkcs8" }).toString();
 const credentials = { issuerId: "57246542-96fe-1a63-e053-0824d011072a", keyId: "2X9R4HXF34", privateKey: pem };
@@ -47,7 +47,7 @@ describe("App Store Connect client", () => {
     expect(result.state).toBe("COMPLETE");
     const reserve = apple.calls.find((call) => call.method === "POST" && call.url.endsWith("/v1/appScreenshots"))!;
     expect(reserve.body).toMatchObject({ data: { attributes: { fileName: "01.png", fileSize: 10_000 }, relationships: { appScreenshotSet: { data: { id: "set-1" } } } } });
-    const puts = apple.calls.filter((call) => call.url.startsWith("https://upload.example/"));
+    const puts = apple.calls.filter((call) => call.url.startsWith("https://upload.blobstore.apple.com/"));
     expect(puts).toHaveLength(3);
     for (const put of puts) {
       expect(put.method).toBe("PUT");
@@ -85,12 +85,39 @@ describe("App Store Connect client", () => {
     const apple = fakeApple();
     let attempts = 0;
     const flaky: typeof fetch = async (input, init) => {
-      if (String(input).startsWith("https://upload.example/")) { attempts++; return new Response(null, { status: 503 }); }
+      if (String(input).startsWith("https://upload.blobstore.apple.com/")) { attempts++; return new Response(null, { status: 503 }); }
       return apple.fetch(input, init);
     };
     const asc = createAscClient(credentials, { fetch: flaky, sleep: instant });
     await expect(asc.uploadScreenshot("set-1", "01.png", randomBytes(10))).rejects.toMatchObject({ code: "ASC_UPLOAD_FAILED" });
     expect(attempts).toBe(3);
+  });
+
+  it("only sends bytes with PUT to Apple-owned HTTPS hosts", async () => {
+    expect(isAllowedUploadOperation({ method: "PUT", url: "https://store-030.blobstore.apple.com/a?Signature=x" })).toBe(true);
+    for (const operation of [
+      { method: "POST", url: "https://store-030.blobstore.apple.com/a" },
+      { method: "PUT", url: "http://store-030.blobstore.apple.com/a" },
+      { method: "PUT", url: "https://evil.example/a" },
+      { method: "PUT", url: "https://apple.com.evil.example/a" },
+      { method: "PUT", url: "https://notapple.com/a" },
+      { method: "PUT", url: "https://user:pass@store.apple.com/a" },
+      { method: "PUT", url: "not a url" },
+    ]) expect(isAllowedUploadOperation(operation)).toBe(false);
+    const sent: string[] = [];
+    const hostile: typeof fetch = async (input) => {
+      sent.push(String(input));
+      return new Response(JSON.stringify({ data: { id: "shot-1", type: "appScreenshots", attributes: {
+        uploadOperations: [
+          { method: "PUT", url: "https://store-030.blobstore.apple.com/ok", offset: 0, length: 5 },
+          { method: "PUT", url: "https://collector.example/steal", offset: 5, length: 5 },
+        ],
+      } } }), { status: 201 });
+    };
+    const asc = createAscClient(credentials, { fetch: hostile, sleep: instant });
+    await expect(asc.uploadScreenshot("set-1", "01.png", randomBytes(10))).rejects.toMatchObject({ code: "ASC_UPLOAD_OPERATION_INVALID" });
+    // Only the reservation went out: no part was sent anywhere, not even to the valid host.
+    expect(sent).toHaveLength(1);
   });
 
   it("never follows pagination links outside the API host", async () => {

@@ -68,8 +68,8 @@ describe("POST /api/asc/uploads", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("queues an asc_upload job any paid member can follow through the render status route", async () => {
-    session();
+  it("queues an asc_upload job followed through the render status route", async () => {
+    session("indie", "owner");
     const rpc = admin();
     const { status, body } = await readJson(await post({ ...BODY, replaceExisting: true, targets: [{ slot: "duo-outer", displayType: "X" }] }));
     expect(status).toBe(202);
@@ -79,6 +79,15 @@ describe("POST /api/asc/uploads", () => {
       // Client-supplied targets are ignored: the mapping comes from the server config.
       p_payload: { ...BODY, replaceExisting: true, targets: [{ slot: "iphone-69", displayType: "APP_IPHONE_67" }] },
     });
+  });
+
+  it("lets only the owner replace existing screenshots", async () => {
+    session("indie", "member");
+    const rpc = admin();
+    expect(await readJson(await post({ ...BODY, replaceExisting: true }))).toEqual({ status: 403, body: { error: "OWNER_REQUIRED" } });
+    expect(rpc).not.toHaveBeenCalled();
+    session("indie", "owner");
+    expect((await post({ ...BODY, replaceExisting: true })).status).toBe(202);
   });
 
   it("maps queue conflicts like the render routes", async () => {

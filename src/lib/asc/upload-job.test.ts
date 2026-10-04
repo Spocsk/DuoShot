@@ -28,15 +28,17 @@ const files = {
   "harbor/iphone-69-portrait/1320x2868/01.png": randomBytes(5000),
 };
 
-async function admin({ createdAt = new Date().toISOString(), connected = true } = {}) {
+async function admin({ createdAt = new Date().toISOString(), connected = true, role = "owner", plan = "indie", workspaceId = "ws-1" } = {}) {
   const zip = new JSZip();
   for (const [path, content] of Object.entries(files)) zip.file(path, content);
   const archive = await zip.generateAsync({ type: "uint8array" });
   const sealed = sealSecret(pem, master, "ws-1");
   const rpc = vi.fn<(name: string, args: unknown) => Promise<{ data: boolean; error: null }>>(async () => ({ data: true, error: null }));
   const client = {
-    from: (table: string) => createQueryBuilder(table === "export_sets"
-      ? { data: { storage_path: "user-1/x.zip", created_at: createdAt }, error: null }
+    from: (table: string) => createQueryBuilder(
+      table === "workspace_members" ? { data: { workspace_id: workspaceId, role }, error: null }
+      : table === "workspaces" ? { data: { id: workspaceId, plan: "free", manual_plan: plan, free_exports_used: 0 }, error: null }
+      : table === "export_sets" ? { data: { storage_path: "user-1/x.zip", created_at: createdAt }, error: null }
       : { data: connected ? { issuer_id: "57246542-96fe-1a63-e053-0824d011072a", key_id: "2X9R4HXF34", encrypted_private_key: sealed.ciphertext, iv: sealed.iv, auth_tag: sealed.authTag } : null, error: null }),
     storage: { from: () => ({ download: async () => ({ data: new Blob([archive as BlobPart]), error: null }) }) },
     rpc,
@@ -129,20 +131,69 @@ describe("asc_upload job", () => {
     ]);
   });
 
-  it("will not overflow a set that already holds screenshots", async () => {
+  it.each([false, true])("checks set capacity before touching anything (replaceExisting: %s)", async (replaceExisting) => {
     const apple = fakeApple({ sets: [{ id: "set-67", displayType: "APP_IPHONE_67" }], existing: { "set-67": Array.from({ length: 9 }, (_, i) => `old-${i}`) } });
     const { client } = await admin();
-    const response = await executeAscUpload(client, job(), { fetch: apple.fetch, sleep: instant });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting } }), { fetch: apple.fetch, sleep: instant });
     expect(await response.json()).toEqual({ error: "ASC_SET_FULL" });
-    expect(apple.shots.size).toBe(0);
+    // Read-only calls only: nothing reserved, created or deleted.
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+    expect(apple.existing["set-67"]).toHaveLength(9);
   });
 
-  it("replaces existing screenshots when asked", async () => {
-    const apple = fakeApple({ sets: [{ id: "set-67", displayType: "APP_IPHONE_67" }], existing: { "set-67": Array.from({ length: 9 }, (_, i) => `old-${i}`) } });
-    const { client } = await admin();
+  it("replaces only after the new screenshots are live, then orders the new set", async () => {
+    const previous = Array.from({ length: 8 }, (_, i) => `old-${i}`);
+    const apple = fakeApple({ sets: [{ id: "set-67", displayType: "APP_IPHONE_67" }], existing: { "set-67": [...previous] } });
+    const { client, rpc } = await admin();
     const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting: true } }), { fetch: apple.fetch, sleep: instant });
     expect(response.status).toBe(200);
-    expect(apple.calls.filter((call) => call.method === "DELETE")).toHaveLength(9);
+    const methods = apple.calls.map((call) => `${call.method} ${new URL(call.url).pathname}`);
+    const firstDelete = methods.findIndex((call) => call.startsWith("DELETE"));
+    const lastPoll = methods.findLastIndex((call) => /^GET \/v1\/appScreenshots\/shot-/.test(call));
+    expect(firstDelete).toBeGreaterThan(lastPoll);
+    expect(methods.filter((call) => call.startsWith("DELETE"))).toEqual(previous.map((id) => `DELETE /v1/appScreenshots/${id}`));
+    const uploaded = [...apple.shots.keys()];
+    expect(apple.calls.at(-1)).toMatchObject({ method: "PATCH", body: { data: uploaded.map((id) => ({ type: "appScreenshots", id })) } });
+    expect(rpc.mock.calls.find(([name]) => name === "complete_render")![1]).toMatchObject({ p_result: { uploaded: 2, replaced: 8 } });
+  });
+
+  it("keeps the previous screenshots when a replacing upload fails", async () => {
+    const apple = fakeApple({ states: ["FAILED"], sets: [{ id: "set-67", displayType: "APP_IPHONE_67" }], existing: { "set-67": ["old-1", "old-2"] } });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting: true } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_PROCESSING_FAILED" });
+    const deleted = apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname);
+    expect(deleted).toEqual([...apple.shots.keys()].map((id) => `/v1/appScreenshots/${id}`));
+    expect(apple.existing["set-67"]).toEqual(["old-1", "old-2"]);
+  });
+
+  it("still rolls back after the heartbeat aborted the job", async () => {
+    const controller = new AbortController();
+    const apple = fakeApple();
+    let commits = 0;
+    const aborting: typeof fetch = async (input, init) => {
+      const response = await apple.fetch(input, init);
+      // The lease is lost right after the first file is committed.
+      if (init?.method === "PATCH" && ++commits === 1) controller.abort();
+      return response;
+    };
+    const { client } = await admin();
+    const response = await executeAscUpload(client, job(), { fetch: aborting, sleep: instant, signal: controller.signal });
+    expect(await response.json()).toEqual({ error: "ASC_ABORTED" });
+    const created = [...apple.shots.keys()];
+    expect(created).toHaveLength(1);
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname)).toEqual([`/v1/appScreenshots/${created[0]}`]);
+  });
+
+  it("re-checks membership, plan and role when the job runs", async () => {
+    const apple = fakeApple();
+    const unpaid = await admin({ plan: "free" });
+    expect(await (await executeAscUpload(unpaid.client, job(), { fetch: apple.fetch })).json()).toEqual({ error: "PAID_PLAN_REQUIRED" });
+    const moved = await admin({ workspaceId: "ws-2" });
+    expect(await (await executeAscUpload(moved.client, job(), { fetch: apple.fetch })).json()).toEqual({ error: "NO_WORKSPACE" });
+    const member = await admin({ role: "member" });
+    expect(await (await executeAscUpload(member.client, job({ payload: { ...PAYLOAD, replaceExisting: true } }), { fetch: apple.fetch })).json()).toEqual({ error: "OWNER_REQUIRED" });
+    expect(apple.calls).toHaveLength(0);
   });
 
   it("stops on an expired export or a revoked connection before calling Apple", async () => {

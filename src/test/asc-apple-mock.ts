@@ -33,7 +33,7 @@ export function fakeApple(options: {
     const failure = options.fail?.(method, path);
     if (failure) return json({ errors: [{ status: String(failure.status), code: failure.code, title: "nope" }] }, failure.status);
 
-    if (parsed.host === "upload.example") {
+    if (parsed.host === "upload.blobstore.apple.com") {
       const [, id, offset] = path.split("/");
       shots.get(id!)!.received.set(Number(offset), new Uint8Array(raw as Uint8Array));
       return new Response(null, { status: 200 });
@@ -62,7 +62,7 @@ export function fakeApple(options: {
       const parts = options.parts ?? 1;
       const size = Math.ceil(attributes.fileSize / parts);
       const uploadOperations = Array.from({ length: parts }, (_, index) => ({
-        method: "PUT", url: `https://upload.example/${id}/${index * size}`, offset: index * size,
+        method: "PUT", url: `https://upload.blobstore.apple.com/${id}/${index * size}`, offset: index * size,
         length: Math.min(size, attributes.fileSize - index * size),
         requestHeaders: [{ name: "Content-Type", value: "image/png" }],
       }));
