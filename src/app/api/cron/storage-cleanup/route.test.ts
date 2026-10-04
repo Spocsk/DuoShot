@@ -36,6 +36,13 @@ describe("storage cleanup cron", () => {
     expect(createAdminSupabase).not.toHaveBeenCalled();
   });
 
+  it("rejects the render worker secret", async () => {
+    vi.stubEnv("CRON_SECRET", "secret");
+    vi.stubEnv("RENDER_WORKER_SECRET", "worker");
+    expect((await GET(request("Bearer worker"))).status).toBe(401);
+    expect(createAdminSupabase).not.toHaveBeenCalled();
+  });
+
   it("stays closed when CRON_SECRET is unset", async () => {
     vi.stubEnv("CRON_SECRET", "");
     expect((await GET(request("Bearer "))).status).toBe(401);

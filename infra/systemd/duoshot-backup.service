@@ -4,6 +4,8 @@ After=docker.service network-online.target
 Requires=docker.service
 
 [Service]
+Environment=DUOSHOT_COMPOSE_PROJECT=i9qtpe5bpyig86s1aljxr5gv
+EnvironmentFile=-/etc/duoshot/compose.env
 Type=oneshot
 ExecStart=/data/duoshot/nightly-backup.sh
 TimeoutStartSec=2h
