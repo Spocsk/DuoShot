@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "cypress/**",
     "cypress.config.ts",
+    // Vendored Tesseract assets copied by scripts/copy-ocr-assets.mjs.
+    "public/ocr/**",
   ]),
 ]);
 

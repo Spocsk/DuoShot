@@ -239,7 +239,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         if (foldCacheRef.current.has(job.key)) continue;
         try {
           ocrWorkerRef.current ??= import("tesseract.js").then(async ({ createWorker, PSM }) => {
-            const worker = await createWorker(["eng", "fra"]);
+            // Assets are served from public/ocr (scripts/copy-ocr-assets.mjs), not a CDN.
+            const worker = await createWorker(["eng", "fra"], undefined, {
+              workerPath: "/ocr/worker.min.js", corePath: "/ocr", langPath: "/ocr/lang", workerBlobURL: false,
+            });
             await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
             return worker;
           });

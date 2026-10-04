@@ -47,3 +47,6 @@ next-env.d.ts
 # Python infrastructure verification
 __pycache__/
 *.pyc
+
+# self-hosted OCR assets, copied by scripts/copy-ocr-assets.mjs
+/public/ocr/
