@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { Locale } from "@/lib/specs";
+import type { SetMeta } from "@/lib/sets-store";
+import { t, tf } from "@/lib/i18n";
 
 /** Open/close state, outside-click dismissal and keyboard navigation of the app (set) listbox. */
 export function useSetsMenu() {
@@ -84,4 +87,109 @@ export function useSetsMenu() {
   }
 
   return { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey };
+}
+
+export function SetPicker({
+  locale,
+  hydrated,
+  sets,
+  active,
+  menu,
+  switchSet,
+  addSet,
+  removeSet,
+}: {
+  locale: Locale;
+  hydrated: boolean;
+  sets: SetMeta[];
+  active: SetMeta | undefined;
+  menu: ReturnType<typeof useSetsMenu>;
+  switchSet: (id: string) => Promise<void>;
+  addSet: () => void;
+  removeSet: (id: string) => Promise<void>;
+}) {
+  const { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey } = menu;
+  return (
+      <div className="ds-set-bar">
+      <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
+        <p className="ds-label" id="tool-sets-label">
+          {t(locale, "tool_sets")}
+        </p>
+        <details
+          className="ds-listbox"
+          ref={setsRef}
+          onToggle={(event) => {
+            if (event.currentTarget.open) {
+              setSetsOpen(true);
+              setSetsClosing(false);
+            }
+          }}
+        >
+          <summary
+            id="tool-sets-trigger"
+            className="ds-listbox-trigger"
+            data-testid="tool-sets"
+            data-ready={hydrated ? "true" : "false"}
+            aria-haspopup="listbox"
+            aria-expanded={setsOpen}
+            aria-controls="tool-sets-menu"
+            aria-labelledby="tool-sets-label"
+            aria-describedby="tool-sets-description"
+            onClick={(event) => {
+              if (setsRef.current?.open) {
+                event.preventDefault();
+                closeSets();
+              }
+            }}
+            onKeyDown={onSetsTriggerKey}
+          >
+            <span>{active?.name?.trim() ? active.name : t(locale, "tool_label_app")}</span>
+            <span className="ds-listbox-caret" aria-hidden="true" />
+          </summary>
+          <ul
+            id="tool-sets-menu"
+            className={`ds-listbox-menu t-dropdown ${setsOpen ? "is-open" : ""} ${setsClosing ? "is-closing" : ""}`}
+            data-origin="top-left"
+            role="listbox"
+            aria-labelledby="tool-sets-label"
+            data-testid="tool-sets-menu"
+            onKeyDown={onSetsMenuKey}
+          >
+            {sets.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={item.id === active?.id}
+                  className={`ds-listbox-option ${item.id === active?.id ? "is-on" : ""}`}
+                  onClick={() => {
+                    closeSets();
+                    void switchSet(item.id);
+                  }}
+                >
+                  {item.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </div>
+      <div className="ds-set-actions">
+        <button type="button" className="ds-cta-ghost" data-testid="tool-set-new" onClick={addSet}>
+          {t(locale, "tool_set_new")}
+        </button>
+        {sets.length > 1 ? (
+          <button
+            type="button"
+            className="ds-text-btn"
+            data-testid="tool-set-delete"
+            aria-label={tf(locale, "tool_set_delete", { name: active?.name?.trim() || t(locale, "tool_label_app") })}
+            onClick={() => active && void removeSet(active.id)}
+          >
+            {t(locale, "tool_set_delete_short")}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
 }
