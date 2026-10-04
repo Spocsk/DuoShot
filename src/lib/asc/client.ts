@@ -131,8 +131,9 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
     },
 
     async listApps(): Promise<AscApp[]> {
-      const apps = await list<{ name?: string; bundleId?: string }>("/v1/apps?limit=200&fields[apps]=name,bundleId&sort=name");
-      return apps.map((app) => ({ id: app.id, name: app.attributes?.name ?? "", bundleId: app.attributes?.bundleId ?? "" }));
+      const apps = await list<{ name?: string; bundleId?: string }>("/v1/apps?limit=200&fields[apps]=name,bundleId");
+      return apps.map((app) => ({ id: app.id, name: app.attributes?.name ?? "", bundleId: app.attributes?.bundleId ?? "" }))
+        .sort((a, b) => a.name.localeCompare(b.name));
     },
 
     async listEditableVersions(appId: string): Promise<AscVersion[]> {

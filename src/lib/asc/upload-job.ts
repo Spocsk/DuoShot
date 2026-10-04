@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeviceSlot, Orientation } from "../specs";
 import { completeRender, type RenderJob } from "../render/jobs";
-import { AscError, createAscClient, isAscId, type AscClientOptions } from "./client";
+import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
 import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor } from "./config";
 import { loadAscCredentials } from "./server";
 
@@ -132,6 +132,7 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
     if (error) console.warn("asc_progress_failed", { jobId: job.id });
   };
 
+  const assetIds: string[] = [];
   try {
     await report();
     const sets = new Map<DeviceSlot, { id: string; kept: string[]; uploaded: string[] }>();
@@ -145,15 +146,17 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
       sets.set(target.slot, { id, kept, uploaded: [] });
     }
 
-    const assetIds: string[] = [];
     for (const [position, file] of planned.entries()) {
       const set = sets.get(file.slot)!;
       progress.files[position]!.state = "uploading";
       await report();
       const bytes = new Uint8Array(await zip.file(file.path)!.async("uint8array"));
-      const { id } = await client.uploadScreenshot(set.id, file.fileName, bytes, { wait: false });
-      set.uploaded.push(id);
+      const { id, operations } = await client.reserveScreenshot(set.id, file.fileName, bytes.byteLength);
+      // Known from the reservation on, so a failure can remove it from the user's set.
       assetIds[position] = id;
+      await client.uploadParts(operations, bytes);
+      await client.commitScreenshot(id, md5Hex(bytes));
+      set.uploaded.push(id);
       progress.files[position]!.state = "processing";
     }
     await report();
@@ -167,12 +170,11 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
         if (state === "FAILED") file.error = "ASC_PROCESSING_FAILED";
       },
     });
-    for (const [position, id] of assetIds.entries()) {
-      if (states[id] === "TIMEOUT") progress.files[position]!.error = "ASC_PROCESSING_TIMEOUT";
-    }
-    await report();
     const failed = Object.values(states).filter((state) => state !== "COMPLETE");
-    if (failed.length) return fail(failed.includes("FAILED") ? "ASC_PROCESSING_FAILED" : "ASC_PROCESSING_TIMEOUT");
+    if (!failed.length) await report();
+    if (failed.length) {
+      throw new AscError(failed.includes("FAILED") ? "ASC_PROCESSING_FAILED" : "ASC_PROCESSING_TIMEOUT");
+    }
 
     // Uploads are sequential, but make the listing order explicit: kept shots first, then ours by slide index.
     let reordered = true;
@@ -191,7 +193,17 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
     const code = error instanceof AscError
       ? (error.appleCode === "SET_FULL" ? "ASC_SET_FULL" : error.code)
       : "ASC_UPLOAD_FAILED";
-    for (const file of progress.files) if (file.state === "uploading") { file.state = "failed"; file.error = code; }
+    // All or nothing: remove every asset this job created (stuck reservations, FAILED
+    // or slow ones too) so a retry neither duplicates screenshots nor fills the set.
+    for (const [position, id] of assetIds.entries()) {
+      if (!id) continue;
+      const file = progress.files[position]!;
+      // The file that broke keeps the job's code; still-processing files timed out; the rest were rolled back.
+      if (file.state === "uploading" || (file.state === "processing" && code === "ASC_PROCESSING_TIMEOUT")) file.error = code;
+      else if (file.state !== "failed") file.error = "ASC_ROLLED_BACK";
+      file.state = "failed";
+      try { await client.deleteScreenshot(id); } catch { file.error = "ASC_CLEANUP_FAILED"; }
+    }
     try { await report(); } catch { /* the failure code below is what matters */ }
     if (!(error instanceof AscError)) console.error("asc_upload_failed", { jobId: job.id, message: error instanceof Error ? error.message : String(error) });
     return fail(code);

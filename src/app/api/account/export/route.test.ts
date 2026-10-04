@@ -6,6 +6,7 @@ import { GET } from "./route";
 
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabase: vi.fn() }));
 vi.mock("@/lib/email", () => ({ sendTransactionalEmail: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: () => null }));
 
 const rows: Record<string, unknown[]> = {
   workspace_members: [{ workspace_id: "ws-1", role: "owner" }],
@@ -50,7 +51,7 @@ describe("GET /api/account/export", () => {
       exportedAt: expect.any(String),
       user: { id: "user-1", email: "a@example.com" },
       ...rows,
-      // No service key in tests, so no App Store Connect connection can exist.
+      // Without the service key no App Store Connect connection can exist.
       asc_connections: [],
     });
     expect(filters).toEqual([

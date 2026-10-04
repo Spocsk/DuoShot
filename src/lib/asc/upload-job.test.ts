@@ -108,6 +108,25 @@ describe("asc_upload job", () => {
       expect.objectContaining({ state: "failed", error: "ASC_PROCESSING_FAILED" }),
     ]);
     expect(rpc.mock.calls.some(([name]) => name === "complete_render")).toBe(false);
+    // Apple requires FAILED assets to be deleted before retrying.
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname))
+      .toEqual([...apple.shots.keys()].map((id) => `/v1/appScreenshots/${id}`));
+  });
+
+  it("removes the job's own reservations when a later file fails, so a retry starts clean", async () => {
+    let commits = 0;
+    const apple = fakeApple({ fail: (method, path) => method === "PATCH" && path.startsWith("/v1/appScreenshots/") && ++commits === 2 ? { status: 422, code: "ENTITY_ERROR" } : null });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, job(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_INVALID" });
+    const created = [...apple.shots.keys()];
+    expect(created).toHaveLength(2);
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname))
+      .toEqual(created.map((id) => `/v1/appScreenshots/${id}`));
+    expect(progressCalls(rpc).at(-1)!.files).toEqual([
+      expect.objectContaining({ state: "failed", error: "ASC_ROLLED_BACK" }),
+      expect.objectContaining({ state: "failed", error: "ASC_INVALID" }),
+    ]);
   });
 
   it("will not overflow a set that already holds screenshots", async () => {
