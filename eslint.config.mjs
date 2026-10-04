@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Bundled render worker (scripts/build-render-worker.mjs).
+    "dist/**",
     "next-env.d.ts",
     "cypress/**",
     "cypress.config.ts",
