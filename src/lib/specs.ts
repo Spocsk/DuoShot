@@ -206,6 +206,8 @@ export type RenderOptions = {
   titleFont: TitleFont;
   format: OutputFormat;
   burnHinge?: boolean;
+  /** Burned-in title colour: contrast-based, a preset, or a custom `#rrggbb`. */
+  textColor?: TextColor;
 };
 
 export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
@@ -221,6 +223,7 @@ export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
   titleFont: "sans",
   format: "png",
   burnHinge: false,
+  textColor: "auto",
 };
 
 /** Reserved inner fold region. UI mask only — not an Apple pixel spec. */
@@ -268,6 +271,15 @@ export function hingeBand(spec: Pick<SizeSpec, "width" | "height" | "orientation
 const LIGHT_OVERLAY_TEXT = "#FFFFFF";
 const DARK_OVERLAY_TEXT = "#172126";
 
+export type TextColor = "auto" | "ink" | "white" | `#${string}`;
+export const TEXT_COLOR_PRESETS = { ink: DARK_OVERLAY_TEXT, white: LIGHT_OVERLAY_TEXT } as const;
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** Accepts only the presets or a 6-digit hex: the value ends up inside SVG markup. */
+export function isTextColor(value: unknown): value is TextColor {
+  return value === "auto" || value === "ink" || value === "white" || (typeof value === "string" && HEX_COLOR.test(value));
+}
+
 function relativeLuminance(hex: string): number | null {
   const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!match) return null;
@@ -278,8 +290,14 @@ function relativeLuminance(hex: string): number | null {
   return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
 }
 
-/** Title colour with the stronger contrast against the slide background; blur backgrounds are darkened, so they take light text. */
-export function overlayTextColor(options: Pick<RenderOptions, "background" | "solidColor" | "gradientFrom" | "gradientTo">): string {
+/**
+ * Title colour. "auto" (default) picks the stronger contrast against the slide background; blur backgrounds
+ * are darkened, so they take light text. Presets and custom hex values are honoured; anything else falls back to auto.
+ */
+export function overlayTextColor(options: Pick<RenderOptions, "background" | "solidColor" | "gradientFrom" | "gradientTo" | "textColor">): string {
+  const choice = options.textColor;
+  if (choice === "ink" || choice === "white") return TEXT_COLOR_PRESETS[choice];
+  if (choice && choice !== "auto" && isTextColor(choice)) return choice.toUpperCase();
   const backgrounds = options.background === "solid"
     ? [options.solidColor]
     : options.background === "gradient"

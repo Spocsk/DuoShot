@@ -281,7 +281,6 @@ html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { display: b
 
 /* The workbench uses the same materials, with denser task hierarchy. */
 .studio-tool-shell { max-width: 88rem; grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-block: clamp(2rem, 4vw, 3.8rem) 6rem; }
-.studio-tool-main > div:first-child h1 { font-size: clamp(2.7rem, 4vw, 4.4rem); font-weight: 630; }
 .studio-tool-main > p:nth-child(2) { max-width: 38rem; margin-top: 0.65rem; font-size: 1.04rem; line-height: 1.55; }
 .studio-tool-main > div:nth-child(3) { margin-top: 1.15rem; }
 .studio-tool-journey { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 2.5rem; padding: 0.4rem; border: 1px solid #d3dee1; border-radius: 0.9rem; background: #e9f0f2; }
@@ -411,7 +410,8 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 .tool-command-notes { max-width: 16rem; }
 .tool-command-set .ds-set-bar { margin: 0; align-items: center; }
 .tool-command-set .ds-field { max-width: 16rem; }
-.tool-command-set .ds-label, .tool-command-orientation .ds-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.tool-command-set .ds-label { margin: 0 0 0.25rem; color: #46606a; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.tool-command-orientation .ds-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .tool-command-set .ds-listbox-trigger { min-height: 2.7rem; }
 .tool-command-set .ds-set-actions { gap: 0.35rem; }
 .tool-command-set .ds-set-actions .ds-cta-ghost { min-height: 2.7rem; padding: 0.55rem 0.8rem; }
@@ -423,7 +423,7 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 .studio-tool-main { position: sticky; top: calc(var(--header-h) + 1rem); min-width: 0; }
 .tool-canvas-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 0 0 1rem; }
 .tool-eyebrow { color: #527079; font-size: 0.66rem; font-weight: 750; letter-spacing: 0.12em; text-transform: uppercase; }
-.tool-canvas-heading h1 { margin-top: 0.15rem; font-size: clamp(1.5rem, 2.3vw, 2.25rem); font-weight: 630; letter-spacing: -0.045em; line-height: 1.1; }
+.tool-canvas-heading h1 { margin-top: 0.15rem; font-size: clamp(1.15rem, 1.6vw, 1.45rem); font-weight: 640; letter-spacing: -0.03em; line-height: 1.2; }
 .tool-canvas-count { color: #526970; font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.72rem; white-space: nowrap; }
 .tool-canvas { min-width: 0; border: 1px solid #dce5e7; border-radius: 1.2rem; background: #edf3f4; padding: clamp(1rem, 2.5vw, 2rem); }
 .studio-tool-main .tool-canvas .preview-duo { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; align-items: end; }
@@ -511,7 +511,7 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
   .tool-command-orientation { grid-column: 1 / -1; grid-row: 3; }
   .tool-command-orientation .ds-seg { width: 100%; }
   .tool-workspace { padding-top: 1.3rem; gap: 1.65rem; }
-  .tool-canvas-heading h1 { font-size: 1.6rem; }
+  .tool-canvas-heading h1 { font-size: 1.2rem; }
   .tool-canvas { padding: 0.9rem; }
   .tool-mobile-view { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.15rem; margin-bottom: 0.9rem; padding: 0.2rem; border: 1px solid #cfdddf; border-radius: 0.65rem; background: #e6eef0; }
   .tool-mobile-view button { min-height: 2.55rem; border-radius: 0.45rem; color: #526b73; font-size: 0.8rem; font-weight: 650; }
@@ -521,11 +521,14 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
   .tool-canvas[data-mobile-view="outer"] .preview-duo .preview-outer, .tool-canvas[data-mobile-view="inner"] .preview-duo .preview-inner { width: 100%; }
   .tool-canvas[data-mobile-view="compare"] .preview-duo { display: grid; gap: 1.25rem; }
   .tool-canvas[data-mobile-view="compare"] .preview-duo .preview-outer { width: 70%; }
+  /* An empty slot is an import target: give it the full width on phones, in every view. */
+  .tool-canvas .preview-duo .preview-stage .preview-glass.preview-outer.preview-empty { width: 100%; }
   .tool-panel-content { padding-top: 1.25rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tool-panel-content { animation: none; }
-  .tool-pair-item, .tool-panel-tabs button { transition: none; }
+  .tool-pair-item, .tool-panel-tabs button, .tool-step, .tool-demo-button, .studio-tool-main .tool-canvas .preview-empty { transition: none; }
+  .tool-demo-button .t-shimmer { animation: none; }
 }
 
 @media (min-width: 1024px) {
@@ -608,4 +611,74 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .studio-hero *, .studio-sequence *, .studio-inline-link span, .studio-tool-journey a, .studio-tool-main .ds-drop, .studio-billing-switch button { animation: none !important; transition-duration: 0.01ms !important; }
+}
+
+/* --- Tool: burned-in text uses the server renderer's font files (preview = export). --- */
+@font-face { font-family: "DuoShot sans"; src: url("/fonts/duoshot-sans-bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: "DuoShot serif"; src: url("/fonts/duoshot-serif-bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: block; }
+.tool-text-color-readout { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 0.6rem; color: var(--muted); font-size: 0.78rem; }
+.tool-text-color-readout code { font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.74rem; }
+.tool-text-color-chip { width: 1.15rem; height: 1.15rem; border: 1px solid var(--line); border-radius: 0.35rem; }
+.tool-text-color-custom { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--foreground); font-weight: 600; }
+.tool-text-color-custom input { width: 2.75rem; height: 2.2rem; padding: 0.15rem; border: 1px solid var(--line); border-radius: 0.5rem; background: #fff; cursor: pointer; }
+.tool-text-color-custom input:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; }
+
+/* --- Tool (stream B): step bar, primary dock, demo, empty slots --- */
+.tool-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.2rem; padding: 0.25rem; border: 1px solid #dce5e7; border-radius: 0.8rem; background: #eaf0f1; counter-reset: step; }
+.tool-step { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; min-height: 3.3rem; padding: 0.35rem 0.2rem; border-radius: 0.6rem; color: #4d646c; font-size: 0.74rem; font-weight: 650; transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease; }
+.tool-step:hover { color: var(--foreground); background: rgb(255 255 255 / 0.55); }
+.tool-step.is-on { background: #fff; color: var(--foreground); box-shadow: 0 2px 8px rgb(29 69 78 / 0.09); }
+.tool-step:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 1px; }
+.tool-step-mark { display: inline-grid; place-items: center; width: 1.35rem; height: 1.35rem; border: 1px solid #a9bcc1; border-radius: 50%; background: #fff; color: #4d646c; font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.66rem; font-weight: 700; }
+.tool-step[data-status="done"] .tool-step-mark { border-color: var(--studio-sea); background: var(--studio-sea); color: #fff; font-family: var(--font-sans), sans-serif; }
+.tool-step.is-on .tool-step-mark { border-color: var(--foreground); background: var(--foreground); color: #fff; }
+.tool-primary-dock { position: sticky; bottom: 0; z-index: 5; display: grid; gap: 0.55rem; margin-top: 1.5rem; padding: 0.9rem 0 1rem; border-top: 1px solid var(--line); background: linear-gradient(180deg, rgb(247 249 250 / 0.92), var(--background) 30%); backdrop-filter: blur(6px); }
+.tool-primary-dock .ds-cta { justify-content: center; text-align: center; }
+.tool-primary-dock .ds-cta:disabled { cursor: not-allowed; }
+.tool-dock-missing { color: var(--warn); font-size: 0.78rem; line-height: 1.45; }
+.tool-dock-missing button, .tool-review-actions li button { color: #6f3f22; font-weight: 620; text-align: left; text-decoration: underline; text-decoration-color: rgb(136 80 47 / 0.4); text-underline-offset: 0.2em; }
+.tool-dock-missing button:hover, .tool-review-actions li button:hover { text-decoration-color: currentColor; }
+.tool-dock-missing button:focus-visible, .tool-review-actions li button:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; border-radius: 0.2rem; }
+.tool-dock-secondary { justify-self: center; font-size: 0.8rem; }
+.tool-dock-score { color: var(--muted); font-size: 0.72rem; line-height: 1.4; text-align: center; }
+.tool-other-actions { margin-top: 1.25rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
+.tool-other-actions > summary { cursor: pointer; color: #355b66; font-size: 0.84rem; font-weight: 620; }
+.tool-other-actions-body { padding-top: 0.9rem; }
+.clone-reason { font-family: var(--font-sans), sans-serif; text-transform: none; letter-spacing: 0; }
+.tool-demo-start { display: grid; justify-items: start; gap: 0.5rem; margin: 0 0 1rem; padding: 1rem 1.15rem; border: 1px solid #cfdcdf; border-radius: 1rem; background: #fff; }
+.tool-demo-start-title { font-size: 1rem; font-weight: 650; letter-spacing: -0.02em; }
+.tool-demo-start-lead, .tool-demo-hint { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
+.tool-demo-button { display: inline-flex; align-items: center; justify-content: center; min-height: 2.85rem; padding: 0.55rem 1rem; border: 1.5px solid var(--studio-sea); border-radius: 0.8rem; background: #e7f0f2; color: #173f4a; font-size: 0.9rem; font-weight: 680; transition: background-color 150ms ease, transform 150ms ease; }
+.tool-demo-button:hover:not(:disabled) { background: #d8e8eb; transform: translateY(-1px); }
+.tool-demo-button:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; }
+.tool-demo-button:disabled { cursor: progress; }
+.tool-demo-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin: 0 0 1rem; padding: 0.7rem 0.9rem; border: 1px solid #c9dade; border-radius: 0.8rem; background: #eef5f6; color: #2f4d55; font-size: 0.8rem; line-height: 1.4; }
+.tool-demo-banner p { flex: 1 1 16rem; }
+.tool-demo-badge { display: inline-flex; align-items: center; margin-left: 0.4rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: var(--studio-sea); color: #fff; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.tool-demo-banner .tool-demo-badge { margin-left: 0; }
+.ds-drop-hint { color: #46606a; }
+.studio-tool-main .tool-canvas .preview-empty { background: #f4f8f9; border: 1.5px dashed #8ea7ae; color: #26434b; transition: border-color 150ms ease, background-color 150ms ease; }
+.studio-tool-main .tool-canvas .preview-empty:hover, .studio-tool-main .tool-canvas .preview-empty.is-over, .studio-tool-main .tool-canvas .preview-empty:focus-within { border-color: var(--studio-sea); background: #e9f2f3; }
+.studio-tool-main .tool-canvas .preview-empty-copy { gap: 0.4rem; font-size: 0.8rem; }
+.preview-empty-label { color: #26434b; font-weight: 650; }
+.preview-empty-size { color: var(--foreground); font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.86rem; font-weight: 600; }
+.preview-empty-drop { color: #46606a; font-size: 0.72rem; }
+.tool-empty-action { margin-top: 0.35rem; border-color: var(--foreground); background: var(--foreground); color: #fff; }
+.tool-empty-action:hover { background: #24343b; }
+.tool-empty-action:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; }
+.studio-tool-main .ds-drop:hover, .studio-tool-main .ds-drop.is-over, .tool-import-stack .ds-drop:hover, .tool-import-stack .ds-drop.is-over { border-color: var(--studio-sea); border-style: dashed; }
+@media (max-width: 639px) {
+  .tool-step { min-height: 3rem; font-size: 0.7rem; }
+  .tool-primary-dock { margin-inline: -1rem; padding-inline: 1rem; }
+}
+.tool-set-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.75rem; margin-top: 0.15rem; }
+.tool-set-title.is-editing .ds-input { width: min(100%, 22rem); min-height: 2.6rem; font-size: 1.05rem; font-weight: 620; }
+.tool-set-rename { color: #315f69; font-size: 0.78rem; font-weight: 620; text-decoration: underline; text-decoration-color: rgb(36 87 101 / 0.35); text-underline-offset: 0.2em; }
+.tool-set-rename:hover { text-decoration-color: currentColor; }
+.tool-set-rename:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; border-radius: 0.2rem; }
+.tool-command-set .ds-listbox-trigger { min-width: 0; }
+.tool-command-set .ds-listbox-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 639px) {
+  .tool-command-set .ds-listbox-trigger .tool-demo-badge { display: none; }
+  .tool-command-set .ds-set-bar { min-width: 0; }
 }

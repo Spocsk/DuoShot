@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { DeviceCamera } from "@/components/device-camera";
 import { duoChassisAspect, type CropTransform, type Locale, type Orientation, type SizeSpec } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
@@ -72,6 +72,7 @@ export function PreviewCard({
 }) {
   const dragRef = useRef<{ pointerId: number; x: number; y: number; focusX: number; focusY: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [over, setOver] = useState(false);
   const effectiveFit = inspect ? compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform).fit : transform.fit;
   const canvasAspect = previewMode === "pixels"
     ? `${spec.width}/${spec.height}`
@@ -81,7 +82,10 @@ export function PreviewCard({
       <figcaption className="duo-caption text-left">{label}</figcaption>
       <div className="preview-stage">
         <div
-          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && previewMode === "pixels" && effectiveFit === "cover" ? "is-draggable" : ""}`}
+          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && previewMode === "pixels" && effectiveFit === "cover" ? "is-draggable" : ""}${!src && over ? " is-over" : ""}`}
+          onDragOver={src ? undefined : (event) => { event.preventDefault(); setOver(true); }}
+          onDragLeave={src ? undefined : () => setOver(false)}
+          onDrop={src ? undefined : (event) => { event.preventDefault(); setOver(false); onImportFiles(event.dataTransfer.files); }}
           data-testid={`${testId}-canvas`}
           data-aspect={canvasAspect}
           onPointerDown={(event) => {
@@ -126,8 +130,10 @@ export function PreviewCard({
             </>
           ) : (
             <div className="preview-empty-copy">
-              <span>{label} · {spec.width} × {spec.height}</span>
+              <span className="preview-empty-label">{label}</span>
+              <span className="preview-empty-size">{spec.width} × {spec.height}</span>
               <button type="button" className="tool-empty-action" onClick={() => inputRef.current?.click()}>{locale === "fr" ? "Importer" : "Import"}</button>
+              <span className="preview-empty-drop">{locale === "fr" ? "ou déposez un PNG/JPEG" : "or drop a PNG/JPEG"}</span>
               <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${locale === "fr" ? "Importer" : "Import"} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
             </div>
           )}

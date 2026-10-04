@@ -292,14 +292,14 @@ export function AuthForm({
           {mode === "signup" ? (
             <>
               {locale === "fr" ? "Déjà un compte ? " : "Already have an account? "}
-              <Link href={`${prefix}/login`} className="ds-link">
+              <Link href={nextPath ? `${prefix}/login?next=${encodeURIComponent(nextPath)}` : `${prefix}/login`} className="ds-link">
                 {t(locale, "nav_login")}
               </Link>
             </>
           ) : (
             <>
               {locale === "fr" ? "Pas encore de compte ? " : "No account yet? "}
-              <Link href={`${prefix}/signup`} className="ds-link">
+              <Link href={nextPath ? `${prefix}/signup?next=${encodeURIComponent(nextPath)}` : `${prefix}/signup`} className="ds-link">
                 {t(locale, "nav_signup")}
               </Link>
             </>

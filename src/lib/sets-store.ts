@@ -4,7 +4,10 @@ export type SetMeta = {
   id: string;
   /** Server app row this set syncs its name, client and orientation to. */
   appId?: string;
+  /** Set label in the picker ("Composition 01"). */
   name: string;
+  /** App name used for the export folder and ZIP. Older drafts lack it and fall back to `name`. */
+  appName?: string;
   clientName: string;
   orientation: Orientation;
   sameSet: boolean;
@@ -14,6 +17,8 @@ export type SetMeta = {
   transforms?: CropTransforms;
   lastReviewId?: string | null;
   lastReviewStatus?: string | null;
+  /** Harbor example loaded from the empty state; its files are replaced, not merged, by the first import. */
+  demo?: boolean;
 };
 
 const META_KEY = "duoshot.sets.v1";
@@ -28,16 +33,31 @@ export function newSetId() {
   return crypto.randomUUID();
 }
 
-export function defaultSet(): SetMeta {
+/** "Composition 01", "Composition 02"…: the first number no existing set uses. */
+export function nextSetName(existing: Pick<SetMeta, "name">[] = []): string {
+  const used = new Set(existing.map((set) => /^Composition (\d+)$/.exec(set.name.trim())?.[1]).filter(Boolean).map(Number));
+  let n = 1;
+  while (used.has(n)) n += 1;
+  return `Composition ${String(n).padStart(2, "0")}`;
+}
+
+export function defaultSet(existing: Pick<SetMeta, "name">[] = []): SetMeta {
   return {
     id: newSetId(),
-    name: "App",
+    name: nextSetName(existing),
+    appName: "",
     clientName: "",
     orientation: "portrait",
     sameSet: false,
     lastReviewId: null,
     lastReviewStatus: null,
   };
+}
+
+/** Name sent to the renderer and the apps table. */
+export function appNameOf(set: Pick<SetMeta, "name" | "appName"> | undefined): string {
+  if (!set) return "App";
+  return (set.appName !== undefined ? set.appName.trim() : set.name.trim()) || "App";
 }
 
 export function loadSetMetas(scope: DraftScope = "guest"): SetMeta[] {

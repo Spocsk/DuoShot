@@ -4,7 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Locale, SizeSpec } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
 import type { SourceInspect } from "@/lib/pipeline/source-inspect";
-import type { CloneResult } from "@/lib/pipeline/clone-score";
+import type { CloneReason, CloneResult } from "@/lib/pipeline/clone-score";
 import type { compositionMetrics } from "@/lib/pipeline/geometry";
 import { CloneTip } from "@/components/tool/controls";
 import { foldStatusText, type FoldCheck } from "@/components/tool/fold-check";
@@ -19,6 +19,9 @@ export function ReviewAlerts({
   clones,
   slideIndex,
   setSlideIndex,
+  cloneAlert,
+  cloneAcknowledged,
+  setCloneAcknowledged,
 }: {
   locale: Locale;
   severeQualityCount: number;
@@ -27,7 +30,11 @@ export function ReviewAlerts({
   clones: CloneResult[];
   slideIndex: number;
   setSlideIndex: Dispatch<SetStateAction<number>>;
+  cloneAlert: boolean;
+  cloneAcknowledged: boolean;
+  setCloneAcknowledged: Dispatch<SetStateAction<boolean>>;
 }) {
+  const riskCount = clones.filter((item) => item.label === "risk").length;
   return <>
     {severeQualityCount > 0 ? (
       <div className="quality-gate" data-testid="quality-gate" data-acknowledged={qualityAcknowledged ? "true" : "false"}>
@@ -46,13 +53,30 @@ export function ReviewAlerts({
         </button>
       </div>
     ) : null}
+    {cloneAlert ? (
+      <div className="quality-gate" data-testid="clone-gate" data-acknowledged={cloneAcknowledged ? "true" : "false"}>
+        <div>
+          <p className="quality-gate-title">{tf(locale, "tool_clone_gate_title", { n: Math.max(riskCount, 1) })}</p>
+          <p className="quality-gate-copy">{t(locale, "tool_clone_gate_copy")}</p>
+        </div>
+        <button
+          type="button"
+          className={cloneAcknowledged ? "ds-pill ds-pill-ink" : "ds-cta-ghost"}
+          data-testid="clone-acknowledge"
+          aria-pressed={cloneAcknowledged}
+          onClick={() => setCloneAcknowledged((value) => !value)}
+        >
+          {cloneAcknowledged ? t(locale, "tool_quality_acknowledged") : t(locale, "tool_quality_ack")}
+        </button>
+      </div>
+    ) : null}
     {clones.length > 0 ? (
       <ol className="mt-4 flex flex-wrap gap-2 font-mono text-xs t-avatar-group" data-testid="clone-badges">
         {clones.map((item) => (
           <li key={item.index}>
             <CloneTip
-              label={`${String(item.index + 1).padStart(2, "0")} · ${t(locale, `clone_${item.label}`)}`}
-              hint={t(locale, `clone_${item.label}`)}
+              label={`${String(item.index + 1).padStart(2, "0")} · ${t(locale, `clone_${item.label}`)} · ${cloneReasonText(locale, item)}`}
+              hint={`${cloneReasonText(locale, item)} · ${locale === "fr" ? "structure commune" : "shared structure"} ${Math.round((1 - item.distance / 64) * 100)} %`}
             >
               <button
                 type="button"
@@ -62,6 +86,7 @@ export function ReviewAlerts({
                 onClick={() => setSlideIndex(item.index)}
               >
                 {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)}
+                <span className="clone-reason"> · {cloneReasonText(locale, item)}</span>
               </button>
             </CloneTip>
           </li>
@@ -73,7 +98,6 @@ export function ReviewAlerts({
 
 export function ReadinessReport({
   locale,
-  preparationScore,
   preparationChecks,
   slideIndex,
   outerInspect,
@@ -89,9 +113,10 @@ export function ReadinessReport({
   cloneAlert,
   severeQualityCount,
   foldWarningCount,
+  demo = false,
 }: {
+  demo?: boolean;
   locale: Locale;
-  preparationScore: number;
   preparationChecks: boolean[];
   slideIndex: number;
   outerInspect: SourceInspect | null;
@@ -110,12 +135,8 @@ export function ReadinessReport({
 }) {
   return (
     <section className="ds-readiness mb-6" aria-label={locale === "fr" ? "Bilan de préparation" : "Readiness report"} data-testid="readiness-report">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-2xl">{locale === "fr" ? "Bilan du set" : "Set report"}</h2>
-        <strong className="font-mono text-xl" data-testid="readiness-score">{preparationScore}/100</strong>
-      </div>
-      <p className="mt-2 text-sm text-[var(--muted)]">{locale === "fr" ? "Score des contrôles applicables validés. Ne prédit pas l’approbation Apple." : "Share of applicable checks passed. Does not predict Apple approval."}</p>
-      <p className="ds-label mt-5">{locale === "fr" ? "Contrôles techniques" : "Technical checks"}</p>
+      <h2 className="font-display text-2xl">{locale === "fr" ? "Bilan du set" : "Set report"}</h2>
+      <p className="ds-label mt-4">{locale === "fr" ? "Contrôles techniques" : "Technical checks"}</p>
       <ul className="mt-2 space-y-2 text-sm">
         {[
           [preparationChecks[0], locale === "fr" ? "Captures fermé et ouvert présentes" : "Closed and open screenshots present"],
@@ -154,16 +175,47 @@ export function ReadinessReport({
         </li>)}
         {clones.filter((item) => item.label !== "ok").map((item) => (
           <li key={`clone-${item.index}`} className="pl-5 text-[var(--warn)]">
-            {locale === "fr" ? "Paire" : "Pair"} {String(item.index + 1).padStart(2, "0")} · {locale === "fr" ? "similarité à examiner" : "similarity needs review"}
+            {locale === "fr" ? "Paire" : "Pair"} {String(item.index + 1).padStart(2, "0")} · {t(locale, `clone_${item.label}`)} : {cloneReasonText(locale, item)}
           </li>
         ))}
       </ul>
       <p className="ds-label mt-5">{locale === "fr" ? "Confirmation humaine" : "Human confirmation"}</p>
       <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
         <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
-        <span>{locale === "fr" ? "J’ai vérifié que chaque visuel montre ma vraie app en usage, dans le bon état d’écran, et que le contenu importé reste lisible près du pli." : "I checked that every image shows my real app in use, in the correct screen state, and that imported content remains readable near the fold."}</span>
+        <span>{demo ? t(locale, "tool_demo_confirm") : locale === "fr" ? "J’ai vérifié que chaque visuel montre ma vraie app en usage, dans le bon état d’écran, et que le contenu importé reste lisible près du pli." : "I checked that every image shows my real app in use, in the correct screen state, and that imported content remains readable near the fold."}</span>
       </label>
       {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{locale === "fr" ? "Les alertes restent à examiner, même si vous confirmez la vérification visuelle." : "Warnings still need review, even after visual confirmation."}</p> : null}
     </section>
+  );
+}
+
+const REASON_KEYS: Record<CloneReason, string> = {
+  "same-set": "clone_reason_same_set",
+  "layout-and-palette": "clone_reason_layout_and_palette",
+  layout: "clone_reason_layout",
+  palette: "clone_reason_palette",
+  distinct: "clone_reason_distinct",
+};
+
+/** Plain-language reason behind a similarity label. */
+export function cloneReasonText(locale: Locale, item: CloneResult): string {
+  return t(locale, REASON_KEYS[item.reason ?? (item.label === "ok" ? "distinct" : "layout")]);
+}
+
+export type CheckItem = { id: "pairs" | "framing" | "similarity" | "confirm"; done: boolean; label: string; fix: () => void };
+
+/** What still blocks "Prepare files". Each open item is a button that jumps to its fix. */
+export function CheckList({ locale, items }: { locale: Locale; items: CheckItem[] }) {
+  return (
+    <div className="tool-review-actions" data-testid="tool-checklist">
+      <p className="tool-eyebrow">{t(locale, "tool_check_todo")}</p>
+      <ul>
+        {items.map((item) => (
+          <li key={item.id} data-done={item.done} data-testid={`tool-check-${item.id}`}>
+            {item.done ? <span>{item.label}<span className="sr-only">{locale === "fr" ? " : fait" : ": done"}</span></span> : <button type="button" onClick={item.fix}>{item.label}</button>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

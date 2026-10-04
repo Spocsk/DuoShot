@@ -126,12 +126,23 @@ export function CapturesPanel({
       </label>
       <input
         id="tool-input-app"
-        value={active?.name ?? ""}
-        onChange={(event) => { patchActive({ name: event.target.value }); setZipUrl(null); }}
+        value={active?.appName ?? active?.name ?? ""}
+        placeholder="App"
+        onChange={(event) => { patchActive({ appName: event.target.value }); setZipUrl(null); }}
+        className="ds-input w-full"
+      />
+    </div>
+            <div className="ds-field">
+      <label className="ds-label" htmlFor="tool-input-client">
+        {t(locale, "tool_client")}
+      </label>
+      <input
+        id="tool-input-client"
+        value={active?.clientName ?? ""}
+        onChange={(event) => { patchActive({ clientName: event.target.value }); setZipUrl(null); }}
         className="ds-input w-full"
       />
     </div>
           </div>
-          <a href="/api/example-zip?v=2" data-testid="tool-example" className="ds-text-btn mt-4">{t(locale, "tool_example")}</a>
   </>;
 }

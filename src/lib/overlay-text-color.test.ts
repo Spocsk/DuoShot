@@ -12,6 +12,12 @@ describe("overlayTextColor", () => {
     expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, background: "gradient", gradientFrom: "#FFFFFF", gradientTo: "#E9EFF1" })).toBe("#172126");
     expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, background: "gradient", gradientFrom: "#10141C", gradientTo: "#2A1A4A" })).toBe("#FFFFFF");
   });
+  it("honours presets and custom colours, and ignores unsafe values", () => {
+    expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, textColor: "ink" })).toBe("#172126");
+    expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, solidColor: "#FFFFFF", textColor: "white" })).toBe("#FFFFFF");
+    expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, textColor: "#ff8800" })).toBe("#FF8800");
+    expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, textColor: "#ff8800\"/>" as `#${string}` })).toBe("#FFFFFF");
+  });
   it("uses light text on darkened blur backgrounds", () => {
     expect(overlayTextColor({ ...DEFAULT_RENDER_OPTIONS, background: "blur", solidColor: "#FFFFFF" })).toBe("#FFFFFF");
   });

@@ -44,4 +44,29 @@ describe("checkout", () => {
     cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-status"]').should("contain", "Paiement annulé");
   });
+
+  it("offers the 30-day pass in the tool paywall and starts its checkout", () => {
+    cy.loginAs("free");
+    cy.intercept("GET", "**/api/billing/availability", { checkoutAvailable: true, passAvailable: true }).as("availability");
+    cy.intercept("POST", "**/api/stripe/checkout", (req) => {
+      const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      expect(body.kind).to.eq("pass30");
+      req.reply({ url: "/tool?checkout=cancel" });
+    }).as("passCheckout");
+    cy.visitFr("/tool?upgrade=1&plan=pass30");
+    cy.wait("@availability");
+    cy.get('[data-testid="paywall"]').should("contain", "Pass 30 jours");
+    cy.get('[data-testid="paywall-cta-pass30"]').should("not.be.disabled").click();
+    cy.wait("@passCheckout");
+    cy.location("search").should("include", "checkout=cancel");
+  });
+
+  it("brings a guest choosing the pass back to the same paywall after signing in", () => {
+    cy.visitFr("/tool?upgrade=1&plan=pass30");
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.visitFr(`/signup?next=${encodeURIComponent("/tool?upgrade=1&plan=pass30")}`);
+    cy.get('main a[href*="/login?next="]').should("have.attr", "href", `/login?next=${encodeURIComponent("/tool?upgrade=1&plan=pass30")}`);
+    cy.visitFr(`/login?next=${encodeURIComponent("https://evil.example/tool")}`);
+    cy.get('main a[href^="/signup"]').should("have.attr", "href", "/signup");
+  });
 });

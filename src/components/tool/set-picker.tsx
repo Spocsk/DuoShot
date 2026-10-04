@@ -113,7 +113,7 @@ export function SetPicker({
       <div className="ds-set-bar">
       <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
         <p className="ds-label" id="tool-sets-label">
-          {t(locale, "tool_sets")}
+          {t(locale, "tool_set_label")}
         </p>
         <details
           className="ds-listbox"
@@ -143,7 +143,7 @@ export function SetPicker({
             }}
             onKeyDown={onSetsTriggerKey}
           >
-            <span>{active?.name?.trim() ? active.name : t(locale, "tool_label_app")}</span>
+            <span className="ds-listbox-value">{active?.name?.trim() ? active.name : "Composition"}</span>{active?.demo ? <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span> : null}
             <span className="ds-listbox-caret" aria-hidden="true" />
           </summary>
           <ul
@@ -168,6 +168,7 @@ export function SetPicker({
                   }}
                 >
                   {item.name}
+                  {item.demo ? <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span> : null}
                 </button>
               </li>
             ))}
@@ -183,7 +184,7 @@ export function SetPicker({
             type="button"
             className="ds-text-btn"
             data-testid="tool-set-delete"
-            aria-label={tf(locale, "tool_set_delete", { name: active?.name?.trim() || t(locale, "tool_label_app") })}
+            aria-label={tf(locale, "tool_set_delete", { name: active?.name?.trim() || "Composition" })}
             onClick={() => active && void removeSet(active.id)}
           >
             {t(locale, "tool_set_delete_short")}
