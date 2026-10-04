@@ -40,7 +40,7 @@ La production tourne uniquement sur le VPS DuoShot : Docker Compose derrière Tr
 
 ## Connecteur App Store Connect
 
-Connexion d’une clé d’API d’équipe App Store Connect et envoi des captures 6,9″, derrière le flag `ASC_CONNECTOR_ENABLED` (désactivé par défaut, avec `ASC_ENCRYPTION_KEY` côté serveur). Aucun envoi réel n’a encore été validé de bout en bout et Apple n’expose pas encore de type d’affichage iPhone Duo. Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
+Backend et connexion d’une clé d’API d’équipe App Store Connect livrés derrière le flag `ASC_CONNECTOR_ENABLED` (désactivé par défaut ; `ASC_ENCRYPTION_KEY` côté serveur). Le bouton d’envoi dans l’outil viendra dans une PR séparée ; aucun envoi réel n’a été validé de bout en bout, et Apple n’expose pas encore de type d’affichage iPhone Duo (seul le 6,9″ est envoyable). Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
 
 ## Auth
 
