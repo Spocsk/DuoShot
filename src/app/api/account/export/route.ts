@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendTransactionalEmail } from "@/lib/email";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -13,14 +14,18 @@ export async function GET() {
     return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
   }
 
-  const [workspaceMembers, consents, exports, dsar] = await Promise.all([
+  // App Store Connect keys are service-role only; export metadata, never the key. Without
+  // the service key no connection can exist, so there is nothing to read.
+  const admin = createAdminSupabase();
+  const [workspaceMembers, consents, exports, dsar, asc] = await Promise.all([
     supabase.from("workspace_members").select("*").eq("user_id", user.id),
     supabase.from("consent_events").select("*").eq("user_id", user.id),
     supabase.from("export_sets").select("*").eq("created_by", user.id),
     supabase.from("dsar_requests").select("*").eq("user_id", user.id),
+    admin ? admin.from("asc_connections").select("workspace_id, issuer_id, key_id, created_at, last_verified_at").eq("created_by", user.id) : { data: [], error: null },
   ]);
   // A partial file would look like a complete export, so fail instead.
-  if ([workspaceMembers, consents, exports, dsar].some((result) => result.error)) {
+  if ([workspaceMembers, consents, exports, dsar, asc].some((result) => result.error)) {
     return NextResponse.json({ error: "EXPORT_FAILED" }, { status: 503 });
   }
 
@@ -38,6 +43,7 @@ export async function GET() {
     consent_events: consents.data,
     export_sets: exports.data,
     dsar_requests: dsar.data,
+    asc_connections: asc.data,
   };
 
   if (user.email) {

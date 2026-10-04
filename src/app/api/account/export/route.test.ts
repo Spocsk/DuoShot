@@ -50,6 +50,8 @@ describe("GET /api/account/export", () => {
       exportedAt: expect.any(String),
       user: { id: "user-1", email: "a@example.com" },
       ...rows,
+      // No service key in tests, so no App Store Connect connection can exist.
+      asc_connections: [],
     });
     expect(filters).toEqual([
       ["workspace_members", "*", "user_id", "user-1"],
