@@ -159,4 +159,19 @@ describe("POST /api/workspace/invitations", () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null as never);
     expect((await POST(request({ email: "new@example.com" }))).status).toBe(503);
   });
+
+  it("rejects a malformed body as an invalid email", async () => {
+    billing();
+    const rpc = admin();
+    const raw = new Request("http://localhost/api/workspace/invitations", { method: "POST", body: "{not json" });
+    expect(await readJson(await POST(raw))).toEqual({ status: 400, body: { error: "INVALID_EMAIL" } });
+    expect(await readJson(await POST(request({ email: 42 })))).toEqual({ status: 400, body: { error: "INVALID_EMAIL" } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("maps an ownership refusal from the database to 403", async () => {
+    billing();
+    admin(vi.fn().mockResolvedValue({ data: null, error: { message: "ERROR: OWNER_REQUIRED" } }));
+    expect(await readJson(await POST(request({ email: "new@example.com" })))).toEqual({ status: 403, body: { error: "OWNER_REQUIRED" } });
+  });
 });

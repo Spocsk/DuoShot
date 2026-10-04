@@ -30,6 +30,9 @@ describe("POST /api/workspace/invitations/accept", () => {
     vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({ user }) as never);
     expect(await readJson(await POST(request({})))).toEqual({ status: 400, body: { error: "INVALID_TOKEN" } });
     expect(await readJson(await POST(request({ token: "" })))).toEqual({ status: 400, body: { error: "INVALID_TOKEN" } });
+    expect(await readJson(await POST(request({ token: 7 })))).toEqual({ status: 400, body: { error: "INVALID_TOKEN" } });
+    const raw = new Request("http://localhost/api/workspace/invitations/accept", { method: "POST", body: "null" });
+    expect(await readJson(await POST(raw))).toEqual({ status: 400, body: { error: "INVALID_TOKEN" } });
     expect(createAdminSupabase).not.toHaveBeenCalled();
   });
 

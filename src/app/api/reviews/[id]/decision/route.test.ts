@@ -37,6 +37,13 @@ describe("POST /api/reviews/[id]/decision", () => {
     expect(body.error).toBe("INVALID_ACTION");
   });
 
+  it("rejects a malformed body as an unknown action", async () => {
+    const raw = new Request("http://localhost/api/reviews/abc123/decision", { method: "POST", body: "{oops" });
+    const { status, body } = await readJson(await POST(raw, params("abc123")));
+    expect(status).toBe(400);
+    expect(body.error).toBe("INVALID_ACTION");
+  });
+
   it("returns 404 when the review is missing without an admin client", async () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null);
     vi.mocked(createPublicSupabase).mockReturnValue(createSupabaseMock({}) as never);

@@ -76,4 +76,17 @@ describe("GET /api/account/export", () => {
     expect((await GET()).status).toBe(200);
     expect(sendTransactionalEmail).not.toHaveBeenCalled();
   });
+
+  it("fails instead of downloading a partial export", async () => {
+    const insert = vi.fn();
+    vi.mocked(createServerSupabase).mockResolvedValue({ ...createSupabaseMock({ user: { id: "user-1", email: "a@example.com" } }), from: (table: string) => ({
+      select: () => ({ eq: async () => table === "consent_events" ? { data: null, error: { message: "timeout" } } : { data: rows[table], error: null } }),
+      insert,
+    }) } as never);
+    const response = await GET();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "EXPORT_FAILED" });
+    expect(insert).not.toHaveBeenCalled();
+    expect(sendTransactionalEmail).not.toHaveBeenCalled();
+  });
 });

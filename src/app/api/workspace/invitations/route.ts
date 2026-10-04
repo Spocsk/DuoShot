@@ -39,8 +39,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const context = await ownerContext();
   if (context.error) return context.error;
-  const body = (await request.json()) as { email?: string; locale?: "fr" | "en" };
-  const email = body.email?.trim().toLowerCase();
+  const body = ((await request.json().catch(() => null)) ?? {}) as { email?: unknown; locale?: unknown };
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
     return NextResponse.json({ error: "INVALID_EMAIL" }, { status: 400 });
   }
@@ -54,6 +54,7 @@ export async function POST(request: Request) {
     p_workspace_id: context.membership.workspace_id, p_user_id: context.user.id, p_email: email, p_token_hash: tokenHash,
   });
   if (error || !data) {
+    if (error?.message?.includes("OWNER_REQUIRED")) return NextResponse.json({ error: "OWNER_REQUIRED" }, { status: 403 });
     const code = ["SEAT_LIMIT", "INVITE_EXISTS", "ALREADY_MEMBER", "STUDIO_REQUIRED"].find((code) => error?.message?.includes(code));
     return NextResponse.json({ error: code ?? "INVITE_FAILED" }, { status: code ? 409 : 503 });
   }
