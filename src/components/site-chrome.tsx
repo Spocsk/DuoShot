@@ -16,6 +16,13 @@ export function SiteHeader({ locale, path }: Props) {
   const otherHref = locale === "fr" ? localizedPath("en", path) : localizedPath("fr", path);
   const prefix = localePrefix(locale);
   const home = prefix || "/";
+  const current = localizedPath(locale, path);
+  const links = [
+    { href: `${prefix}/tool`, label: t(locale, "nav_tool"), testId: "nav-tool" },
+    { href: `${prefix}/specs`, label: t(locale, "nav_specs"), testId: "nav-specs" },
+    { href: rejectionPath(locale), label: t(locale, "nav_rejection"), testId: "nav-reject" },
+    { href: pricingPath(locale), label: t(locale, "nav_pricing"), testId: "nav-pricing" },
+  ];
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] backdrop-blur-md">
       <a className="ds-skip" href="#main">
@@ -27,22 +34,15 @@ export function SiteHeader({ locale, path }: Props) {
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-x-2">
           <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
-            <Link href={`${prefix}/tool`} data-testid="nav-tool" className="ds-nav-link">
-              {t(locale, "nav_tool")}
-            </Link>
-            <Link href={`${prefix}/specs`} data-testid="nav-specs" className="ds-nav-link">
-              {t(locale, "nav_specs")}
-            </Link>
-            <Link href={rejectionPath(locale)} data-testid="nav-reject" className="ds-nav-link">
-              {t(locale, "nav_rejection")}
-            </Link>
-            <Link href={pricingPath(locale)} data-testid="nav-pricing" className="ds-nav-link">
-              {t(locale, "nav_pricing")}
-            </Link>
+            {links.map((link) => (
+              <Link key={link.testId} href={link.href} data-testid={link.testId} className="ds-nav-link" aria-current={current === link.href ? "page" : undefined}>
+                {link.label}
+              </Link>
+            ))}
             <HeaderAuth locale={locale} />
           </nav>
           <LocaleSwitch locale={locale} href={otherHref} />
-          <SiteNav locale={locale} prefix={prefix} />
+          <SiteNav locale={locale} prefix={prefix} current={current} />
         </div>
       </div>
     </header>
