@@ -16,50 +16,90 @@ import { HarborCover, HarborInnerMain, ShelfInnerShot } from "@/components/harbo
 
 type SequencePhase = "import" | "inspect" | "report" | "prevent";
 
+function ImportPanel({ fr }: { fr: boolean }) {
+  return <div className="studio-sequence-import">
+    <div className="studio-sequence-import-thumbs" aria-hidden="true">
+      <div className="studio-sequence-thumb is-outer"><HarborCover /><span>{fr ? "Fermé" : "Closed"}</span></div>
+      <div className="studio-sequence-thumb is-inner"><ShelfInnerShot index={0} /><span>{fr ? "Ouvert" : "Open"}</span></div>
+    </div>
+    <div className="studio-sequence-import-status"><span>{fr ? "2 vues importées" : "2 views imported"}</span><strong>2 / 2</strong><i /></div>
+  </div>;
+}
+
+function AnalysisCard({ fr }: { fr: boolean }) {
+  return <div className="studio-sequence-info studio-sequence-analysis">
+    <div><span>{fr ? "DÉMO HARBOR · RÉSULTAT" : "HARBOR DEMO · RESULT"}</span><strong>{fr ? "2 / 2 vues analysées" : "2 / 2 views analyzed"}</strong></div>
+    <div className="studio-sequence-score"><span>{fr ? "Score de préparation" : "Preparation score"}</span><strong>83 / 100</strong></div>
+    <p>{fr ? "Dimensions contrôlées · cadrage à examiner" : "Dimensions checked · framing to review"}</p>
+  </div>;
+}
+
+function ReportCard({ fr }: { fr: boolean }) {
+  return <div className="studio-sequence-info studio-sequence-report">
+    <span>{fr ? "DÉMO HARBOR · BILAN" : "HARBOR DEMO · REPORT"}</span>
+    <strong>{fr ? "Ce qui reste à vérifier" : "What still needs review"}</strong>
+    <ul>
+      <li><i className="studio-check" />{fr ? "Dimensions et format contrôlés" : "Dimensions and format checked"}</li>
+      <li><i className="studio-review-dot" />{fr ? "Cadrage à examiner" : "Framing to review"}</li>
+      <li><i className="studio-human-dot" />{fr ? "App en usage à confirmer" : "App in use to confirm"}</li>
+    </ul>
+  </div>;
+}
+
+function PreventMarkers() {
+  return <div className="studio-prevent-markers" aria-hidden="true">
+    <span className="studio-prevent-marker is-format">1</span>
+    <span className="studio-prevent-marker is-framing">2</span>
+    <span className="studio-prevent-marker is-similarity">3</span>
+    <span className="studio-prevent-marker is-fold">4</span>
+  </div>;
+}
+
+function PreventPanel({ fr }: { fr: boolean }) {
+  return <div className="studio-sequence-info studio-sequence-prevent">
+    <strong>{fr ? "Avant de soumettre" : "Before you submit"}</strong>
+    <ol className="studio-prevent-checks">
+      <li><b>1</b><div>{fr ? "Dimensions et format" : "Dimensions and format"}<small>{fr ? "Contrôles automatiques" : "Automatic checks"}</small></div></li>
+      <li><b>2</b><div>{fr ? "Cadrage" : "Framing"}<small>{fr ? "Alertes à examiner" : "Warnings to review"}</small></div></li>
+      <li><b>3</b><div>{fr ? "Similarité des vues" : "View similarity"}<small>{fr ? "Comparaison à examiner" : "Comparison to review"}</small></div></li>
+      <li><b>4</b><div>{fr ? "Lisibilité près du pli" : "Legibility near the fold"}<small>{fr ? "Vérification humaine" : "Human review"}</small></div></li>
+    </ol>
+    <p className="studio-prevent-outcome">{fr ? "Corrigez avant de soumettre. Limitez les allers-retours." : "Fix issues before submitting. Reduce back-and-forth."}</p>
+    <small className="studio-prevent-note">{fr ? "Démonstration illustrative. La décision et les délais restent ceux d’Apple." : "Illustrative demo. Apple determines the outcome and review time."}</small>
+  </div>;
+}
+
+/** Static per-step visual: the linear layout for small screens, reduced motion and no script. */
 function SequenceScene({ locale, phase }: { locale: Locale; phase: SequencePhase }) {
   const fr = locale === "fr";
-  return <div className={`studio-sequence-scene is-${phase}`} data-sequence-scene={phase}>
+  return <div className={`studio-sequence-scene is-${phase}`}>
     <div className="studio-sequence-device">
       <DuoDevice locale={locale} />
-      {phase === "prevent" ? <div className="studio-prevent-markers" aria-hidden="true">
-        <span className="studio-prevent-marker is-format">1</span>
-        <span className="studio-prevent-marker is-framing">2</span>
-        <span className="studio-prevent-marker is-similarity">3</span>
-        <span className="studio-prevent-marker is-fold">4</span>
-      </div> : null}
+      {phase === "prevent" ? <PreventMarkers /> : null}
     </div>
-    {phase === "import" ? <div className="studio-sequence-import">
-      <div className="studio-sequence-import-thumbs" aria-hidden="true">
-        <div className="studio-sequence-thumb is-outer"><HarborCover /><span>{fr ? "Fermé" : "Closed"}</span></div>
-        <div className="studio-sequence-thumb is-inner"><ShelfInnerShot index={0} /><span>{fr ? "Ouvert" : "Open"}</span></div>
-      </div>
-      <div className="studio-sequence-import-status"><span>{fr ? "2 vues importées" : "2 views imported"}</span><strong>2 / 2</strong><i /></div>
-    </div> : null}
-    {phase === "inspect" ? <div className="studio-sequence-info studio-sequence-analysis">
-      <div><span>{fr ? "DÉMO HARBOR · RÉSULTAT" : "HARBOR DEMO · RESULT"}</span><strong>{fr ? "2 / 2 vues analysées" : "2 / 2 views analyzed"}</strong></div>
-      <div className="studio-sequence-score"><span>{fr ? "Score de préparation" : "Preparation score"}</span><strong>83 / 100</strong></div>
-      <p>{fr ? "Dimensions contrôlées · cadrage à examiner" : "Dimensions checked · framing to review"}</p>
-    </div> : null}
-    {phase === "report" ? <div className="studio-sequence-info studio-sequence-report">
-      <span>{fr ? "DÉMO HARBOR · BILAN" : "HARBOR DEMO · REPORT"}</span>
-      <strong>{fr ? "Ce qui reste à vérifier" : "What still needs review"}</strong>
-      <ul>
-        <li><i className="studio-check" />{fr ? "Dimensions et format contrôlés" : "Dimensions and format checked"}</li>
-        <li><i className="studio-review-dot" />{fr ? "Cadrage à examiner" : "Framing to review"}</li>
-        <li><i className="studio-human-dot" />{fr ? "App en usage à confirmer" : "App in use to confirm"}</li>
-      </ul>
-    </div> : null}
-    {phase === "prevent" ? <div className="studio-sequence-info studio-sequence-prevent">
-      <strong>{fr ? "Avant de soumettre" : "Before you submit"}</strong>
-      <ol className="studio-prevent-checks">
-        <li><b>1</b><div>{fr ? "Dimensions et format" : "Dimensions and format"}<small>{fr ? "Contrôles automatiques" : "Automatic checks"}</small></div></li>
-        <li><b>2</b><div>{fr ? "Cadrage" : "Framing"}<small>{fr ? "Alertes à examiner" : "Warnings to review"}</small></div></li>
-        <li><b>3</b><div>{fr ? "Similarité des vues" : "View similarity"}<small>{fr ? "Comparaison à examiner" : "Comparison to review"}</small></div></li>
-        <li><b>4</b><div>{fr ? "Lisibilité près du pli" : "Legibility near the fold"}<small>{fr ? "Vérification humaine" : "Human review"}</small></div></li>
-      </ol>
-      <p className="studio-prevent-outcome">{fr ? "Corrigez avant de soumettre. Limitez les allers-retours." : "Fix issues before submitting. Reduce back-and-forth."}</p>
-      <small className="studio-prevent-note">{fr ? "Démonstration illustrative. La décision et les délais restent ceux d’Apple." : "Illustrative demo. Apple determines the outcome and review time."}</small>
-    </div> : null}
+    {phase === "import" ? <ImportPanel fr={fr} /> : null}
+    {phase === "inspect" ? <AnalysisCard fr={fr} /> : null}
+    {phase === "report" ? <ReportCard fr={fr} /> : null}
+    {phase === "prevent" ? <PreventPanel fr={fr} /> : null}
+  </div>;
+}
+
+/** One persistent device with every step's overlay stacked; LandingMotion scrubs between them. */
+function SequenceStage({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  return <div className="studio-sequence-scene">
+    <div className="studio-sequence-device">
+      <DuoDevice locale={locale} />
+      <div className="studio-frame-guide"><i /><i /><i /><i /></div>
+      <span className="studio-hinge-glow" />
+      <PreventMarkers />
+    </div>
+    <div className="studio-stage-panels">
+      <ImportPanel fr={fr} />
+      <AnalysisCard fr={fr} />
+      <ReportCard fr={fr} />
+      <PreventPanel fr={fr} />
+    </div>
   </div>;
 }
 
@@ -122,10 +162,7 @@ export function HomePage({ locale }: { locale: Locale }) {
 
           <section className="studio-sequence" aria-label={fr ? "Parcours de préparation" : "Preparation journey"}>
             <div className="studio-sequence-stage" aria-hidden="true">
-              <SequenceScene locale={locale} phase="import" />
-              <SequenceScene locale={locale} phase="inspect" />
-              <SequenceScene locale={locale} phase="report" />
-              <SequenceScene locale={locale} phase="prevent" />
+              <SequenceStage locale={locale} />
             </div>
             <div className="studio-sequence-steps">
               <div className="studio-sequence-step" data-sequence-step>
