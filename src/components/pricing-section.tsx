@@ -113,7 +113,7 @@ export function PricingSection({ locale, heading = "h2" }: { locale: Locale; hea
     <section id="pricing" data-testid="pricing" className="studio-pricing mx-auto max-w-6xl scroll-mt-24 px-5 py-16" data-reveal>
       <Title className={titleClass}>{t(locale, "pricing_title")}</Title>
       <p className="mt-4 max-w-xl text-[var(--muted)]">{t(locale, "pricing_lead")}</p>
-      <p className="mt-4 max-w-2xl border-l border-[var(--ink)] pl-4 text-sm text-[var(--muted)]">
+      <p className="mt-4 max-w-2xl border-l border-[var(--studio-ink)] pl-4 text-sm text-[var(--muted)]">
         {t(locale, "pricing_free_body")}
       </p>
       <div className="studio-billing-switch mt-8" role="group" aria-label={locale === "fr" ? "Période de facturation" : "Billing period"}>

@@ -1,16 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f1ea;
-  --foreground: #141414;
-  --muted: #6b645c;
-  --accent: #141414;
-  --line: color-mix(in srgb, var(--foreground) 12%, transparent);
-  --surface: color-mix(in srgb, #ffffff 78%, var(--background));
-  --warn: color-mix(in srgb, var(--foreground) 78%, #9a5a28);
-  --device: #16181d;
-  --header-h: 3.75rem;
-  --target: 2.75rem;
+  /* Studio clair tokens: the single source for marketing, Tool and companion pages. */
+  --studio-canvas: #f7f9fa;
+  --studio-ink: #172126;
+  --studio-muted: #536168;
+  --studio-line: #d5dcdf;
+  --studio-surface: #ffffff;
+  --studio-mist: #e9eff1;
+  --studio-sea: #245765;
+  --studio-warning: #88502f;
+  --background: var(--studio-canvas);
+  --foreground: var(--studio-ink);
+  --muted: var(--studio-muted);
+  --accent: var(--studio-ink);
+  --line: var(--studio-line);
+  --surface: var(--studio-surface);
+  --warn: var(--studio-warning);
+  --device: #171a1e;
+  --header-h: 4.25rem;
+  --target: 2.85rem;
+  --font-display: var(--font-sans);
 }
 
 @theme inline {
@@ -63,7 +73,7 @@ a {
   left: 0.75rem;
   top: 0.75rem;
   z-index: 80;
-  border-radius: 999px;
+  border-radius: 0.7rem;
   background: var(--foreground);
   color: var(--background);
   padding: 0.55rem 0.95rem;
@@ -76,7 +86,7 @@ a {
 }
 
 .font-display {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 .ds-cta {
@@ -86,7 +96,7 @@ a {
   min-height: var(--target);
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 0.8rem;
   background: var(--foreground);
   color: var(--background);
   padding: 0.8rem 1.35rem;
@@ -139,7 +149,7 @@ a {
   min-height: var(--target);
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 0.8rem;
   border: 1px solid var(--line);
   padding: 0.8rem 1.35rem;
   font-weight: 500;
@@ -200,7 +210,7 @@ a {
   background: var(--surface);
   padding: 0.7rem 0.9rem;
   text-align: left;
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 1.05rem;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -281,9 +291,9 @@ a {
 .ds-pill {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: 0.6rem;
   padding: 0.32rem 0.72rem;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.62rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -325,7 +335,7 @@ button.ds-pill {
 .ds-seg {
   display: flex;
   gap: 0.2rem;
-  border-radius: 999px;
+  border-radius: 0.8rem;
   background: color-mix(in srgb, var(--foreground) 6%, var(--surface));
   padding: 0.18rem;
 }
@@ -334,7 +344,7 @@ button.ds-pill {
   flex: 1;
   min-height: var(--target);
   min-width: 0;
-  border-radius: 999px;
+  border-radius: 0.6rem;
   padding: 0.45rem 0.5rem;
   font-size: 0.8rem;
   font-weight: 500;
@@ -528,7 +538,7 @@ button.ds-pill {
   min-height: var(--target);
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 0.8rem;
   border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
   color: var(--warn);
   padding: 0.8rem 1.35rem;
@@ -594,7 +604,7 @@ button.ds-pill {
 }
 
 .ds-spec-head {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.16em;
@@ -730,7 +740,7 @@ button.ds-pill {
 .duo-caption {
   margin-top: 0.7rem;
   text-align: center;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -798,14 +808,14 @@ button.ds-pill {
 
 .harbor-cover-time {
   margin-top: 3%;
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(1.45rem, 4.8vw, 2.35rem);
   line-height: 0.88;
 }
 
 .harbor-cover-place,
 .harbor-place {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   line-height: 0.92;
 }
 
@@ -922,7 +932,7 @@ button.ds-pill {
 
 .harbor-glass-title {
   margin-top: 0.15rem;
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(0.85rem, 1.8vw, 1.2rem);
 }
 
@@ -1276,7 +1286,7 @@ button.ds-pill {
 .ds-menu .ds-menu-link {
   display: block;
   padding: 0.65rem 0;
-  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: 2rem;
   line-height: 1.15;
 }
@@ -1470,7 +1480,7 @@ img.preview-glass {
 .review-view-switch button {
   min-height: 2.5rem;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 0.6rem;
   padding: 0.4rem 0.8rem;
   color: var(--muted);
   font-size: 0.72rem;
@@ -1999,103 +2009,6 @@ html {
   --tt-fg: var(--foreground);
 }
 
-/* 2026 studio identity: quiet mineral surfaces, precise cobalt actions, imagery first. */
-:root {
-  --background: #f7f9fb;
-  --foreground: #152435;
-  --muted: #596b7c;
-  --accent: #214cb4;
-  --line: rgb(21 36 53 / 0.12);
-  --surface: #ffffff;
-  --warn: #9b4c2e;
-  --device: #17202b;
-}
-
-.font-display {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 600;
-  letter-spacing: -0.055em;
-}
-
-.ds-cta,
-.ds-pill-ink {
-  background: var(--accent);
-  color: #fff;
-}
-
-.ds-cta-ghost {
-  border-color: rgb(21 36 53 / 0.2);
-}
-
-.ds-home-hero {
-  position: relative;
-  isolation: isolate;
-  overflow: clip;
-  min-height: calc(100svh - var(--header-h));
-  background:
-    radial-gradient(ellipse 66% 90% at 77% 22%, rgb(190 216 239 / 0.85), transparent 75%),
-    linear-gradient(125deg, #f9fbfc 10%, #edf3f7 66%, #dbe8f0);
-}
-
-.ds-home-hero::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 22%;
-  pointer-events: none;
-  background: linear-gradient(transparent, rgb(247 249 251 / 0.84));
-  z-index: -1;
-}
-
-.ds-home-hero-inner {
-  width: min(100%, 90rem);
-  min-height: calc(100svh - var(--header-h));
-  margin-inline: auto;
-  padding: clamp(3rem, 7vw, 7rem) clamp(1.25rem, 5.2vw, 5.5rem);
-  display: grid;
-  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
-  align-items: center;
-  gap: clamp(2.5rem, 5vw, 6rem);
-}
-
-.ds-home-hero h1 {
-  max-width: 12ch;
-  font-size: clamp(3.2rem, 5.2vw, 6.3rem);
-  line-height: 0.99;
-}
-
-.ds-home-hero .duo-stage {
-  padding: clamp(1rem, 2.2vw, 2rem);
-  border: 1px solid rgb(255 255 255 / 0.72);
-  border-radius: clamp(1.5rem, 3vw, 3rem);
-  background: rgb(255 255 255 / 0.46);
-  box-shadow: 0 35px 90px rgb(38 73 98 / 0.13), inset 0 1px rgb(255 255 255 / 0.84);
-  backdrop-filter: blur(20px);
-}
-
-.ds-home-hero .duo-chassis,
-.ds-home-hero .duo-book {
-  box-shadow: 0 24px 48px rgb(13 38 64 / 0.21), 0 2px 5px rgb(13 38 64 / 0.14);
-}
-
-.ds-proof-band {
-  border-block: 1px solid var(--line);
-  background: #fff;
-}
-
-.ds-proof-band-inner {
-  width: min(100%, 72rem);
-  margin-inline: auto;
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: clamp(2rem, 7vw, 7rem);
-  padding: clamp(3rem, 7vw, 6rem) 1.25rem;
-}
-
-.ds-proof-band .zip-tree {
-  margin-top: 1.5rem;
-}
-
 .ds-readiness {
   border-top: 2px solid var(--accent);
   border-bottom: 1px solid var(--line);
@@ -2107,24 +2020,6 @@ html {
   min-width: 1.2rem;
   color: var(--accent);
   font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .ds-home-hero-inner {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    padding-block: 3.5rem 4rem;
-  }
-  .ds-home-hero h1 { max-width: 14ch; }
-  .ds-home-hero .duo-stage { max-width: 46rem; }
-  .ds-proof-band-inner { grid-template-columns: 1fr; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ds-home-hero *, .ds-readiness * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
 }
 
 /* Camera belongs to the chassis, never to output pixels. */

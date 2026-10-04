@@ -1,19 +1,5 @@
 /* DuoShot Studio — a new visual world shared by marketing and product. */
-:root {
-  --background: #f7f9fa;
-  --foreground: #172126;
-  --muted: #536168;
-  --accent: #172126;
-  --line: #d5dcdf;
-  --surface: #ffffff;
-  --warn: #88502f;
-  --device: #171a1e;
-  --header-h: 4.25rem;
-  --target: 2.85rem;
-  --studio-sea: #245765;
-  --studio-mist: #e9eff1;
-  --font-display: var(--font-sans);
-}
+/* Tokens live in globals.css (:root, --studio-*). */
 
 @theme inline {
   --color-studio-canvas: var(--background);
@@ -464,7 +450,7 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 }
 
 /* Four-step narrative: complete, linear content is the no-script default. */
-.studio-intro .studio-intro-benefit { color: var(--ink); font-weight: 600; }
+.studio-intro .studio-intro-benefit { color: var(--studio-ink); font-weight: 600; }
 .studio-intro-copy { display: grid; gap: 1.25rem; }
 .studio-sequence-device { position: relative; }
 .studio-sequence-import { position: relative; }
