@@ -46,10 +46,11 @@ function timeoutProblems(env) {
  * whose prerequisites are missing. Softer deployment policy (secret length, live
  * keys, HTTPS) stays in deploymentProblems().
  */
-export function startupProblems(env) {
+export function startupProblems(env, processKind = 'web') {
   const problems = [];
   if (env.APP_ENV && !APP_ENVS.includes(env.APP_ENV)) problems.push(`APP_ENV (${APP_ENVS.join(', ')})`);
-  if (env.APP_ENV === 'production') {
+  // The render worker checks its own basics (src/worker/loop.ts workerConfigErrors).
+  if (env.APP_ENV === 'production' && processKind === 'web') {
     for (const name of ['NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_SUPABASE_URL']) if (!env[name]) problems.push(name);
     if (!supabasePublicKey(env)) problems.push('SUPABASE_PUBLIC_KEY');
     if (!supabaseAdminKey(env)) problems.push('SUPABASE_ADMIN_KEY');

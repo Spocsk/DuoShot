@@ -10,5 +10,5 @@ export const TEST_STRIPE_KEY: RegExp;
 export function supabasePublicKey(env: Env): string | undefined;
 export function supabaseAdminKey(env: Env): string | undefined;
 export function ascEncryptionKeyValid(value: string | undefined): boolean;
-export function startupProblems(env: Env): string[];
+export function startupProblems(env: Env, processKind?: "web" | "worker"): string[];
 export function deploymentProblems(env: Env): string[];

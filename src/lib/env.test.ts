@@ -60,6 +60,10 @@ describe("startup rules", () => {
     ]);
   });
 
+  it("leaves the production web basics to the web server", () => {
+    expect(startupProblems({ APP_ENV: "production" }, "worker")).toEqual([]);
+  });
+
   it("is never stricter than the VPS audit for a production environment", () => {
     const env = { ...production, RENDER_QUEUE_ENABLED: "true", RENDER_WORKER_SECRET: "d".repeat(32), ASC_CONNECTOR_ENABLED: "true", ASC_ENCRYPTION_KEY: KEY };
     expect(deploymentProblems(env)).toEqual([]);

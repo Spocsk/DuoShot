@@ -25,7 +25,7 @@ async function main() {
     return 1;
   }
   // Same startup rules as the web server: an enabled feature without its configuration stops here.
-  assertServerEnv("render-worker");
+  assertServerEnv("worker");
   const admin = createAdminSupabase();
   if (!admin) return 1;
   const worker = createRenderWorker(admin, workerConfigFromEnv(process.env, args.has("--once")));
