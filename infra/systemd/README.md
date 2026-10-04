@@ -35,11 +35,37 @@ Backups are separate. These timers do not create or replace off-host backups.
 After applying `20260926190000_render_jobs.sql`, deploy the compatible image,
 set `RENDER_QUEUE_ENABLED=true` in the private application environment and keep
 `RENDER_CONCURRENCY=1`. Install `duoshot-render-worker.service`, reload systemd,
-then enable/start it. It calls the protected loopback worker endpoint and reads
-RENDER_WORKER_SECRET inside the container (a value distinct from CRON_SECRET, so
-a leaked cron secret cannot drive renders). Until RENDER_WORKER_SECRET is set,
-the worker and the route fall back to CRON_SECRET and log
-`render_worker_secret_fallback`. No user access tokens are stored.
+then enable/start it. No user access tokens are stored.
+
+The unit runs `node scripts/run-render-worker.mjs`, which picks the mode from
+`RENDER_WORKER_MODE`:
+
+- `process` (default): runs the standalone worker `dist/render-worker.mjs`
+  (bundled by `npm run build`, see `scripts/build-render-worker.mjs`) in the
+  same process. It talks to Supabase with the service-role key from the
+  container environment, polls both lanes (renders every 2 s, App Store Connect
+  uploads every 5 s when `ASC_CONNECTOR_ENABLED=true`), heartbeats leases every
+  15 s and renders with Sharp outside Next. Each job is bounded by
+  `RENDER_JOB_TIMEOUT_MS` / `ASC_JOB_TIMEOUT_MS` (default 900000 ms). A timed-out
+  render is failed with `RENDER_INTERRUPTED` (its reservation is refunded); an
+  upload is first aborted so it rolls back on Apple's side, then failed with
+  `ASC_INTERRUPTED` if it does not finish within 30 s. Sharp cannot be
+  interrupted, so the worker then stops claiming, lets the other lane drain and
+  exits; `Restart=always` starts a clean one 5 s later. The worker refuses to
+  start, naming the variables, when `RENDER_QUEUE_ENABLED`, the service-role key
+  or a valid `NEXT_PUBLIC_SUPABASE_URL` is missing.
+- `http` (rollback): polls the protected loopback route
+  `/api/internal/render-worker` with RENDER_WORKER_SECRET (a value distinct from
+  CRON_SECRET, so a leaked cron secret cannot drive renders); renders then run in
+  the render container's Next server. Until RENDER_WORKER_SECRET is set, the
+  script and the route fall back to CRON_SECRET and log
+  `render_worker_secret_fallback`.
+
+`RENDER_WORKER_MODE` is read from the container environment (`app.env`), and
+the unit passes the value from `/etc/duoshot/compose.env` with `docker exec -e`
+when set there, so switching modes only needs `systemctl restart
+duoshot-render-worker.service`. Both modes share `runRenderTick`
+(`src/lib/render/worker.ts`): same claims, error codes and progress reporting.
 
 `/api/internal/*` answers 404 unless the request reaches Next directly from the
 container loopback or the private Docker network: the proxy refuses any request
@@ -55,9 +81,14 @@ running container labelled `com.docker.compose.service=render` and runs
 `docker exec` does not forward the stop signal to the process it started, so
 `ExecStop` sends SIGTERM to every `run-render-worker` process found with
 `docker top` in the render **and** web containers (both found by label) (the latter catches a worker
-left over from before the move). The worker finishes its current tick and exits;
-a restart therefore never leaves a second worker looping. Stop the unit before
-recreating the render container and start it again afterwards.
+left over from before the move), then waits until none is left (at most 110 s,
+within `TimeoutStopSec=120`). On SIGTERM the worker stops claiming at once and
+gives the running job `RENDER_WORKER_STOP_GRACE_MS` (default 60 s) to finish.
+Past that, a render is left to its lease (it expires within 90 s and the render
+is retried with the same reservation) and an upload is aborted to roll back,
+then failed with `ASC_INTERRUPTED` by the next claim. A restart therefore never
+leaves a second worker looping. Stop the unit before recreating the render
+container and start it again afterwards.
 
 This unit file includes what was first applied live as the drop-in
 `/etc/systemd/system/duoshot-render-worker.service.d/render-container.conf`.
@@ -76,7 +107,7 @@ The browser persists the request key and job ID under the signed-in user's key,
 polls status and resumes on reload. Completed export URLs are signed afresh.
 Backups defer while any render job is queued or running, then stop the web
 container (found by label, its ID kept to restart it) before stopping Supabase writes. The render container keeps running
-during the backup; its worker logs failed ticks and retries every 2 seconds until Supabase is back.
+during the backup; its worker logs `render_worker_claim_failed` and retries every 2 seconds until Supabase is back.
 Restart the worker with the web after maintenance.
 
 Rollback: stop admission (`RENDER_QUEUE_ENABLED=false`) only after draining all

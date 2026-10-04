@@ -1,6 +1,5 @@
 import { readRenderBody } from "./read-body";
 import { renderSlots } from "@/lib/pipeline/render-slots";
-import { NextResponse } from "next/server";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { loadSources } from "@/lib/pipeline/sources";
 import { parseRenderBody, renderErrorStatus, type RenderBody } from "@/lib/pipeline/request";
@@ -18,11 +17,11 @@ import { completeRender, type RenderJob } from "./jobs";
 
 export async function executeReview(request: Request, supabase: SupabaseClient, user: { id: string }, job?: RenderJob) {
   const context = await readWorkspaceBilling(supabase, user.id);
-  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
-  if (job && context.membership.workspace_id !== job.workspace_id) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 409 });
+  if (!context.ok) return Response.json({ error: context.error }, { status: context.status });
+  if (job && context.membership.workspace_id !== job.workspace_id) return Response.json({ error: "NO_WORKSPACE" }, { status: 409 });
   const { membership, entitlements } = context;
   if (entitlements.plan !== "studio") {
-    return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
+    return Response.json({ error: "STUDIO_REQUIRED" }, { status: 403 });
   }
 
   const writer = createReviewWriter(supabase);
@@ -30,19 +29,19 @@ export async function executeReview(request: Request, supabase: SupabaseClient, 
   let body: RenderBody;
   try { body = parseRenderBody(await readRenderBody(request), user.id); } catch (error) {
     const code = error instanceof SyntaxError ? "INVALID_JSON" : error instanceof Error ? error.message : "INVALID_REQUEST";
-    return NextResponse.json({ error: code }, { status: renderErrorStatus(code) });
+    return Response.json({ error: code }, { status: renderErrorStatus(code) });
   }
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? [];
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? []);
   if (outerPaths.length === 0 || innerPaths.length === 0) {
-    return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
+    return Response.json({ error: "NO_IMAGES" }, { status: 400 });
   }
   if (!Array.isArray(outerPaths) || !Array.isArray(innerPaths) || outerPaths.length > 10 || innerPaths.length > 10 || outerPaths.length !== innerPaths.length) {
-    return NextResponse.json({ error: "INVALID_PAIRS" }, { status: 400 });
+    return Response.json({ error: "INVALID_PAIRS" }, { status: 400 });
   }
   if ([...outerPaths, ...innerPaths].some((path) => typeof path !== "string" || !path.startsWith(`${user.id}/`))) {
-    return NextResponse.json({ error: "PATH_FORBIDDEN" }, { status: 403 });
+    return Response.json({ error: "PATH_FORBIDDEN" }, { status: 403 });
   }
   const orientation = body.options?.orientation ?? body.orientation;
   const options: RenderOptions = {
@@ -56,13 +55,13 @@ export async function executeReview(request: Request, supabase: SupabaseClient, 
   let release: () => void;
   try { release = await renderSlots.acquire(request.signal); } catch (error) {
     const code = error instanceof Error ? error.message : "RENDER_BUSY";
-    return NextResponse.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
+    return Response.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
   }
   try {
     let sources: Map<string, Buffer>;
     try { sources = await loadSources(supabase, user.id, [...outerPaths, ...innerPaths]); } catch (error) {
       const code = error instanceof Error ? error.message : "UPLOAD_MISSING";
-      return NextResponse.json({ error: code }, { status: renderErrorStatus(code) });
+      return Response.json({ error: code }, { status: renderErrorStatus(code) });
     }
 
     const publicId = crypto.randomUUID().replaceAll("-", "").slice(0, 12);
@@ -83,12 +82,12 @@ export async function executeReview(request: Request, supabase: SupabaseClient, 
       .select("id, public_id")
       .single();
     if (reviewError || !review) {
-      return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
+      return Response.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
     }
 
     const pairCount = Math.min(outerPaths.length, innerPaths.length);
     if (pairCount === 0) {
-      return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
+      return Response.json({ error: "NO_IMAGES" }, { status: 400 });
     }
 
     const locale: Locale = body.locale === "en" ? "en" : "fr";
@@ -146,18 +145,18 @@ export async function executeReview(request: Request, supabase: SupabaseClient, 
     if (typeof slides === "string") {
       await revokeIncompleteReview();
       const status = renderErrorStatus(slides);
-      return NextResponse.json({ error: slides }, { status });
+      return Response.json({ error: slides }, { status });
     }
     const { error: slideError } = await writer.from("review_slides").insert(slides);
     if (slideError) {
       await revokeIncompleteReview();
-      return NextResponse.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
+      return Response.json({ error: "REVIEW_CREATE_FAILED" }, { status: 500 });
     }
 
     const result = { id: publicId, url: reviewPath(locale, publicId), expiresAt };
     if (job) await completeRender(writer, job, result);
 
-    return NextResponse.json(result);
+    return Response.json(result);
   } finally {
     release();
   }

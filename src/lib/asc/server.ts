@@ -6,9 +6,10 @@ import { readWorkspaceBilling } from "../workspace-billing";
 import { isProPlan } from "../plans";
 import type { PlanId } from "../specs";
 import { ascConnectorEnabled } from "./config";
-import { openSecret, readMasterKey } from "./crypto";
+import { loadAscCredentials } from "./credentials";
 import { AscError, ascErrorStatus, createAscClient, type AscClient, type AscClientOptions } from "./client";
-import type { AscCredentials } from "./jwt";
+
+export { loadAscCredentials };
 
 export const NO_STORE = { "Cache-Control": "private, no-store" };
 
@@ -42,18 +43,6 @@ export async function ascContext({ owner = false, paid = true }: { owner?: boole
       plan: billing.entitlements.plan, paid: isPaid, admin,
     } satisfies AscContext,
   };
-}
-
-/** Decrypts the workspace key for server-side use only. Null when no connection exists. */
-export async function loadAscCredentials(admin: SupabaseClient, workspaceId: string): Promise<AscCredentials | null> {
-  const { data, error } = await admin.from("asc_connections")
-    .select("issuer_id, key_id, encrypted_private_key, iv, auth_tag").eq("workspace_id", workspaceId).maybeSingle();
-  if (error) throw new Error("ASC_UNAVAILABLE");
-  if (!data) return null;
-  const key = readMasterKey();
-  if (!key) throw new Error("ASC_UNAVAILABLE");
-  const privateKey = openSecret({ ciphertext: data.encrypted_private_key, iv: data.iv, authTag: data.auth_tag }, key, workspaceId);
-  return { issuerId: data.issuer_id, keyId: data.key_id, privateKey };
 }
 
 export async function workspaceAscClient(context: AscContext, options?: AscClientOptions) {

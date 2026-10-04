@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { renderWorkerSecret, verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
-import { executeExport } from "@/lib/render/export";
-import { executeReview } from "@/lib/render/review";
-import { executeAscUpload } from "@/lib/asc/upload-job";
-import { completeRender, type RenderJob } from "@/lib/render/jobs";
+import { runRenderTick } from "@/lib/render/worker";
 export const runtime = "nodejs";
-const LEASE_LOST = "RENDER_LEASE_LOST";
-/** Another attempt owns the job now; completing again would only fail and must not touch its quota or result. */
-function leaseLost(job: RenderJob) {
-  console.warn("render_worker_lease_lost", { jobId: job.id });
-  return NextResponse.json({ jobId: job.id, processed: true, leaseLost: true });
-}
 export const maxDuration = 900;
+/**
+ * Rollback path only. Production runs the queue in the standalone worker process
+ * (dist/render-worker.mjs, RENDER_WORKER_MODE=process); with RENDER_WORKER_MODE=http,
+ * scripts/run-render-worker.mjs polls this route instead and renders run inside Next.
+ */
 export async function POST(request: Request) {
   if (!verifyBearer(request, renderWorkerSecret())) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   if (process.env.RENDER_QUEUE_ENABLED !== "true") return NextResponse.json({ error: "QUEUE_DISABLED" }, { status: 503 });
@@ -21,34 +17,12 @@ export async function POST(request: Request) {
   // Two lanes with their own slot: renders (export, review) and App Store Connect
   // uploads, so a long upload never holds up an export. The worker polls each lane.
   const lane = new URL(request.url).searchParams.get("lane") === "asc" ? "asc" : "render";
-  if (lane === "asc" && process.env.ASC_CONNECTOR_ENABLED !== "true") return NextResponse.json({ idle: true });
-  const claimed = await admin.rpc(lane === "asc" ? "claim_asc_upload" : "claim_render");
-  if (claimed.error) return NextResponse.json({ error: "QUEUE_UNAVAILABLE" }, { status: 503 });
-  const job = claimed.data as RenderJob | null;
-  if (!job) return NextResponse.json({ idle: true });
-  const controller = new AbortController();
-  const heartbeat = setInterval(() => {
-    void admin.rpc("heartbeat_render", { p_job: job.id, p_lease: job.lease_token }).then(({ data, error }) => {
-      if (error || data !== true) controller.abort();
-    });
-  }, 15_000);
-  try {
-    const input = new Request("http://localhost/render", { method: "POST", body: JSON.stringify(job.payload), signal: controller.signal });
-    const response = job.kind === "export" ? await executeExport(input, admin, { id: job.user_id }, job)
-      : job.kind === "review" ? await executeReview(input, admin, { id: job.user_id }, job)
-      : job.kind === "asc_upload" ? await executeAscUpload(admin, job, { signal: controller.signal })
-      : NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
-    if (!response.ok) {
-      const result = await response.json() as { error?: string };
-      if (result.error === LEASE_LOST) return leaseLost(job);
-      await completeRender(admin, job, null, null, result.error ?? "RENDER_FAILED");
-    }
-    return NextResponse.json({ jobId: job.id, processed: true });
-  } catch (error) {
-    if (error instanceof Error && error.message === LEASE_LOST) return leaseLost(job);
-    // If a lease was lost, this cannot change the new attempt's quota or result.
-    try { await completeRender(admin, job, null, null, "RENDER_FAILED"); } catch { /* recovered by the next claim after lease expiry */ }
-    console.error("render_worker_attempt_failed", { jobId: job.id });
-    return NextResponse.json({ jobId: job.id, error: "RENDER_ATTEMPT_FAILED" }, { status: 500 });
-  } finally { clearInterval(heartbeat); }
+  const outcome = await runRenderTick(admin, lane);
+  switch (outcome.kind) {
+    case "idle": return NextResponse.json({ idle: true });
+    case "unavailable": return NextResponse.json({ error: "QUEUE_UNAVAILABLE" }, { status: 503 });
+    case "lease_lost": return NextResponse.json({ jobId: outcome.jobId, processed: true, leaseLost: true });
+    case "failed": return NextResponse.json({ jobId: outcome.jobId, error: "RENDER_ATTEMPT_FAILED" }, { status: 500 });
+    default: return NextResponse.json({ jobId: outcome.jobId, processed: true });
+  }
 }

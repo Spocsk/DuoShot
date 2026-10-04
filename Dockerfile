@@ -29,6 +29,10 @@ COPY --from=build --chown=node:node /app/src/lib/pipeline/fonts ./src/lib/pipeli
 COPY --from=build /app/src/lib/pipeline/fonts /usr/local/share/fonts/duoshot
 RUN fc-cache -f
 COPY --from=build --chown=node:node /app/scripts/run-maintenance.mjs /app/scripts/run-render-worker.mjs /app/scripts/check-deployment-env.mjs ./scripts/
+# Standalone render worker (npm run build): Sharp renders run in their own Node process.
+COPY --from=build --chown=node:node /app/dist/render-worker.mjs ./dist/
+# Fail the image build if the bundle cannot load sharp from the standalone node_modules.
+RUN node dist/render-worker.mjs --check
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"

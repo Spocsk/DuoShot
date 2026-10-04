@@ -9,15 +9,23 @@ Requires=docker.service
 Environment=DUOSHOT_COMPOSE_PROJECT=i9qtpe5bpyig86s1aljxr5gv
 EnvironmentFile=-/etc/duoshot/compose.env
 Type=simple
+# The worker runs as its own Node process (dist/render-worker.mjs), outside the container's
+# Next server. RENDER_WORKER_MODE=http in /etc/duoshot/compose.env rolls back to the loopback
+# route without recreating the container; it overrides the value from app.env.
 # Resolve the render container by its compose project and service labels (names change when Coolify
 # recreates the project) and refuse to guess when zero or several match. $$ is a literal $.
-ExecStart=/bin/sh -c 'set -- $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=render); [ $$# -eq 1 ] || { echo "expected one running render container, found $$#" >&2; exit 1; }; exec docker exec "$$1" node scripts/run-render-worker.mjs'
-# docker exec does not forward the stop to the process it started; signal it directly
-# so a restart never leaves a second worker looping inside the container.
-ExecStop=/bin/sh -c 'for c in $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=render) $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=web); do docker top $$c -o pid,args 2>/dev/null | awk "/run-render-worker/ {print \\$$1}" | xargs -r kill -TERM; done'
+ExecStart=/bin/sh -c 'set -- $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=render); [ $$# -eq 1 ] || { echo "expected one running render container, found $$#" >&2; exit 1; }; exec docker exec $${RENDER_WORKER_MODE:+-e RENDER_WORKER_MODE=$$RENDER_WORKER_MODE} "$$1" node scripts/run-render-worker.mjs'
+# docker exec does not forward the stop to the process it started, and its client exits at once
+# on SIGTERM: signal the worker directly (in render and web, the latter for a worker left over
+# from before the move), then wait for it to drain, bounded by TimeoutStopSec. Recreating the
+# container after `systemctl stop` therefore never kills a job mid-render, and a restart never
+# leaves a second worker looping inside the container.
+ExecStop=/bin/sh -c 'ids="$$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=render) $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=web)"; workers() { for c in $$ids; do docker top $$c -o pid,args 2>/dev/null | awk "/run-render-worker/ {print \\$$1}"; done; }; workers | xargs -r kill -TERM; i=0; while [ $$i -lt 110 ] && [ -n "$$(workers)" ]; do sleep 1; i=$$((i+1)); done'
 Restart=always
 RestartSec=5
-TimeoutStopSec=20
+# On SIGTERM the worker stops claiming and gives the running job 60 s (RENDER_WORKER_STOP_GRACE_MS)
+# plus up to 30 s of App Store Connect rollback before it exits; leave a margin.
+TimeoutStopSec=120
 
 [Install]
 WantedBy=multi-user.target

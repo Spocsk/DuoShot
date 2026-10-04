@@ -9,6 +9,13 @@ if (process.env.RENDER_QUEUE_ENABLED === 'true') {
   // One shared value would let a leaked cron secret drive renders again.
   else if (process.env.RENDER_WORKER_SECRET === process.env.CRON_SECRET) missing.push('RENDER_WORKER_SECRET (must differ from CRON_SECRET)');
 }
+const renderWorkerMode = process.env.RENDER_WORKER_MODE || 'process';
+if (!['process', 'http'].includes(renderWorkerMode)) missing.push('RENDER_WORKER_MODE (process or http)');
+for (const name of ['RENDER_JOB_TIMEOUT_MS', 'ASC_JOB_TIMEOUT_MS', 'RENDER_WORKER_STOP_GRACE_MS']) {
+  if (process.env[name] && !(Number(process.env[name]) > 0)) missing.push(`${name} (positive milliseconds)`);
+}
+// The worker would fail an upload before the executor's own 10-minute Apple budget and rollback.
+if (Number(process.env.ASC_JOB_TIMEOUT_MS) > 0 && Number(process.env.ASC_JOB_TIMEOUT_MS) < 660_000) missing.push('ASC_JOB_TIMEOUT_MS (660000 or more)');
 for (const name of required) {
   if (!process.env[name]) continue;
   try { if (new URL(process.env[name]).protocol !== 'https:') missing.push(`${name} (HTTPS required)`); }
@@ -31,6 +38,7 @@ if (process.env.ASC_CONNECTOR_ENABLED === 'true') {
 console.log(JSON.stringify({
   configured: missing.length === 0, missing,
   renderQueueEnabled: process.env.RENDER_QUEUE_ENABLED === 'true',
+  renderWorkerMode,
   checkoutEnabled: process.env.STRIPE_CHECKOUT_ENABLED === 'true',
   ascConnectorEnabled: process.env.ASC_CONNECTOR_ENABLED === 'true',
   // Optional: the one-time pass is hidden unless its Stripe price is set.
