@@ -95,3 +95,57 @@ describe("real PostgreSQL migration contracts", () => {
     expect((await db.query("select policyname from pg_policies where schemaname='storage' and policyname like 'reviews_%'")).rows).toEqual([]);
   });
 });
+
+describe("one-time pass and waitlist contracts", () => {
+  const owner = "33333333-0000-4000-8000-000000000003";
+  let passWorkspace: string;
+  beforeAll(async () => {
+    await db.query("insert into auth.users values($1,'pass@example.invalid')", [owner]);
+    passWorkspace = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [owner])).rows[0].workspace_id;
+    await db.query("update workspaces set stripe_customer_id='cus_pass', free_exports_used=2 where id=$1", [passWorkspace]);
+  });
+  type Grant = { grant_workspace_pass: { granted: boolean; expires_at: string } };
+  const grant = (session: string, customer = "cus_pass") =>
+    db.query<Grant>("select grant_workspace_pass($1,$2,$3,30)", [passWorkspace, session, customer]);
+
+  it("treats an exhausted trial as free until a pass is granted", async () => {
+    await expect(db.query("select reserve_export($1,$2)", [passWorkspace, owner])).rejects.toThrow("TRIAL_EXHAUSTED");
+    const first = (await grant("cs_pass_1")).rows[0].grant_workspace_pass;
+    expect(first.granted).toBe(true);
+    const id = (await db.query<{ reserve_export: string }>("select reserve_export($1,$2)", [passWorkspace, owner])).rows[0].reserve_export;
+    expect((await db.query<{ kind: string }>("select kind from export_reservations where id=$1", [id])).rows[0].kind).toBe("daily");
+  });
+  it("grants each Checkout session once, even under concurrent deliveries", async () => {
+    const before = (await db.query<{ n: number }>("select count(*)::int n from workspace_passes where workspace_id=$1", [passWorkspace])).rows[0].n;
+    const results = await Promise.all([grant("cs_pass_2"), grant("cs_pass_2")]);
+    expect(results.map((r) => r.rows[0].grant_workspace_pass.granted).sort()).toEqual([false, true]);
+    expect((await db.query<{ n: number }>("select count(*)::int n from workspace_passes where workspace_id=$1", [passWorkspace])).rows[0].n).toBe(before + 1);
+    const days = (await db.query<{ d: number }>("select round(extract(epoch from pass_expires_at-now())/86400)::int d from workspaces where id=$1", [passWorkspace])).rows[0].d;
+    expect(days).toBe(60);
+  });
+  it("rejects a session for another customer and stops counting an expired pass", async () => {
+    await expect(grant("cs_pass_other", "cus_other")).rejects.toThrow("CUSTOMER_MISMATCH");
+    await db.query("update workspaces set pass_expires_at=now()-interval '1 second' where id=$1", [passWorkspace]);
+    await expect(db.query("select reserve_export($1,$2)", [passWorkspace, owner])).rejects.toThrow("TRIAL_EXHAUSTED");
+  });
+  it("keeps passes, the pass RPC and the waitlist away from client roles", async () => {
+    const privileges = (await db.query<Record<string, boolean>>(`select
+      has_table_privilege('authenticated','public.workspace_passes','select') as passes_read,
+      has_table_privilege('anon','public.waitlist','select') as waitlist_anon_read,
+      has_table_privilege('anon','public.waitlist','insert') as waitlist_anon_insert,
+      has_table_privilege('authenticated','public.waitlist','select') as waitlist_read,
+      has_column_privilege('authenticated','public.workspaces','pass_expires_at','update') as pass_write,
+      has_function_privilege('authenticated','public.grant_workspace_pass(uuid,text,text,integer)','execute') as grant_pass,
+      has_function_privilege('anon','public.grant_workspace_pass(uuid,text,text,integer)','execute') as grant_pass_anon`)).rows[0];
+    expect(Object.entries(privileges).filter(([, granted]) => granted).map(([name]) => name)).toEqual([]);
+    expect((await db.query<{ rls: boolean }>("select relrowsecurity rls from pg_class where relname in ('waitlist','workspace_passes')")).rows).toEqual([{ rls: true }, { rls: true }]);
+    expect((await db.query("select policyname from pg_policies where tablename in ('waitlist','workspace_passes')")).rows).toEqual([]);
+  });
+  it("keeps one waitlist row per email and topic", async () => {
+    const insert = (topic: string) => db.query("insert into waitlist(email,topic,token) values('dev@example.invalid',$1,$2)", [topic, `${topic}-token-0123456789abcdef0123456789`]);
+    await insert("apple_duo_open");
+    await insert("launch");
+    await expect(db.query("insert into waitlist(email,topic,token) values('dev@example.invalid','launch','another-token-0123456789abcdef0123456789')")).rejects.toThrow();
+    await expect(db.query("insert into waitlist(email,topic,token) values('x@example.invalid','newsletter','third-token-0123456789abcdef0123456789')")).rejects.toThrow();
+  });
+});

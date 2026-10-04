@@ -29,6 +29,13 @@ describe("API rate limits", () => {
     expect(checkRateLimit("GET", "/api/workspace/invitations", "203.0.113.1").limited).toBe(false);
   });
 
+  it("gives the public waitlist a tight shared budget for sign-up and e-mail links", () => {
+    expect(hit(10, "POST", "/api/waitlist").limited).toBe(false);
+    expect(checkRateLimit("GET", "/api/waitlist/confirm", "203.0.113.1", 0)).toMatchObject({ limited: true, rule: "waitlist" });
+    expect(checkRateLimit("POST", "/api/waitlist/unsubscribe", "203.0.113.1", 0)).toMatchObject({ limited: true, rule: "waitlist" });
+    expect(checkRateLimit("POST", "/api/waitlist", "203.0.113.9", 0).limited).toBe(false);
+  });
+
   it("allows frequent render polling", () => {
     expect(hit(600, "GET", "/api/render-jobs/job-1").limited).toBe(false);
     expect(hit(1, "GET", "/api/render-jobs/job-1")).toMatchObject({ limited: true, rule: "polling" });
