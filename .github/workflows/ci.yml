@@ -46,7 +46,7 @@ jobs:
       - run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
-      - uses: cypress-io/github-action@v6
+      - uses: cypress-io/github-action@v7
         with:
           install: false
           start: npm start
