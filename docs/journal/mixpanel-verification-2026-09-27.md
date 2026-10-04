@@ -1,6 +1,6 @@
 # Vérification Mixpanel — 27 septembre 2026
 
-> **Note (4 octobre 2026)** : Mixpanel a été retiré ; DataFast est l’unique outil d’analytics. Ce document décrit l’état à sa date. État actuel : [`analytics.md`](analytics.md).
+> **Note (4 octobre 2026)** : Mixpanel a été retiré ; DataFast est l’unique outil d’analytics. Ce document décrit l’état à sa date. État actuel : [`analytics.md`](../analytics.md).
 
 Contrôles réalisés vers 08:38–08:40 Europe/Paris sur https://duoshot.site, image de production `919b630b042d08d6599db53e99bc1fd3b39429e9`.
 

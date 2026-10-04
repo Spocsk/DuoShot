@@ -11,7 +11,7 @@
 
 The four test price IDs, a Stripe test API key and a webhook signing secret are stored only in ignored local configuration. The test account is `acct_1UExSRClApGnRrWt`. Its existing test webhook still points to `https://duoshot.vercel.app/api/stripe/webhook`; move it to an isolated test deployment before conducting payment tests. No Stripe test key was copied to Vercel Production.
 
-The billing migration was applied to the correct Supabase project `jvhqcmqwrihbtwrggwuq` on 25 September after reconciling the migration histories. The server key is configured locally and in Vercel Production. Owner Studio access is held separately in `manual_plan`. Additive export, storage, atomic invitation and Checkout concurrency migrations have also been applied; see `schema-reconciliation-2026-09-25.md`.
+The billing migration was applied to the correct Supabase project `jvhqcmqwrihbtwrggwuq` on 25 September after reconciling the migration histories. The server key is configured locally and in Vercel Production. Owner Studio access is held separately in `manual_plan`. Additive export, storage, atomic invitation and Checkout concurrency migrations have also been applied; see [`journal/schema-reconciliation-2026-09-25.md`](journal/schema-reconciliation-2026-09-25.md).
 
 **Checkout remains closed** through `STRIPE_CHECKOUT_ENABLED=false`. Tax settings, live account and controlled real purchase remain unvalidated. The production domain is now `https://duoshot.site`.
 
