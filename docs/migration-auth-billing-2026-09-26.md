@@ -1,5 +1,7 @@
 # Migration, Auth et facturation — suivi du 26 septembre 2026
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 > Mise à jour après décision utilisateur : le domaine public a été basculé sur la base neuve du VPS. Le bilan ci-dessous décrit les préparatifs antérieurs ; l’état courant est documenté dans [production-cutover-2026-09-26.md](production-cutover-2026-09-26.md).
 
 ## État et limites

@@ -1,5 +1,7 @@
 # DuoShot billing setup — 25 September 2026
 
+> **Note (4 October 2026):** production now runs only on the VPS (Docker Compose behind Traefik); Vercel is no longer used for deploys. This document describes the state at its date. Current procedure: [`infra/deploy.md`](../infra/deploy.md).
+
 ## Configured in Stripe test mode
 
 - DuoShot Indie: product `prod_VJU0ROjuNdmq4G`, monthly EUR 12 price `price_1UIr2AClApGnRrWtevMuWqDB` (`duoshot_indie_monthly`), annual EUR 120 price `price_1UIusDClApGnRrWtQfXhHcG2` (`duoshot_indie_yearly`).

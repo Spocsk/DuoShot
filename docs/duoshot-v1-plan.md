@@ -31,6 +31,8 @@ isProject: false
 
 # DuoShot v1.0 — générateur de screenshots Duo
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 Nom figé : **DuoShot**. Scope : **v1.0 complète**. Frames device **gelés**. Sources : [raffinage S01](/home/ubuntu/.cursor/projects/workspace/uploads/raffinage-S01-screenshots-duo_682f.md) et [base de connaissances](/home/ubuntu/.cursor/projects/workspace/uploads/iphone-duo-base-connaissances_180e.md). Repo actuel : [README.md](/workspace/README.md) seulement.
 
 ## Décisions figées (cette itération)

@@ -1,5 +1,7 @@
 # Raffinage S01 — screenshots Duo
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 Fiche recopiée dans le repo à partir du plan d’exécution DuoShot v1.0 (12 sept. 2026). L’upload d’origine `raffinage-S01-screenshots-duo` peut manquer sur une VM fraîche.
 
 ## Décisions produit
