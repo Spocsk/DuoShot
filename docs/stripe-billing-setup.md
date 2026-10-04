@@ -2,6 +2,10 @@
 
 > **Note (4 October 2026):** production now runs only on the VPS (Docker Compose behind Traefik); Vercel is no longer used for deploys. This document describes the state at its date. Current procedure: [`infra/deploy.md`](../infra/deploy.md).
 
+> **Update (4 October 2026):** production `/api/billing/availability` now returns `checkoutAvailable: true`; Checkout was opened to customers on 4 October 2026 without a real test purchase. Remaining: one real purchase and refund performed by the owner, then tax validation and the Stripe Tax decision. The Pass 30 jours offer (PR #21) stays hidden until `STRIPE_PRICE_PASS30` is set. See [the live configuration record](journal/stripe-live-2026-10-03.md).
+
+> **Update (3 October 2026):** live products, all four prices, the webhook and the default customer portal are configured. The live API key and webhook secret are installed in the VPS production environment. Checkout remained closed at that date pending tax validation and end-to-end testing in an isolated test environment. Never use a real card to test in live mode. See [the live configuration record](journal/stripe-live-2026-10-03.md).
+
 ## Configured in Stripe test mode
 
 - DuoShot Indie: product `prod_VJU0ROjuNdmq4G`, monthly EUR 12 price `price_1UIr2AClApGnRrWtevMuWqDB` (`duoshot_indie_monthly`), annual EUR 120 price `price_1UIusDClApGnRrWtQfXhHcG2` (`duoshot_indie_yearly`).
@@ -13,7 +17,7 @@ The four test price IDs, a Stripe test API key and a webhook signing secret are 
 
 The billing migration was applied to the correct Supabase project `jvhqcmqwrihbtwrggwuq` on 25 September after reconciling the migration histories. The server key is configured locally and in Vercel Production. Owner Studio access is held separately in `manual_plan`. Additive export, storage, atomic invitation and Checkout concurrency migrations have also been applied; see [`journal/schema-reconciliation-2026-09-25.md`](journal/schema-reconciliation-2026-09-25.md).
 
-**Checkout remains closed** through `STRIPE_CHECKOUT_ENABLED=false`. Tax settings, live account and controlled real purchase remain unvalidated. The production domain is now `https://duoshot.site`.
+**Checkout was closed** at this date through `STRIPE_CHECKOUT_ENABLED=false` (opened on 4 October 2026, see the update above). Tax settings, live account and controlled real purchase remain unvalidated. The production domain is now `https://duoshot.site`.
 
 ## Complete before real test checkout
 
@@ -26,7 +30,7 @@ The billing migration was applied to the correct Supabase project `jvhqcmqwrihbt
 
 ## Production gate
 
-Create separate live products with monthly and annual prices and a live webhook, then set live keys and all four live price IDs in the production environment. Both `STRIPE_CHECKOUT_ENABLED=true` and `STRIPE_LIVE_ENABLED=true` are required to start live Checkout. Confirm tax behavior and perform one controlled real purchase before opening paid CTAs publicly. Keep Stripe test and live identifiers separate.
+Create separate live products with monthly and annual prices and a live webhook, then set live keys and all four live price IDs in the production environment. Both `STRIPE_CHECKOUT_ENABLED=true` and `STRIPE_LIVE_ENABLED=true` are required to start live Checkout. Validate test flows in an isolated test environment, confirm the business's tax obligations and account readiness, then authorize opening Checkout for genuine customers. Stripe prohibits testing live mode with real payment details. Keep Stripe test and live identifiers separate.
 
 ## Optional one-time offer: Pass 30 jours (added 4 October 2026)
 
