@@ -34,7 +34,7 @@
     "@tailwindcss/postcss": "^4",
     "@tesseract.js-data/eng": "1.0.0",
     "@tesseract.js-data/fra": "1.0.0",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "cypress": "^15.7.1",
