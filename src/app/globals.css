@@ -19,6 +19,7 @@
   --studio-review-soft: #f6ebdc;
   --studio-deep: #21333b;
   --studio-deep-muted: #c5d5d8;
+  --studio-line-strong: #b9c5ca;
   --background: var(--studio-canvas);
   --foreground: var(--studio-ink);
   --muted: var(--studio-muted);
