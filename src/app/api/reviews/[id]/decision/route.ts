@@ -12,10 +12,10 @@ export async function POST(request: Request, { params }: Params) {
   if (isDemoReview(id)) {
     return NextResponse.json({ error: "DEMO_READONLY" }, { status: 403 });
   }
-  const body = (await request.json()) as { action?: string; comment?: string };
+  const body = ((await request.json().catch(() => null)) ?? {}) as { action?: unknown; comment?: unknown };
   const status = body.action === "approve" ? "approved" : body.action === "redo" ? "changes_requested" : null;
   if (!status) return NextResponse.json({ error: "INVALID_ACTION" }, { status: 400 });
-  const comment = body.comment?.trim() || null;
+  const comment = typeof body.comment === "string" ? body.comment.trim() || null : null;
   const admin = createAdminSupabase();
   if (admin) {
     const { data: review } = await admin

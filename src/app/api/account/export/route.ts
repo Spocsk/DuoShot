@@ -19,6 +19,10 @@ export async function GET() {
     supabase.from("export_sets").select("*").eq("created_by", user.id),
     supabase.from("dsar_requests").select("*").eq("user_id", user.id),
   ]);
+  // A partial file would look like a complete export, so fail instead.
+  if ([workspaceMembers, consents, exports, dsar].some((result) => result.error)) {
+    return NextResponse.json({ error: "EXPORT_FAILED" }, { status: 503 });
+  }
 
   await supabase.from("dsar_requests").insert({
     user_id: user.id,

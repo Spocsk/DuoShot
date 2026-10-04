@@ -11,8 +11,8 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const body = (await request.json()) as { token?: string };
-  if (!body.token) return NextResponse.json({ error: "INVALID_TOKEN" }, { status: 400 });
+  const body = ((await request.json().catch(() => null)) ?? {}) as { token?: unknown };
+  if (typeof body.token !== "string" || !body.token) return NextResponse.json({ error: "INVALID_TOKEN" }, { status: 400 });
   const tokenHash = createHash("sha256").update(body.token).digest("hex");
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
