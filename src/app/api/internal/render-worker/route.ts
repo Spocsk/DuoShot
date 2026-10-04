@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { executeExport } from "@/lib/render/export";
 import { executeReview } from "@/lib/render/review";
+import { executeAscUpload } from "@/lib/asc/upload-job";
 import { completeRender, type RenderJob } from "@/lib/render/jobs";
 export const runtime = "nodejs";
 const LEASE_LOST = "RENDER_LEASE_LOST";
@@ -29,7 +30,10 @@ export async function POST(request: Request) {
   }, 15_000);
   try {
     const input = new Request("http://localhost/render", { method: "POST", body: JSON.stringify(job.payload), signal: controller.signal });
-    const response = await (job.kind === "export" ? executeExport : executeReview)(input, admin, { id: job.user_id }, job);
+    const response = job.kind === "export" ? await executeExport(input, admin, { id: job.user_id }, job)
+      : job.kind === "review" ? await executeReview(input, admin, { id: job.user_id }, job)
+      : job.kind === "asc_upload" ? await executeAscUpload(admin, job, { signal: controller.signal })
+      : NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
     if (!response.ok) {
       const result = await response.json() as { error?: string };
       if (result.error === LEASE_LOST) return leaseLost(job);
