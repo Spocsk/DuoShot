@@ -1,6 +1,5 @@
 import { readRenderBody } from "./read-body";
 import { renderSlots } from "@/lib/pipeline/render-slots";
-import { NextResponse } from "next/server";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { mapLimit } from "@/lib/map-limit";
 import { FREE_EXPORTS, isProPlan } from "@/lib/plans";
@@ -29,7 +28,7 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
   let body: RenderBody;
   try { body = parseRenderBody(await readRenderBody(request), user.id); } catch (error) {
     const code = error instanceof SyntaxError ? "INVALID_REQUEST" : error instanceof Error ? error.message : "INVALID_REQUEST";
-    return NextResponse.json({ error: code }, { status: renderErrorStatus(code) });
+    return Response.json({ error: code }, { status: renderErrorStatus(code) });
   }
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? body.paths ?? [];
@@ -40,34 +39,34 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
     const checked = checkSourceCount(count);
     if (checked.warning === "TOO_FEW") countWarning = "TOO_FEW";
   } catch (error) {
-    return NextResponse.json(
+    return Response.json(
       { error: error instanceof Error ? error.message : "INVALID_COUNT" },
       { status: 400 },
     );
   }
   if (outerPaths.length === 0 && innerPaths.length === 0) {
-    return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
+    return Response.json({ error: "NO_IMAGES" }, { status: 400 });
   }
   const unpaired = outerPaths.length !== innerPaths.length && !sameSet;
 
   const context = await readWorkspaceBilling(supabase, user.id);
-  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
-  if (job && context.membership.workspace_id !== job.workspace_id) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 409 });
+  if (!context.ok) return Response.json({ error: context.error }, { status: context.status });
+  if (job && context.membership.workspace_id !== job.workspace_id) return Response.json({ error: "NO_WORKSPACE" }, { status: 409 });
   const { membership, workspace, entitlements } = context;
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
   const include69 = Boolean(body.include69);
   const pro = isProPlan(entitlements.plan);
 
   if (include69 && !canUse69(entitlements.plan)) {
-    return NextResponse.json({ error: "IPHONE_69_GATED" }, { status: 403 });
+    return Response.json({ error: "IPHONE_69_GATED" }, { status: 403 });
   }
 
   if (!job && !pro && (workspace?.free_exports_used ?? 0) >= FREE_EXPORTS) {
-    return NextResponse.json({ error: "TRIAL_EXHAUSTED" }, { status: 402 });
+    return Response.json({ error: "TRIAL_EXHAUSTED" }, { status: 402 });
   }
 
   const admin = createAdminSupabase();
-  if (!admin) return NextResponse.json({ error: "EXPORT_UNAVAILABLE" }, { status: 503 });
+  if (!admin) return Response.json({ error: "EXPORT_UNAVAILABLE" }, { status: 503 });
   let reservation: string | null = job?.reservation_id ?? null;
   try {
     targetsFor({
@@ -76,7 +75,7 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
       plan: entitlements.plan,
     });
   } catch (error) {
-    return NextResponse.json(
+    return Response.json(
       { error: error instanceof Error ? error.message : "TARGET_ERROR" },
       { status: 403 },
     );
@@ -85,7 +84,7 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
   let release: () => void;
   try { release = await renderSlots.acquire(request.signal); } catch (error) {
     const code = error instanceof Error ? error.message : "RENDER_BUSY";
-    return NextResponse.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
+    return Response.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
   }
 
   try {
@@ -95,7 +94,7 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
       });
       if (reserveError || !reserved) {
         const code = ["TRIAL_EXHAUSTED", "DAILY_LIMIT"].find((value) => reserveError?.message?.includes(value));
-        return NextResponse.json({ error: code ?? "EXPORT_UNAVAILABLE" }, { status: code ? 402 : 503 });
+        return Response.json({ error: code ?? "EXPORT_UNAVAILABLE" }, { status: code ? 402 : 503 });
       }
       reservation = reserved as string;
     }
@@ -190,7 +189,7 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
       if (error) throw new Error("EXPORT_FAILED");
     }
 
-    return NextResponse.json(result);
+    return Response.json(result);
   } catch (error) {
     if (reservation && !job) {
       const { error: refundError } = await admin.rpc("finish_export", { p_reservation: reservation, p_export: null });
@@ -198,7 +197,7 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
     }
     const code = error instanceof Error ? error.message : "EXPORT_FAILED";
     const status = renderErrorStatus(code);
-    return NextResponse.json({ error: code }, { status });
+    return Response.json({ error: code }, { status });
   } finally {
     release();
   }

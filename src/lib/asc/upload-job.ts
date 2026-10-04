@@ -1,11 +1,10 @@
 import JSZip from "jszip";
-import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeviceSlot, Orientation } from "../specs";
 import { completeRender, type RenderJob } from "../render/jobs";
 import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
 import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor } from "./config";
-import { loadAscCredentials } from "./server";
+import { loadAscCredentials } from "./credentials";
 import { readWorkspaceBilling } from "../workspace-billing";
 import { isProPlan } from "../plans";
 
@@ -94,13 +93,13 @@ export function planAscFiles(paths: string[], targets: AscTarget[]): PlannedFile
 }
 
 type Options = AscClientOptions & { budgetMs?: number };
-const fail = (code: string) => NextResponse.json({ error: code }, { status: 400 });
+const fail = (code: string) => Response.json({ error: code }, { status: 400 });
 
 /**
- * Worker entry for `asc_upload`. Returns a NextResponse like the other executors:
+ * Worker entry for `asc_upload`. Returns a Response like the other executors:
  * success commits the job; an error response is committed by the worker.
  */
-export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, options: Options = {}): Promise<NextResponse> {
+export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, options: Options = {}): Promise<Response> {
   // A reclaimed attempt cannot know which screenshots Apple already accepted;
   // retrying would duplicate them in the user's listing.
   if ((job.attempts ?? 1) > 1) return fail("ASC_RETRY_UNSAFE");
@@ -209,9 +208,9 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
       skipped: ascTargetsForExport(true).skipped,
     };
     await completeRender(admin, job, result);
-    return NextResponse.json(result);
+    return Response.json(result);
   } catch (error) {
-    if (error instanceof Error && error.message === "RENDER_LEASE_LOST") return NextResponse.json({ error: "RENDER_LEASE_LOST" }, { status: 409 });
+    if (error instanceof Error && error.message === "RENDER_LEASE_LOST") return Response.json({ error: "RENDER_LEASE_LOST" }, { status: 409 });
     const code = error instanceof AscError
       ? (error.appleCode === "SET_FULL" ? "ASC_SET_FULL" : error.code)
       : "ASC_UPLOAD_FAILED";
