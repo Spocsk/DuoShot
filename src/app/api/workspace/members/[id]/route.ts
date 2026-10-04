@@ -29,9 +29,12 @@ export async function DELETE(_request: Request, { params }: Params) {
     .eq("id", id)
     .eq("workspace_id", owner.workspace_id)
     .neq("role", "owner")
-    .select("id, user_id")
+    .select("id, user_id, active")
     .maybeSingle();
   if (!data) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+  // Only a user who just lost their active workspace needs another one switched on;
+  // otherwise their current active membership must stay as it is.
+  if (!data.active) return NextResponse.json({ id, revoked: true });
   const { data: fallback } = await admin
     .from("workspace_members")
     .select("id")
@@ -39,6 +42,10 @@ export async function DELETE(_request: Request, { params }: Params) {
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (fallback) await admin.from("workspace_members").update({ active: true }).eq("id", fallback.id);
+  if (fallback) {
+    const { error } = await admin.from("workspace_members").update({ active: true }).eq("id", fallback.id);
+    // The removal itself succeeded; the user is left without an active workspace until they pick one.
+    if (error) console.error("member_fallback_activation_failed", { membershipId: fallback.id });
+  }
   return NextResponse.json({ id, revoked: true });
 }
