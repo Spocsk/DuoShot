@@ -1,7 +1,6 @@
 "use client";
 
-import { submitRender, resumeRender } from "@/lib/render-client";
-import { assertBatchSize, MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
+import { MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
 
 import {
   Suspense,
@@ -12,7 +11,6 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -34,14 +32,11 @@ import {
 } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
 import { checkSourceCount } from "@/lib/pipeline/validate";
-import { hashFromFile } from "@/lib/pipeline/clone-hash-browser";
-import { inspectFile, type SourceInspect } from "@/lib/pipeline/source-inspect";
-import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
+import { inspectFile } from "@/lib/pipeline/source-inspect";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, isCheckoutKind, startCheckout } from "@/lib/checkout";
 import { trackProduct } from "@/lib/analytics-client";
-import { trackDatafastConversion } from "@/lib/datafast-client";
 import type { CheckoutKind } from "@/lib/plans";
 import {
   defaultSet,
@@ -53,29 +48,22 @@ import {
 import { Overlay } from "@/components/overlay";
 import { PaywallModal } from "@/components/paywall-modal";
 import { AuthForm } from "@/components/auth-form";
-import { localePrefix, reviewPath } from "@/lib/site";
-import { mapLimit } from "@/lib/map-limit";
+import { localePrefix } from "@/lib/site";
 import { mergeSideFiles } from "@/lib/merge-side-files";
-import { checkFoldImage } from "@/lib/fold-ocr-browser";
-import { foldStatusText, type FoldCheck } from "@/components/tool/fold-check";
-import { explainError } from "@/components/tool/errors";
+import { foldStatusText, useFoldChecks } from "@/components/tool/fold-check";
+import { quotaLabel, useBilling } from "@/components/tool/use-billing";
+import { useSetsMenu } from "@/components/tool/set-picker";
+import { useAppSync } from "@/components/tool/use-app-sync";
+import { usePreviews } from "@/components/tool/use-previews";
+import { useSourceChecks } from "@/components/tool/use-source-checks";
+import { useRenderJobs } from "@/components/tool/use-render-jobs";
 import { isAllowedImage, takeFiles } from "@/components/tool/files";
 import { CloneTip, DsToggle, Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
 import { DropZone } from "@/components/tool/drop-zone";
 import { PairStrip, ToolCanvas, ToolPanelTabs } from "@/components/tool/canvas";
 import { CropControls, PreviewCard } from "@/components/tool/preview-card";
-import { drawTarget } from "@/components/tool/draw-target";
-import type { Worker as OcrWorker } from "tesseract.js";
 
 type Props = { locale: Locale };
-
-type BillingStatus = {
-  plan?: string;
-  source?: string;
-  remainingFreeExports?: number | null;
-  canUse69?: boolean;
-  checkoutAvailable?: boolean;
-};
 
 const subscribeNever = () => () => {};
 
@@ -129,60 +117,22 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [status, setStatus] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<"ok" | "err" | "busy" | "info">("info");
   const [zipUrl, setZipUrl] = useState<string | null>(null);
-  const [zipName, setZipName] = useState("app.zip");
-  const [exportImages, setExportImages] = useState<Array<{slot: string; index: number; width: number; height: number; format: string}>>([]);
-  const [busyExport, setBusyExport] = useState(false);
-  const [busyReview, setBusyReview] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [toolPanel, setToolPanel] = useState<"captures" | "adjust" | "review">("captures");
   const [mobileView, setMobileView] = useState<"outer" | "inner" | "compare">("outer");
   const [adjustSide, setAdjustSide] = useState<"outer" | "inner">("outer");
   const completedSetsRef = useRef<Set<string>>(new Set());
   const [sameSetOpen, setSameSetOpen] = useState(false);
-  const [previews, setPreviews] = useState<{ outer: string; inner: string } | null>(null);
-  const [outerInspects, setOuterInspects] = useState<SourceInspect[]>([]);
-  const [innerInspects, setInnerInspects] = useState<SourceInspect[]>([]);
-  const [foldChecks, setFoldChecks] = useState<Record<number, FoldCheck>>({});
-  const foldCacheRef = useRef(new Map<string, FoldCheck>());
-  const foldFileIdsRef = useRef(new WeakMap<File, number>());
-  const nextFoldFileIdRef = useRef(1);
-  const ocrWorkerRef = useRef<Promise<OcrWorker> | null>(null);
-  const ocrQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [qualityAcknowledged, setQualityAcknowledged] = useState(false);
   const [appUsageConfirmed, setAppUsageConfirmed] = useState(false);
-  const [clones, setClones] = useState<CloneResult[]>([]);
-  const [billingError, setBillingError] = useState(false);
-  const [activationTimedOut, setActivationTimedOut] = useState(false);
-  const [activationAttempt, setActivationAttempt] = useState(0);
-  const [downloadId, setDownloadId] = useState<string | null>(null);
-  const [billing, setBilling] = useState<BillingStatus | null>(null);
-  const [session, setSession] = useState<"loading" | "out" | "in">("loading");
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
   const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [reviewUrl, setReviewUrl] = useState<string | null>(null);
-  const [reviewStatus, setReviewStatus] = useState<string | null>(null);
-  const [reviewSetStatus, setReviewSetStatus] = useState<string | null>(null);
-  const [reviewUpgrade, setReviewUpgrade] = useState(false);
-  const setsRef = useRef<HTMLDetailsElement>(null);
-  const [setsOpen, setSetsOpen] = useState(false);
-  const [setsClosing, setSetsClosing] = useState(false);
-  const signedIn = session === "in";
-  const checkoutFlag = searchParams.get("checkout");
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
   const requestedPlan = searchParams.get("plan") ?? undefined;
   const preferredUpgradeKind = isCheckoutKind(requestedPlan) ? requestedPlan : undefined;
-  const urlStatus =
-    checkoutFlag === "success"
-      ? billing?.source === "stripe" && billing.plan !== "free"
-        ? t(locale, "checkout_success")
-        : locale === "fr" ? (activationTimedOut ? "Activation non confirmée. Vérifiez à nouveau le statut de l’abonnement." : "Retour du paiement. Vérification de l’activation en cours…") : (activationTimedOut ? "Activation not confirmed. Check your subscription status again." : "Returned from checkout. Checking activation…")
-      : checkoutFlag === "cancel"
-        ? t(locale, "checkout_cancel")
-        : null;
-
   const sameSet = active?.sameSet ?? false;
   const effectiveInner = sameSet ? outerFiles : innerFiles;
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
@@ -213,106 +163,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     () => normalizeCropTransform(innerTransforms[slideIndex], globalFit),
     [globalFit, innerTransforms, slideIndex],
   );
-  const outerInspect = outerInspects[slideIndex] ?? null;
-  const effectiveInnerInspects = sameSet ? outerInspects : innerInspects;
-  const innerInspect = effectiveInnerInspects[slideIndex] ?? null;
-
-  useEffect(() => {
-    let cancelled = false;
-    const jobs = effectiveInner.map((file, index) => {
-      let fileId = foldFileIdsRef.current.get(file);
-      if (!fileId) {
-        fileId = nextFoldFileIdRef.current++;
-        foldFileIdsRef.current.set(file, fileId);
-      }
-      const transform = normalizeCropTransform(innerTransforms[index], globalFit);
-      return { file, index, transform, key: [activeId, fileId, orientation, options.solidColor, transform.fit, transform.x, transform.y, transform.zoom].join(":") };
-    });
-    setFoldChecks((previous) => Object.fromEntries(jobs.map((job) => [job.index,
-      foldCacheRef.current.get(job.key) ?? (previous[job.index]?.key === job.key ? previous[job.index] : { key: job.key, status: "checking", count: 0 }),
-    ])));
-    const timer = window.setTimeout(() => { void (async () => {
-      for (const job of jobs) {
-        if (cancelled) return;
-        if (foldCacheRef.current.has(job.key)) continue;
-        try {
-          ocrWorkerRef.current ??= import("tesseract.js").then(async ({ createWorker, PSM }) => {
-            // Assets are served from public/ocr (scripts/copy-ocr-assets.mjs), not a CDN.
-            const worker = await createWorker(["eng", "fra"], undefined, {
-              workerPath: "/ocr/worker.min.js", corePath: "/ocr", langPath: "/ocr/lang", workerBlobURL: false,
-            });
-            await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
-            return worker;
-          });
-          const worker = await ocrWorkerRef.current;
-          if (cancelled) return;
-          const scan = ocrQueueRef.current.then(() => cancelled ? null : checkFoldImage(job.file, innerSpec, job.transform, worker, options.solidColor));
-          ocrQueueRef.current = scan.then(() => undefined, () => undefined);
-          const count = await scan;
-          if (count === null) return;
-          if (cancelled) return;
-          const result: FoldCheck = { key: job.key, status: count > 0 ? "warning" : "clear", count };
-          foldCacheRef.current.set(job.key, result);
-          setFoldChecks((previous) => previous[job.index]?.key === job.key ? { ...previous, [job.index]: result } : previous);
-        } catch {
-          if (cancelled) return;
-          const result: FoldCheck = { key: job.key, status: "error", count: 0 };
-          setFoldChecks((previous) => previous[job.index]?.key === job.key ? { ...previous, [job.index]: result } : previous);
-        }
-      }
-    })(); }, 250);
-    return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [activeId, effectiveInner, innerSpec, innerTransforms, globalFit, options.solidColor, orientation]);
-
-  useEffect(() => () => {
-    void ocrWorkerRef.current?.then((worker) => worker.terminate()).catch(() => {});
-  }, []);
-
+  const foldChecks = useFoldChecks({ activeId, effectiveInner, innerSpec, innerTransforms, globalFit, solidColor: options.solidColor, orientation });
   const foldWarningCount = Object.values(foldChecks).filter((check) => check.status === "warning").length;
   const currentFoldCheck = foldChecks[slideIndex];
-
-  const qualityItems = useMemo(() => {
-    const outer = outerInspects.map((inspect, index) => ({
-      side: "outer" as const,
-      index,
-      ...compositionMetrics(
-        inspect.width,
-        inspect.height,
-        outerSpec.width,
-        outerSpec.height,
-        normalizeCropTransform(outerTransforms[index], globalFit),
-      ),
-    }));
-    const inner = effectiveInnerInspects.map((inspect, index) => ({
-      side: "inner" as const,
-      index,
-      ...compositionMetrics(
-        inspect.width,
-        inspect.height,
-        innerSpec.width,
-        innerSpec.height,
-        normalizeCropTransform(innerTransforms[index], globalFit),
-      ),
-    }));
-    return [...outer, ...inner];
-  }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, globalFit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
-  const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
-  const cloneAlert = cloneForced || clones.some((item) => item.label === "risk");
-  const preparationChecks = [
-    hasExportable,
-    hasExportable && !unpaired,
-    hasExportable && !cloneAlert,
-    hasExportable && severeQualityCount === 0,
-    appUsageConfirmed,
-    Boolean(zipUrl && exportImages.length),
-  ];
-  const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
-  // Mirrors the Check panel's "To do" list so the export action says what is still open.
-  const missingSteps = [
-    unpaired ? (locale === "fr" ? "compléter les vues fermé et ouvert" : "complete the closed and open views") : null,
-    severeQualityCount > 0 || cloneAlert ? (locale === "fr" ? "examiner les alertes de cadrage et de similarité" : "review framing and similarity alerts") : null,
-    !appUsageConfirmed ? (locale === "fr" ? "confirmer le contenu de l’app" : "confirm the app content") : null,
-  ].filter((step): step is string => step !== null);
 
   const warning = useMemo(() => {
     const count = Math.max(outerFiles.length, effectiveInner.length);
@@ -324,45 +177,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }
   }, [outerFiles.length, effectiveInner.length]);
 
-  const refreshBilling = useCallback(async () => {
-    setBillingError(false);
-    try {
-      const supabase = createBrowserSupabase();
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) { setSession("out"); setBilling(null); return; }
-      setSession("in");
-      const response = await fetch("/api/billing/status", { cache: "no-store" });
-      if (!response.ok) throw new Error("BILLING_UNAVAILABLE");
-      setBilling(await response.json() as BillingStatus);
-    } catch { setBilling(null); setBillingError(true); }
-  }, []);
-
-  useEffect(() => {
-    if (checkoutFlag !== "success" || (billing?.source === "stripe" && billing.plan !== "free")) return;
-    const timer = window.setInterval(() => void refreshBilling(), 2000);
-    const timeout = window.setTimeout(() => { window.clearInterval(timer); setActivationTimedOut(true); }, 60000);
-    return () => { window.clearInterval(timer); window.clearTimeout(timeout); };
-  }, [billing?.plan, billing?.source, checkoutFlag, refreshBilling, activationAttempt]);
-
-  useEffect(() => {
-    const sessionId = searchParams.get("session_id");
-    const plan = billing?.plan;
-    if (checkoutFlag === "success" && sessionId?.startsWith("cs_") && billing?.source === "stripe" && (plan === "indie" || plan === "studio")) {
-      const report = () => { void trackDatafastConversion("subscription_activated", sessionId, { plan }); };
-      report();
-      window.addEventListener("duoshot:analytics-choice", report);
-      return () => window.removeEventListener("duoshot:analytics-choice", report);
-    }
-  }, [billing?.plan, billing?.source, checkoutFlag, searchParams]);
-
-  useEffect(() => {
-    const supabase = createBrowserSupabase();
-    queueMicrotask(() => void refreshBilling());
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      void refreshBilling();
-    });
-    return () => listener.subscription.unsubscribe();
-  }, [refreshBilling]);
+  const { billing, setBilling, billingError, session, activationTimedOut, retryActivation, refreshBilling, urlStatus } = useBilling(locale, searchParams);
+  const signedIn = session === "in";
 
   useEffect(() => {
     let cancelled = false;
@@ -400,54 +216,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     };
   }, [loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
 
-  useEffect(() => {
-    function onPointer(event: PointerEvent) {
-      const root = setsRef.current;
-      if (!root?.open) return;
-      if (!root.contains(event.target as Node)) root.removeAttribute("open");
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setsRef.current?.removeAttribute("open");
-    }
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  const appSyncTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-  useEffect(() => {
-    const timers = appSyncTimers.current;
-    return () => timers.forEach((timer) => clearTimeout(timer));
-  }, []);
-
-  const syncApp = useCallback((set: SetMeta) => {
-    const timers = appSyncTimers.current;
-    clearTimeout(timers.get(set.id));
-    // Debounced so typing a name sends one request once the user pauses, not one per key.
-    timers.set(set.id, setTimeout(async () => {
-      timers.delete(set.id);
-      const response = await fetch("/api/apps", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: set.appId,
-          name: set.name,
-          clientName: set.clientName,
-          orientation: set.orientation,
-        }),
-      }).catch(() => null);
-      const app = response?.ok ? ((await response.json()) as { id?: string }) : null;
-      if (!app?.id || app.id === set.appId) return;
-      setSets((current) => {
-        const next = current.map((item) => (item.id === set.id ? { ...item, appId: app.id } : item));
-        saveSetMetas(next);
-        return next;
-      });
-    }, 800));
-  }, [saveSetMetas]);
+  const { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey } = useSetsMenu();
+  const syncApp = useAppSync(saveSetMetas, setSets);
 
   const patchActive = useCallback(
     (patch: Partial<SetMeta>) => {
@@ -469,105 +239,71 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     queueMicrotask(() => setSlideIndex((index) => Math.min(index, max)));
   }, [outerFiles.length, effectiveInner.length]);
 
-  const drawPreviews = useCallback(
-    async (
-      outer: File | undefined,
-      inner: File | undefined,
-      next: RenderOptions,
-      transforms: { outer: CropTransform; inner: CropTransform },
-    ) => {
-      if (!outer && !inner) {
-        setPreviews(null);
-        return;
-      }
-      const outerSpec = duoSpec("duo-outer", next.orientation);
-      const innerSpec = duoSpec("duo-inner", next.orientation);
-      const nextPreviews = { outer: "", inner: "" };
-      if (outer) {
-        const bitmap = await createImageBitmap(outer);
-        nextPreviews.outer = drawTarget(bitmap, next, outerSpec, transforms.outer);
-        bitmap.close();
-      }
-      if (inner) {
-        const bitmap = await createImageBitmap(inner);
-        nextPreviews.inner = drawTarget(bitmap, next, innerSpec, transforms.inner);
-        bitmap.close();
-      }
-      setPreviews(nextPreviews);
-    },
-    [],
-  );
+  const previews = usePreviews(outerSlide, innerSlide, renderOptions, outerTransform, innerTransform);
+  const { outerInspects, innerInspects, clones } = useSourceChecks(outerFiles, innerFiles, effectiveInner, cloneForced);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (!outerSlide && !innerSlide) {
-        setPreviews(null);
-        return;
-      }
-      void drawPreviews(outerSlide, innerSlide, renderOptions, {
-        outer: outerTransform,
-        inner: innerTransform,
-      });
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [drawPreviews, innerSlide, innerTransform, outerSlide, outerTransform, renderOptions]);
+  const outerInspect = outerInspects[slideIndex] ?? null;
+  const effectiveInnerInspects = sameSet ? outerInspects : innerInspects;
+  const innerInspect = effectiveInnerInspects[slideIndex] ?? null;
+  const qualityItems = useMemo(() => {
+    const outer = outerInspects.map((inspect, index) => ({
+      side: "outer" as const,
+      index,
+      ...compositionMetrics(
+        inspect.width,
+        inspect.height,
+        outerSpec.width,
+        outerSpec.height,
+        normalizeCropTransform(outerTransforms[index], globalFit),
+      ),
+    }));
+    const inner = effectiveInnerInspects.map((inspect, index) => ({
+      side: "inner" as const,
+      index,
+      ...compositionMetrics(
+        inspect.width,
+        inspect.height,
+        innerSpec.width,
+        innerSpec.height,
+        normalizeCropTransform(innerTransforms[index], globalFit),
+      ),
+    }));
+    return [...outer, ...inner];
+  }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, globalFit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
+  const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
+  const cloneAlert = cloneForced || clones.some((item) => item.label === "risk");
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const [outer, inner] = await Promise.all([
-        Promise.all(outerFiles.map(inspectFile)),
-        Promise.all(innerFiles.map(inspectFile)),
-      ]);
-      if (!cancelled) {
-        setOuterInspects(outer);
-        setInnerInspects(inner);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [outerFiles, innerFiles]);
+  function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
+    setStatus(message);
+    setStatusKind(kind);
+  }
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const count = Math.min(outerFiles.length, effectiveInner.length);
-      const next: CloneResult[] = [];
-      for (let index = 0; index < count; index += 1) {
-        const outerHash = await hashFromFile(outerFiles[index]!);
-        const innerHash = await hashFromFile(effectiveInner[index]!);
-        next.push(scorePair(outerHash, innerHash, index, cloneForced));
-      }
-      if (!cancelled) setClones(next);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [outerFiles, effectiveInner, cloneForced]);
-
-  useEffect(() => {
-    const id = active?.lastReviewId;
-    if (!id) {
-      queueMicrotask(() => {
-        setReviewUrl(null);
-        setReviewSetStatus(active?.lastReviewStatus ?? null);
-      });
-      return;
-    }
-    queueMicrotask(() => setReviewUrl(`${window.location.origin}${reviewPath(locale, id)}`));
-    let cancelled = false;
-    void fetch(`/api/reviews/${id}`)
-      .then(async (response) => {
-        if (!response.ok) return;
-        const data = (await response.json()) as { status?: string };
-        if (!cancelled && data.status) setReviewSetStatus(data.status);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [active?.lastReviewId, active?.lastReviewStatus, locale]);
+  const {
+    zipName, exportImages, busyExport, busyReview, downloadId,
+    reviewUrl, reviewStatus, reviewSetStatus, reviewUpgrade,
+    onExport, onDownload, onReview,
+  } = useRenderJobs({
+    locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
+    setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
+    zipUrl, setZipUrl, patchActive, outerFiles, innerFiles, effectiveInner, sameSet,
+    cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
+    orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
+  });
+  const preparationChecks = [
+    hasExportable,
+    hasExportable && !unpaired,
+    hasExportable && !cloneAlert,
+    hasExportable && severeQualityCount === 0,
+    appUsageConfirmed,
+    Boolean(zipUrl && exportImages.length),
+  ];
+  const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
+  // Mirrors the Check panel's "To do" list so the export action says what is still open.
+  const missingSteps = [
+    unpaired ? (locale === "fr" ? "compléter les vues fermé et ouvert" : "complete the closed and open views") : null,
+    severeQualityCount > 0 || cloneAlert ? (locale === "fr" ? "examiner les alertes de cadrage et de similarité" : "review framing and similarity alerts") : null,
+    !appUsageConfirmed ? (locale === "fr" ? "confirmer le contenu de l’app" : "confirm the app content") : null,
+  ].filter((step): step is string => step !== null);
 
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
     const selected = takeFiles(list);
@@ -657,295 +393,6 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setZipUrl(null);
   }
 
-  function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
-    setStatus(message);
-    setStatusKind(kind);
-  }
-
-  useEffect(() => {
-    if (owner === "guest" || !draftsLoaded) return;
-    let mounted = true;
-    const progress = (state: "queued" | "running") => {
-      if (!mounted) return;
-      setStatusKind("busy");
-      setStatus(state === "queued" ? (locale === "fr" ? "Votre rendu est en attente…" : "Your render is queued…") : t(locale, "tool_progress_compose"));
-    };
-    for (const kind of ["export", "review"] as const) {
-      const pending = resumeRender(owner, kind, progress);
-      if (!pending) continue;
-      queueMicrotask(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(true); });
-      void pending.then(async response => {
-        const payload = await response.json();
-        if (!response.ok || !payload.url) throw new Error(payload.error ?? "RENDER_UNAVAILABLE");
-        if (!mounted) return;
-        if (kind === "export") {
-          setZipUrl(payload.url); setZipName(payload.filename ?? "app.zip");
-          setDownloadId(payload.exportId ?? null); setExportImages(payload.images ?? []);
-          if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId);
-        } else {
-          setReviewUrl(new URL(payload.url, window.location.origin).href);
-          setReviewStatus(t(locale, "tool_review_ready"));
-          void trackDatafastConversion("review_created", payload.id ?? payload.url.split("/").filter(Boolean).pop());
-        }
-        setToolPanel("review");
-        setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
-        void refreshBilling();
-      }).catch(() => {
-        if (mounted) { setStatusKind("err"); setStatus(locale === "fr" ? "Récupération du rendu indisponible. Rechargez la page pour réessayer sans créer une nouvelle demande." : "Render recovery unavailable. Reload to retry without creating a new request."); }
-      }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
-    }
-    return () => { mounted = false; };
-  }, [owner, locale, refreshBilling, draftsLoaded]);
-
-  async function uploadSide(userId: string, files: File[], onProgress: () => void) {
-    const supabase = createBrowserSupabase();
-    return mapLimit(files, 4, async (file) => {
-      const ext = file.type === "image/png" ? "png" : "jpg";
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("uploads").upload(path, file, {
-        contentType: file.type,
-        upsert: true,
-      });
-      if (error) throw new Error("UPLOAD_FAILED");
-      onProgress();
-      return path;
-    });
-  }
-
-  async function onExport() {
-    void trackProduct("export_requested", {
-      image_count: Math.max(outerFiles.length, effectiveInner.length),
-      plan: billing?.plan ?? "unknown",
-    });
-    setBusyExport(true);
-    flashStatus(t(locale, "tool_progress_compose"), "busy");
-    setZipUrl(null);
-    setDownloadId(null);
-    try {
-      const supabase = createBrowserSupabase();
-      const { data: sessionData } = await supabase.auth.getUser();
-      if (!sessionData.user) {
-        setShowAuth(true);
-        flashStatus(t(locale, "error_auth"), "err");
-        return;
-      }
-      if (include69 && billing && billing.canUse69 === false) {
-        setPaywall("69");
-        return;
-      }
-      if (billing?.plan === "free" && billing.remainingFreeExports === 0) {
-        setPaywall("trial");
-        return;
-      }
-      if (severeQualityCount > 0 && !qualityAcknowledged) {
-        flashStatus(t(locale, "tool_quality_ack_required"), "err");
-        document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
-        return;
-      }
-      const extra = sameSet ? [] : innerFiles;
-      assertBatchSize([...outerFiles, ...extra]);
-      const total = outerFiles.length + extra.length;
-      let done = 0;
-      const tick = () => {
-        done += 1;
-        flashStatus(tf(locale, "tool_progress_upload", { done, total }), "busy");
-      };
-      const [outerPaths, uploadedInner] = await Promise.all([
-        uploadSide(sessionData.user.id, outerFiles, tick),
-        extra.length ? uploadSide(sessionData.user.id, extra, tick) : Promise.resolve([] as string[]),
-      ]);
-      const innerPaths = sameSet ? outerPaths : uploadedInner;
-      flashStatus(t(locale, "tool_progress_compose"), "busy");
-      const response = await submitRender(sessionData.user.id, "export", {
-          outerPaths,
-          innerPaths,
-          sameSet: cloneForced,
-          appName: active?.name || "App",
-          clientName: active?.clientName || "",
-          include69,
-          assumeCloneRisk: assumeClone,
-          options: renderOptions,
-          transforms: {
-            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], globalFit)),
-            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
-          },
-        }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
-      });
-      const payload = (await response.json()) as {
-        url?: string; error?: string; warning?: string; filename?: string; exportId?: string; expiresAt?: string;
-        images?: Array<{slot: string; index: number; width: number; height: number; format: string}>;
-      };
-      if (!response.ok) {
-        void refreshBilling();
-        void trackProduct("export_failed", {
-          reason: ["TRIAL_EXHAUSTED", "IPHONE_69_GATED", "CLONE_RISK"].includes(payload.error ?? "")
-            ? payload.error! : "other",
-        });
-        if (payload.error === "TRIAL_EXHAUSTED") {
-          setPaywall("trial");
-          flashStatus(t(locale, "error_trial"), "err");
-          return;
-        }
-        if (payload.error === "IPHONE_69_GATED") {
-          setPaywall("69");
-          flashStatus(t(locale, "error_69"), "err");
-          return;
-        }
-        if (payload.error === "CLONE_RISK") {
-          flashStatus(t(locale, "error_clone"), "err");
-          return;
-        }
-        flashStatus(explainError(locale, payload.error || "EXPORT_FAILED"), "err");
-        return;
-      }
-      if (!payload.url) throw new Error("STORAGE_UNAVAILABLE");
-      if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId, {
-        image_count: Math.max(outerFiles.length, effectiveInner.length),
-        plan: billing?.plan ?? "unknown",
-      });
-      const warning = payload.warning ?? "";
-      setZipName(payload.filename || "app.zip");
-      setZipUrl(payload.url);
-      setDownloadId(payload.exportId ?? null);
-      setExportImages(payload.images ?? []);
-      flashStatus(
-        warning === "TOO_FEW"
-          ? t(locale, "tool_warn")
-          : warning === "UNPAIRED"
-            ? t(locale, "tool_warn_unpaired")
-            : t(locale, "tool_zip_ready"),
-        "ok",
-      );
-      void refreshBilling();
-    } catch (error) {
-      void trackProduct("export_failed", { reason: "network_or_storage" });
-      flashStatus(error instanceof Error ? explainError(locale, error.message) : t(locale, "error_export"), "err");
-    } finally {
-      setBusyExport(false);
-    }
-  }
-
-  async function onDownload() {
-    void trackProduct("zip_download_clicked");
-    if (!downloadId) { if (zipUrl) window.location.assign(zipUrl); return; }
-    try {
-      const response = await fetch(`/api/exports/${downloadId}/download?format=json`, { cache: "no-store" });
-      const payload = await response.json() as { url?: string; error?: string };
-      if (!response.ok || !payload.url) {
-        const messages: Record<string, [string, string]> = {
-          EXPORT_EXPIRED: ["Ce ZIP a expiré après 24 h. Vos captures locales restent disponibles.", "This ZIP expired after 24 hours. Your local screenshots remain available."],
-          EXPORT_DELETED: ["Ce fichier a été supprimé du serveur.", "This file has been removed from the server."],
-          AUTH_REQUIRED: ["Reconnectez-vous pour récupérer ce fichier.", "Sign in again to retrieve this file."],
-        };
-        const message = messages[payload.error ?? ""];
-        flashStatus(message ? message[locale === "fr" ? 0 : 1] : locale === "fr" ? "Téléchargement indisponible. Réessayez sans générer un nouvel export." : "Download unavailable. Retry without generating another export.", "err");
-        return;
-      }
-      setZipUrl(payload.url);
-      window.location.assign(payload.url);
-    } catch { flashStatus(locale === "fr" ? "Erreur réseau. Réessayez le téléchargement ; aucun essai supplémentaire n’est consommé." : "Network error. Retry the download; no additional trial is consumed.", "err"); }
-  }
-
-  async function onReview() {
-    void trackProduct("review_requested", { plan: billing?.plan ?? "unknown" });
-    setReviewUpgrade(false);
-    const supabase = createBrowserSupabase();
-    const { data: sessionData } = await supabase.auth.getUser();
-    if (!sessionData.user) {
-      setShowAuth(true);
-      flashStatus(t(locale, "error_auth_review"), "err");
-      return;
-    }
-    let plan = billing?.plan;
-    if (!plan) {
-      const response = await fetch("/api/billing/status");
-      if (!response.ok) {
-        void trackProduct("review_failed", { reason: "billing_unavailable" });
-        setShowAuth(true);
-        flashStatus(t(locale, "error_auth_review"), "err");
-        return;
-      }
-      const nextBilling = (await response.json()) as BillingStatus;
-      setBilling(nextBilling);
-      plan = nextBilling.plan;
-    }
-    if (plan !== "studio") {
-      setReviewUpgrade(true);
-      flashStatus(t(locale, "error_studio"), "err");
-      return;
-    }
-    if (severeQualityCount > 0 && !qualityAcknowledged) {
-      flashStatus(t(locale, "tool_quality_ack_required"), "err");
-      document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
-      return;
-    }
-    setBusyReview(true);
-    flashStatus(t(locale, "tool_review_preparing"), "busy");
-    try {
-      const extra = sameSet ? [] : innerFiles;
-      assertBatchSize([...outerFiles, ...extra]);
-      const total = outerFiles.length + extra.length;
-      let done = 0;
-      const tick = () => {
-        done += 1;
-        flashStatus(tf(locale, "tool_progress_review", { done, total }), "busy");
-      };
-      const [outerPaths, uploadedInner] = await Promise.all([
-        uploadSide(sessionData.user.id, outerFiles, tick),
-        extra.length ? uploadSide(sessionData.user.id, extra, tick) : Promise.resolve([] as string[]),
-      ]);
-      const innerPaths = sameSet ? outerPaths : uploadedInner;
-      const response = await submitRender(sessionData.user.id, "review", {
-          outerPaths,
-          innerPaths,
-          sameSet: cloneForced,
-          appName: active?.name || "App",
-          clientName: active?.clientName || "",
-          orientation,
-          locale,
-          options: renderOptions,
-          transforms: {
-            outer: outerFiles.map((_, index) => normalizeCropTransform(outerTransforms[index], globalFit)),
-            inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
-          },
-        }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
-      });
-      const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
-      if (!response.ok) {
-        void trackProduct("review_failed", { reason: ["STUDIO_REQUIRED", "INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "UPLOAD_MISSING"].includes(payload.error ?? "") ? payload.error! : "other" });
-        if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
-        flashStatus(explainError(locale, payload.error || "STUDIO_REQUIRED"), "err");
-        return;
-      }
-      const publicId = payload.id ?? payload.url?.split("/").filter(Boolean).pop();
-      if (publicId) void trackDatafastConversion("review_created", publicId, { slide_count: Math.max(outerFiles.length, effectiveInner.length) });
-      if (publicId) patchActive({ lastReviewId: publicId, lastReviewStatus: "pending" });
-      const path = payload.url || (publicId ? reviewPath(locale, publicId) : "");
-      const absolute = path.startsWith("http") ? path : `${window.location.origin}${path}`;
-      setReviewUrl(absolute);
-      try {
-        await navigator.clipboard.writeText(absolute);
-        setReviewStatus(
-          payload.expiresAt
-            ? `${t(locale, "tool_review_copied")} · ${locale === "fr" ? "expire le" : "expires"} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payload.expiresAt))}`
-            : t(locale, "tool_review_copied"),
-        );
-      } catch {
-        setReviewStatus(t(locale, "tool_review_ready"));
-      }
-      flashStatus(t(locale, "tool_review_ready"), "ok");
-    } catch (error) {
-      void trackProduct("review_failed", { reason: "network_or_storage" });
-      const code = error instanceof Error ? error.message : "STUDIO_REQUIRED";
-      if (code === "STUDIO_REQUIRED") setReviewUpgrade(true);
-      flashStatus(explainError(locale, code), "err");
-    } finally {
-      setBusyReview(false);
-    }
-  }
-
   async function onCheckout(kind: CheckoutKind) {
     if (!billing?.checkoutAvailable) { flashStatus(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet.", "info"); return; }
     if (!signedIn) {
@@ -979,64 +426,6 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setZipUrl(null);
   }
 
-  function closeSets() {
-    if (!setsRef.current?.open) {
-      setSetsOpen(false);
-      setSetsClosing(false);
-      return;
-    }
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setsRef.current.removeAttribute("open");
-      setSetsOpen(false);
-      setSetsClosing(false);
-      return;
-    }
-    setSetsOpen(false);
-    setSetsClosing(true);
-    const closeMs =
-      parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dropdown-close-dur")) || 150;
-    window.setTimeout(() => {
-      setsRef.current?.removeAttribute("open");
-      setSetsClosing(false);
-    }, closeMs);
-  }
-
-  function onSetsTriggerKey(event: ReactKeyboardEvent<HTMLElement>) {
-    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-    event.preventDefault();
-    const root = setsRef.current;
-    if (!root) return;
-    root.setAttribute("open", "");
-    setSetsOpen(true);
-    const options = root.querySelectorAll<HTMLButtonElement>('[role="option"]');
-    const target = event.key === "ArrowUp" ? options[options.length - 1] : options[0];
-    queueMicrotask(() => target?.focus());
-  }
-
-  function onSetsMenuKey(event: ReactKeyboardEvent<HTMLUListElement>) {
-    const options = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]')];
-    if (!options.length) return;
-    const index = options.findIndex((el) => el === document.activeElement);
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      options[(index + 1 + options.length) % options.length]?.focus();
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      options[(index - 1 + options.length) % options.length]?.focus();
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      options[0]?.focus();
-    } else if (event.key === "End") {
-      event.preventDefault();
-      options[options.length - 1]?.focus();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      closeSets();
-      (setsRef.current?.querySelector("summary") as HTMLElement | null)?.focus();
-    }
-  }
-
   function addSet() {
     closeSets();
     const next = defaultSet();
@@ -1057,22 +446,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   const remaining = billing?.remainingFreeExports;
-  const remainingLabel =
-    billingError ? (locale === "fr" ? "Statut temporairement indisponible" : "Status temporarily unavailable") : !billing && session === "in"
-      ? locale === "fr"
-        ? "Chargement du plan…"
-        : "Loading plan…"
-      : billing?.plan === "studio"
-      ? t(locale, "tool_plan_studio")
-      : billing?.plan === "indie"
-        ? t(locale, "tool_plan_indie")
-        : remaining === 1
-          ? t(locale, "tool_remaining_one")
-          : remaining === 0
-            ? t(locale, "tool_remaining_none")
-            : remaining != null
-              ? tf(locale, "tool_remaining", { n: remaining })
-              : t(locale, "tool_guest_quota");
+  const remainingLabel = quotaLabel(locale, billing, billingError, session);
   const pillMute = remaining === 0 && billing?.plan === "free";
   const cloneLabel = clones[slideIndex]?.label ?? (cloneForced && hasExportable ? "risk" : null);
   const visibleReviewUrl = reviewUrl;
@@ -1168,7 +542,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Gardez cet onglet ouvert et libérez de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
             {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{locale === "fr" ? "Récupérer explicitement les brouillons anonymes ou anciens dans ce compte" : "Import anonymous or older drafts into this account"}</button> : null}
             {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{locale === "fr" ? "Réessayer le statut" : "Retry status"}</button> : null}
-            {activationTimedOut ? <button className="ds-text-btn" onClick={() => { setActivationTimedOut(false); setActivationAttempt((n) => n + 1); }}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
+            {activationTimedOut ? <button className="ds-text-btn" onClick={() => retryActivation()}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
           </div>
         </div>
         <div className="tool-command-orientation">
