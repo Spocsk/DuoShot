@@ -5,7 +5,6 @@ import gsap from "gsap";
 
 export function LandingMotion({ children }: { children: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
-  const played = useRef(new Set<string>());
 
   useLayoutEffect(() => {
     const node = root.current;
@@ -33,131 +32,155 @@ export function LandingMotion({ children }: { children: ReactNode }) {
 
       media.add("(min-width: 900px) and (prefers-reduced-motion: no-preference)", () => {
         const sequence = node.querySelector<HTMLElement>(".studio-sequence");
-        if (!sequence) return;
-        const scenes = Array.from(sequence.querySelectorAll<HTMLElement>(".studio-sequence-stage > [data-sequence-scene]"));
+        const stage = sequence?.querySelector<HTMLElement>(".studio-sequence-stage");
+        if (!sequence || !stage) return;
         const steps = Array.from(sequence.querySelectorAll<HTMLElement>("[data-sequence-step]"));
-        if (!scenes.length || scenes.length !== steps.length) return;
+        if (steps.length !== 4) return;
+        const q = gsap.utils.selector(stage);
+        const one = (selector: string) => stage.querySelector<HTMLElement>(selector);
+        const cluster = one(".duo-cluster");
+        const outerScreen = one(".duo-closed .duo-screen");
+        const book = one(".duo-book-inner");
+        const thumbs = q(".studio-sequence-thumb");
+        const score = one(".studio-sequence-score strong");
+        if (!cluster || !outerScreen || !book || thumbs.length !== 2 || !score) return;
         sequence.classList.add("is-motion");
-        gsap.set(scenes, { autoAlpha: 0 });
-        gsap.set(scenes[0], { autoAlpha: 1 });
-        gsap.set(steps, { opacity: 0.5 });
-        gsap.set(steps[0], { opacity: 1 });
-        let running: gsap.core.Timeline | null = null;
-        let removeFlights = () => {};
+        const scoreText = score.textContent;
 
-        const finishAnimation = () => {
-          running?.progress(1).pause();
-          running?.kill();
-          running = null;
-          removeFlights();
-        };
-        const animateImport = (scene: HTMLElement) => {
-          const thumbs = Array.from(scene.querySelectorAll<HTMLElement>(".studio-sequence-thumb"));
-          const targets = [scene.querySelector<HTMLElement>(".duo-closed .harbor-cover"), scene.querySelector<HTMLElement>(".duo-book-inner")];
-          const status = scene.querySelector<HTMLElement>(".studio-sequence-import-status");
-          const flights: HTMLElement[] = [];
-          const sceneRect = scene.getBoundingClientRect();
-          const timeline = gsap.timeline({ paused: true });
-          targets.forEach((target, index) => {
-            if (!target || !thumbs[index]) return;
-            const destination = target.getBoundingClientRect();
-            const origin = thumbs[index].getBoundingClientRect();
-            // Keep percentage padding relative to the screenshot, not the whole scene.
-            const flight = document.createElement("div");
-            const content = target.cloneNode(true) as HTMLElement;
-            content.style.width = "100%";
-            content.style.height = "100%";
-            flight.appendChild(content);
-            flight.classList.add("studio-import-flight");
-            Object.assign(flight.style, {
-              position: "absolute", left: `${destination.left - sceneRect.left}px`,
-              top: `${destination.top - sceneRect.top}px`, width: `${destination.width}px`,
-              height: `${destination.height}px`, margin: "0", zIndex: "6", pointerEvents: "none",
-              overflow: "hidden", borderRadius: getComputedStyle(index === 0 ? target.parentElement! : target).borderRadius,
-            });
-            scene.appendChild(flight);
-            flights.push(flight);
-            gsap.set(target, { opacity: 0 });
-            const start = index * 0.16;
-            timeline.fromTo(flight, {
-              x: origin.left - destination.left, y: origin.top - destination.top,
-              scaleX: origin.width / destination.width, scaleY: origin.height / destination.height,
-              transformOrigin: "top left", autoAlpha: 1,
-            }, { x: 0, y: 0, scaleX: 1, scaleY: 1, duration: 0.75, ease: "power3.inOut" }, start)
-              .to(target, { opacity: 1, duration: 0.12 }, start + 0.7)
-              .to(flight, { autoAlpha: 0, duration: 0.12 }, start + 0.75);
-          });
-          if (status) timeline.fromTo(status, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.22 }, 0.85);
-          removeFlights = () => {
-            flights.forEach((flight) => flight.remove());
-            targets.forEach((target) => { if (target) gsap.set(target, { clearProps: "opacity" }); });
-          };
-          timeline.eventCallback("onComplete", () => removeFlights());
-          running = timeline;
-          timeline.play();
-        };
-        const animatePrevention = (scene: HTMLElement) => {
-          const markers = scene.querySelectorAll<HTMLElement>(".studio-prevent-marker");
-          const checks = scene.querySelectorAll<HTMLElement>(".studio-prevent-checks li");
-          const outcome = scene.querySelector<HTMLElement>(".studio-prevent-outcome");
-          const timeline = gsap.timeline({ paused: true });
-          markers.forEach((marker, index) => {
-            timeline.fromTo(marker, { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, duration: 0.3, ease: "power3.out" }, index * 0.22);
-            if (checks[index]) timeline.fromTo(checks[index], { opacity: 0.3, x: 8 }, { opacity: 1, x: 0, duration: 0.3 }, index * 0.22);
-          });
-          if (outcome) timeline.fromTo(outcome, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.95);
-          running = timeline;
-          timeline.play();
-        };
-        let active = -1;
-        const showScene = (index: number) => {
-          if (active === index) return;
-          finishAnimation();
-          active = index;
-          scenes.forEach((scene, sceneIndex) => {
-            gsap.to(scene, { autoAlpha: sceneIndex === index ? 1 : 0, duration: 0.28, ease: "power2.out", overwrite: true });
-          });
-          gsap.to(steps, { opacity: (stepIndex: number) => stepIndex === index ? 1 : 0.5, duration: 0.35, overwrite: true });
-          const phase = scenes[index].dataset.sequenceScene;
-          if (phase && !played.current.has(phase)) {
-            played.current.add(phase);
-            if (phase === "import") animateImport(scenes[index]);
-            if (phase === "prevent") animatePrevention(scenes[index]);
+        // Layout box relative to the stage, ignoring transforms, so flights aim true after any refresh.
+        const box = (element: HTMLElement) => {
+          let left = 0;
+          let top = 0;
+          let current: HTMLElement | null = element;
+          while (current && current !== stage) {
+            left += current.offsetLeft;
+            top += current.offsetTop;
+            current = current.offsetParent as HTMLElement | null;
           }
+          return { left, top, width: element.offsetWidth, height: element.offsetHeight };
         };
-        // A viewport-based selection also handles fast jumps past intermediate steps.
-        let frame = 0;
-        const updateScene = () => {
-          frame = 0;
-          const center = window.innerHeight / 2;
-          const index = steps.findIndex((step) => {
-            const rect = step.getBoundingClientRect();
-            return rect.top <= center && rect.bottom > center;
-          });
-          if (index !== -1) showScene(index);
-        };
-        const scheduleScene = () => {
-          if (!frame) frame = requestAnimationFrame(updateScene);
-        };
-        window.addEventListener("scroll", scheduleScene, { passive: true });
-        window.addEventListener("resize", scheduleScene);
-        scheduleScene();
-        // Finish in-flight geometry before a resize; any later first play measures afresh.
-        let previousWidth = sequence.clientWidth;
-        let previousHeight = window.innerHeight;
-        const resizeObserver = new ResizeObserver(() => {
-          if (sequence.clientWidth !== previousWidth || window.innerHeight !== previousHeight) finishAnimation();
-          previousWidth = sequence.clientWidth;
-          previousHeight = window.innerHeight;
+        const flight = (thumb: HTMLElement, target: HTMLElement) => ({
+          x: () => box(target).left - box(thumb).left,
+          y: () => box(target).top - box(thumb).top,
+          scaleX: () => box(target).width / box(thumb).width,
+          scaleY: () => box(target).height / box(thumb).height,
         });
-        resizeObserver.observe(sequence);
+
+        // State 0: the device waits half-folded with blank screens, captures ready below.
+        gsap.set(steps, { opacity: 0.4 });
+        gsap.set(cluster, { transformOrigin: "60% 55%" });
+        gsap.set(q(".duo-leaf-left"), { rotateY: 38, transformOrigin: "100% 50%", transformPerspective: 900 });
+        gsap.set(q(".duo-leaf-right"), { rotateY: -38, transformOrigin: "0% 50%", transformPerspective: 900 });
+        gsap.set([outerScreen, ...q(".duo-book-inner .duo-screen")], { autoAlpha: 0 });
+        gsap.set(q(".duo-crease"), { opacity: 0 });
+        gsap.set(thumbs, { transformOrigin: "0 0" });
+        gsap.set(q(".studio-sequence-import-status i"), { scaleX: 0 });
+        gsap.set(q(".studio-sequence-import-status strong"), { autoAlpha: 0 });
+
+        // One master timeline, one unit per step, so shared properties hand off in order both ways.
+        const master = gsap.timeline({ paused: true });
+        const segment = (index: number) => {
+          const timeline = gsap.timeline({ defaults: { ease: "power2.inOut" } });
+          master.add(timeline, index);
+          return timeline;
+        };
+
+        // 01 — import: captures fly into each screen while the device unfolds.
+        segment(0)
+          .to(steps[0], { opacity: 1, duration: 0.3 }, 0)
+          .to(q(".studio-sequence-thumb > span"), { autoAlpha: 0, duration: 0.12 }, 0.05)
+          .to(thumbs[0], { ...flight(thumbs[0], outerScreen), borderWidth: 0, duration: 0.4 }, 0.05)
+          .to(outerScreen, { autoAlpha: 1, duration: 0.1 }, 0.4)
+          .to(thumbs[0], { autoAlpha: 0, duration: 0.1 }, 0.43)
+          .to(thumbs[1], { ...flight(thumbs[1], book), borderWidth: 0, duration: 0.4 }, 0.15)
+          .to(q(".duo-book-inner .duo-screen"), { autoAlpha: 1, duration: 0.1 }, 0.5)
+          .to(thumbs[1], { autoAlpha: 0, duration: 0.1 }, 0.53)
+          // The capture lands on the half-folded leaves, which then flatten around the hinge.
+          .to(q(".duo-leaf"), { rotateY: 0, duration: 0.45, ease: "power2.out" }, 0.5)
+          .to(q(".duo-crease"), { opacity: 1, duration: 0.2 }, 0.75)
+          .to(q(".studio-sequence-import-status i"), { scaleX: 1, duration: 0.8, ease: "none" }, 0.1)
+          .to(q(".studio-sequence-import-status strong"), { autoAlpha: 1, duration: 0.15 }, 0.8);
+
+        // 02 — inspect: push in on the open screens, frame them, light the hinge, score the result.
+        const counter = { value: 0 };
+        segment(1)
+          .to(steps[0], { opacity: 0.4, duration: 0.3 }, 0)
+          .to(steps[1], { opacity: 1, duration: 0.3 }, 0.1)
+          .to(q(".studio-sequence-import"), { autoAlpha: 0, y: -14, duration: 0.3 }, 0)
+          .to(cluster, { scale: 1.06, y: 10, duration: 0.6 }, 0.05)
+          .to(q(".studio-frame-guide"), { autoAlpha: 1, duration: 0.15 }, 0.3)
+          .fromTo(q(".studio-frame-guide i"), { scale: 0 }, { scale: 1, duration: 0.35, stagger: 0.06, ease: "power3.out" }, 0.3)
+          .fromTo(q(".studio-hinge-glow"), { autoAlpha: 0, scaleY: 0.2 }, { autoAlpha: 1, scaleY: 1, duration: 0.4 }, 0.45)
+          .fromTo(q(".studio-sequence-analysis"), { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.35)
+          .fromTo(counter, { value: 0 }, {
+            value: 83, duration: 0.45, ease: "power1.out",
+            onUpdate: () => { score.textContent = `${Math.round(counter.value)} / 100`; },
+          }, 0.5);
+
+        // 03 — report: step back from the device and sort what remains into three kinds of check.
+        segment(2)
+          .to(steps[1], { opacity: 0.4, duration: 0.3 }, 0)
+          .to(steps[2], { opacity: 1, duration: 0.3 }, 0.1)
+          .to([...q(".studio-frame-guide"), ...q(".studio-hinge-glow")], { autoAlpha: 0, duration: 0.25 }, 0)
+          .to(q(".studio-sequence-analysis"), { autoAlpha: 0, y: -16, duration: 0.3 }, 0)
+          .to(cluster, { scale: 0.92, y: -10, duration: 0.6 }, 0.05)
+          .fromTo(q(".studio-sequence-report"), { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power3.out" }, 0.3)
+          .fromTo(q(".studio-sequence-report li"), { autoAlpha: 0, x: -12 }, { autoAlpha: 1, x: 0, duration: 0.3, stagger: 0.12 }, 0.45)
+          .fromTo(q(".studio-sequence-report li i"), { scale: 0 }, { scale: 1, duration: 0.25, stagger: 0.12, ease: "back.out(2)" }, 0.5);
+
+        // 04 — prevent: each issue is pinned on the device next to its check, then the outcome.
+        const markers = q(".studio-prevent-marker");
+        const checks = q(".studio-prevent-checks li");
+        const prevent = segment(3)
+          .to(steps[2], { opacity: 0.4, duration: 0.3 }, 0)
+          .to(steps[3], { opacity: 1, duration: 0.3 }, 0.1)
+          .to(q(".studio-sequence-report"), { autoAlpha: 0, y: -16, duration: 0.3 }, 0)
+          .to(cluster, { scale: 1, y: 0, duration: 0.5 }, 0.05)
+          .fromTo(q(".studio-sequence-prevent"), { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.35, ease: "power3.out" }, 0.25)
+          .set(q(".studio-prevent-markers"), { autoAlpha: 1 }, 0.35)
+          .fromTo(q(".studio-prevent-outcome"), { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.2 }, 0.8);
+        markers.forEach((marker, index) => {
+          const at = 0.4 + index * 0.13;
+          prevent.fromTo(marker, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.2, ease: "back.out(2.5)" }, at);
+          if (checks[index]) prevent.fromTo(checks[index], { opacity: 0.3, x: 8 }, { opacity: 1, x: 0, duration: 0.2 }, at);
+        });
+
+        master.set({}, {}, steps.length);
+
+        // Each step's text sweeps through a short window (top of the step from 78% to 38% of the
+        // viewport); the time is the sum of the window progresses, so the scene holds while a step
+        // is read and survives uneven step heights. Read from live rects: a ScrollTrigger refresh
+        // would reset the scroll position and cut short smooth scrolls started during load.
+        const progress = () => {
+          const height = window.innerHeight;
+          return steps.reduce((sum, step) => sum + gsap.utils.clamp(0, 1, (height * 0.78 - step.getBoundingClientRect().top) / (height * 0.4)), 0);
+        };
+        let frame = 0;
+        const seek = () => {
+          frame = 0;
+          gsap.to(master, { time: progress(), duration: 0.6, ease: "power2.out", overwrite: true });
+        };
+        const scheduleSeek = () => {
+          if (!frame) frame = requestAnimationFrame(seek);
+        };
+        // Layout changed: replay from the start so measured flights and recorded start values are fresh.
+        let disposed = false;
+        const remeasure = () => {
+          if (disposed) return;
+          gsap.killTweensOf(master);
+          master.time(0).invalidate().time(progress());
+        };
+        master.time(progress());
+        window.addEventListener("scroll", scheduleSeek, { passive: true });
+        window.addEventListener("resize", remeasure);
+        document.fonts?.ready.then(remeasure);
+
         return () => {
-          window.removeEventListener("scroll", scheduleScene);
-          window.removeEventListener("resize", scheduleScene);
+          disposed = true;
+          window.removeEventListener("scroll", scheduleSeek);
+          window.removeEventListener("resize", remeasure);
           cancelAnimationFrame(frame);
-          resizeObserver.disconnect();
-          finishAnimation();
-          gsap.killTweensOf([...scenes, ...steps]);
+          score.textContent = scoreText;
           sequence.classList.remove("is-motion");
         };
       });
