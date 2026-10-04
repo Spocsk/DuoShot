@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { checkoutAvailable } from "@/lib/billing-availability";
+import { checkoutAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import { readJson } from "@/test/supabase-mock";
 import { GET } from "./route";
 
-vi.mock("@/lib/billing-availability", () => ({ checkoutAvailable: vi.fn() }));
+vi.mock("@/lib/billing-availability", () => ({ checkoutAvailable: vi.fn(), passCheckoutAvailable: vi.fn() }));
 
-beforeEach(() => vi.mocked(checkoutAvailable).mockReset());
+beforeEach(() => {
+  vi.mocked(checkoutAvailable).mockReset();
+  vi.mocked(passCheckoutAvailable).mockReset().mockReturnValue(false);
+});
 
 describe("GET /api/billing/availability", () => {
   it.each([true, false])("returns checkoutAvailable=%s without caching", async (available) => {
@@ -14,12 +17,13 @@ describe("GET /api/billing/availability", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     const { status, body } = await readJson(response);
     expect(status).toBe(200);
-    expect(body).toEqual({ checkoutAvailable: available });
+    expect(body).toEqual({ checkoutAvailable: available, passAvailable: false });
   });
 
   it("evaluates public availability without a user id", () => {
     vi.mocked(checkoutAvailable).mockReturnValue(false);
     GET();
     expect(checkoutAvailable).toHaveBeenCalledWith();
+    expect(passCheckoutAvailable).toHaveBeenCalledWith();
   });
 });

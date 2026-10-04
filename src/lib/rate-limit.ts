@@ -17,6 +17,8 @@ export const RATE_LIMIT_RULES: Rule[] = [
   { name: "account", methods: ["GET", "POST"], pattern: /^\/api\/account\/(?:export|delete)$/, limit: 10, windowMs: 60 * MINUTE },
   { name: "invitations", methods: ["POST"], pattern: /^\/api\/workspace\/invitations(?:\/accept)?$/, limit: 30, windowMs: 60 * MINUTE },
   { name: "billing", methods: ["POST"], pattern: /^\/api\/stripe\/(?:checkout|portal)$/, limit: 20, windowMs: 10 * MINUTE },
+  // Public, unauthenticated sign-up that sends e-mail, plus its confirm/unsubscribe links.
+  { name: "waitlist", methods: ["GET", "POST"], pattern: /^\/api\/waitlist(?:\/(?:confirm|unsubscribe))?$/, limit: 10, windowMs: 10 * MINUTE },
   { name: "oauth-check", methods: ["POST"], pattern: /^\/api\/auth\/oauth-check$/, limit: 30, windowMs: 10 * MINUTE },
   { name: "example-zip", methods: ["GET"], pattern: /^\/api\/example-zip$/, limit: 10, windowMs: 10 * MINUTE },
   { name: "review-decision", methods: ["POST"], pattern: /^\/api\/reviews\/[^/]+\/decision$/, limit: 30, windowMs: 10 * MINUTE },

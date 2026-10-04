@@ -156,4 +156,69 @@ describe("POST /api/stripe/webhook", () => {
     expect(update).not.toHaveBeenCalled();expect(insert).not.toHaveBeenCalled();
   });
 
+  describe("one-time pass", () => {
+    function passEvent(session: Record<string, unknown>, type = "checkout.session.completed", rpcResult: { data: unknown; error: unknown } = { data: { granted: true }, error: null }, duplicate = false) {
+      const insert = vi.fn(() => createQueryBuilder({ data: null, error: null }));
+      const update = vi.fn(() => createQueryBuilder({ data: null, error: null }));
+      const rpc = vi.fn(async () => rpcResult);
+      const from = vi.fn((table: string) => table === "stripe_events"
+        ? { ...createQueryBuilder({ data: duplicate ? { id: "evt_pass" } : null, error: null }), insert }
+        : { ...createQueryBuilder({ data: null, error: null }), update });
+      vi.mocked(createAdminSupabase).mockReturnValue({ from, rpc } as never);
+      const retrieve = vi.fn();
+      vi.mocked(getStripe).mockReturnValue({
+        webhooks: { constructEvent: vi.fn(() => ({
+          id: "evt_pass", type, livemode: false,
+          data: { object: { id: "cs_pass", mode: "payment", payment_status: "paid", customer: "cus_1", client_reference_id: "ws-1", metadata: { kind: "pass30", workspace_id: "ws-1" }, ...session } },
+        })) },
+        subscriptions: { retrieve },
+      } as never);
+      return { rpc, insert, update, retrieve };
+    }
+
+    it("records a 30-day pass for a paid one-time Checkout", async () => {
+      const { rpc, insert, update, retrieve } = passEvent({});
+      const { status, body } = await readJson(await POST(request("valid")));
+      expect(status).toBe(200);
+      expect(body.received).toBe(true);
+      expect(rpc).toHaveBeenCalledWith("grant_workspace_pass", { p_workspace_id: "ws-1", p_session_id: "cs_pass", p_customer_id: "cus_1", p_days: 30 });
+      expect(retrieve).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+      expect(insert).toHaveBeenCalledWith({ id: "evt_pass", type: "checkout.session.completed" });
+    });
+
+    it("is idempotent: a duplicate event is not reprocessed and a replayed session is not extended twice", async () => {
+      const duplicate = passEvent({}, "checkout.session.completed", { data: null, error: null }, true);
+      expect((await readJson(await POST(request("valid")))).body.duplicate).toBe(true);
+      expect(duplicate.rpc).not.toHaveBeenCalled();
+      // A second event for the same session (e.g. async_payment_succeeded after completed)
+      // reaches the RPC, which is keyed on the session id and reports granted=false.
+      const replay = passEvent({}, "checkout.session.async_payment_succeeded", { data: { granted: false }, error: null });
+      expect((await POST(request("valid"))).status).toBe(200);
+      expect(replay.rpc).toHaveBeenCalledWith("grant_workspace_pass", expect.objectContaining({ p_session_id: "cs_pass" }));
+    });
+
+    it("waits for async payment confirmation before granting", async () => {
+      const { rpc, insert } = passEvent({ payment_status: "unpaid" });
+      expect((await POST(request("valid"))).status).toBe(200);
+      expect(rpc).not.toHaveBeenCalled();
+      expect(insert).toHaveBeenCalled();
+    });
+
+    it("acknowledges payments DuoShot checkout did not create", async () => {
+      const { rpc } = passEvent({ metadata: {}, client_reference_id: null });
+      const { status, body } = await readJson(await POST(request("valid")));
+      expect(status).toBe(200);
+      expect(body.ignored).toBe("PAYMENT_UNLINKED");
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
+    it("keeps a pass it cannot apply as a failed delivery", async () => {
+      const { insert } = passEvent({}, "checkout.session.completed", { data: null, error: { message: "CUSTOMER_MISMATCH" } });
+      const { status, body } = await readJson(await POST(request("valid")));
+      expect(status).toBe(500);
+      expect(body.error).toBe("CUSTOMER_MISMATCH");
+      expect(insert).not.toHaveBeenCalled();
+    });
+  });
 });

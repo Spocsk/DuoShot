@@ -1,4 +1,4 @@
-import { PRO_CHECKOUT_KIND, type CheckoutKind } from "./plans";
+import { PRO_CHECKOUT_KIND, type CheckoutKind, type PurchaseKind } from "./plans";
 import { localePrefix } from "./site";
 import type { Locale } from "./specs";
 import { trackProduct } from "./analytics-client";
@@ -16,7 +16,7 @@ function checkoutMessage(code: string | undefined, english: boolean): string {
   return messages[code ?? ""]?.[english ? 1 : 0] ?? (english ? "Billing is temporarily unavailable. Please retry in a moment." : "La facturation est temporairement indisponible. Réessayez dans un instant.");
 }
 
-export async function startCheckout(kind: CheckoutKind, nextPath: string): Promise<void> {
+export async function startCheckout(kind: PurchaseKind, nextPath: string): Promise<void> {
   const response = await fetch("/api/stripe/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
