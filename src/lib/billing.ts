@@ -10,6 +10,8 @@ export type Entitlements = {
   periodEnd?: string | null;
   cancelAtPeriodEnd?: boolean;
   hasBillingCustomer?: boolean;
+  /** Set while a one-time pass is unexpired; it then grants at least Indie. */
+  passExpiresAt?: string | null;
 };
 
 export function planFromWorkspace(value: string | null | undefined): PlanId {
@@ -25,7 +27,7 @@ export function mergePlanSources(stripePlan: PlanId, manualPlan: PlanId): PlanId
 export function entitlementsFromPlan(
   plan: PlanId,
   extra: Pick<Entitlements, "source"> & { freeExportsUsed?: number } &
-    Partial<Pick<Entitlements, "subscriptionStatus" | "periodEnd" | "cancelAtPeriodEnd" | "hasBillingCustomer">>,
+    Partial<Pick<Entitlements, "subscriptionStatus" | "periodEnd" | "cancelAtPeriodEnd" | "hasBillingCustomer" | "passExpiresAt">>,
 ): Entitlements {
   return {
     plan,
@@ -36,7 +38,15 @@ export function entitlementsFromPlan(
     periodEnd: extra.periodEnd ?? null,
     cancelAtPeriodEnd: extra.cancelAtPeriodEnd ?? false,
     hasBillingCustomer: extra.hasBillingCustomer ?? false,
+    passExpiresAt: extra.passExpiresAt ?? null,
   };
+}
+
+/** A pass counts only before its expiry, compared at read time (no cron). */
+export function activePassUntil(passExpiresAt: string | null | undefined, now = Date.now()): string | null {
+  if (!passExpiresAt) return null;
+  const expiry = Date.parse(passExpiresAt);
+  return Number.isFinite(expiry) && expiry > now ? passExpiresAt : null;
 }
 
 /** The signed webhook projection is authoritative; manual grants are explicit. */
@@ -49,10 +59,15 @@ export function resolveEntitlements(options: {
   cancelAtPeriodEnd?: boolean | null;
   customerId?: string | null;
   freeExportsUsed?: number;
+  passExpiresAt?: string | null;
+  now?: number;
 }): Entitlements {
-  const stripePlan = options.subscriptionId && ["active", "trialing"].includes(options.subscriptionStatus ?? "")
+  const subscriptionPlan = options.subscriptionId && ["active", "trialing"].includes(options.subscriptionStatus ?? "")
     ? planFromWorkspace(options.workspacePlan)
     : "free";
+  const passUntil = activePassUntil(options.passExpiresAt, options.now);
+  // A pass is paid through Stripe, so it reports source "stripe" like a subscription.
+  const stripePlan = mergePlanSources(subscriptionPlan, passUntil ? "indie" : "free");
   const manualPlan = planFromWorkspace(options.manualPlan);
   const plan = mergePlanSources(stripePlan, manualPlan);
   return entitlementsFromPlan(plan, {
@@ -62,5 +77,6 @@ export function resolveEntitlements(options: {
     periodEnd: options.periodEnd,
     cancelAtPeriodEnd: options.cancelAtPeriodEnd ?? false,
     hasBillingCustomer: Boolean(options.customerId),
+    passExpiresAt: passUntil,
   });
 }

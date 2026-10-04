@@ -2,8 +2,8 @@
 
 import { useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { i18nKeys, t } from "@/lib/i18n";
-import { CHECKOUT_CATALOG, PLANS, type CheckoutKind } from "@/lib/plans";
+import { i18nKeys, t, tf } from "@/lib/i18n";
+import { CHECKOUT_CATALOG, ONE_TIME_CATALOG, PLANS, type CheckoutKind, type OneTimeKind, type PurchaseKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
 import { appleUploadStatus } from "@/lib/apple-screenshot-status";
 import { localePrefix, pricingPath, reviewPath } from "@/lib/site";
@@ -11,8 +11,10 @@ import { PricingCta } from "@/components/pricing-cta";
 import { FaqList } from "@/components/faq-list";
 
 /**
- * Plans are read from PLANS, so a new plan appears without touching this layout.
- * Individual plans are cards; the plan with several seats becomes the full-width team band.
+ * Plans are read from PLANS and one-time offers from ONE_TIME_CATALOG, so a new offer appears
+ * without touching this layout. Individual plans and passes are cards; the plan with several
+ * seats becomes the full-width team band. Passes render only when the server says their
+ * Stripe price is configured (passAvailable).
  */
 const PREFERRED_ORDER = ["free", "pass30", "indie", "studio"];
 const RECOMMENDED = "indie";
@@ -25,8 +27,17 @@ const num = (plan: PlanRecord, key: string) => (typeof plan[key] === "number" ? 
 const hasKey = (key: string) => i18nKeys().fr.includes(key);
 const text = (locale: Locale, key: string, fallback: string) => (hasKey(key) ? t(locale, key) : fallback);
 
-function orderedPlans(): PlanId[] {
-  const ids = Object.keys(planRecords);
+function isPass(id: PlanId): id is OneTimeKind {
+  return id in ONE_TIME_CATALOG;
+}
+
+/** Entitlements of a plan or pass: a pass carries the quotas of the plan it grants. */
+function entitlements(id: PlanId): PlanRecord {
+  return isPass(id) ? planRecords[ONE_TIME_CATALOG[id].plan]! : planRecords[id]!;
+}
+
+function orderedPlans(withPasses: boolean): PlanId[] {
+  const ids = [...Object.keys(planRecords), ...(withPasses ? Object.keys(ONE_TIME_CATALOG) : [])];
   const rank = (id: string) => {
     const index = PREFERRED_ORDER.indexOf(id);
     return index === -1 ? PREFERRED_ORDER.length - 1 : index;
@@ -35,7 +46,7 @@ function orderedPlans(): PlanId[] {
 }
 
 function isTeam(id: PlanId) {
-  return (num(planRecords[id]!, "seats") ?? 1) > 1;
+  return !isPass(id) && (num(planRecords[id]!, "seats") ?? 1) > 1;
 }
 
 function eur(value: number, locale: Locale) {
@@ -43,19 +54,28 @@ function eur(value: number, locale: Locale) {
   return locale === "fr" ? `${formatted} €` : `€${formatted}`;
 }
 
-/** Checkout kinds that belong to a plan: `${id}_monthly`, `${id}_yearly`, or a one-off kind named after it. */
+/** Subscription kinds that belong to a plan: `${id}_monthly` and `${id}_yearly`. */
 function kindsFor(id: PlanId): CheckoutKind[] {
-  return (Object.keys(CHECKOUT_CATALOG) as CheckoutKind[]).filter((kind) => kind === id || kind.startsWith(`${id}_`));
+  return (Object.keys(CHECKOUT_CATALOG) as CheckoutKind[]).filter((kind) => kind.startsWith(`${id}_`));
 }
 
 type Offer = {
   price: string;
   note: string;
-  cta: { kind: CheckoutKind; label: string } | { href: string; label: string; testId: string } | null;
+  cta: { kind: PurchaseKind; label: string } | { href: string; label: string; testId: string } | null;
 };
 
 function offerFor(id: PlanId, locale: Locale, yearly: boolean): Offer {
   const fr = locale === "fr";
+  if (isPass(id)) {
+    const pass = ONE_TIME_CATALOG[id];
+    const price = eur(pass.amountCents / 100, locale);
+    return {
+      price,
+      note: tf(locale, "pricing_pass_price", { price }).replace(price, "").trim(),
+      cta: { kind: pass.kind, label: tf(locale, "pricing_pass_cta", { price: eur(pass.amountCents / 100, locale).replace("\u00a0", " ") }) },
+    };
+  }
   const plan = planRecords[id]!;
   const title = planTitle(id, locale);
   if (id === "free") {
@@ -81,23 +101,18 @@ function offerFor(id: PlanId, locale: Locale, yearly: boolean): Offer {
       cta: kind ? { kind, label: `${title} — ${eur(value, locale).replace(" ", " ")}/${showYear ? (fr ? "an" : "year") : (fr ? "mois" : "month")}` } : null,
     };
   }
-  // One-off plans (e.g. a pass): price straight from the checkout catalog.
-  const kind = kindsFor(id)[0];
-  const cents = kind ? CHECKOUT_CATALOG[kind].amountCents : null;
-  return {
-    price: cents !== null ? `${eur(cents / 100, locale)}` : "—",
-    note: text(locale, `pricing_${id}_period`, " "),
-    cta: kind ? { kind, label: cents !== null ? `${title} — ${eur(cents / 100, locale).replace(" ", " ")}` : title } : null,
-  };
+  return { price: "—", note: "\u00a0", cta: null };
 }
 
 function planTitle(id: PlanId, locale: Locale) {
   if (id === "free") return t(locale, "pricing_trial_title");
+  if (isPass(id)) return t(locale, "pricing_pass_title");
   return text(locale, `pricing_${id}_title`, id.charAt(0).toUpperCase() + id.slice(1));
 }
 
 function planBody(id: PlanId, locale: Locale) {
   if (id === "free") return t(locale, "pricing_trial_body");
+  if (isPass(id)) return t(locale, "pricing_pass_body");
   return text(locale, `pricing_${id}_body`, "");
 }
 
@@ -106,7 +121,7 @@ function comparisonRows(locale: Locale, ids: PlanId[]) {
   const yes = t(locale, "pricing_val_yes");
   const no = t(locale, "pricing_val_no");
   const fr = locale === "fr";
-  const value = (id: PlanId, pick: (plan: PlanRecord) => string) => pick(planRecords[id]!);
+  const value = (id: PlanId, pick: (plan: PlanRecord) => string) => pick(entitlements(id));
   const quota = (plan: PlanRecord) => {
     const free = num(plan, "freeExports");
     const daily = num(plan, "dailyHdSets");
@@ -127,11 +142,11 @@ function comparisonRows(locale: Locale, ids: PlanId[]) {
   return rows.map((row) => ({ label: row.label, cells: ids.map((id) => value(id, row.pick)) }));
 }
 
-function OfferCta({ locale, offer, featured }: { locale: Locale; offer: Offer; featured: boolean }) {
+function OfferCta({ locale, offer, featured, available }: { locale: Locale; offer: Offer; featured: boolean; available?: boolean }) {
   if (!offer.cta) return null;
   const className = featured ? "ds-cta" : "ds-cta-ghost";
   if ("kind" in offer.cta) {
-    return <PricingCta locale={locale} kind={offer.cta.kind} label={offer.cta.label} className={className} />;
+    return <PricingCta locale={locale} kind={offer.cta.kind} label={offer.cta.label} className={className} initialAvailable={available} />;
   }
   return <Link href={offer.cta.href} data-testid={offer.cta.testId} className={className}>{offer.cta.label}</Link>;
 }
@@ -140,20 +155,26 @@ export function PricingSection({
   locale,
   heading = "h2",
   compact = false,
+  checkoutAvailable,
+  passAvailable = false,
 }: {
   locale: Locale;
   heading?: "h1" | "h2";
   /** Home page: cards and reassurance only, with a link to the full comparison. */
   compact?: boolean;
+  /** Server-read availability so the first HTML shows the right buttons; omitted = checked after mount. */
+  checkoutAvailable?: boolean;
+  /** One-time passes render only when the server says their Stripe price is configured. */
+  passAvailable?: boolean;
 }) {
   const [yearly, setYearly] = useState(false);
   const fr = locale === "fr";
-  const ids = orderedPlans();
+  const ids = orderedPlans(passAvailable);
   const cards = ids.filter((id) => !isTeam(id));
   const teams = ids.filter(isTeam);
   const Title = heading;
+  // Local projects are covered by the Studio question in the general FAQ below the section.
   const faq = [
-    { q: t(locale, "pricing_faq_local_q"), a: t(locale, "pricing_faq_local_a") },
     { q: t(locale, "pricing_faq_refund_q"), a: t(locale, "pricing_faq_refund_a") },
     { q: t(locale, "pricing_faq_apple_q"), a: appleUploadStatus(locale) },
   ];
@@ -182,7 +203,7 @@ export function PricingSection({
           const offer = offerFor(id, locale, yearly);
           const featured = id === RECOMMENDED;
           return (
-            <article key={id} className={`studio-plan${featured ? " is-featured" : ""}`} data-plan={id}>
+            <article key={id} className={`studio-plan${featured ? " is-featured" : ""}`} data-plan={id} data-testid={isPass(id) ? `pricing-${id}` : undefined}>
               <div className="studio-plan-title">
                 <h3>{planTitle(id, locale)}</h3>
                 {featured ? <span className="studio-plan-badge">{t(locale, "pricing_featured")}</span> : null}
@@ -190,7 +211,7 @@ export function PricingSection({
               <p className="studio-plan-price">{offer.price}</p>
               <p className="studio-plan-note">{offer.note}</p>
               <p className="studio-plan-body">{planBody(id, locale)}</p>
-              <div className="studio-plan-cta"><OfferCta locale={locale} offer={offer} featured={featured} /></div>
+              <div className="studio-plan-cta"><OfferCta locale={locale} offer={offer} featured={featured} available={checkoutAvailable} /></div>
             </article>
           );
         })}
@@ -205,11 +226,12 @@ export function PricingSection({
               <h3>{planTitle(id, locale)}</h3>
               <p className="studio-plan-body">{planBody(id, locale)}</p>
               <p className="studio-plan-seats">{t(locale, "pricing_seats_soon")}</p>
+              <p className="studio-plan-local" data-testid={`pricing-note-${id}`}>{t(locale, "pricing_local_projects")}</p>
             </div>
             <div className="studio-plan-team-offer">
               <p className="studio-plan-price">{offer.price}</p>
               <p className="studio-plan-note">{offer.note}</p>
-              <OfferCta locale={locale} offer={offer} featured={false} />
+              <OfferCta locale={locale} offer={offer} featured={false} available={checkoutAvailable} />
               <Link href={reviewPath(locale, "harbor")} data-testid="pricing-review-demo" className="studio-inline-link">
                 {t(locale, "cta_review_demo")} <span aria-hidden="true">↗</span>
               </Link>

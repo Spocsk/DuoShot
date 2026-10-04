@@ -8,6 +8,7 @@ import { trackProduct } from "@/lib/analytics-client";
 import { trackDatafastConversion } from "@/lib/datafast-client";
 import { reviewPath } from "@/lib/site";
 import { mapLimit } from "@/lib/map-limit";
+import { uploadSource } from "@/lib/source-upload";
 import type { SetMeta } from "@/lib/sets-store";
 import { explainError } from "@/components/tool/errors";
 import type { BillingStatus } from "@/components/tool/use-billing";
@@ -129,15 +130,10 @@ export function useRenderJobs(ctx: RenderJobsContext) {
   }, [owner, locale, refreshBilling, draftsLoaded, setStatus, setStatusKind, setToolPanel, setZipUrl]);
 
   async function uploadSide(userId: string, files: File[], onProgress: () => void) {
-    const supabase = createBrowserSupabase();
+    const bucket = createBrowserSupabase().storage.from("uploads");
     return mapLimit(files, 4, async (file) => {
-      const ext = file.type === "image/png" ? "png" : "jpg";
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("uploads").upload(path, file, {
-        contentType: file.type,
-        upsert: true,
-      });
-      if (error) throw new Error("UPLOAD_FAILED");
+      // Content-addressed: a file already stored for this user is not sent again.
+      const path = await uploadSource(bucket, userId, file);
       onProgress();
       return path;
     });

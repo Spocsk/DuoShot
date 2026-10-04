@@ -4,8 +4,14 @@ Requires=docker.service
 After=docker.service network-online.target
 
 [Service]
+# Compose project that owns the containers; a staging stack on the same host has another one.
+# Override in /etc/duoshot/compose.env (DUOSHOT_COMPOSE_PROJECT=...) without editing the unit.
+Environment=DUOSHOT_COMPOSE_PROJECT=i9qtpe5bpyig86s1aljxr5gv
+EnvironmentFile=-/etc/duoshot/compose.env
 Type=oneshot
-ExecStart=/usr/bin/docker exec web-i9qtpe5bpyig86s1aljxr5gv node scripts/run-maintenance.mjs %i
+# Resolve the web container by its compose project and service labels (names change when Coolify recreates
+# the project) and refuse to guess when zero or several containers match. $$ is a literal $.
+ExecStart=/bin/sh -c 'set -- $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=web); [ $$# -eq 1 ] || { echo "expected one running web container, found $$#" >&2; exit 1; }; exec docker exec "$$1" node scripts/run-maintenance.mjs %i'
 TimeoutStartSec=75
 NoNewPrivileges=true
 ProtectSystem=strict

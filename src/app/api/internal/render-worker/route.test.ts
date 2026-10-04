@@ -14,6 +14,13 @@ describe("private worker access",()=>{
     expect((await POST(new Request("http://localhost/api/internal/render-worker",{method:"POST"}))).status).toBe(401);
     expect(createAdminSupabase).not.toHaveBeenCalled();
   });
+  it("accepts only the dedicated worker secret once it is set, never the cron secret",async()=>{
+    vi.stubEnv("RENDER_WORKER_SECRET","worker");vi.stubEnv("CRON_SECRET","cron");vi.stubEnv("RENDER_QUEUE_ENABLED","false");
+    const call=(secret:string)=>POST(new Request("http://localhost/api/internal/render-worker",{method:"POST",headers:{authorization:`Bearer ${secret}`}}));
+    expect((await call("cron")).status).toBe(401);
+    expect((await call("worker")).status).toBe(503);
+    expect(createAdminSupabase).not.toHaveBeenCalled();
+  });
   it("does not claim work until the queue is enabled",async()=>{
     vi.stubEnv("CRON_SECRET","private");vi.stubEnv("RENDER_QUEUE_ENABLED","false");
     expect((await POST(new Request("http://localhost/api/internal/render-worker",{method:"POST",headers:{authorization:"Bearer private"}}))).status).toBe(503);

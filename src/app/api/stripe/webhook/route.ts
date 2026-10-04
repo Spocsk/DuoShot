@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { billingEventMatches } from "@/lib/billing-environment";
-import { PLANS } from "@/lib/plans";
+import { ONE_TIME_CATALOG, PLANS, isOneTimeKind } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -55,8 +55,33 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string): Promise
   return "synced";
 }
 
+/**
+ * One-time pass (Checkout mode "payment"). Granting is idempotent on the session id in
+ * the database, so concurrent or repeated deliveries extend the pass only once. An
+ * unpaid session (delayed payment method) waits for async_payment_succeeded.
+ */
+async function grantPass(session: Stripe.Checkout.Session): Promise<"synced" | "unlinked"> {
+  const admin = createAdminSupabase();
+  if (!admin) throw new Error("SUPABASE_ADMIN_REQUIRED");
+  const workspaceId = session.metadata?.workspace_id;
+  const kind = session.metadata?.kind;
+  // Payments for other products on the same Stripe account are acknowledged and ignored.
+  if (!workspaceId || !isOneTimeKind(kind) || session.client_reference_id !== workspaceId) return "unlinked";
+  if (session.payment_status !== "paid") return "synced";
+  const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
+  if (!customerId) throw new Error("CUSTOMER_MISMATCH");
+  const { error } = await admin.rpc("grant_workspace_pass", {
+    p_workspace_id: workspaceId, p_session_id: session.id, p_customer_id: customerId, p_days: ONE_TIME_CATALOG[kind].days,
+  });
+  if (error) {
+    const known = ["WORKSPACE_NOT_FOUND", "CUSTOMER_MISMATCH"].find((code) => error.message?.includes(code));
+    throw new Error(known ?? "PASS_GRANT_FAILED");
+  }
+  return "synced";
+}
+
 /** Failure codes surfaced in the Stripe delivery log; anything else is generic. */
-const REPORTED_FAILURES = new Set(["WORKSPACE_LOOKUP_FAILED", "WORKSPACE_NOT_FOUND", "CUSTOMER_MISMATCH", "SUBSCRIPTION_SYNC_CONFLICT", "EVENT_STORE_FAILED"]);
+const REPORTED_FAILURES = new Set(["WORKSPACE_LOOKUP_FAILED", "WORKSPACE_NOT_FOUND", "CUSTOMER_MISMATCH", "SUBSCRIPTION_SYNC_CONFLICT", "EVENT_STORE_FAILED", "PASS_GRANT_FAILED"]);
 
 export async function POST(request: Request) {
   const stripe = getStripe();
@@ -81,9 +106,11 @@ export async function POST(request: Request) {
 
   try {
     let subscriptionId: string | undefined;
+    let outcome: "synced" | "unlinked" = "synced";
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object as Stripe.Checkout.Session;
-      subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
+      if (session.mode === "payment") outcome = await grantPass(session);
+      else subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
     } else if (event.type.startsWith("customer.subscription.")) {
       subscriptionId = (event.data.object as Stripe.Subscription).id;
     } else if (event.type === "invoice.payment_failed" || event.type === "invoice.paid") {
@@ -91,12 +118,13 @@ export async function POST(request: Request) {
       const invoiceSubscription = invoice.parent?.subscription_details?.subscription;
       subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
     }
-    const outcome = subscriptionId ? await syncSubscription(stripe, subscriptionId) : "synced";
+    if (subscriptionId) outcome = await syncSubscription(stripe, subscriptionId);
     const { error: markerError } = await admin.from("stripe_events").insert({ id: event.id, type: event.type });
     if (markerError && markerError.code !== "23505") throw new Error("EVENT_STORE_FAILED");
     if (outcome === "unlinked") {
-      console.warn(`[stripe-webhook] ignored ${event.id} (${event.type}): SUBSCRIPTION_UNLINKED`);
-      return NextResponse.json({ received: true, ignored: "SUBSCRIPTION_UNLINKED" });
+      const ignored = event.type.startsWith("checkout.session.") && (event.data.object as Stripe.Checkout.Session).mode === "payment" ? "PAYMENT_UNLINKED" : "SUBSCRIPTION_UNLINKED";
+      console.warn(`[stripe-webhook] ignored ${event.id} (${event.type}): ${ignored}`);
+      return NextResponse.json({ received: true, ignored });
     }
     return NextResponse.json({ received: true });
   } catch (error) {

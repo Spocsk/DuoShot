@@ -55,6 +55,35 @@ The render container runs its own Next server on its loopback. The systemd unit
 `http://127.0.0.1:3000/api/internal/render-worker` inside that same container,
 so export rendering never competes with public traffic in `web` for memory or CPU.
 
+The systemd units in `infra/systemd/` and `nightly-backup.sh` find these
+containers by their compose labels (`com.docker.compose.project` =
+`DUOSHOT_COMPOSE_PROJECT`, default `i9qtpe5bpyig86s1aljxr5gv`, and
+`com.docker.compose.service=web|render`), not by name, and refuse to act when
+zero or several running containers match. Keep the service names `web` and
+`render`; override the project in `/etc/duoshot/compose.env` if it changes.
+
+**Run exactly one `web` container.** The API rate limits in
+`src/lib/rate-limit.ts` keep their counters in that process's memory: with
+several replicas each would count separately (multiplying the effective limit)
+and a restart resets them. Scaling `web` out first needs a shared store
+(Redis or PostgreSQL) for those counters.
+
+### Secrets
+
+`/data/duoshot/app.env` holds two distinct bearer secrets (32+ characters each,
+e.g. `openssl rand -hex 32`); `node scripts/check-deployment-env.mjs` checks both:
+
+| Variable | Used by |
+| --- | --- |
+| `CRON_SECRET` | `/api/cron/*`, called by `duoshot-maintenance@.service` |
+| `RENDER_WORKER_SECRET` | `/api/internal/render-worker`, called by `duoshot-render-worker.service` |
+
+While `RENDER_WORKER_SECRET` is unset, the worker route and script fall back to
+`CRON_SECRET` and log `render_worker_secret_fallback`: set it, then recreate
+**both** `render` and `web` so they read the same value. `/api/internal/*`
+also answers 404 to anything that did not come straight from a container
+loopback or the private Docker network (see `infra/systemd/README.md`).
+
 ## Deploy procedure
 
 Run as root on the VPS. Pick the image built from the merged `main` commit.

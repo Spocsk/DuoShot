@@ -43,6 +43,21 @@ describe("POST /api/reviews/[id]/decision", () => {
     expect(body.error).toBe("INVALID_ACTION");
   });
 
+  it("rejects a comment over 2000 characters before touching the database", async () => {
+    const { status, body } = await readJson(await POST(jsonRequest({ action: "redo", comment: "x".repeat(2001) }), params("abc123")));
+    expect(status).toBe(400);
+    expect(body).toEqual({ error: "COMMENT_TOO_LONG", max: 2000 });
+    expect(createAdminSupabase).not.toHaveBeenCalled();
+  });
+
+  it("accepts exactly 2000 characters, counting emoji as one and ignoring surrounding spaces", async () => {
+    vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({
+      from: () => createQueryBuilder({ data: { public_id: "abc123", status: "changes_requested", comment: "ok" } }),
+    }) as never);
+    const comment = `  ${"🙂".repeat(2000)}  `;
+    expect((await POST(jsonRequest({ action: "redo", comment }), params("abc123"))).status).toBe(200);
+  });
+
   it("returns 503 without an admin client instead of falling back to the public key", async () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null);
     const { status, body } = await readJson(await POST(jsonRequest({ action: "approve" }), params("abc123")));
