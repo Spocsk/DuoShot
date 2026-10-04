@@ -69,9 +69,15 @@ describe("render worker bundle", { timeout: 20_000 }, () => {
     expect(result.stderr).toContain("SUPABASE_ADMIN_KEY");
   });
 
+  it("refuses an enabled App Store Connect connector without a valid master key", async () => {
+    const result = await run(["--once"], { ...env(), ASC_CONNECTOR_ENABLED: "true" });
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("ASC_ENCRYPTION_KEY");
+  });
+
   it("claims each lane once with the service key and exits cleanly when no job is queued", async () => {
     calls.length = 0;
-    const result = await run(["--once"], { ...env(), ASC_CONNECTOR_ENABLED: "true" });
+    const result = await run(["--once"], { ...env(), ASC_CONNECTOR_ENABLED: "true", ASC_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64") });
     expect(result.code, result.stderr).toBe(0);
     expect(calls.map((call) => call.path).sort()).toEqual(["/rest/v1/rpc/claim_asc_upload", "/rest/v1/rpc/claim_render"]);
     expect(calls.every((call) => call.apikey === "service-role-test")).toBe(true);

@@ -8,6 +8,7 @@
  *   --once   one claim per lane, then exit
  */
 import { createAdminSupabase } from "../lib/supabase/admin";
+import { assertServerEnv } from "../lib/env-check";
 import { createRenderWorker, workerConfigErrors, workerConfigFromEnv } from "./loop";
 
 const args = new Set(process.argv.slice(2));
@@ -23,6 +24,8 @@ async function main() {
     console.error("render_worker_config_missing", { missing: errors });
     return 1;
   }
+  // Same startup rules as the web server: an enabled feature without its configuration stops here.
+  assertServerEnv("render-worker");
   const admin = createAdminSupabase();
   if (!admin) return 1;
   const worker = createRenderWorker(admin, workerConfigFromEnv(process.env, args.has("--once")));
