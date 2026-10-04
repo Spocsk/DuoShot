@@ -6,7 +6,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Overlay } from "@/components/overlay";
 import { t, tf } from "@/lib/i18n";
 import type { Locale, Orientation } from "@/lib/specs";
-import { useAscUpload, type AscApp, type AscFileProgress, type AscLocalization, type AscVersion } from "./use-asc-upload";
+import { type useAscUpload, type AscApp, type AscFileProgress, type AscLocalization, type AscVersion } from "./use-asc-upload";
 import {
   ascAppUrl, ascErrorKey, ascFileErrorKey, ascFilePlan, ascFileStateKey, ascGate, autoPick,
   type AscPlannedFile, type AscToolStatus, type ExportImage,
@@ -26,11 +26,14 @@ type Props = {
  * Secondary Export action under "Download ZIP". Renders nothing while the
  * connector flag is off: GET /api/asc/connection answers 404 then.
  */
-export function AscToolAction(props: Props) {
-  const { locale, prefix } = props;
+export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscUpload> }) {
+  const { locale, prefix, exportId } = props;
   const [status, setStatus] = useState<AscToolStatus | null>(null);
   const [open, setOpen] = useState(false);
-  const upload = useAscUpload();
+  // The hook lives in the tool so an upload survives step changes; a finished
+  // result only belongs to the export it was sent from.
+  const stale = props.upload.exportId !== exportId && (props.upload.state.phase === "completed" || props.upload.state.phase === "failed");
+  const upload = stale ? { ...props.upload, state: { phase: "idle" } as const } : props.upload;
   const ids = useId();
 
   useEffect(() => {

@@ -140,6 +140,10 @@ describe("tool: send to App Store Connect", () => {
     cy.get(".ds-dialog-close").click();
     cy.get('[data-testid="asc-dialog"]').should("not.exist");
     cy.get('[data-testid="asc-tool-open"]').should("have.text", "Envoyé vers App Store Connect").and("be.focused");
+    // The upload state belongs to the tool, not to the Export step.
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="tool-tab-export"]').click();
+    cy.get('[data-testid="asc-tool-open"]').should("have.text", "Envoyé vers App Store Connect");
   });
 
   it("hides replace for members and translates a failed job", () => {

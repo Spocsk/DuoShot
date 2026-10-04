@@ -27,6 +27,8 @@ async function readJson<T>(response: Response): Promise<T> {
  */
 export function useAscUpload() {
   const [state, setState] = useState<AscUploadState>({ phase: "idle" });
+  /** Export the current state belongs to, so a newer export starts from idle. */
+  const [exportId, setExportId] = useState<string | null>(null);
   const cancelled = useRef(false);
 
   const listApps = useCallback(async () => (await readJson<{ apps: AscApp[] }>(await fetch("/api/asc/apps"))).apps, []);
@@ -37,6 +39,7 @@ export function useAscUpload() {
 
   const upload = useCallback(async (input: { exportId: string; appId: string; versionId: string; localizationId: string; replaceExisting?: boolean }) => {
     cancelled.current = false;
+    setExportId(input.exportId);
     setState({ phase: "queued" });
     try {
       const { jobId } = await readJson<{ jobId: string }>(await fetch("/api/asc/uploads", {
@@ -67,5 +70,5 @@ export function useAscUpload() {
   }, []);
   // The job keeps running server-side; only the polling stops with the component.
   useEffect(() => () => { cancelled.current = true; }, []);
-  return { state, listApps, listVersions, listLocalizations, upload, stop, reset };
+  return { state, exportId, listApps, listVersions, listLocalizations, upload, stop, reset };
 }

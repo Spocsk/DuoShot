@@ -64,6 +64,7 @@ import { PairStrip, ToolCanvas, ToolStepBar, type ToolPanel } from "@/components
 import { PreviewCard } from "@/components/tool/preview-card";
 import { SetTitle } from "@/components/tool/set-title";
 import { AscToolAction } from "@/components/asc/asc-tool-action";
+import { useAscUpload } from "@/components/asc/use-asc-upload";
 
 type Props = { locale: Locale };
 
@@ -195,6 +196,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
 
   const { billing, setBilling, billingError, session, activationTimedOut, retryActivation, refreshBilling, urlStatus } = useBilling(locale, searchParams);
   const signedIn = session === "in";
+  // Owned here, not by the Export step, so an App Store Connect upload keeps polling across steps.
+  const ascUpload = useAscUpload();
 
   useEffect(() => {
     let cancelled = false;
@@ -770,7 +773,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             {toolPanel === "export" && zipUrl && jobs.downloadId && signedIn && !isDemo ? (
               <AscToolAction
                 key={jobs.downloadId} locale={locale} prefix={prefix} exportId={jobs.downloadId} images={jobs.exportImages}
-                orientation={orientation} onEnable69={showSetting69}
+                orientation={orientation} onEnable69={showSetting69} upload={ascUpload}
               />
             ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
