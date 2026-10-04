@@ -1,23 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { readActiveMembership } from "@/lib/active-membership";
+import { requireMembership } from "@/lib/active-membership";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params;
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const lookup = await readActiveMembership(supabase, user.id);
-  if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
-  const owner = lookup.membership;
-  if (!owner || owner.role !== "owner") {
-    return NextResponse.json({ error: "OWNER_REQUIRED" }, { status: 403 });
-  }
+  const gate = await requireMembership(supabase, { role: "owner" });
+  if (!gate.ok) return gate.response;
+  const owner = gate.membership;
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
   const { data } = await admin

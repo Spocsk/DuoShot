@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { readActiveMembership } from "@/lib/active-membership";
+import { readActiveMembership, requireMembership } from "@/lib/active-membership";
 import { slugify } from "@/lib/pipeline/geometry";
 
 export const runtime = "nodejs";
@@ -29,14 +29,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const lookup = await readActiveMembership(supabase, user.id);
-  if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
-  const membership = lookup.membership;
-  if (!membership) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 409 });
+  const gate = await requireMembership(supabase);
+  if (!gate.ok) return gate.response;
+  const { membership } = gate;
   const body = (await request.json().catch(() => null)) as {
     id?: unknown;
     name?: unknown;
