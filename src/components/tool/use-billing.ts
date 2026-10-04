@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { useSearchParams } from "next/navigation";
 import type { Locale } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
+import type { Translator } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { trackDatafastConversion } from "@/lib/datafast-client";
 
@@ -20,6 +21,7 @@ export type SessionState = "loading" | "out" | "in";
  * polled after a Stripe checkout return until the subscription is active.
  */
 export function useBilling(locale: Locale, searchParams: ReturnType<typeof useSearchParams>) {
+  const { t } = useI18n();
   const [billingError, setBillingError] = useState(false);
   const [activationTimedOut, setActivationTimedOut] = useState(false);
   const [activationAttempt, setActivationAttempt] = useState(0);
@@ -29,10 +31,10 @@ export function useBilling(locale: Locale, searchParams: ReturnType<typeof useSe
   const urlStatus =
     checkoutFlag === "success"
       ? billing?.source === "stripe" && billing.plan !== "free"
-        ? t(locale, "checkout_success")
+        ? t("checkout_success")
         : locale === "fr" ? (activationTimedOut ? "Activation non confirmée. Vérifiez à nouveau le statut de l’abonnement." : "Retour du paiement. Vérification de l’activation en cours…") : (activationTimedOut ? "Activation not confirmed. Check your subscription status again." : "Returned from checkout. Checking activation…")
       : checkoutFlag === "cancel"
-        ? t(locale, "checkout_cancel")
+        ? t("checkout_cancel")
         : null;
 
   const refreshBilling = useCallback(async () => {
@@ -83,7 +85,7 @@ export function useBilling(locale: Locale, searchParams: ReturnType<typeof useSe
   return { billing, setBilling, billingError, session, activationTimedOut, retryActivation, refreshBilling, urlStatus };
 }
 
-export function quotaLabel(locale: Locale, billing: BillingStatus | null, billingError: boolean, session: SessionState) {
+export function quotaLabel({ locale, t, tf }: Translator, billing: BillingStatus | null, billingError: boolean, session: SessionState) {
   const remaining = billing?.remainingFreeExports;
   const remainingLabel =
     billingError ? (locale === "fr" ? "Statut temporairement indisponible" : "Status temporarily unavailable") : !billing && session === "in"
@@ -91,15 +93,15 @@ export function quotaLabel(locale: Locale, billing: BillingStatus | null, billin
         ? "Chargement du plan…"
         : "Loading plan…"
       : billing?.plan === "studio"
-      ? t(locale, "tool_plan_studio")
+      ? t("tool_plan_studio")
       : billing?.plan === "indie"
-        ? t(locale, "tool_plan_indie")
+        ? t("tool_plan_indie")
         : remaining === 1
-          ? t(locale, "tool_remaining_one")
+          ? t("tool_remaining_one")
           : remaining === 0
-            ? t(locale, "tool_remaining_none")
+            ? t("tool_remaining_none")
             : remaining != null
-              ? tf(locale, "tool_remaining", { n: remaining })
-              : t(locale, "tool_guest_quota");
+              ? tf("tool_remaining", { n: remaining })
+              : t("tool_guest_quota");
   return remainingLabel;
 }

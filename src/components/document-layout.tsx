@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, IBM_Plex_Mono } from "next/font/google";
 import { AnalyticsProvider } from "@/components/analytics-provider";
+import { I18nProvider } from "@/components/i18n-provider";
+import { getMessages } from "@/lib/i18n";
 import { LANDING_MOTION_QUERY } from "@/lib/motion";
 import "@/app/transitions-root.css";
 import "@/app/transitions-dev.css";
@@ -42,8 +44,10 @@ export function DocumentLayout({ children, locale }: { children: React.ReactNode
     >
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
-        {children}
-        <AnalyticsProvider />
+        <I18nProvider locale={locale} messages={getMessages(locale)}>
+          {children}
+          <AnalyticsProvider />
+        </I18nProvider>
       </body>
     </html>
   );

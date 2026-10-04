@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
@@ -24,6 +24,7 @@ type Status = {
 };
 
 export function AccountApp({ locale }: { locale: Locale }) {
+  const { t, tf } = useI18n();
   const router = useRouter();
   const prefix = localePrefix(locale);
   const [email, setEmail] = useState<string | null>(null);
@@ -107,11 +108,11 @@ export function AccountApp({ locale }: { locale: Locale }) {
   const remaining = status?.remainingFreeExports;
   const planLabel =
     plan === "studio"
-      ? t(locale, "account_plan_studio")
+      ? t("account_plan_studio")
       : plan === "indie"
-        ? t(locale, "account_plan_indie")
+        ? t("account_plan_indie")
         : plan === "free"
-          ? t(locale, "account_plan_free")
+          ? t("account_plan_free")
           : null;
   const subscriptionLabel = status?.subscriptionStatus
     ? ({
@@ -128,12 +129,12 @@ export function AccountApp({ locale }: { locale: Locale }) {
     <main id="main" className="studio-account-page flex-1">
       <div className="studio-account-inner mx-auto max-w-2xl px-5 py-12" data-testid="account">
         <div className="studio-account-heading">
-          <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
+          <h1 className="font-display text-4xl">{t("account_title")}</h1>
           <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
           <button className="ds-text-btn mt-3" onClick={() => void createBrowserSupabase().auth.signOut().then(({ error }) => { if (error) setMessage(error.message); else router.replace(`${prefix}/login`); })}>{locale === "fr" ? "Se déconnecter" : "Sign out"}</button>
         </div>
         <section className="studio-account-plan" aria-label={locale === "fr" ? "Votre offre" : "Your plan"}>
-          <p className="ds-label">{t(locale, "account_plan_label")}</p>
+          <p className="ds-label">{t("account_plan_label")}</p>
           {planLabel ? (
             <p className="font-display mt-1 text-3xl" data-testid="account-plan">{planLabel}</p>
           ) : statusError ? (
@@ -146,7 +147,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
             </p>
           )}
           {plan === "free" && remaining != null ? (
-            <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
+            <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf("account_remaining", { n: remaining })}</p>
           ) : null}
           {status?.source === "workspace" ? <p className="mt-2 text-sm text-[var(--muted)]">{locale === "fr" ? "Accès accordé manuellement" : "Manually granted access"}</p> : null}
           {status?.subscriptionStatus && status.source !== "workspace" ? (
@@ -170,7 +171,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
                 data-testid="account-upgrade-indie"
                 className="ds-cta"
               >
-                {t(locale, "pricing_indie_cta")}
+                {t("pricing_indie_cta")}
               </button>
               <button
                 type="button"
@@ -179,13 +180,13 @@ export function AccountApp({ locale }: { locale: Locale }) {
                 data-testid="account-upgrade-studio"
                 className="ds-cta-ghost"
               >
-                {t(locale, "pricing_studio_cta")}
+                {t("pricing_studio_cta")}
               </button>
             </div>
           ) : null}
           {plan === "studio" ? (
             <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex">
-              {t(locale, "cta_tool")}
+              {t("cta_tool")}
             </Link>
           ) : null}
         </section>
@@ -193,7 +194,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
         <AscConnectionPanel locale={locale} />
         <div className="studio-account-settings mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
           <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
-            {t(locale, "export_data")}
+            {t("export_data")}
           </button>
           <button
             type="button"
@@ -201,7 +202,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
             data-testid="account-delete"
             className="ds-danger"
           >
-            {t(locale, "delete_account")}
+            {t("delete_account")}
           </button>
           <Link href={`${prefix}/privacy`} className="ds-text-btn">
             {locale === "fr" ? "Confidentialité" : "Privacy"}

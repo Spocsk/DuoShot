@@ -3,17 +3,19 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
 import { MAX_IMAGES, type Locale } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/types";
 
 export type ToolPanel = "captures" | "adjust" | "review" | "export";
 export type StepStatus = "done" | "todo" | "current";
 
 const STEPS = ["captures", "adjust", "review", "export"] as const;
-const STEP_KEYS: Record<ToolPanel, string> = { captures: "tool_step_import", adjust: "tool_step_adjust", review: "tool_step_review", export: "tool_step_export" };
+const STEP_KEYS: Record<ToolPanel, MessageKey> = { captures: "tool_step_import", adjust: "tool_step_adjust", review: "tool_step_review", export: "tool_step_export" };
 
 /** Importer → Ajuster → Vérifier → Exporter. A tablist: arrows move between steps, each tab says whether it is done. */
 export function ToolStepBar({ value, done, onChange, locale }: { value: ToolPanel; done: Record<ToolPanel, boolean>; onChange: (value: ToolPanel) => void; locale: Locale }) {
-  return <div className="tool-steps" role="tablist" aria-label={t(locale, "tool_steps_label")} data-testid="tool-steps">
+  const { t } = useI18n();
+  return <div className="tool-steps" role="tablist" aria-label={t("tool_steps_label")} data-testid="tool-steps">
     {STEPS.map((panel, index) => {
       const status: StepStatus = value === panel ? "current" : done[panel] ? "done" : "todo";
       return <button
@@ -39,8 +41,8 @@ export function ToolStepBar({ value, done, onChange, locale }: { value: ToolPane
         }}
       >
         <span className="tool-step-mark" aria-hidden="true">{done[panel] && value !== panel ? "✓" : index + 1}</span>
-        <span className="tool-step-label">{t(locale, STEP_KEYS[panel])}</span>
-        <span className="sr-only">, {t(locale, status === "current" ? "tool_step_current" : status === "done" ? "tool_step_done" : "tool_step_todo")}</span>
+        <span className="tool-step-label">{t(STEP_KEYS[panel])}</span>
+        <span className="sr-only">, {t(status === "current" ? "tool_step_current" : status === "done" ? "tool_step_done" : "tool_step_todo")}</span>
       </button>;
     })}
   </div>;

@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { MAX_IMAGES, WARN_MIN_IMAGES, type Locale, type SizeSpec } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { SetMeta } from "@/lib/sets-store";
 import { DsToggle } from "@/components/tool/controls";
 import { DropZone } from "@/components/tool/drop-zone";
@@ -44,22 +44,23 @@ export function CapturesPanel({
   patchActive: (patch: Partial<SetMeta>) => void;
   setZipUrl: Dispatch<SetStateAction<string | null>>;
 }) {
+  const { t, tf } = useI18n();
   return <>
           <div className="tool-panel-heading"><h2>{locale === "fr" ? "Vos captures" : "Your screenshots"}</h2><p>{locale === "fr" ? "Importez les vues de votre app. Jusqu’à 10 paires." : "Import your app screens. Up to 10 pairs."}</p></div>
           <div id="tool-import" className="tool-import-stack">
             <div className="mt-5 grid gap-4 md:grid-cols-2">
       <DropZone
         testId="drop-outer"
-        label={tf(locale, "tool_drop_outer", { w: outerSpec.width, h: outerSpec.height })}
-        hint={t(locale, "tool_drop")}
+        label={tf("tool_drop_outer", { w: outerSpec.width, h: outerSpec.height })}
+        hint={t("tool_drop")}
         count={outerFiles.length}
         names={outerFiles.map((file) => file.name)}
         onFiles={(list) => onSideFiles("outer", list)}
       />
       <DropZone
         testId="drop-inner"
-        label={tf(locale, "tool_drop_inner", { w: innerSpec.width, h: innerSpec.height })}
-        hint={t(locale, "tool_drop")}
+        label={tf("tool_drop_inner", { w: innerSpec.width, h: innerSpec.height })}
+        hint={t("tool_drop")}
         count={sameSet ? outerFiles.length : innerFiles.length}
         names={(sameSet ? outerFiles : innerFiles).map((file) => file.name)}
         disabled={sameSet}
@@ -68,22 +69,22 @@ export function CapturesPanel({
     </div>
     {cloneForced ? (
       <p className="ds-warn-clone" role="alert" data-testid="warn-clone">
-        {t(locale, "tool_warn_clone")}
+        {t("tool_warn_clone")}
       </p>
     ) : null}
     {unpaired ? (
       <p className="ds-warn" role="status" data-testid="warn-unpaired">
-        {t(locale, "tool_warn_unpaired")}
+        {t("tool_warn_unpaired")}
       </p>
     ) : null}
     {warning === "TOO_FEW" ? (
       <p className="ds-warn" role="status" data-testid="warn-too-few">
-        {t(locale, "tool_warn")} ({WARN_MIN_IMAGES}+)
+        {t("tool_warn")} ({WARN_MIN_IMAGES}+)
       </p>
     ) : null}
     {Math.max(outerFiles.length, effectiveInner.length) >= MAX_IMAGES ? (
       <p className="ds-warn" role="status">
-        {t(locale, "tool_cap")}
+        {t("tool_cap")}
       </p>
     ) : null}
           </div>
@@ -94,7 +95,7 @@ export function CapturesPanel({
         aria-expanded={sameSet || sameSetOpen}
         onClick={() => setSameSetOpen((open) => !open)}
       >
-        <span>{t(locale, "tool_same_set")}</span>
+        <span>{t("tool_same_set")}</span>
         <span className="t-acc-chevron" aria-hidden="true">
           <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6">
             <path d="M4 6.5L8 10.5L12 6.5" />
@@ -113,7 +114,7 @@ export function CapturesPanel({
                 setZipUrl(null);
               }}
             >
-              {t(locale, "tool_same_set")}
+              {t("tool_same_set")}
             </DsToggle>
           </div>
         </div>
@@ -122,7 +123,7 @@ export function CapturesPanel({
           <div className="tool-panel-fields">
             <div className="ds-field">
       <label className="ds-label" htmlFor="tool-input-app">
-        {t(locale, "tool_label_app")}
+        {t("tool_label_app")}
       </label>
       <input
         id="tool-input-app"
@@ -134,7 +135,7 @@ export function CapturesPanel({
     </div>
             <div className="ds-field">
       <label className="ds-label" htmlFor="tool-input-client">
-        {t(locale, "tool_client")}
+        {t("tool_client")}
       </label>
       <input
         id="tool-input-client"

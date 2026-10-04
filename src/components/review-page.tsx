@@ -1,12 +1,11 @@
 "use client";
 
 import { DeviceCamera } from "@/components/device-camera";
-import { useEffect, useState, type CSSProperties } from "react";
-import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { connectPreviewStyle, duoSpec, type Locale, type Orientation } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
-type Slide = { index: number; clone: string; outer: string; inner: string };
+type Slide = { index: number; clone: "ok" | "review" | "risk"; outer: string; inner: string };
 type Payload = {
   set_name: string;
   client_name: string | null;
@@ -28,7 +27,9 @@ function reviewStatusLabel(status: string, locale: Locale) {
   return labels[status]?.[locale === "fr" ? 0 : 1] ?? status;
 }
 
-export function ReviewPage({ id, locale, demo = false }: { id: string; locale: Locale; demo?: boolean }) {
+/** Header and footer are server components, passed in so this client page does not pull them into its bundle. */
+export function ReviewPage({ id, locale, demo = false, header, footer }: { id: string; locale: Locale; demo?: boolean; header: ReactNode; footer: ReactNode }) {
+  const { t, tf } = useI18n();
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -80,10 +81,10 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
 
   return (
     <div className="studio-review-page flex min-h-full flex-col">
-      <SiteHeader locale={locale} path={locale === "en" ? `/en/r/${id}` : `/r/${id}`} />
+      {header}
       <main id="main" className="studio-review-main mx-auto w-full max-w-6xl px-5 py-12">
         {error ? (
-          <p className="text-[var(--muted)]" data-testid="review-missing">{t(locale, "review_missing")}</p>
+          <p className="text-[var(--muted)]" data-testid="review-missing">{t("review_missing")}</p>
         ) : !data ? (
           <div className="t-skel max-w-md" aria-busy="true">
             <div className="t-skel-skeleton is-pulsing">
@@ -114,7 +115,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
             <h1 className="font-display text-5xl" data-testid="review-title">{data.set_name}</h1>
             {demo ? (
               <p className="mt-3 max-w-2xl text-[var(--muted)]" data-testid="review-demo">
-                {t(locale, "review_demo_banner")}
+                {t("review_demo_banner")}
               </p>
             ) : null}
             <p className="mt-3 text-[var(--muted)]" data-testid="review-status" role="status">
@@ -136,7 +137,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                   data-testid="review-device-view"
                   onClick={() => setViewMode("device")}
                 >
-                  {t(locale, "review_device_view")}
+                  {t("review_device_view")}
                 </button>
                 <button
                   type="button"
@@ -145,7 +146,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                   data-testid="review-pixel-view"
                   onClick={() => setViewMode("pixels")}
                 >
-                  {t(locale, "review_pixel_view")}
+                  {t("review_pixel_view")}
                 </button>
               </div>
               {viewMode === "device" ? (
@@ -155,7 +156,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                   aria-pressed={hinge}
                   onClick={() => setHinge((value) => !value)}
                 >
-                  <span className="text-sm">{t(locale, "tool_hinge_toggle")}</span>
+                  <span className="text-sm">{t("tool_hinge_toggle")}</span>
                   <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
                     <span className="ds-toggle-thumb t-toggle-thumb" />
                   </span>
@@ -171,7 +172,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                 return (
                 <section key={slide.index}>
                   <p className="duo-caption mb-3">
-                    {String(slide.index + 1).padStart(2, "0")} · {t(locale, `clone_${slide.clone}`)}
+                    {String(slide.index + 1).padStart(2, "0")} · {t(`clone_${slide.clone}`)}
                   </p>
                   <div
                     className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}
@@ -183,7 +184,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                       data-aspect={viewMode === "pixels" ? `${outerSpec.width}/${outerSpec.height}` : undefined}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.outer} alt={tf(locale, "review_alt_numbered_outer", { n: slide.index + 1, total: data.slides.length })} />
+                      <img src={slide.outer} alt={tf("review_alt_numbered_outer", { n: slide.index + 1, total: data.slides.length })} />
                       {viewMode === "device" ? <DeviceCamera /> : null}
                     </div>
                     <p className="studio-review-label studio-review-label-inner">{locale === "fr" ? "Écran ouvert" : "Open screen"}</p>
@@ -192,7 +193,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                       data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={slide.inner} alt={tf(locale, "review_alt_numbered_inner", { n: slide.index + 1, total: data.slides.length })} />
+                      <img src={slide.inner} alt={tf("review_alt_numbered_inner", { n: slide.index + 1, total: data.slides.length })} />
                       <span className="division" aria-hidden="true" />
                     </div>
                   </div>
@@ -204,7 +205,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
               <>
             <div className="ds-field mt-10 max-w-xl">
               <label className="ds-label" htmlFor="review-comment">
-                {t(locale, "review_comment")}
+                {t("review_comment")}
               </label>
               <textarea
                 id="review-comment"
@@ -229,7 +230,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
           </>
         )}
       </main>
-      <SiteFooter locale={locale} />
+      {footer}
     </div>
   );
 }

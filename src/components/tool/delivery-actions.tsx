@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { PurchaseKind } from "@/lib/plans";
 import { SwapLabel } from "@/components/tool/controls";
 import type { BillingStatus, SessionState } from "@/components/tool/use-billing";
@@ -14,10 +14,11 @@ export const EXAMPLE_ZIP_URL = "/api/example-zip?v=2";
 
 /** Secondary deliveries, folded away so "Prepare files" stays the one obvious action. */
 export function OtherActions({ locale, hasExportable, jobs }: { locale: Locale; hasExportable: boolean; jobs: Jobs }) {
+  const { t } = useI18n();
   const { busyReview, onReview } = jobs;
   return (
     <details className="tool-other-actions" data-testid="tool-other-actions">
-      <summary>{t(locale, "tool_other_actions")}</summary>
+      <summary>{t("tool_other_actions")}</summary>
       <div className="tool-other-actions-body">
         <button
           type="button"
@@ -26,13 +27,13 @@ export function OtherActions({ locale, hasExportable, jobs }: { locale: Locale; 
           onClick={() => void onReview()}
           className="ds-cta-ghost w-full"
         >
-          <SwapLabel text={busyReview ? t(locale, "tool_review_preparing") : t(locale, "tool_review_share")} />
+          <SwapLabel text={busyReview ? t("tool_review_preparing") : t("tool_review_share")} />
         </button>
         <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-review-hint">
-          {t(locale, "tool_review_hint")}
+          {t("tool_review_hint")}
         </p>
         <a href={EXAMPLE_ZIP_URL} data-testid="tool-example" className="ds-text-btn mt-3">
-          {t(locale, "tool_example")}
+          {t("tool_example")}
         </a>
       </div>
     </details>
@@ -47,11 +48,12 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
   onCheckout: (kind: PurchaseKind) => Promise<void>;
   jobs: Jobs;
 }) {
+  const { t, tf } = useI18n();
   const { reviewUrl, reviewStatus, reviewSetStatus, reviewUpgrade } = jobs;
   return <>
     {reviewSetStatus ? (
       <p className="mt-2 text-sm" data-testid="tool-review-set-status">
-        {tf(locale, "tool_review_status", { status: reviewSetStatus })}
+        {tf("tool_review_status", { status: reviewSetStatus })}
       </p>
     ) : null}
     {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
@@ -68,7 +70,7 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
         onClick={() => void onCheckout("studio_monthly")}
         className="ds-cta-ghost mt-3 w-full"
       >
-        {t(locale, "pricing_studio_cta")}
+        {t("pricing_studio_cta")}
       </button>
     ) : null}
   </>;
@@ -84,9 +86,10 @@ export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo
   demo: boolean;
   jobs: Jobs;
 }) {
+  const { t } = useI18n();
   const { exportImages } = jobs;
   return <>
-    <div className="tool-panel-heading"><h2>{t(locale, "tool_export_title")}</h2><p>{zipUrl ? t(locale, "tool_export_lead") : demo ? t(locale, "tool_demo_export_hint") : t(locale, "tool_export_empty")}</p></div>
+    <div className="tool-panel-heading"><h2>{t("tool_export_title")}</h2><p>{zipUrl ? t("tool_export_lead") : demo ? t("tool_demo_export_hint") : t("tool_export_empty")}</p></div>
     {zipUrl ? (
       <div className="mt-4" data-testid="tool-export-delivery">
         <p className="ds-label">{locale === "fr" ? "Fichiers prêts" : "Files ready"}</p>
@@ -104,9 +107,9 @@ export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo
     ) : null}
     {session === "out" && !demo ? (
       <p className="mt-3 text-xs text-[var(--muted)]">
-        {t(locale, "tool_need_account")}{" "}
+        {t("tool_need_account")}{" "}
         <Link href={`${prefix}/signup`} className="ds-link">
-          {t(locale, "nav_signup")}
+          {t("nav_signup")}
         </Link>
       </p>
     ) : null}

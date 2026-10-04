@@ -2,10 +2,11 @@
 
 import { useRef, useState } from "react";
 import type { Locale } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 /** Set title with an inline rename: Enter or leaving the field saves, Escape cancels. The app name stays separate. */
 export function SetTitle({ locale, name, onRename }: { locale: Locale; name: string; onRename: (name: string) => void }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<string | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const shown = name.trim() || "Composition";
@@ -19,7 +20,7 @@ export function SetTitle({ locale, name, onRename }: { locale: Locale; name: str
   if (draft !== null) {
     return (
       <div className="tool-set-title is-editing">
-        <label className="sr-only" htmlFor="tool-set-name">{t(locale, "tool_set_rename_label")}</label>
+        <label className="sr-only" htmlFor="tool-set-name">{t("tool_set_rename_label")}</label>
         <input
           id="tool-set-name"
           data-testid="tool-set-name"
@@ -45,10 +46,10 @@ export function SetTitle({ locale, name, onRename }: { locale: Locale; name: str
         type="button"
         className="tool-set-rename"
         data-testid="tool-set-rename"
-        aria-label={`${t(locale, "tool_set_rename")} ${shown}`}
+        aria-label={`${t("tool_set_rename")} ${shown}`}
         onClick={() => setDraft(name)}
       >
-        {t(locale, "tool_set_rename")}
+        {t("tool_set_rename")}
       </button>
     </div>
   );

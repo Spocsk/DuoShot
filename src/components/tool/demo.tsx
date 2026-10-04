@@ -1,7 +1,7 @@
 "use client";
 
 import type { Locale } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 export const HARBOR_PAIRS = 3;
 export type DemoState = "idle" | "loading" | "error";
@@ -25,10 +25,11 @@ export async function fetchHarborFiles(locale: Locale): Promise<{ outer: File[];
 
 /** Empty-state invitation: try the workspace with Harbor before importing anything. */
 export function DemoStart({ locale, state, onLoad }: { locale: Locale; state: DemoState; onLoad: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="tool-demo-start" data-testid="tool-demo-start">
-      <p className="tool-demo-start-title">{t(locale, "tool_empty_title")}</p>
-      <p className="tool-demo-start-lead">{t(locale, "tool_empty_lead")}</p>
+      <p className="tool-demo-start-title">{t("tool_empty_title")}</p>
+      <p className="tool-demo-start-lead">{t("tool_empty_lead")}</p>
       <button
         type="button"
         className="tool-demo-button"
@@ -37,10 +38,10 @@ export function DemoStart({ locale, state, onLoad }: { locale: Locale; state: De
         aria-busy={state === "loading"}
         onClick={onLoad}
       >
-        {state === "loading" ? <span className="t-shimmer" data-text={t(locale, "tool_demo_loading")}>{t(locale, "tool_demo_loading")}</span> : t(locale, "tool_demo_cta")}
+        {state === "loading" ? <span className="t-shimmer" data-text={t("tool_demo_loading")}>{t("tool_demo_loading")}</span> : t("tool_demo_cta")}
       </button>
-      <p className="tool-demo-hint">{t(locale, "tool_demo_hint")}</p>
-      {state === "error" ? <p className="ds-warn text-sm" role="alert">{t(locale, "tool_demo_error")}</p> : null}
+      <p className="tool-demo-hint">{t("tool_demo_hint")}</p>
+      {state === "error" ? <p className="ds-warn text-sm" role="alert">{t("tool_demo_error")}</p> : null}
     </div>
   );
 }

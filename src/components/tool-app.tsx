@@ -25,7 +25,7 @@ import {
   type Orientation,
   type RenderOptions,
 } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import { inspectFile } from "@/lib/pipeline/source-inspect";
 import { createBrowserSupabase } from "@/lib/supabase/client";
@@ -101,6 +101,8 @@ export function ToolApp({ locale }: Props) {
 }
 
 function ToolAppInner({ locale, owner }: Props & { owner: string }) {
+  const i18n = useI18n();
+  const { t, tf } = i18n;
   const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
@@ -345,10 +347,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
   const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
   const checklist: CheckItem[] = [
-    { id: "pairs", done: hasExportable && !unpaired, label: t(locale, "tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
-    { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t(locale, "tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
-    { id: "similarity", done: !cloneAlert || assumeClone, label: t(locale, "tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
-    { id: "confirm", done: appUsageConfirmed, label: t(locale, "tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
+    { id: "pairs", done: hasExportable && !unpaired, label: t("tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
+    { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t("tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
+    { id: "similarity", done: !cloneAlert || assumeClone, label: t("tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
+    { id: "confirm", done: appUsageConfirmed, label: t("tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
   ];
   const readyToPrepare = checklist.every((item) => item.done);
   const importDone = hasExportable && !unpaired;
@@ -483,7 +485,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     try {
       await startCheckout(kind, checkoutReturnPath(locale));
     } catch (error) {
-      flashStatus(error instanceof Error ? error.message : t(locale, "error_export"), "err");
+      flashStatus(error instanceof Error ? error.message : t("error_export"), "err");
       setCheckoutBusy(false);
     }
   }
@@ -535,7 +537,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       const base = existing ?? reusable ?? defaultSet(sets);
       const demoSet: SetMeta = {
         ...base,
-        name: t(locale, "tool_demo_set_name"),
+        name: t("tool_demo_set_name"),
         appName: "Harbor",
         demo: true,
         sameSet: false,
@@ -590,7 +592,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   const remaining = billing?.remainingFreeExports;
-  const remainingLabel = quotaLabel(locale, billing, billingError, session);
+  const remainingLabel = quotaLabel(i18n, billing, billingError, session);
   const pillMute = remaining === 0 && billing?.plan === "free";
   const cloneLabel = clones[slideIndex]?.label ?? (cloneForced && hasExportable ? "risk" : null);
 
@@ -605,21 +607,21 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   let primary: PrimaryAction;
   if (toolPanel === "captures" || (toolPanel === "adjust" && !importDone)) {
     primary = importDone
-      ? { label: t(locale, "tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
-      : { label: t(locale, !hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
+      ? { label: t("tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
+      : { label: t(!hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
   } else if (toolPanel === "adjust") {
-    primary = { label: t(locale, "tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
+    primary = { label: t("tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
   } else if (zipUrl && toolPanel === "export") {
     primary = {
-      label: t(locale, "tool_action_download"), testId: "tool-zip-link", href: jobs.downloadId ? `/api/exports/${jobs.downloadId}/download` : zipUrl, download: jobs.zipName,
+      label: t("tool_action_download"), testId: "tool-zip-link", href: jobs.downloadId ? `/api/exports/${jobs.downloadId}/download` : zipUrl, download: jobs.zipName,
       onClick: (event) => { event.preventDefault(); void jobs.onDownload(); },
     };
   } else if (isDemo) {
     // Harbor is fictional: its files come from the example ZIP, so no export trial is spent on it.
-    primary = { label: t(locale, "tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
+    primary = { label: t("tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
   } else {
     primary = {
-      label: jobs.busyExport ? t(locale, "tool_preparing") : t(locale, "tool_action_prepare"), testId: "tool-download",
+      label: jobs.busyExport ? t("tool_preparing") : t("tool_action_prepare"), testId: "tool-download",
       disabled: jobs.busyExport || !readyToPrepare, onClick: () => void jobs.onExport(),
     };
   }
@@ -641,11 +643,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         </div>
         <div className="tool-command-orientation">
           <Seg
-          label={t(locale, "tool_label_orientation")}
+          label={t("tool_label_orientation")}
           value={orientation}
           options={[
-            { value: "portrait", label: t(locale, "tool_orient_portrait") },
-            { value: "landscape", label: t(locale, "tool_orient_landscape") },
+            { value: "portrait", label: t("tool_orient_portrait") },
+            { value: "landscape", label: t("tool_orient_landscape") },
           ]}
           onChange={(value) => {
             patchActive({ orientation: value as Orientation });
@@ -668,9 +670,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : (locale === "fr" ? "Aucune paire" : "No pairs")}</span>
           </div>
           {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
-            <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span>
-            <p>{t(locale, "tool_demo_banner")}</p>
-            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t(locale, "tool_demo_replace")}</button>
+            <span className="tool-demo-badge">{t("tool_demo_badge")}</span>
+            <p>{t("tool_demo_banner")}</p>
+            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t("tool_demo_replace")}</button>
           </div> : null}
           {!hasAny && draftsLoaded ? <DemoStart locale={locale} state={demoState} onLoad={() => void loadDemo()} /> : null}
           <ToolCanvas mobileView={mobileView} locale={locale} slideIndex={slideIndex} onMobileView={setMobileView}>
@@ -680,7 +682,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         >
           <PreviewCard
             testId="preview-outer"
-            label={t(locale, "tool_preview_outer")}
+            label={t("tool_preview_outer")}
             src={previews?.outer}
             inspect={outerInspect}
             kind="outer"
@@ -695,7 +697,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           />
           <PreviewCard
             testId="preview-inner"
-            label={t(locale, "tool_preview_inner")}
+            label={t("tool_preview_inner")}
             src={previews?.inner}
             inspect={innerInspect}
             kind="inner"
@@ -736,7 +738,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               />
             </> : null}
             {toolPanel === "review" ? <>
-              <div className="tool-panel-heading"><h2>{t(locale, "tool_step_review")}</h2><p>{locale === "fr" ? "Réglez chaque point de la liste, puis préparez les fichiers." : "Clear every item on the list, then prepare the files."}</p></div>
+              <div className="tool-panel-heading"><h2>{t("tool_step_review")}</h2><p>{locale === "fr" ? "Réglez chaque point de la liste, puis préparez les fichiers." : "Clear every item on the list, then prepare the files."}</p></div>
               <CheckList locale={locale} items={checklist} />
               <ReviewAlerts
                 locale={locale} severeQualityCount={severeQualityCount} qualityAcknowledged={qualityAcknowledged} setQualityAcknowledged={setQualityAcknowledged}
@@ -759,7 +761,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           </div>
           <div className="tool-primary-dock" data-testid="tool-primary-dock" data-step={toolPanel}>
             {showMissing ? <p className="tool-dock-missing" data-testid="tool-missing-steps">
-              <span>{t(locale, "tool_action_missing")}</span>{" "}
+              <span>{t("tool_action_missing")}</span>{" "}
               {checklist.filter((item) => !item.done).map((item, index) => <span key={item.id}>{index ? <span aria-hidden="true"> · </span> : null}<button type="button" onClick={item.fix}>{item.label}</button></span>)}
             </p> : null}
             {(toolPanel === "review" || toolPanel === "export") && (status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
@@ -778,10 +780,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
               <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
-                {t(locale, "tool_create_account")}
+                {t("tool_create_account")}
               </button>
             ) : null}
-            {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf(locale, "tool_score_line", { score: preparationScore })}</p> : null}
+            {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf("tool_score_line", { score: preparationScore })}</p> : null}
           </div>
         </aside>
       </div>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { Locale } from "@/lib/specs";
 import type { SetMeta } from "@/lib/sets-store";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 
 /** Open/close state, outside-click dismissal and keyboard navigation of the app (set) listbox. */
 export function useSetsMenu() {
@@ -108,12 +108,13 @@ export function SetPicker({
   addSet: () => void;
   removeSet: (id: string) => Promise<void>;
 }) {
+  const { t, tf } = useI18n();
   const { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey } = menu;
   return (
       <div className="ds-set-bar">
       <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
         <p className="ds-label" id="tool-sets-label">
-          {t(locale, "tool_set_label")}
+          {t("tool_set_label")}
         </p>
         <details
           className="ds-listbox"
@@ -143,7 +144,7 @@ export function SetPicker({
             }}
             onKeyDown={onSetsTriggerKey}
           >
-            <span className="ds-listbox-value">{active?.name?.trim() ? active.name : "Composition"}</span>{active?.demo ? <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span> : null}
+            <span className="ds-listbox-value">{active?.name?.trim() ? active.name : "Composition"}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
             <span className="ds-listbox-caret" aria-hidden="true" />
           </summary>
           <ul
@@ -168,7 +169,7 @@ export function SetPicker({
                   }}
                 >
                   {item.name}
-                  {item.demo ? <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span> : null}
+                  {item.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
                 </button>
               </li>
             ))}
@@ -177,17 +178,17 @@ export function SetPicker({
       </div>
       <div className="ds-set-actions">
         <button type="button" className="ds-cta-ghost" data-testid="tool-set-new" onClick={addSet}>
-          {t(locale, "tool_set_new")}
+          {t("tool_set_new")}
         </button>
         {sets.length > 1 ? (
           <button
             type="button"
             className="ds-text-btn"
             data-testid="tool-set-delete"
-            aria-label={tf(locale, "tool_set_delete", { name: active?.name?.trim() || "Composition" })}
+            aria-label={tf("tool_set_delete", { name: active?.name?.trim() || "Composition" })}
             onClick={() => active && void removeSet(active.id)}
           >
-            {t(locale, "tool_set_delete_short")}
+            {t("tool_set_delete_short")}
           </button>
         ) : null}
       </div>

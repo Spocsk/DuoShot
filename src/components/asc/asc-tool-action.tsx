@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Overlay } from "@/components/overlay";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { Locale, Orientation } from "@/lib/specs";
 import { type useAscUpload, type AscApp, type AscFileProgress, type AscLocalization, type AscVersion } from "./use-asc-upload";
 import {
@@ -27,6 +27,7 @@ type Props = {
  * connector flag is off: GET /api/asc/connection answers 404 then.
  */
 export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscUpload> }) {
+  const { t } = useI18n();
   const { locale, prefix, exportId } = props;
   const [status, setStatus] = useState<AscToolStatus | null>(null);
   const [open, setOpen] = useState(false);
@@ -52,11 +53,11 @@ export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscU
     return (
       <div className="tool-asc" data-testid="asc-tool-locked">
         <button type="button" className="ds-cta-ghost w-full" disabled aria-describedby={`${ids}-locked`}>
-          <LockIcon />{t(locale, "asct_send")}
+          <LockIcon />{t("asct_send")}
         </button>
         <p id={`${ids}-locked`} className="tool-asc-note">
-          {t(locale, "asct_locked_hint")}{" "}
-          <Link href={`${prefix}/pricing`} className="ds-link" data-testid="asc-tool-pricing">{t(locale, "asct_locked_link")}</Link>
+          {t("asct_locked_hint")}{" "}
+          <Link href={`${prefix}/pricing`} className="ds-link" data-testid="asc-tool-pricing">{t("asct_locked_link")}</Link>
         </p>
       </div>
     );
@@ -66,16 +67,16 @@ export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscU
     return (
       <div className="tool-asc" data-testid="asc-tool-not-connected">
         <p className="tool-asc-note">
-          {t(locale, "asct_not_connected_hint")}{" "}
-          <Link href={`${prefix}/account#connexions`} className="ds-link" data-testid="asc-tool-connect">{t(locale, "asct_connect_link")}</Link>
+          {t("asct_not_connected_hint")}{" "}
+          <Link href={`${prefix}/account#connexions`} className="ds-link" data-testid="asc-tool-connect">{t("asct_connect_link")}</Link>
         </p>
       </div>
     );
   }
 
   const phase = upload.state.phase;
-  const label = phase === "queued" || phase === "running" ? t(locale, "asct_sending")
-    : phase === "completed" ? t(locale, "asct_sent") : t(locale, "asct_send");
+  const label = phase === "queued" || phase === "running" ? t("asct_sending")
+    : phase === "completed" ? t("asct_sent") : t("asct_send");
   return (
     <div className="tool-asc">
       <button type="button" className="ds-cta-ghost w-full" data-testid="asc-tool-open" aria-haspopup="dialog" onClick={() => setOpen(true)}>
@@ -83,7 +84,7 @@ export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscU
       </button>
       {/* Portaled: the dock's backdrop-filter would otherwise contain the fixed overlay. */}
       {open ? createPortal(
-        <Overlay onClose={() => setOpen(false)} labelledBy={`${ids}-title`} closeLabel={t(locale, "asct_close")}>
+        <Overlay onClose={() => setOpen(false)} labelledBy={`${ids}-title`} closeLabel={t("asct_close")}>
           <AscUploadDialog {...props} titleId={`${ids}-title`} owner={status?.owner === true} upload={upload}
             onEnable69={() => { setOpen(false); props.onEnable69(); }} />
         </Overlay>,
@@ -121,6 +122,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
   owner: boolean;
   upload: ReturnType<typeof useAscUpload>;
 }) {
+  const { t, tf } = useI18n();
   const { state, listApps, listVersions, listLocalizations } = upload;
   const plan = useMemo(() => ascFilePlan(images, orientation), [images, orientation]);
   const [chosenApp, setChosenApp] = useState("");
@@ -154,9 +156,9 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
 
   const progress = state.phase === "queued" || state.phase === "running" || state.phase === "failed" ? state.progress : undefined;
   const announcement = view === "progress"
-    ? (progress ? tf(locale, "asct_progress_summary", { done: progress.done, total: progress.total }) : t(locale, "asct_progress_queued"))
-    : view === "done" ? t(locale, "asct_success_title")
-    : view === "error" ? t(locale, "asct_error_title") : "";
+    ? (progress ? tf("asct_progress_summary", { done: progress.done, total: progress.total }) : t("asct_progress_queued"))
+    : view === "done" ? t("asct_success_title")
+    : view === "error" ? t("asct_error_title") : "";
 
   async function confirm() {
     if (submitting || state.phase !== "idle" || !appId || !versionId || !localizationId) return;
@@ -169,10 +171,10 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
   }
 
   const size = plan.send[0] ? `${plan.send[0].width} × ${plan.send[0].height}` : "";
-  const heading = view === "no69" ? t(locale, "asct_no69_title")
-    : view === "progress" ? t(locale, "asct_progress_title")
-    : view === "done" ? t(locale, "asct_success_title")
-    : view === "error" ? t(locale, "asct_error_title") : t(locale, "asct_dialog_title");
+  const heading = view === "no69" ? t("asct_no69_title")
+    : view === "progress" ? t("asct_progress_title")
+    : view === "done" ? t("asct_success_title")
+    : view === "error" ? t("asct_error_title") : t("asct_dialog_title");
 
   return (
     <div className="tool-asc-dialog" data-testid="asc-dialog" data-view={view}>
@@ -180,34 +182,34 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
       <p className="sr-only" role="status" aria-live="polite" data-testid="asc-live">{announcement}</p>
 
       {view === "no69" ? <>
-        <p className="mt-3 text-sm text-[var(--muted)]">{t(locale, "asct_no69_body")}</p>
+        <p className="mt-3 text-sm text-[var(--muted)]">{t("asct_no69_body")}</p>
         <SkippedFiles locale={locale} files={plan.skipped} />
-        <button type="button" className="ds-cta mt-5 w-full" data-testid="asc-enable-69" onClick={onEnable69}>{t(locale, "asct_enable69")}</button>
+        <button type="button" className="ds-cta mt-5 w-full" data-testid="asc-enable-69" onClick={onEnable69}>{t("asct_enable69")}</button>
       </> : null}
 
       {view === "form" ? <>
-        <p className="mt-3 text-sm text-[var(--muted)]">{t(locale, "asct_dialog_lead")}</p>
+        <p className="mt-3 text-sm text-[var(--muted)]">{t("asct_dialog_lead")}</p>
         <div className="mt-5 grid gap-4">
           <Picker
-            id={`${ids}-app`} label={t(locale, "asct_app")} locale={locale} lookup={apps} empty={t(locale, "asct_no_apps")} testId="asc-app"
+            id={`${ids}-app`} label={t("asct_app")} locale={locale} lookup={apps} empty={t("asct_no_apps")} testId="asc-app"
             value={appId} onChange={(value) => { setChosenApp(value); setChosenVersion(""); setChosenLocalization(""); }}
             options={apps.items.map((app) => ({ value: app.id, label: `${app.name} · ${app.bundleId}` }))}
           />
           {appId ? <Picker
-            id={`${ids}-version`} label={t(locale, "asct_version")} locale={locale} lookup={versions} empty={t(locale, "asct_no_versions")} testId="asc-version"
+            id={`${ids}-version`} label={t("asct_version")} locale={locale} lookup={versions} empty={t("asct_no_versions")} testId="asc-version"
             value={versionId} onChange={(value) => { setChosenVersion(value); setChosenLocalization(""); }}
             options={versions.items.map((version) => ({ value: version.id, label: `${version.versionString} · ${version.platform === "IOS" ? "iOS" : version.platform}` }))}
           /> : null}
           {versionId ? <Picker
-            id={`${ids}-loc`} label={t(locale, "asct_localization")} locale={locale} lookup={localizations} empty={t(locale, "asct_no_localizations")} testId="asc-localization"
+            id={`${ids}-loc`} label={t("asct_localization")} locale={locale} lookup={localizations} empty={t("asct_no_localizations")} testId="asc-localization"
             value={localizationId} onChange={setChosenLocalization}
             options={localizations.items.map((item) => ({ value: item.id, label: languageLabel(locale, item.locale) }))}
           /> : null}
         </div>
 
         <section className="mt-5" aria-labelledby={`${ids}-files`} data-testid="asc-send-files">
-          <h3 id={`${ids}-files`} className="ds-label">{t(locale, "asct_files_title")}</h3>
-          <p className="mt-1 text-sm">{tf(locale, "asct_files_count", { n: plan.send.length, size })}</p>
+          <h3 id={`${ids}-files`} className="ds-label">{t("asct_files_title")}</h3>
+          <p className="mt-1 text-sm">{tf("asct_files_count", { n: plan.send.length, size })}</p>
           <FileList files={plan.send} />
         </section>
         <SkippedFiles locale={locale} files={plan.skipped} />
@@ -217,41 +219,41 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
             <input id={`${ids}-replace`} type="checkbox" className="mt-1" checked={replaceExisting} data-testid="asc-replace"
               aria-describedby={`${ids}-replace-hint`} onChange={(event) => setReplaceExisting(event.target.checked)} />
             <span>
-              {t(locale, "asct_replace")}
-              <span id={`${ids}-replace-hint`} className="mt-1 block text-xs text-[var(--muted)]">{t(locale, "asct_replace_hint")}</span>
+              {t("asct_replace")}
+              <span id={`${ids}-replace-hint`} className="mt-1 block text-xs text-[var(--muted)]">{t("asct_replace_hint")}</span>
             </span>
           </label>
-        ) : <p className="mt-5 text-xs text-[var(--muted)]">{t(locale, "asct_keep_hint")}</p>}
+        ) : <p className="mt-5 text-xs text-[var(--muted)]">{t("asct_keep_hint")}</p>}
 
         <button type="button" className="ds-cta mt-5 w-full" data-testid="asc-confirm"
           disabled={submitting || !appId || !versionId || !localizationId} onClick={() => void confirm()}>
-          {tf(locale, "asct_confirm", { n: plan.send.length })}
+          {tf("asct_confirm", { n: plan.send.length })}
         </button>
       </> : null}
 
       {view === "progress" ? <>
         <p className="mt-3 text-sm" data-testid="asc-progress-summary">
-          {progress ? tf(locale, "asct_progress_summary", { done: progress.done, total: progress.total }) : t(locale, "asct_progress_queued")}
+          {progress ? tf("asct_progress_summary", { done: progress.done, total: progress.total }) : t("asct_progress_queued")}
         </p>
-        {progress ? <progress className="tool-asc-progress mt-3" max={progress.total} value={progress.done} aria-label={t(locale, "asct_progress_title")} /> : null}
+        {progress ? <progress className="tool-asc-progress mt-3" max={progress.total} value={progress.done} aria-label={t("asct_progress_title")} /> : null}
         <ProgressList locale={locale} files={progress?.files ?? []} />
-        <p className="mt-4 text-xs text-[var(--muted)]">{t(locale, "asct_progress_keep")}</p>
+        <p className="mt-4 text-xs text-[var(--muted)]">{t("asct_progress_keep")}</p>
       </> : null}
 
       {view === "done" && state.phase === "completed" ? <>
-        <p className="mt-3 text-sm" data-testid="asc-success">{tf(locale, "asct_success_body", { n: state.result.uploaded })}</p>
-        {state.result.replaced ? <p className="mt-1 text-sm">{tf(locale, "asct_success_replaced", { n: state.result.replaced })}</p> : null}
-        {state.result.reordered === false ? <p className="ds-warn mt-3">{t(locale, "asct_success_order")}</p> : null}
+        <p className="mt-3 text-sm" data-testid="asc-success">{tf("asct_success_body", { n: state.result.uploaded })}</p>
+        {state.result.replaced ? <p className="mt-1 text-sm">{tf("asct_success_replaced", { n: state.result.replaced })}</p> : null}
+        {state.result.reordered === false ? <p className="ds-warn mt-3">{t("asct_success_order")}</p> : null}
         <ProgressList locale={locale} files={state.result.files ?? []} />
         <a className="ds-cta mt-5 w-full" href={ascAppUrl(state.result.appId ?? appId)} target="_blank" rel="noopener noreferrer" data-testid="asc-open">
-          {t(locale, "asct_open")}
+          {t("asct_open")}
         </a>
       </> : null}
 
       {view === "error" && state.phase === "failed" ? <>
-        <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(locale, ascErrorKey(state.error))}</p>
+        <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(state.error))}</p>
         <ProgressList locale={locale} files={state.progress?.files ?? []} />
-        <button type="button" className="ds-cta-ghost mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t(locale, "asct_retry")}</button>
+        <button type="button" className="ds-cta-ghost mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t("asct_retry")}</button>
       </> : null}
     </div>
   );
@@ -261,20 +263,21 @@ function Picker({ id, label, locale, lookup, empty, value, onChange, options, te
   id: string; label: string; locale: Locale; lookup: Lookup<unknown>; empty: string;
   value: string; onChange: (value: string) => void; options: { value: string; label: string }[]; testId: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className="ds-field grid gap-1">
       <label className="ds-label" htmlFor={id}>{label}</label>
       {lookup.state === "error" ? (
         <p className="ds-warn" role="alert" data-testid={`${testId}-error`}>
-          {t(locale, ascErrorKey(lookup.error))}{" "}
-          <button type="button" className="ds-text-btn" onClick={lookup.retry}>{t(locale, "asct_retry")}</button>
+          {t(ascErrorKey(lookup.error))}{" "}
+          <button type="button" className="ds-text-btn" onClick={lookup.retry}>{t("asct_retry")}</button>
         </p>
       ) : lookup.state === "ready" && !options.length ? (
         <p className="text-sm text-[var(--muted)]" data-testid={`${testId}-empty`}>{empty}</p>
       ) : (
         <select id={id} className="ds-input w-full" data-testid={testId} value={value} disabled={lookup.state !== "ready"}
           aria-busy={lookup.state === "loading"} onChange={(event) => onChange(event.target.value)}>
-          <option value="">{lookup.state === "ready" ? t(locale, "asct_choose") : t(locale, "asct_loading")}</option>
+          <option value="">{lookup.state === "ready" ? t("asct_choose") : t("asct_loading")}</option>
           {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       )}
@@ -291,19 +294,21 @@ function FileList({ files }: { files: AscPlannedFile[] }) {
 }
 
 function SkippedFiles({ locale, files }: { locale: Locale; files: AscPlannedFile[] }) {
+  const { t, tf } = useI18n();
   const ids = useId();
   if (!files.length) return null;
   return (
     <section className="mt-5" aria-labelledby={`${ids}-skipped`} data-testid="asc-skipped-files">
-      <h3 id={`${ids}-skipped`} className="ds-label">{t(locale, "asct_skipped_title")}</h3>
-      <p className="mt-1 text-sm" data-testid="asc-skipped-reason">{t(locale, "asct_skipped_reason")}</p>
-      <p className="mt-1 text-xs text-[var(--muted)]">{tf(locale, "asct_skipped_count", { n: files.length })}</p>
+      <h3 id={`${ids}-skipped`} className="ds-label">{t("asct_skipped_title")}</h3>
+      <p className="mt-1 text-sm" data-testid="asc-skipped-reason">{t("asct_skipped_reason")}</p>
+      <p className="mt-1 text-xs text-[var(--muted)]">{tf("asct_skipped_count", { n: files.length })}</p>
       <FileList files={files} />
     </section>
   );
 }
 
 function ProgressList({ locale, files }: { locale: Locale; files: AscFileProgress[] }) {
+  const { t } = useI18n();
   if (!files.length) return null;
   return (
     <ol className="tool-asc-files mt-3" data-testid="asc-progress-files">
@@ -311,8 +316,8 @@ function ProgressList({ locale, files }: { locale: Locale; files: AscFileProgres
         <li key={`${file.slot}-${file.index}`} data-state={file.state}>
           <span>{locale === "fr" ? "6,9″" : "6.9″"} · {String(file.index).padStart(2, "0")}</span>
           <span className="tool-asc-file-state">
-            {t(locale, ascFileStateKey(file.state))}
-            {file.state === "failed" && file.error ? ` · ${t(locale, ascFileErrorKey(file.error))}` : ""}
+            {t(ascFileStateKey(file.state))}
+            {file.state === "failed" && file.error ? ` · ${t(ascFileErrorKey(file.error))}` : ""}
           </span>
         </li>
       ))}

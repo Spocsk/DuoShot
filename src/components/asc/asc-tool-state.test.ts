@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { t, tf } from "@/lib/i18n";
+import { getTranslator } from "@/lib/i18n";
 import {
   ascAppUrl, ascErrorKey, ascFileErrorKey, ascFilePlan, ascFileStateKey, ascGate, autoPick, type ExportImage,
 } from "./asc-tool-state";
+
+const fr = getTranslator("fr");
+const en = getTranslator("en");
 
 const image = (slot: string, index: number, width: number, height: number): ExportImage => ({ slot, index, width, height, format: "png" });
 
@@ -51,16 +54,16 @@ describe("ascFilePlan", () => {
 
 describe("error and state messages", () => {
   it("translates stable codes and falls back to a generic message", () => {
-    expect(t("fr", ascErrorKey("ASC_SET_FULL"))).toContain("10 au maximum");
-    expect(t("fr", ascErrorKey("ASC_UNAUTHORIZED"))).toContain("Reconnectez");
-    expect(t("en", ascErrorKey("EXPORT_EXPIRED"))).toContain("expired");
+    expect(fr.t(ascErrorKey("ASC_SET_FULL"))).toContain("10 au maximum");
+    expect(fr.t(ascErrorKey("ASC_UNAUTHORIZED"))).toContain("Reconnectez");
+    expect(en.t(ascErrorKey("EXPORT_EXPIRED"))).toContain("expired");
     expect(ascErrorKey("SOMETHING_NEW")).toBe("asct_err_generic");
     expect(ascErrorKey(undefined)).toBe("asct_err_generic");
   });
 
   it("explains rollback and cleanup failures per file", () => {
     expect(ascFileErrorKey("ASC_ROLLED_BACK")).toBe("asct_file_rolled_back");
-    expect(t("fr", ascFileErrorKey("ASC_CLEANUP_FAILED"))).toContain("vérifiez la fiche");
+    expect(fr.t(ascFileErrorKey("ASC_CLEANUP_FAILED"))).toContain("vérifiez la fiche");
     expect(ascFileErrorKey("ASC_PROCESSING_FAILED")).toBe("asct_err_processing");
   });
 
@@ -71,10 +74,10 @@ describe("error and state messages", () => {
   });
 
   it("keeps the skipped reason and the plural forms", () => {
-    expect(t("fr", "asct_skipped_reason")).toBe("Apple n’accepte pas encore les captures iPhone Duo dans l’API");
-    expect(tf("fr", "asct_confirm", { n: 1 })).toBe("Envoyer 1 capture");
-    expect(tf("fr", "asct_confirm", { n: 3 })).toBe("Envoyer 3 captures");
-    expect(tf("en", "asct_success_body", { n: 1 })).toBe("1 6.9″ screenshot is in App Store Connect.");
+    expect(fr.t("asct_skipped_reason")).toBe("Apple n’accepte pas encore les captures iPhone Duo dans l’API");
+    expect(fr.tf("asct_confirm", { n: 1 })).toBe("Envoyer 1 capture");
+    expect(fr.tf("asct_confirm", { n: 3 })).toBe("Envoyer 3 captures");
+    expect(en.tf("asct_success_body", { n: 1 })).toBe("1 6.9″ screenshot is in App Store Connect.");
   });
 });
 

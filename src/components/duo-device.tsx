@@ -1,16 +1,17 @@
 import type { ReactNode } from "react";
 import { DeviceCamera } from "@/components/device-camera";
-import { t } from "@/lib/i18n";
+import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { HarborCover, HarborInnerMain, HarborInnerSide } from "@/components/harbor-ui";
 
 /** `openOverlay` is drawn over the open device's own box, so it follows the device's transforms. */
 export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay?: ReactNode }) {
+  const { t } = getTranslator(locale);
   return (
     <div className="duo-stage">
-      <p className="ds-label">{t(locale, "example_listing")}</p>
+      <p className="ds-label">{t("example_listing")}</p>
       <p className="mt-1 mb-4 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
-        {t(locale, "hero_kicker")}
+        {t("hero_kicker")}
       </p>
       <div className="duo-cluster" aria-hidden="true">
         <figure className="duo-closed">
@@ -20,7 +21,7 @@ export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay
               <DeviceCamera />
             </div>
           </div>
-          <figcaption className="duo-caption">{t(locale, "closed_caption")}</figcaption>
+          <figcaption className="duo-caption">{t("closed_caption")}</figcaption>
         </figure>
         <figure className="duo-open">
           {openOverlay ? (
@@ -59,7 +60,7 @@ export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay
               </div>
             </div>
           )}
-          <figcaption className="duo-caption">{t(locale, "open_caption")}</figcaption>
+          <figcaption className="duo-caption">{t("open_caption")}</figcaption>
         </figure>
       </div>
     </div>

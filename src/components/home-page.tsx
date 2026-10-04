@@ -2,7 +2,8 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { AppleAvailability } from "./apple-availability";
 import { FaqList } from "@/components/faq-list";
-import { FAQ, t } from "@/lib/i18n";
+import { getTranslator } from "@/lib/i18n";
+import { FAQ } from "@/lib/i18n";
 import { duoSpec, formatInches, type Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
@@ -65,6 +66,7 @@ function DeliveredFiles({ locale }: { locale: Locale }) {
 }
 
 function ProofSection({ locale }: { locale: Locale }) {
+  const { t } = getTranslator(locale);
   const fr = locale === "fr";
   const prefix = localePrefix(locale);
   return <section className="studio-proof" aria-labelledby="studio-proof-title" data-reveal>
@@ -94,7 +96,7 @@ function ProofSection({ locale }: { locale: Locale }) {
       </div>
     </div>
     <div className="studio-proof-actions">
-      <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t(locale, "cta_example")}</a>
+      <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t("cta_example")}</a>
       <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
         {fr ? "Ouvrir l’exemple dans l’outil" : "Open the example in the tool"} <span aria-hidden="true">↗</span>
       </Link>
@@ -221,6 +223,7 @@ function SequenceSection({ locale }: { locale: Locale }) {
 /* ------------------------------------------------------------------ */
 
 export function HomePage({ locale }: { locale: Locale }) {
+  const { t } = getTranslator(locale);
   const prefix = localePrefix(locale);
   const fr = locale === "fr";
 
@@ -244,7 +247,7 @@ export function HomePage({ locale }: { locale: Locale }) {
               </p>
               <div className="studio-hero-actions">
                 <Link href={`${prefix}/tool`} data-testid="cta-tool" className="ds-cta">
-                  {t(locale, "cta_tool")}
+                  {t("cta_tool")}
                 </Link>
                 <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo" className="ds-cta-ghost">
                   {fr ? "Voir l’exemple" : "See the example"}
@@ -264,7 +267,7 @@ export function HomePage({ locale }: { locale: Locale }) {
                 </div>
               </dl>
               <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link studio-hero-specs">
-                {t(locale, "cta_specs")} <span aria-hidden="true">↗</span>
+                {t("cta_specs")} <span aria-hidden="true">↗</span>
               </Link>
             </div>
             <div className="studio-hero-meta">
@@ -284,7 +287,7 @@ export function HomePage({ locale }: { locale: Locale }) {
               <h2>{fr ? "Prêt pour le regard du client." : "Ready for your client’s eye."}</h2>
               <p>{fr ? "Avec Studio, partagez une revue temporaire et recueillez une décision sur le set, sans envoyer de fichiers à l’aveugle." : "With Studio, share a temporary review and collect a decision on the set before delivery."}</p>
               <Link href={reviewPath(locale, DEMO_REVIEW_ID)} data-testid="cta-review-demo" className="studio-inline-link">
-                {t(locale, "cta_review_demo")} <span aria-hidden="true">↗</span>
+                {t("cta_review_demo")} <span aria-hidden="true">↗</span>
               </Link>
             </div>
             <div className="studio-review-preview" aria-label={fr ? "Aperçu de la revue client Harbor" : "Preview of the Harbor client review"}>
@@ -311,7 +314,7 @@ export function HomePage({ locale }: { locale: Locale }) {
           <PricingSection locale={locale} compact />
 
           <section className="studio-faq" data-reveal>
-            <h2>{t(locale, "faq_title")}</h2>
+            <h2>{t("faq_title")}</h2>
             <FaqList items={FAQ[locale]} />
             <TrustLine locale={locale} />
           </section>
