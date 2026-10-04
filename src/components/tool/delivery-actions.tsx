@@ -93,7 +93,7 @@ export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo
         <p className="mt-2 text-xs text-[var(--muted)]">{locale === "fr" ? "Chemins dans le dossier de l’app" : "Paths inside the app folder"}</p>
         <ul className="mt-3 space-y-1 text-sm">
           {exportImages.map((image) => (
-            <li key={`${image.slot}-${image.index}`} className="studio-delivered-file">
+            <li key={`${image.slot}-${image.index}-${image.width}x${image.height}`} className="studio-delivered-file">
               <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
               <span>{image.slot === "duo-outer" ? (locale === "fr" ? "Fermé" : "Closed") : image.slot === "duo-inner" ? (locale === "fr" ? "Ouvert" : "Open") : "6.9"} · {image.width} × {image.height}</span>
             </li>
