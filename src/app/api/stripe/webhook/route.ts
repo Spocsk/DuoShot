@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { billingEventMatches } from "@/lib/billing-environment";
+import { PLANS } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,7 @@ async function syncSubscription(stripe: Stripe, subscriptionId: string): Promise
   const { data: updated, error } = await admin.from("workspaces").update({
     stripe_sync_version: workspace.stripe_sync_version + 1,
     plan,
-    seats: plan === "studio" ? 3 : 1,
+    seats: PLANS[plan].seats,
     stripe_subscription_id: subscription.status === "canceled" ? null : subscription.id,
     stripe_price_id: priceId ?? null,
     subscription_status: subscription.status,

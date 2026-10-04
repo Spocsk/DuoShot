@@ -42,28 +42,27 @@ La production tourne uniquement sur le VPS DuoShot : Docker Compose derrière Tr
 
 Google OAuth, e-mail + mot de passe, magic link OTP. **Pas** de Sign in with Apple en v1.
 
-Projet Supabase : [DuoShot](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq) (`jvhqcmqwrihbtwrggwuq`).
+En production, l’auth est le GoTrue du **Supabase auto-hébergé** sur le VPS (`infra/supabase`), exposé en HTTPS sur `https://api.duoshot.site` derrière Traefik (santé : `https://api.duoshot.site/auth/v1/health`). L’ancien projet Supabase Cloud n’est plus utilisé par la production ; ne pas y reconfigurer l’auth.
 
-### Activer Google
+### Côté app
 
-1. [Google Cloud Console → Identifiants](https://console.cloud.google.com/apis/credentials) : écran de consentement OAuth (External, app DuoShot), puis **ID client OAuth 2.0** type Application Web.
-2. URI de redirection autorisée (côté Google) — uniquement le callback Supabase :
+- `NEXT_PUBLIC_SUPABASE_URL` = `https://api.duoshot.site` et `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (ou `NEXT_PUBLIC_SUPABASE_ANON_KEY`) : figés au build de l’image depuis les variables du dépôt GitHub.
+- `SUPABASE_INTERNAL_URL` (optionnel, serveur uniquement) : URL Docker privée de l’API ; le navigateur utilise toujours l’URL publique HTTPS.
+- `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SECRET_KEY`) : serveur uniquement, dans `/data/duoshot/app.env`.
+- OAuth, magic link et confirmation reviennent sur `https://duoshot.site/auth/callback` (`src/app/auth/callback`) ; `src/app/auth/confirm` traite les liens e-mail à `token_hash`.
 
-   `https://jvhqcmqwrihbtwrggwuq.supabase.co/auth/v1/callback`
+### Côté GoTrue (VPS)
 
-3. [Supabase → Authentication → Providers → Google](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/providers) : activer, coller Client ID + secret. Aucun secret dans git.
-4. [URL Configuration](https://supabase.com/dashboard/project/jvhqcmqwrihbtwrggwuq/auth/url-configuration) :
+La configuration vit dans les fichiers d’environnement root-only de la stack Supabase (voir [`infra/supabase/README.md`](infra/supabase/README.md)), jamais dans git :
 
-   - **Site URL** : `https://duoshot.site`
-   - **Redirect URLs** :
-     - `https://duoshot.site/auth/callback`
-     - `https://duoshot.site/**`
-     - `http://localhost:3000/auth/callback`
-     - `http://localhost:3000/**`
+- `SITE_URL` = `https://duoshot.site` ; `ADDITIONAL_REDIRECT_URLS` contient `https://duoshot.site/auth/callback`. Sans ces URLs, GoTrue ignore `redirectTo` et renvoie vers `SITE_URL`.
+- `API_EXTERNAL_URL` : URL publique de l’API Auth, sous `/auth/v1` sur `https://api.duoshot.site` (le callback Google en dépend).
+- Google : provider activé avec Client ID + secret dans l’environnement Auth. Dans [Google Cloud Console → Identifiants](https://console.cloud.google.com/apis/credentials), l’URI de redirection autorisée est le callback GoTrue `https://api.duoshot.site/auth/v1/callback`, avec l’origine `https://duoshot.site`.
+- E-mail : SMTP Resend (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_ADMIN_EMAIL`, `SMTP_SENDER_NAME`), confirmation e-mail obligatoire (`ENABLE_EMAIL_AUTOCONFIRM=false`), inscriptions ouvertes (`DISABLE_SIGNUP=false`).
 
-   Sans ces URLs prod, GoTrue ignore `redirectTo` et renvoie le SSO vers `http://localhost:3000`.
+Après toute modification, vérifier les réglages effectifs avec la clé publique sur `https://api.duoshot.site/auth/v1/settings` (Google activé, inscriptions ouvertes, confirmation requise).
 
-Sans provider allumé, le bouton Google affiche une erreur dans l’app (plus de JSON brut GoTrue). SMTP Resend si le quota mail Free sature.
+En local, pointer `NEXT_PUBLIC_SUPABASE_URL` vers une instance Supabase de développement dont la liste de redirections inclut `http://localhost:3000/auth/callback`.
 
 ## Plans
 

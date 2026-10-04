@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { readActiveMembership } from "@/lib/active-membership";
+import { STUDIO_SEATS } from "@/lib/plans";
 
 export async function GET() {
   const supabase = await createServerSupabase();
@@ -28,5 +29,5 @@ export async function GET() {
       return { ...member, email: data.user?.email ?? null };
     }),
   );
-  return NextResponse.json({ members: hydrated, limit: 3 });
+  return NextResponse.json({ members: hydrated, limit: STUDIO_SEATS });
 }

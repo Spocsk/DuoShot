@@ -4,6 +4,12 @@ import { executeExport } from "@/lib/render/export";
 import { executeReview } from "@/lib/render/review";
 import { completeRender, type RenderJob } from "@/lib/render/jobs";
 export const runtime = "nodejs";
+const LEASE_LOST = "RENDER_LEASE_LOST";
+/** Another attempt owns the job now; completing again would only fail and must not touch its quota or result. */
+function leaseLost(job: RenderJob) {
+  console.warn("render_worker_lease_lost", { jobId: job.id });
+  return NextResponse.json({ jobId: job.id, processed: true, leaseLost: true });
+}
 export const maxDuration = 900;
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -26,10 +32,12 @@ export async function POST(request: Request) {
     const response = await (job.kind === "export" ? executeExport : executeReview)(input, admin, { id: job.user_id }, job);
     if (!response.ok) {
       const result = await response.json() as { error?: string };
+      if (result.error === LEASE_LOST) return leaseLost(job);
       await completeRender(admin, job, null, null, result.error ?? "RENDER_FAILED");
     }
     return NextResponse.json({ jobId: job.id, processed: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === LEASE_LOST) return leaseLost(job);
     // If a lease was lost, this cannot change the new attempt's quota or result.
     try { await completeRender(admin, job, null, null, "RENDER_FAILED"); } catch { /* recovered by the next claim after lease expiry */ }
     console.error("render_worker_attempt_failed", { jobId: job.id });

@@ -5,6 +5,8 @@ export type CheckoutKind = "indie_monthly" | "studio_monthly" | "indie_yearly" |
 export const FREE_EXPORTS = 2;
 export const PRO_CHECKOUT_KIND: CheckoutKind = "indie_monthly";
 export const PRO_DAILY_CAP = 100;
+/** Studio seat count; the database mirrors it in private.seat_limit. */
+export const STUDIO_SEATS = 3;
 export const PLANS = {
   free: {
     id: "free" as const,
@@ -24,7 +26,7 @@ export const PLANS = {
     id: "studio" as const,
     dailyHdSets: PRO_DAILY_CAP,
     duoOnly: false,
-    seats: 3,
+    seats: STUDIO_SEATS,
     monthlyEur: 49,
     yearlyEur: 490,
   },

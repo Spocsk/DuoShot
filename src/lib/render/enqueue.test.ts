@@ -154,6 +154,18 @@ describe("enqueueRender", () => {
     expect(body.error).toBe("EXPORT_UNAVAILABLE");
   });
 
+  it("hides unexpected thrown errors behind EXPORT_UNAVAILABLE and logs them", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    rpc.mockRejectedValue(new Error("connect ECONNREFUSED 10.0.0.5:5432"));
+    const response = await enqueueRender(request(PAIR), userClient(), USER_ID, "export");
+    const text = await response.text();
+    expect(response.status).toBe(503);
+    expect(JSON.parse(text)).toEqual({ error: "EXPORT_UNAVAILABLE" });
+    expect(text).not.toContain("ECONNREFUSED");
+    expect(log).toHaveBeenCalledWith("render_enqueue_failed", { message: "connect ECONNREFUSED 10.0.0.5:5432" });
+    log.mockRestore();
+  });
+
   it("maps an oversized body to 413 INPUT_TOO_LARGE", async () => {
     const big = JSON.stringify({ appName: "x".repeat(70_000) });
     const { status, body } = await readJson(await enqueueRender(request(big), userClient(), USER_ID, "export"));

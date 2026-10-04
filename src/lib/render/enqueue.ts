@@ -5,6 +5,10 @@ import { createAdminSupabase } from "../supabase/admin";
 import { readWorkspaceBilling } from "../workspace-billing";
 import { parseRenderBody, renderErrorStatus } from "../pipeline/request";
 import { canUse69 } from "../specs";
+
+/** Codes thrown by body reading and validation; anything else is an internal failure. */
+const CLIENT_ERROR_CODES = new Set(["INVALID_REQUEST", "INPUT_TOO_LARGE", "INVALID_PAIRS", "PATH_FORBIDDEN", "INVALID_OPTIONS", "INVALID_TRANSFORMS"]);
+
 export async function enqueueRender(request: Request, client: SupabaseClient, userId: string, kind: "export" | "review") {
   try {
     const key = request.headers.get("idempotency-key");
@@ -31,7 +35,11 @@ export async function enqueueRender(request: Request, client: SupabaseClient, us
     }
     return NextResponse.json({ jobId: data, statusUrl: `/api/render-jobs/${data}` }, { status: 202, headers: { "Cache-Control": "no-store", "Retry-After": "2" } });
   } catch (error) {
-    const code = error instanceof SyntaxError ? "INVALID_REQUEST" : error instanceof Error ? error.message : "INVALID_REQUEST";
-    return NextResponse.json({ error: code }, { status: renderErrorStatus(code) });
+    if (error instanceof SyntaxError) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
+    if (error instanceof Error && CLIENT_ERROR_CODES.has(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: renderErrorStatus(error.message) });
+    }
+    console.error("render_enqueue_failed", { message: error instanceof Error ? error.message : String(error) });
+    return NextResponse.json({ error: "EXPORT_UNAVAILABLE" }, { status: 503 });
   }
 }
