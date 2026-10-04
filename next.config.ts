@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import { securityHeaders } from "./src/lib/security-headers";
 
+/** Browser navigations ask for HTML; image and RSC fetches do not. */
+const HTML_DOCUMENT = { type: "header", key: "accept", value: ".*text/html.*" } as const;
+
 const nextConfig: NextConfig = {
   output: "standalone",
   allowedDevOrigins: ["127.0.0.1", "localhost"],
@@ -10,8 +13,7 @@ const nextConfig: NextConfig = {
     "/api/example-zip": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews/[id]/media": ["./src/lib/pipeline/fonts/**/*"],
-    "/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
-    "/en/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
+    "/[locale]/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
   },
   poweredByHeader: false,
   async headers() {
@@ -32,6 +34,22 @@ const nextConfig: NextConfig = {
       { source: "/rejection", destination: "/rejet", permanent: true },
       { source: "/en/pourquoi-pas-ia", destination: "/en/why-not-ai", permanent: true },
       { source: "/en/rejet", destination: "/en/rejection", permanent: true },
+      // French pages are served by app/[locale] with locale "fr" (see rewrites): a page opened
+      // at /fr/… goes back to its public unprefixed URL. Only the French OG images, fetched as
+      // images rather than documents, are served under /fr.
+      { source: "/fr", has: [HTML_DOCUMENT], destination: "/", permanent: true },
+      { source: "/fr/:path+", has: [HTML_DOCUMENT], destination: "/:path+", permanent: true },
+      // Social cards cached before the single [locale] tree (route groups added a hash).
+      { source: "/opengraph-image-:hash", destination: "/fr/opengraph-image", permanent: true },
+      { source: "/:page(specs|rejet)/opengraph-image-:hash", destination: "/fr/:page/opengraph-image", permanent: true },
+    ];
+  },
+  async rewrites() {
+    // Plain rewrites run after filesystem routes (API, auth, metadata files, public assets)
+    // and before dynamic ones: unprefixed paths reach app/[locale] as French, /en/… as is.
+    return [
+      { source: "/", destination: "/fr" },
+      { source: "/:first((?!(?:en|fr|api|auth|_next)(?![^/]))[^/]+)/:rest*", destination: "/fr/:first/:rest*" },
     ];
   },
 };
