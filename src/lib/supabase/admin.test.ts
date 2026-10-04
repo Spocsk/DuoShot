@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createAdminSupabase, createPublicSupabase, createReviewWriter } from "./admin";
+import { createAdminSupabase, createReviewWriter } from "./admin";
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://supabase.example.invalid");
@@ -27,12 +27,6 @@ describe("createAdminSupabase", () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     vi.stubEnv("SUPABASE_SECRET_KEY", "secret-key-test");
     expect(createAdminSupabase()).not.toBeNull();
-  });
-});
-
-describe("createPublicSupabase", () => {
-  it("always builds a client from the publishable key", () => {
-    expect(createPublicSupabase()).not.toBeNull();
   });
 });
 

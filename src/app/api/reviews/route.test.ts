@@ -15,7 +15,6 @@ vi.mock("@/lib/supabase/admin", () => {
   const createAdminSupabase = vi.fn();
   return {
     createAdminSupabase,
-    createPublicSupabase: vi.fn(),
     createReviewWriter: (client: unknown) => createAdminSupabase() ?? client,
   };
 });

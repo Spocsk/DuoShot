@@ -30,7 +30,7 @@ const addMember = (workspace: string, user: string, active = false) =>
 const activeWorkspace = async (user: string) =>
   (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1 and active", [user])).rows.map((r) => r.workspace_id);
 
-describe("public review RPCs on real PostgreSQL", () => {
+describe("review RPCs on real PostgreSQL", () => {
   async function review(fields: Record<string, unknown> = {}) {
     const owner = await newUser();
     const publicId = `rv${tag()}`;
@@ -115,15 +115,16 @@ describe("public review RPCs on real PostgreSQL", () => {
     expect((await db.query("select status,comment from review_links where id=$1", [id])).rows[0]).toEqual({ status: "changes_requested", comment: null });
   });
 
-  it("lets anonymous clients call both RPCs but not read review tables directly", async () => {
+  it.each(["anon", "authenticated"])("does not let %s execute the review RPCs or read review tables", async (role) => {
     const { publicId } = await review();
     const grants = (await db.query<Record<string, boolean>>(`select
-      has_function_privilege('anon','public.get_review_payload(text)','execute') as read,
-      has_function_privilege('anon','public.submit_review_decision(text,text,text)','execute') as decide`)).rows[0];
-    expect(grants).toEqual({ read: true, decide: true });
-    await db.exec("set role anon");
+      has_function_privilege($1,'public.get_review_payload(text)','execute') as read,
+      has_function_privilege($1,'public.submit_review_decision(text,text,text)','execute') as decide`, [role])).rows[0];
+    expect(grants).toEqual({ read: false, decide: false });
+    await db.exec(`set role ${role}`);
     try {
-      expect((await payload(publicId))?.public_id).toBe(publicId);
+      await expect(payload(publicId)).rejects.toThrow(/permission denied/);
+      await expect(decide(publicId, "approved")).rejects.toThrow(/permission denied/);
       const direct = await db.query("select * from public.review_links").then((r) => r.rows, () => []);
       expect(direct).toEqual([]);
       const slides = await db.query("select * from public.review_slides").then((r) => r.rows, () => []);
@@ -131,6 +132,20 @@ describe("public review RPCs on real PostgreSQL", () => {
     } finally {
       await db.exec("reset role");
     }
+    expect((await payload(publicId))?.status).toBe("pending");
+  });
+
+  it("keeps both RPCs executable by service_role only", async () => {
+    const grants = (await db.query<Record<string, boolean>>(`select
+      has_function_privilege('service_role','public.get_review_payload(text)','execute') as read,
+      has_function_privilege('service_role','public.submit_review_decision(text,text,text)','execute') as decide`)).rows[0];
+    expect(grants).toEqual({ read: true, decide: true });
+  });
+
+  it("can re-apply the service-only migration", async () => {
+    await db.exec(await readFile("supabase/migrations/20261004120000_review_rpcs_service_only.sql", "utf8"));
+    const anon = (await db.query<{ ok: boolean }>("select has_function_privilege('anon','public.get_review_payload(text)','execute') as ok")).rows[0];
+    expect(anon.ok).toBe(false);
   });
 });
 

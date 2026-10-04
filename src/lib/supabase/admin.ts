@@ -1,5 +1,4 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { getSupabasePublicKey } from "./env";
 import { getSupabaseServerUrl } from "./server-env";
 
 export function createAdminSupabase() {
@@ -7,7 +6,7 @@ export function createAdminSupabase() {
   if (!key) {
     if (process.env.NODE_ENV !== "production") {
       console.warn(
-        "SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) is missing — review routes use the user/anon client",
+        "SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) is missing — public review routes return 503 and review writes use the user client (RLS)",
       );
     }
     return null;
@@ -15,17 +14,6 @@ export function createAdminSupabase() {
   return createClient(getSupabaseServerUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-}
-
-export function createPublicSupabase() {
-  return createClient(getSupabaseServerUrl(), getSupabasePublicKey(), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-/** Admin when configured, otherwise the anon client (RPCs + public storage). */
-export function createReviewReader() {
-  return createAdminSupabase() ?? createPublicSupabase();
 }
 
 /** Admin when configured, otherwise the authenticated user client (RLS). */
