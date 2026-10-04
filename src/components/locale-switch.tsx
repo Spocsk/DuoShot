@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import { LOCALE_COOKIE } from "@/lib/locale";
 import type { Locale } from "@/lib/specs";
 
 export function LocaleSwitch({ locale, href }: { locale: Locale; href: string }) {
+  const { t } = useI18n();
   const router = useRouter();
   const other: Locale = locale === "fr" ? "en" : "fr";
 
@@ -31,7 +32,7 @@ export function LocaleSwitch({ locale, href }: { locale: Locale; href: string })
       }}
     >
       <span aria-hidden="true" className="text-sm leading-none">{other === "en" ? "🇬🇧" : "🇫🇷"}</span>
-      <span>{t(locale, "lang_switch")}</span>
+      <span>{t("lang_switch")}</span>
     </Link>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
@@ -24,6 +24,7 @@ type Status = {
 };
 
 export function AccountApp({ locale }: { locale: Locale }) {
+  const { t, tf } = useI18n();
   const router = useRouter();
   const prefix = localePrefix(locale);
   const [email, setEmail] = useState<string | null>(null);
@@ -51,7 +52,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
   }, [prefix, router]);
 
   async function checkout(kind: CheckoutKind) {
-    if (!status?.checkoutAvailable) { setMessage(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet."); return; }
+    if (!status?.checkoutAvailable) { setMessage(t("account_payments_not_open_yet")); return; }
     setBusy(true);
     try {
       await startCheckout(kind, checkoutReturnPath(locale));
@@ -90,7 +91,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
   }
 
   async function erase() {
-    if (!confirm(locale === "fr" ? "Supprimer le compte et les fichiers ?" : "Delete account and files?")) {
+    if (!confirm(t("account_delete_account_files"))) {
       return;
     }
     const response = await fetch("/api/account/delete", { method: "POST" });
@@ -99,7 +100,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
       await supabase.auth.signOut();
       router.replace(prefix || "/");
     } else {
-      setMessage(locale === "fr" ? "Suppression incomplète." : "Deletion incomplete.");
+      setMessage(t("account_deletion_incomplete"));
     }
   }
 
@@ -107,20 +108,20 @@ export function AccountApp({ locale }: { locale: Locale }) {
   const remaining = status?.remainingFreeExports;
   const planLabel =
     plan === "studio"
-      ? t(locale, "account_plan_studio")
+      ? t("account_plan_studio")
       : plan === "indie"
-        ? t(locale, "account_plan_indie")
+        ? t("account_plan_indie")
         : plan === "free"
-          ? t(locale, "account_plan_free")
+          ? t("account_plan_free")
           : null;
   const subscriptionLabel = status?.subscriptionStatus
     ? ({
-        active: locale === "fr" ? "Actif" : "Active",
-        trialing: locale === "fr" ? "Période d’essai" : "Trialing",
-        past_due: locale === "fr" ? "Paiement en attente" : "Payment overdue",
-        unpaid: locale === "fr" ? "Impayé" : "Unpaid",
-        canceled: locale === "fr" ? "Résilié" : "Canceled",
-        incomplete: locale === "fr" ? "À confirmer" : "Incomplete",
+        active: t("account_active"),
+        trialing: t("account_trialing"),
+        past_due: t("account_payment_overdue"),
+        unpaid: t("account_unpaid"),
+        canceled: t("account_canceled"),
+        incomplete: t("account_incomplete"),
       } as Record<string, string>)[status.subscriptionStatus] ?? status.subscriptionStatus
     : null;
 
@@ -128,41 +129,41 @@ export function AccountApp({ locale }: { locale: Locale }) {
     <main id="main" className="studio-account-page flex-1">
       <div className="studio-account-inner mx-auto max-w-2xl px-5 py-12" data-testid="account">
         <div className="studio-account-heading">
-          <h1 className="font-display text-4xl">{t(locale, "account_title")}</h1>
+          <h1 className="font-display text-4xl">{t("account_title")}</h1>
           <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
-          <button className="ds-text-btn mt-3" onClick={() => void createBrowserSupabase().auth.signOut().then(({ error }) => { if (error) setMessage(error.message); else router.replace(`${prefix}/login`); })}>{locale === "fr" ? "Se déconnecter" : "Sign out"}</button>
+          <button className="ds-text-btn mt-3" onClick={() => void createBrowserSupabase().auth.signOut().then(({ error }) => { if (error) setMessage(error.message); else router.replace(`${prefix}/login`); })}>{t("account_sign_out")}</button>
         </div>
-        <section className="studio-account-plan" aria-label={locale === "fr" ? "Votre offre" : "Your plan"}>
-          <p className="ds-label">{t(locale, "account_plan_label")}</p>
+        <section className="studio-account-plan" aria-label={t("account_plan")}>
+          <p className="ds-label">{t("account_plan_label")}</p>
           {planLabel ? (
             <p className="font-display mt-1 text-3xl" data-testid="account-plan">{planLabel}</p>
           ) : statusError ? (
             <p className="ds-warn mt-2 text-sm" role="alert" data-testid="account-plan-error">
-              {locale === "fr" ? "Impossible de charger votre offre. Actualisez la page pour réessayer." : "Could not load your plan. Refresh the page to try again."}
+              {t("account_could_not_load_plan")}
             </p>
           ) : (
             <p className="mt-2 text-sm text-[var(--muted)]" role="status" data-testid="account-plan-loading">
-              {locale === "fr" ? "Chargement de votre abonnement…" : "Loading your subscription…"}
+              {t("account_loading_subscription")}
             </p>
           )}
           {plan === "free" && remaining != null ? (
-            <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf(locale, "account_remaining", { n: remaining })}</p>
+            <p className="mt-2 text-[var(--muted)]" data-testid="account-remaining">{tf("account_remaining", { n: remaining })}</p>
           ) : null}
-          {status?.source === "workspace" ? <p className="mt-2 text-sm text-[var(--muted)]">{locale === "fr" ? "Accès accordé manuellement" : "Manually granted access"}</p> : null}
+          {status?.source === "workspace" ? <p className="mt-2 text-sm text-[var(--muted)]">{t("account_manually_granted_access")}</p> : null}
           {status?.subscriptionStatus && status.source !== "workspace" ? (
             <p className="mt-2 text-sm text-[var(--muted)]" data-testid="account-billing-state">
-              {locale === "fr" ? "Abonnement" : "Subscription"}: {subscriptionLabel}
-              {status.periodEnd ? ` · ${status.cancelAtPeriodEnd ? (locale === "fr" ? "Fin" : "Ends") : (locale === "fr" ? "Renouvellement" : "Renews")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(status.periodEnd))}` : ""}
+              {t("account_subscription")}: {subscriptionLabel}
+              {status.periodEnd ? ` · ${status.cancelAtPeriodEnd ? t("account_ends") : t("account_renews")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(status.periodEnd))}` : ""}
             </p>
           ) : null}
           {status?.hasBillingCustomer ? (
             <button type="button" className="ds-cta-ghost mt-5" onClick={() => void manageBilling()} disabled={busy} data-testid="account-manage-billing">
-              {locale === "fr" ? "Gérer abonnement et factures" : "Manage subscription and invoices"}
+              {t("account_manage_subscription_invoices")}
             </button>
           ) : null}
           {plan === "free" ? (
             <div className="mt-8 flex flex-wrap gap-3">
-              {status?.checkoutAvailable !== true ? <p className="w-full text-sm text-[var(--muted)]">{locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet."}</p> : null}
+              {status?.checkoutAvailable !== true ? <p className="w-full text-sm text-[var(--muted)]">{t("account_payments_not_open_yet")}</p> : null}
               <button
                 type="button"
                 onClick={() => void checkout("indie_monthly")}
@@ -170,7 +171,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
                 data-testid="account-upgrade-indie"
                 className="ds-cta"
               >
-                {t(locale, "pricing_indie_cta")}
+                {t("pricing_indie_cta")}
               </button>
               <button
                 type="button"
@@ -179,13 +180,13 @@ export function AccountApp({ locale }: { locale: Locale }) {
                 data-testid="account-upgrade-studio"
                 className="ds-cta-ghost"
               >
-                {t(locale, "pricing_studio_cta")}
+                {t("pricing_studio_cta")}
               </button>
             </div>
           ) : null}
           {plan === "studio" ? (
             <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex">
-              {t(locale, "cta_tool")}
+              {t("cta_tool")}
             </Link>
           ) : null}
         </section>
@@ -193,7 +194,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
         <AscConnectionPanel locale={locale} />
         <div className="studio-account-settings mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
           <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
-            {t(locale, "export_data")}
+            {t("export_data")}
           </button>
           <button
             type="button"
@@ -201,10 +202,10 @@ export function AccountApp({ locale }: { locale: Locale }) {
             data-testid="account-delete"
             className="ds-danger"
           >
-            {t(locale, "delete_account")}
+            {t("delete_account")}
           </button>
           <Link href={`${prefix}/privacy`} className="ds-text-btn">
-            {locale === "fr" ? "Confidentialité" : "Privacy"}
+            {t("footer_privacy")}
           </Link>
         </div>
         {message ? <p className="ds-warn" role="alert" data-testid="account-message">{message}</p> : null}
@@ -236,6 +237,7 @@ type WorkspaceMember = {
 };
 
 function StudioWorkspace({ locale }: { locale: Locale }) {
+  const { t } = useI18n();
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -278,13 +280,13 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
     const payload = (await response.json()) as { error?: string; emailSent?: boolean; acceptPath?: string };
     if (response.ok) {
       setInviteEmail("");
-      setStudioMessage(payload.emailSent ? (locale === "fr" ? "Invitation envoyée." : "Invitation sent.") : `${locale === "fr" ? "Invitation créée, e-mail non envoyé. Partagez ce lien : " : "Invitation created, email not sent. Share this link: "}${window.location.origin}${payload.acceptPath ?? ""}`);
+      setStudioMessage(payload.emailSent ? t("account_invitation_sent") : `${t("account_invitation_created_email_not")}${window.location.origin}${payload.acceptPath ?? ""}`);
       await refreshStudio();
     } else {
       setStudioMessage(
         payload.error === "SEAT_LIMIT"
-          ? locale === "fr" ? "Les trois sièges sont déjà attribués ou réservés." : "All three seats are already assigned or reserved."
-          : locale === "fr" ? "Invitation impossible." : "Could not send invitation.",
+          ? t("account_all_three_seats_already")
+          : t("account_could_not_send_invitation"),
       );
     }
     setStudioBusy(false);
@@ -308,23 +310,23 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
   return (
     <section className="mt-12 border-t border-[var(--line)] pt-10" data-testid="studio-workspace">
       <p className="ds-label">Studio</p>
-      <h2 className="font-display mt-2 text-3xl">{locale === "fr" ? "Équipe et reviews" : "Team and reviews"}</h2>
+      <h2 className="font-display mt-2 text-3xl">{t("account_team_reviews")}</h2>
       <p className="mt-3 text-sm text-[var(--muted)]">
-        {locale === "fr" ? "Trois sièges inclus. Les médias de validation expirent après sept jours." : "Three seats included. Review media expires after seven days."}
+        {t("account_three_seats_included_review")}
       </p>
       <div className="mt-6 flex gap-3">
         <label className="min-w-0 flex-1">
-          <span className="sr-only">{locale === "fr" ? "E-mail du membre" : "Member email"}</span>
+          <span className="sr-only">{t("account_member_email")}</span>
           <input
             className="ds-input w-full"
             type="email"
             value={inviteEmail}
-            placeholder={locale === "fr" ? "collaborateur@studio.fr" : "teammate@studio.com"}
+            placeholder={t("account_teammate_studio_com")}
             onChange={(event) => setInviteEmail(event.target.value)}
           />
         </label>
         <button type="button" className="ds-cta" disabled={studioBusy || !inviteEmail} onClick={() => void invite()}>
-          {locale === "fr" ? "Inviter" : "Invite"}
+          {t("account_invite")}
         </button>
       </div>
       {studioMessage ? <p className="mt-3 text-sm text-[var(--muted)]">{studioMessage}</p> : null}
@@ -337,7 +339,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
                 {member.role}
                 {member.role !== "owner" ? (
                   <button type="button" className="ds-text-btn" onClick={() => void revokeMember(member.id)}>
-                    {locale === "fr" ? "Retirer" : "Remove"}
+                    {t("account_remove")}
                   </button>
                 ) : null}
               </span>
@@ -352,13 +354,13 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
               <span>{invitation.email}</span>
               <span className="flex items-center gap-3 text-[var(--muted)]">
                 {invitation.accepted_at
-                  ? locale === "fr" ? "Acceptée" : "Accepted"
+                  ? t("asct_file_complete")
                   : invitation.revoked_at
-                    ? locale === "fr" ? "Révoquée" : "Revoked"
-                    : locale === "fr" ? "En attente" : "Pending"}
+                    ? t("account_revoked")
+                    : t("account_pending")}
                 {!invitation.accepted_at && !invitation.revoked_at ? (
                   <button type="button" className="ds-text-btn" onClick={() => void revokeInvitation(invitation.id)}>
-                    {locale === "fr" ? "Révoquer" : "Revoke"}
+                    {t("account_revoke")}
                   </button>
                 ) : null}
               </span>
@@ -366,7 +368,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
           ))}
         </ul>
       ) : null}
-      <h3 className="font-display mt-10 text-2xl">{locale === "fr" ? "Validations récentes" : "Recent reviews"}</h3>
+      <h3 className="font-display mt-10 text-2xl">{t("account_recent_reviews")}</h3>
       {reviews.length ? (
         <ul className="mt-3 divide-y divide-[var(--line)]">
           {reviews.map((review) => (
@@ -375,21 +377,21 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
                 <p>{review.set_name}</p>
                 <p className="text-xs text-[var(--muted)]">
                   {review.client_name ? `${review.client_name} · ` : ""}{review.status}
-                  {review.expiresAt ? ` · ${locale === "fr" ? "expire" : "expires"} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(review.expiresAt))}` : ""}
+                  {review.expiresAt ? ` · ${t("account_expires")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(review.expiresAt))}` : ""}
                 </p>
               </div>
               <div className="flex gap-3">
-                <Link className="ds-text-btn" href={reviewPath(locale, review.public_id)}>{locale === "fr" ? "Ouvrir" : "Open"}</Link>
+                <Link className="ds-text-btn" href={reviewPath(locale, review.public_id)}>{t("account_open")}</Link>
                 {!['expired', 'revoked'].includes(review.status) ? (
                   <button type="button" className="ds-text-btn" onClick={() => void revokeReview(review.public_id)}>
-                    {locale === "fr" ? "Révoquer" : "Revoke"}
+                    {t("account_revoke")}
                   </button>
                 ) : null}
               </div>
             </li>
           ))}
         </ul>
-      ) : <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Aucun lien de validation créé." : "No reviews yet."}</p>}
+      ) : <p className="mt-3 text-sm text-[var(--muted)]">{t("account_no_reviews_yet")}</p>}
     </section>
   );
 }

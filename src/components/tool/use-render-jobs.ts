@@ -2,7 +2,8 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { submitRender, resumeRender } from "@/lib/render-client";
 import { assertBatchSize } from "@/lib/pipeline/limits";
 import { normalizeCropTransform, type CropTransform, type FitMode, type Locale, type Orientation, type RenderOptions } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { trackProduct } from "@/lib/analytics-client";
 import { trackDatafastConversion } from "@/lib/datafast-client";
@@ -54,6 +55,8 @@ export type RenderJobsContext = {
  * render still pending from a previous visit, and the delivered download.
  */
 export function useRenderJobs(ctx: RenderJobsContext) {
+  const i18n = useI18n();
+  const { t, tf } = i18n;
   const {
     locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
     setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
@@ -100,7 +103,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     const progress = (state: "queued" | "running") => {
       if (!mounted) return;
       setStatusKind("busy");
-      setStatus(state === "queued" ? (locale === "fr" ? "Votre rendu est en attente…" : "Your render is queued…") : t(locale, "tool_progress_compose"));
+      setStatus(state === "queued" ? t("tool_render_queued") : t("tool_progress_compose"));
     };
     for (const kind of ["export", "review"] as const) {
       const pending = resumeRender(owner, kind, progress);
@@ -116,18 +119,18 @@ export function useRenderJobs(ctx: RenderJobsContext) {
           if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId);
         } else {
           setReviewUrl(new URL(payload.url, window.location.origin).href);
-          setReviewStatus(t(locale, "tool_review_ready"));
+          setReviewStatus(t("tool_review_ready"));
           void trackDatafastConversion("review_created", payload.id ?? payload.url.split("/").filter(Boolean).pop());
         }
         setToolPanel(kind === "export" ? "export" : "review");
-        setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
+        setStatusKind("ok"); setStatus(t(kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
         void refreshBilling();
       }).catch(() => {
-        if (mounted) { setStatusKind("err"); setStatus(locale === "fr" ? "Récupération du rendu indisponible. Rechargez la page pour réessayer sans créer une nouvelle demande." : "Render recovery unavailable. Reload to retry without creating a new request."); }
+        if (mounted) { setStatusKind("err"); setStatus(t("tool_render_recovery_unavailable_reload")); }
       }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
     }
     return () => { mounted = false; };
-  }, [owner, locale, refreshBilling, draftsLoaded, setStatus, setStatusKind, setToolPanel, setZipUrl]);
+  }, [owner, locale, t, refreshBilling, draftsLoaded, setStatus, setStatusKind, setToolPanel, setZipUrl]);
 
   async function uploadSide(userId: string, files: File[], onProgress: () => void) {
     const bucket = createBrowserSupabase().storage.from("uploads");
@@ -145,7 +148,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       plan: billing?.plan ?? "unknown",
     });
     setBusyExport(true);
-    flashStatus(t(locale, "tool_progress_compose"), "busy");
+    flashStatus(t("tool_progress_compose"), "busy");
     setZipUrl(null);
     setDownloadId(null);
     try {
@@ -153,7 +156,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
         setShowAuth(true);
-        flashStatus(t(locale, "error_auth"), "err");
+        flashStatus(t("error_auth"), "err");
         return;
       }
       if (include69 && billing && billing.canUse69 === false) {
@@ -165,7 +168,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         return;
       }
       if (severeQualityCount > 0 && !qualityAcknowledged) {
-        flashStatus(t(locale, "tool_quality_ack_required"), "err");
+        flashStatus(t("tool_quality_ack_required"), "err");
         document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
         return;
       }
@@ -175,14 +178,14 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       let done = 0;
       const tick = () => {
         done += 1;
-        flashStatus(tf(locale, "tool_progress_upload", { done, total }), "busy");
+        flashStatus(tf("tool_progress_upload", { done, total }), "busy");
       };
       const [outerPaths, uploadedInner] = await Promise.all([
         uploadSide(sessionData.user.id, outerFiles, tick),
         extra.length ? uploadSide(sessionData.user.id, extra, tick) : Promise.resolve([] as string[]),
       ]);
       const innerPaths = sameSet ? outerPaths : uploadedInner;
-      flashStatus(t(locale, "tool_progress_compose"), "busy");
+      flashStatus(t("tool_progress_compose"), "busy");
       const response = await submitRender(sessionData.user.id, "export", {
           outerPaths,
           innerPaths,
@@ -197,7 +200,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
+        flashStatus(state === "queued" ? t("tool_waiting_process_can_return") : t("tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as {
         url?: string; error?: string; warning?: string; filename?: string; exportId?: string; expiresAt?: string;
@@ -211,19 +214,19 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         });
         if (payload.error === "TRIAL_EXHAUSTED") {
           setPaywall("trial");
-          flashStatus(t(locale, "error_trial"), "err");
+          flashStatus(t("error_trial"), "err");
           return;
         }
         if (payload.error === "IPHONE_69_GATED") {
           setPaywall("69");
-          flashStatus(t(locale, "error_69"), "err");
+          flashStatus(t("error_69"), "err");
           return;
         }
         if (payload.error === "CLONE_RISK") {
-          flashStatus(t(locale, "error_clone"), "err");
+          flashStatus(t("error_clone"), "err");
           return;
         }
-        flashStatus(explainError(locale, payload.error || "EXPORT_FAILED"), "err");
+        flashStatus(explainError(i18n, payload.error || "EXPORT_FAILED"), "err");
         return;
       }
       if (!payload.url) throw new Error("STORAGE_UNAVAILABLE");
@@ -238,16 +241,16 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       setExportImages(payload.images ?? []);
       flashStatus(
         warning === "TOO_FEW"
-          ? t(locale, "tool_warn")
+          ? t("tool_warn")
           : warning === "UNPAIRED"
-            ? t(locale, "tool_warn_unpaired")
-            : t(locale, "tool_zip_ready"),
+            ? t("tool_warn_unpaired")
+            : t("tool_zip_ready"),
         "ok",
       );
       void refreshBilling();
     } catch (error) {
       void trackProduct("export_failed", { reason: "network_or_storage" });
-      flashStatus(error instanceof Error ? explainError(locale, error.message) : t(locale, "error_export"), "err");
+      flashStatus(error instanceof Error ? explainError(i18n, error.message) : t("error_export"), "err");
     } finally {
       setBusyExport(false);
     }
@@ -260,18 +263,17 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       const response = await fetch(`/api/exports/${downloadId}/download?format=json`, { cache: "no-store" });
       const payload = await response.json() as { url?: string; error?: string };
       if (!response.ok || !payload.url) {
-        const messages: Record<string, [string, string]> = {
-          EXPORT_EXPIRED: ["Ce ZIP a expiré après 24 h. Vos captures locales restent disponibles.", "This ZIP expired after 24 hours. Your local screenshots remain available."],
-          EXPORT_DELETED: ["Ce fichier a été supprimé du serveur.", "This file has been removed from the server."],
-          AUTH_REQUIRED: ["Reconnectez-vous pour récupérer ce fichier.", "Sign in again to retrieve this file."],
+        const messages: Record<string, MessageKey> = {
+          EXPORT_EXPIRED: "tool_download_expired",
+          EXPORT_DELETED: "tool_download_deleted",
+          AUTH_REQUIRED: "tool_download_sign_in_again",
         };
-        const message = messages[payload.error ?? ""];
-        flashStatus(message ? message[locale === "fr" ? 0 : 1] : locale === "fr" ? "Téléchargement indisponible. Réessayez sans générer un nouvel export." : "Download unavailable. Retry without generating another export.", "err");
+        flashStatus(t(messages[payload.error ?? ""] ?? "tool_download_unavailable_retry_without"), "err");
         return;
       }
       setZipUrl(payload.url);
       window.location.assign(payload.url);
-    } catch { flashStatus(locale === "fr" ? "Erreur réseau. Réessayez le téléchargement ; aucun essai supplémentaire n’est consommé." : "Network error. Retry the download; no additional trial is consumed.", "err"); }
+    } catch { flashStatus(t("tool_network_error_retry_download"), "err"); }
   }
 
   async function onReview() {
@@ -281,7 +283,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     const { data: sessionData } = await supabase.auth.getUser();
     if (!sessionData.user) {
       setShowAuth(true);
-      flashStatus(t(locale, "error_auth_review"), "err");
+      flashStatus(t("error_auth_review"), "err");
       return;
     }
     let plan = billing?.plan;
@@ -290,7 +292,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       if (!response.ok) {
         void trackProduct("review_failed", { reason: "billing_unavailable" });
         setShowAuth(true);
-        flashStatus(t(locale, "error_auth_review"), "err");
+        flashStatus(t("error_auth_review"), "err");
         return;
       }
       const nextBilling = (await response.json()) as BillingStatus;
@@ -299,16 +301,16 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     }
     if (plan !== "studio") {
       setReviewUpgrade(true);
-      flashStatus(t(locale, "error_studio"), "err");
+      flashStatus(t("error_studio"), "err");
       return;
     }
     if (severeQualityCount > 0 && !qualityAcknowledged) {
-      flashStatus(t(locale, "tool_quality_ack_required"), "err");
+      flashStatus(t("tool_quality_ack_required"), "err");
       document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
       return;
     }
     setBusyReview(true);
-    flashStatus(t(locale, "tool_review_preparing"), "busy");
+    flashStatus(t("tool_review_preparing"), "busy");
     try {
       const extra = sameSet ? [] : innerFiles;
       assertBatchSize([...outerFiles, ...extra]);
@@ -316,7 +318,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       let done = 0;
       const tick = () => {
         done += 1;
-        flashStatus(tf(locale, "tool_progress_review", { done, total }), "busy");
+        flashStatus(tf("tool_progress_review", { done, total }), "busy");
       };
       const [outerPaths, uploadedInner] = await Promise.all([
         uploadSide(sessionData.user.id, outerFiles, tick),
@@ -337,13 +339,13 @@ export function useRenderJobs(ctx: RenderJobsContext) {
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t(locale, "tool_progress_compose"), "busy");
+        flashStatus(state === "queued" ? t("tool_waiting_process_can_return") : t("tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
       if (!response.ok) {
         void trackProduct("review_failed", { reason: ["STUDIO_REQUIRED", "INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "UPLOAD_MISSING"].includes(payload.error ?? "") ? payload.error! : "other" });
         if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
-        flashStatus(explainError(locale, payload.error || "STUDIO_REQUIRED"), "err");
+        flashStatus(explainError(i18n, payload.error || "STUDIO_REQUIRED"), "err");
         return;
       }
       const publicId = payload.id ?? payload.url?.split("/").filter(Boolean).pop();
@@ -356,18 +358,18 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         await navigator.clipboard.writeText(absolute);
         setReviewStatus(
           payload.expiresAt
-            ? `${t(locale, "tool_review_copied")} · ${locale === "fr" ? "expire le" : "expires"} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payload.expiresAt))}`
-            : t(locale, "tool_review_copied"),
+            ? `${t("tool_review_copied")} · ${t("tool_expires")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payload.expiresAt))}`
+            : t("tool_review_copied"),
         );
       } catch {
-        setReviewStatus(t(locale, "tool_review_ready"));
+        setReviewStatus(t("tool_review_ready"));
       }
-      flashStatus(t(locale, "tool_review_ready"), "ok");
+      flashStatus(t("tool_review_ready"), "ok");
     } catch (error) {
       void trackProduct("review_failed", { reason: "network_or_storage" });
       const code = error instanceof Error ? error.message : "STUDIO_REQUIRED";
       if (code === "STUDIO_REQUIRED") setReviewUpgrade(true);
-      flashStatus(explainError(locale, code), "err");
+      flashStatus(explainError(i18n, code), "err");
     } finally {
       setBusyReview(false);
     }

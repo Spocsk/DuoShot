@@ -1,11 +1,12 @@
 "use client";
 
-import type { Locale } from "@/lib/specs";
 import { analyticsConfigured } from "@/lib/analytics-client";
+import { useI18n } from "@/components/i18n-provider";
 
-export function AnalyticsSettingsButton({ locale }: { locale: Locale }) {
+export function AnalyticsSettingsButton() {
+  const { t } = useI18n();
   if (!analyticsConfigured()) return null;
   return <button type="button" className="hover:text-[var(--studio-ink)]" onClick={() => window.dispatchEvent(new Event("duoshot:analytics-settings"))}>
-    {locale === "fr" ? "Préférences statistiques" : "Analytics preferences"}
+    {t("footer_analytics_preferences")}
   </button>;
 }

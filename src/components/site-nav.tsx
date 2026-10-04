@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { HeaderAuth } from "@/components/header-auth";
 import { pricingPath, rejectionPath } from "@/lib/site";
@@ -18,6 +18,7 @@ type Props = {
 const subscribeNever = () => () => {};
 
 export function SiteNav({ locale, prefix, current }: Props) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
   const panel = useRef<HTMLDivElement>(null);
@@ -63,10 +64,10 @@ export function SiteNav({ locale, prefix, current }: Props) {
   }
 
   const links = [
-    { href: `${prefix}/tool`, label: t(locale, "nav_tool") },
-    { href: `${prefix}/specs`, label: t(locale, "nav_specs") },
-    { href: rejectionPath(locale), label: t(locale, "nav_rejection") },
-    { href: pricingPath(locale), label: t(locale, "nav_pricing") },
+    { href: `${prefix}/tool`, label: t("nav_tool") },
+    { href: `${prefix}/specs`, label: t("nav_specs") },
+    { href: rejectionPath(locale), label: t("nav_rejection") },
+    { href: pricingPath(locale), label: t("nav_pricing") },
   ];
 
   const menu = (
@@ -98,7 +99,7 @@ export function SiteNav({ locale, prefix, current }: Props) {
         className={`ds-burger md:hidden ${open ? "is-open" : ""}`}
         aria-expanded={open}
         aria-controls="site-menu"
-        aria-label={open ? t(locale, "nav_close") : t(locale, "nav_open")}
+        aria-label={open ? t("nav_close") : t("nav_open")}
         onClick={() => setOpen((value) => !value)}
       >
         <span />

@@ -1,5 +1,6 @@
 import { connection } from "next/server";
-import { FAQ, t } from "@/lib/i18n";
+import { getTranslator } from "@/lib/i18n";
+import { FAQ } from "@/lib/i18n";
 import { checkoutDisplayAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import type { Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
@@ -9,6 +10,7 @@ import { TrustLine } from "@/components/trust-line";
 import { FaqList } from "@/components/faq-list";
 
 export async function PricingPage({ locale }: { locale: Locale }) {
+  const { t } = getTranslator(locale);
   // Checkout availability comes from runtime env (absent at image build time), so
   // render per request: the first HTML then shows the real buttons, not a disabled flash.
   await connection();
@@ -25,7 +27,7 @@ export async function PricingPage({ locale }: { locale: Locale }) {
           <TrustLine locale={locale} />
         </div>
         <section className="mx-auto max-w-6xl px-5 pb-16">
-          <h2 className="font-display text-4xl">{t(locale, "faq_title")}</h2>
+          <h2 className="font-display text-4xl">{t("faq_title")}</h2>
           <FaqList items={faq} />
         </section>
       </main>

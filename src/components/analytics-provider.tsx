@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useI18n } from "@/components/i18n-provider";
 import { analyticsPath } from "@/lib/analytics-path";
 import {
   analyticsChoice, analyticsConfigured, refreshAnalyticsAudience, resetAnalyticsUser,
@@ -47,7 +48,7 @@ export function AnalyticsProvider() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [choiceError, setChoiceError] = useState(false);
   const configured = analyticsConfigured();
-  const fr = !pathname?.startsWith("/en");
+  const { locale, t } = useI18n();
 
   useEffect(() => {
     const open = () => setSettingsOpen(true);
@@ -85,7 +86,6 @@ export function AnalyticsProvider() {
     if (!configured || !ready || choice !== "accepted") return;
     const page = analyticsPath(pathname ?? "");
     if (!page) return;
-    const locale = fr ? "fr" : "en";
     void trackProduct("page_viewed", { page, locale });
     let visibleAt = document.visibilityState === "visible" ? Date.now() : null;
     const flush = () => {
@@ -107,7 +107,7 @@ export function AnalyticsProvider() {
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", flush);
     };
-  }, [choice, configured, fr, pathname, ready]);
+  }, [choice, configured, locale, pathname, ready]);
 
   async function choose(next: "accepted" | "rejected") {
     setChoiceError(false);
@@ -132,16 +132,14 @@ export function AnalyticsProvider() {
   return (
     <>
       {configured && ready && (choice === null || settingsOpen) ? (
-        <div className="fixed inset-x-3 bottom-3 z-[100] mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 shadow-xl sm:flex-row sm:items-center sm:gap-5" role="dialog" aria-label={fr ? "Préférences statistiques" : "Analytics preferences"}>
+        <div className="fixed inset-x-3 bottom-3 z-[100] mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 shadow-xl sm:flex-row sm:items-center sm:gap-5" role="dialog" aria-label={t("footer_analytics_preferences")}>
           <div className="min-w-0 flex-1">
-            <p className="text-xs leading-snug text-[var(--muted)] sm:text-sm"><strong className="font-semibold text-[var(--foreground)]">{fr ? "Mesure des parcours. " : "Product analytics. "}</strong>{fr
-              ? "Avec votre accord, Datafast mesure les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
-              : "With your permission, Datafast measures pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
-            {choiceError ? <p className="mt-1 text-xs text-[var(--warn)] sm:text-sm" role="alert">{fr ? "Choix non enregistré. Réessayez." : "Preference not saved. Please retry."}</p> : null}
+            <p className="text-xs leading-snug text-[var(--muted)] sm:text-sm"><strong className="font-semibold text-[var(--foreground)]">{t("consent_product_analytics")}</strong>{t("consent_permission_datafast_measures_pages")}</p>
+            {choiceError ? <p className="mt-1 text-xs text-[var(--warn)] sm:text-sm" role="alert">{t("consent_preference_not_saved_please")}</p> : null}
           </div>
           <div className="flex shrink-0 gap-2">
-            <button type="button" className="ds-cta flex-1 sm:flex-none" onClick={() => void choose("accepted")}>{fr ? "Accepter" : "Accept"}</button>
-            <button type="button" className="ds-cta-ghost flex-1 sm:flex-none" onClick={() => void choose("rejected")}>{fr ? "Refuser" : "Decline"}</button>
+            <button type="button" className="ds-cta flex-1 sm:flex-none" onClick={() => void choose("accepted")}>{t("account_accept")}</button>
+            <button type="button" className="ds-cta-ghost flex-1 sm:flex-none" onClick={() => void choose("rejected")}>{t("consent_decline")}</button>
           </div>
         </div>
       ) : null}

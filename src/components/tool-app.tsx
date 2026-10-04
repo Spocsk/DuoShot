@@ -25,7 +25,7 @@ import {
   type Orientation,
   type RenderOptions,
 } from "@/lib/specs";
-import { t, tf } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import { inspectFile } from "@/lib/pipeline/source-inspect";
 import { createBrowserSupabase } from "@/lib/supabase/client";
@@ -82,6 +82,7 @@ const BOOT_SET: SetMeta = {
 const EMPTY_TRANSFORMS: CropTransform[] = [];
 
 export function ToolApp({ locale }: Props) {
+  const { t } = useI18n();
   const [owner, setOwner] = useState<string | null>(null);
   useEffect(() => {
     const supabase = createBrowserSupabase();
@@ -94,13 +95,15 @@ export function ToolApp({ locale }: Props) {
   return (
     <main id="main" className="flex-1">
       <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
-        {owner ? <ToolAppInner key={owner} locale={locale} owner={owner} /> : <p role="status">{locale === "fr" ? "Chargement de l’atelier…" : "Loading workspace…"}</p>}
+        {owner ? <ToolAppInner key={owner} locale={locale} owner={owner} /> : <p role="status">{t("tool_loading_workspace")}</p>}
       </Suspense>
     </main>
   );
 }
 
 function ToolAppInner({ locale, owner }: Props & { owner: string }) {
+  const i18n = useI18n();
+  const { t, tf } = i18n;
   const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
@@ -345,10 +348,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
   const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
   const checklist: CheckItem[] = [
-    { id: "pairs", done: hasExportable && !unpaired, label: t(locale, "tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
-    { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t(locale, "tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
-    { id: "similarity", done: !cloneAlert || assumeClone, label: t(locale, "tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
-    { id: "confirm", done: appUsageConfirmed, label: t(locale, "tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
+    { id: "pairs", done: hasExportable && !unpaired, label: t("tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
+    { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t("tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
+    { id: "similarity", done: !cloneAlert || assumeClone, label: t("tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
+    { id: "confirm", done: appUsageConfirmed, label: t("tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
   ];
   const readyToPrepare = checklist.every((item) => item.done);
   const importDone = hasExportable && !unpaired;
@@ -378,7 +381,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       try { const metadata = await inspectFile(file); if (metadata.width * metadata.height > MAX_SOURCE_PIXELS) return null; const bitmap = await createImageBitmap(file); const allowed = bitmap.width * bitmap.height <= MAX_SOURCE_PIXELS; bitmap.close(); return allowed ? file : null; } catch { return null; }
     }));
     const incoming = checked.filter((file): file is File => file !== null);
-    if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo et 40 mégapixels maximum, 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 40 megapixels, 10 screenshots per side.", "err");
+    if (incoming.length < selected.length) flashStatus(t("tool_some_files_were_skipped"), "err");
     // The Harbor example is replaced, never mixed with the user's own captures.
     const replacingDemo = Boolean(active?.demo) && incoming.length > 0;
     const current = replacingDemo ? [] : side === "outer" ? outerFiles : innerFiles;
@@ -473,7 +476,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   async function onCheckout(kind: PurchaseKind) {
-    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet.", "info"); return; }
+    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("account_payments_not_open_yet"), "info"); return; }
     if (!signedIn) {
       setPaywall(null);
       setShowAuth(true);
@@ -483,7 +486,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     try {
       await startCheckout(kind, checkoutReturnPath(locale));
     } catch (error) {
-      flashStatus(error instanceof Error ? error.message : t(locale, "error_export"), "err");
+      flashStatus(error instanceof Error ? error.message : t("error_export"), "err");
       setCheckoutBusy(false);
     }
   }
@@ -535,7 +538,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       const base = existing ?? reusable ?? defaultSet(sets);
       const demoSet: SetMeta = {
         ...base,
-        name: t(locale, "tool_demo_set_name"),
+        name: t("tool_demo_set_name"),
         appName: "Harbor",
         demo: true,
         sameSet: false,
@@ -590,7 +593,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   const remaining = billing?.remainingFreeExports;
-  const remainingLabel = quotaLabel(locale, billing, billingError, session);
+  const remainingLabel = quotaLabel(i18n, billing, billingError, session);
   const pillMute = remaining === 0 && billing?.plan === "free";
   const cloneLabel = clones[slideIndex]?.label ?? (cloneForced && hasExportable ? "risk" : null);
 
@@ -605,21 +608,21 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   let primary: PrimaryAction;
   if (toolPanel === "captures" || (toolPanel === "adjust" && !importDone)) {
     primary = importDone
-      ? { label: t(locale, "tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
-      : { label: t(locale, !hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
+      ? { label: t("tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
+      : { label: t(!hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
   } else if (toolPanel === "adjust") {
-    primary = { label: t(locale, "tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
+    primary = { label: t("tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
   } else if (zipUrl && toolPanel === "export") {
     primary = {
-      label: t(locale, "tool_action_download"), testId: "tool-zip-link", href: jobs.downloadId ? `/api/exports/${jobs.downloadId}/download` : zipUrl, download: jobs.zipName,
+      label: t("tool_action_download"), testId: "tool-zip-link", href: jobs.downloadId ? `/api/exports/${jobs.downloadId}/download` : zipUrl, download: jobs.zipName,
       onClick: (event) => { event.preventDefault(); void jobs.onDownload(); },
     };
   } else if (isDemo) {
     // Harbor is fictional: its files come from the example ZIP, so no export trial is spent on it.
-    primary = { label: t(locale, "tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
+    primary = { label: t("tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
   } else {
     primary = {
-      label: jobs.busyExport ? t(locale, "tool_preparing") : t(locale, "tool_action_prepare"), testId: "tool-download",
+      label: jobs.busyExport ? t("tool_preparing") : t("tool_action_prepare"), testId: "tool-download",
       disabled: jobs.busyExport || !readyToPrepare, onClick: () => void jobs.onExport(),
     };
   }
@@ -628,24 +631,24 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   return (
     <div className="studio-tool-shell mx-auto max-w-[92rem] px-5 pb-24 pt-5" data-tool-panel={toolPanel}>
       <header className="tool-command-bar" id="tool-create">
-        <div className="tool-command-brand"><span className="tool-command-dot" aria-hidden="true" /><span>{locale === "fr" ? "Atelier" : "Workspace"}</span></div>
+        <div className="tool-command-brand"><span className="tool-command-dot" aria-hidden="true" /><span>{t("tool_workspace")}</span></div>
         <div className="tool-command-set">
-          <SetPicker locale={locale} hydrated={hydrated} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} />
+          <SetPicker hydrated={hydrated} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} />
           <div className="tool-command-notes">
-            <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{locale === "fr" ? "Brouillons sur cet appareil · sans synchronisation" : "Drafts on this device · no synchronization"}</p>
-            {storageError ? <p role="alert" className="ds-warn text-sm">{locale === "fr" ? "Sauvegarde locale impossible. Gardez cet onglet ouvert et libérez de l’espace avant de réessayer." : "Local save failed. Keep this tab open and free up storage before retrying."}</p> : null}
-            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{locale === "fr" ? "Récupérer explicitement les brouillons anonymes ou anciens dans ce compte" : "Import anonymous or older drafts into this account"}</button> : null}
-            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{locale === "fr" ? "Réessayer le statut" : "Retry status"}</button> : null}
-            {activationTimedOut ? <button className="ds-text-btn" onClick={() => retryActivation()}>{locale === "fr" ? "Revérifier l’activation" : "Check activation again"}</button> : null}
+            <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{t("tool_drafts_on_device_no")}</p>
+            {storageError ? <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p> : null}
+            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{t("tool_import_anonymous_older_drafts")}</button> : null}
+            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{t("tool_retry_status")}</button> : null}
+            {activationTimedOut ? <button className="ds-text-btn" onClick={() => retryActivation()}>{t("tool_check_activation_again")}</button> : null}
           </div>
         </div>
         <div className="tool-command-orientation">
           <Seg
-          label={t(locale, "tool_label_orientation")}
+          label={t("tool_label_orientation")}
           value={orientation}
           options={[
-            { value: "portrait", label: t(locale, "tool_orient_portrait") },
-            { value: "landscape", label: t(locale, "tool_orient_landscape") },
+            { value: "portrait", label: t("tool_orient_portrait") },
+            { value: "landscape", label: t("tool_orient_landscape") },
           ]}
           onChange={(value) => {
             patchActive({ orientation: value as Orientation });
@@ -657,35 +660,34 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         />
 </div>
         <div className="tool-command-account">
-          {session === "loading" ? <span className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">{locale === "fr" ? "Chargement…" : "Loading…"}</span> : !signedIn ? <button type="button" className="ds-pill ds-pill-ink" data-testid="tool-quota" onClick={() => setShowAuth(true)}>{locale === "fr" ? "Invité" : "Guest"}</button> : <span className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">{remainingLabel}</span>}
+          {session === "loading" ? <span className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">{t("tool_loading")}</span> : !signedIn ? <button type="button" className="ds-pill ds-pill-ink" data-testid="tool-quota" onClick={() => setShowAuth(true)}>{t("tool_guest")}</button> : <span className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">{remainingLabel}</span>}
         </div>
       </header>
       {urlStatus && toolPanel !== "review" && toolPanel !== "export" ? <div className="tool-return-status"><StatusLine text={urlStatus} kind="info" testId="tool-status" /></div> : null}
       <div className="tool-workspace">
-        <section className="studio-tool-main min-w-0" aria-label={locale === "fr" ? "Aperçu des captures" : "Screenshot preview"}>
+        <section className="studio-tool-main min-w-0" aria-label={t("tool_screenshot_preview")}>
           <div className="tool-canvas-heading" id="tool-inspect">
-            <div><p className="tool-eyebrow">{locale === "fr" ? "Votre composition" : "Your composition"}</p><SetTitle locale={locale} name={active?.name ?? ""} onRename={(name) => patchActive({ name })} /></div>
-            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : (locale === "fr" ? "Aucune paire" : "No pairs")}</span>
+            <div><p className="tool-eyebrow">{t("tool_composition")}</p><SetTitle name={active?.name ?? ""} onRename={(name) => patchActive({ name })} /></div>
+            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : t("tool_no_pairs")}</span>
           </div>
           {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
-            <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span>
-            <p>{t(locale, "tool_demo_banner")}</p>
-            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t(locale, "tool_demo_replace")}</button>
+            <span className="tool-demo-badge">{t("tool_demo_badge")}</span>
+            <p>{t("tool_demo_banner")}</p>
+            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t("tool_demo_replace")}</button>
           </div> : null}
-          {!hasAny && draftsLoaded ? <DemoStart locale={locale} state={demoState} onLoad={() => void loadDemo()} /> : null}
-          <ToolCanvas mobileView={mobileView} locale={locale} slideIndex={slideIndex} onMobileView={setMobileView}>
+          {!hasAny && draftsLoaded ? <DemoStart state={demoState} onLoad={() => void loadDemo()} /> : null}
+          <ToolCanvas mobileView={mobileView} slideIndex={slideIndex} onMobileView={setMobileView}>
         <div
           className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}${previewMode === "pixels" ? " is-pixels" : ""}`}
           style={previewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
         >
           <PreviewCard
             testId="preview-outer"
-            label={t(locale, "tool_preview_outer")}
+            label={t("tool_preview_outer")}
             src={previews?.outer}
             inspect={outerInspect}
             kind="outer"
             spec={outerSpec}
-            locale={locale}
             orientation={orientation}
             previewMode={previewMode}
             slide={slideIndex}
@@ -695,12 +697,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           />
           <PreviewCard
             testId="preview-inner"
-            label={t(locale, "tool_preview_inner")}
+            label={t("tool_preview_inner")}
             src={previews?.inner}
             inspect={innerInspect}
             kind="inner"
             spec={innerSpec}
-            locale={locale}
             orientation={orientation}
             previewMode={previewMode}
             hinge={showHinge}
@@ -711,55 +712,52 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           />
         </div>
           </ToolCanvas>
-          <PairStrip outerFiles={outerFiles} innerFiles={effectiveInner} active={slideIndex} locale={locale} sameSet={sameSet} onSelect={setSlideIndex} onRemove={(side, index) => removeSideFile(side === "inner" && sameSet ? "outer" : side, index)} />
-          {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{locale === "fr" ? "Des points demandent votre attention dans Vérifier." : "Some items need your attention in Check."}</span><button type="button" onClick={() => goToPanel("review")}>{locale === "fr" ? "Voir le bilan" : "View report"}</button></div> : null}
+          <PairStrip outerFiles={outerFiles} innerFiles={effectiveInner} active={slideIndex} sameSet={sameSet} onSelect={setSlideIndex} onRemove={(side, index) => removeSideFile(side === "inner" && sameSet ? "outer" : side, index)} />
+          {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{t("tool_some_items_need_attention")}</span><button type="button" onClick={() => goToPanel("review")}>{t("tool_view_report")}</button></div> : null}
         </section>
-        <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={locale === "fr" ? "Commandes de l’atelier" : "Workspace controls"}>
-          <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} locale={locale} />
+        <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={t("tool_workspace_controls")}>
+          <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} />
           <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
-            {toolPanel === "captures" ? <CapturesPanel
-              locale={locale} active={active} outerSpec={outerSpec} innerSpec={innerSpec} outerFiles={outerFiles} innerFiles={innerFiles}
+            {toolPanel === "captures" ? <CapturesPanel active={active} outerSpec={outerSpec} innerSpec={innerSpec} outerFiles={outerFiles} innerFiles={innerFiles}
               effectiveInner={effectiveInner} sameSet={sameSet} cloneForced={cloneForced} unpaired={unpaired} warning={warning}
               sameSetOpen={sameSetOpen} setSameSetOpen={setSameSetOpen} onSideFiles={onSideFiles} patchActive={patchActive} setZipUrl={setZipUrl}
             /> : null}
             {toolPanel === "adjust" ? <>
               <AdjustPanel
-                locale={locale} adjustSide={adjustSide} setAdjustSide={setAdjustSide} setMobileView={setMobileView} previewMode={previewMode}
+                adjustSide={adjustSide} setAdjustSide={setAdjustSide} setMobileView={setMobileView} previewMode={previewMode}
                 setPreviewMode={setPreviewMode} outerInspect={outerInspect} innerInspect={innerInspect} outerSpec={outerSpec} innerSpec={innerSpec}
                 outerTransform={outerTransform} innerTransform={innerTransform} updateCropTransform={updateCropTransform} slideIndex={slideIndex}
                 innerSlide={innerSlide} currentFoldCheck={currentFoldCheck}
               />
-              <AdvancedSettings
-                locale={locale} globalFit={globalFit} updateGlobalFit={updateGlobalFit} options={options} updateOptions={updateOptions}
+              <AdvancedSettings globalFit={globalFit} updateGlobalFit={updateGlobalFit} options={options} updateOptions={updateOptions}
                 showHinge={showHinge} setShowHinge={setShowHinge} include69={include69} patchActive={patchActive} setZipUrl={setZipUrl}
                 billing={billing} setPaywall={setPaywall} cloneLabel={cloneLabel} assumeClone={assumeClone} setAssumeClone={setAssumeClone}
               />
             </> : null}
             {toolPanel === "review" ? <>
-              <div className="tool-panel-heading"><h2>{t(locale, "tool_step_review")}</h2><p>{locale === "fr" ? "Réglez chaque point de la liste, puis préparez les fichiers." : "Clear every item on the list, then prepare the files."}</p></div>
-              <CheckList locale={locale} items={checklist} />
-              <ReviewAlerts
-                locale={locale} severeQualityCount={severeQualityCount} qualityAcknowledged={qualityAcknowledged} setQualityAcknowledged={setQualityAcknowledged}
+              <div className="tool-panel-heading"><h2>{t("tool_step_review")}</h2><p>{t("tool_clear_every_item_on")}</p></div>
+              <CheckList items={checklist} />
+              <ReviewAlerts severeQualityCount={severeQualityCount} qualityAcknowledged={qualityAcknowledged} setQualityAcknowledged={setQualityAcknowledged}
                 clones={clones} slideIndex={slideIndex} setSlideIndex={setSlideIndex} cloneAlert={cloneAlert} cloneAcknowledged={assumeClone} setCloneAcknowledged={setAssumeClone}
               />
               <ReadinessReport
-                locale={locale} preparationChecks={preparationChecks} slideIndex={slideIndex} demo={isDemo}
+                preparationChecks={preparationChecks} slideIndex={slideIndex} demo={isDemo}
                 outerInspect={outerInspect} innerInspect={innerInspect} outerSpec={outerSpec} innerSpec={innerSpec} qualityItems={qualityItems}
                 effectiveInner={effectiveInner} foldChecks={foldChecks} clones={clones} appUsageConfirmed={appUsageConfirmed}
                 setAppUsageConfirmed={setAppUsageConfirmed} cloneAlert={cloneAlert} severeQualityCount={severeQualityCount} foldWarningCount={foldWarningCount}
               />
-              <OtherActions locale={locale} hasExportable={hasExportable} jobs={jobs} />
+              <OtherActions hasExportable={hasExportable} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
             {toolPanel === "export" ? <>
               <ExportPanel locale={locale} prefix={prefix} zipUrl={zipUrl} session={session} orientation={orientation} demo={isDemo} jobs={jobs} />
-              <OtherActions locale={locale} hasExportable={hasExportable} jobs={jobs} />
+              <OtherActions hasExportable={hasExportable} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
           </div>
           <div className="tool-primary-dock" data-testid="tool-primary-dock" data-step={toolPanel}>
             {showMissing ? <p className="tool-dock-missing" data-testid="tool-missing-steps">
-              <span>{t(locale, "tool_action_missing")}</span>{" "}
+              <span>{t("tool_action_missing")}</span>{" "}
               {checklist.filter((item) => !item.done).map((item, index) => <span key={item.id}>{index ? <span aria-hidden="true"> · </span> : null}<button type="button" onClick={item.fix}>{item.label}</button></span>)}
             </p> : null}
             {(toolPanel === "review" || toolPanel === "export") && (status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
@@ -778,10 +776,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
               <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
-                {t(locale, "tool_create_account")}
+                {t("tool_create_account")}
               </button>
             ) : null}
-            {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf(locale, "tool_score_line", { score: preparationScore })}</p> : null}
+            {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf("tool_score_line", { score: preparationScore })}</p> : null}
           </div>
         </aside>
       </div>
@@ -792,7 +790,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             setUpgradeDismissed(true);
           }}
           labelledBy="auth-modal-title"
-          closeLabel={locale === "fr" ? "Fermer" : "Close"}
+          closeLabel={t("asct_close")}
         >
           <AuthForm
             locale={locale}
@@ -805,7 +803,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             }}
           />
           <button type="button" className="ds-text-btn mt-4" onClick={() => setAuthMode((mode) => mode === "signup" ? "login" : "signup")}>
-            {authMode === "signup" ? (locale === "fr" ? "Déjà un compte ? Se connecter" : "Already have an account? Sign in") : (locale === "fr" ? "Créer un compte" : "Create an account")}
+            {authMode === "signup" ? t("tool_already_have_account_sign") : t("signup_title")}
           </button>
         </Overlay>
       ) : null}

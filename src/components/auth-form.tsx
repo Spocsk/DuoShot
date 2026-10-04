@@ -6,7 +6,7 @@ import { useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import { localePrefix } from "@/lib/site";
 import { clearAnalyticsAuthIntent, markAnalyticsAuthIntent, trackProduct } from "@/lib/analytics-client";
 
@@ -27,13 +27,14 @@ export function AuthForm({
   onSuccess?: () => void;
   initialError?: boolean;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const prefix = localePrefix(locale);
   const afterAuth = nextPath ?? `${prefix}/tool`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [privacy, setPrivacy] = useState(false);
-  const [message, setMessage] = useState<string | null>(initialError ? (locale === "fr" ? "Ce lien de connexion est invalide ou a expiré. Demandez un nouveau lien ou reconnectez-vous." : "This sign-in link is invalid or expired. Request a new link or sign in again.") : null);
+  const [message, setMessage] = useState<string | null>(initialError ? t("auth_sign_in_link_invalid") : null);
   const [messageOk, setMessageOk] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -67,7 +68,7 @@ export function AuthForm({
       if (error || !data.url) {
         const raw = error?.message ?? "";
         const providerOff = /provider is not enabled|unsupported provider/i.test(raw);
-        fail(providerOff ? t(locale, "google_error") : raw || t(locale, "google_error"));
+        fail(providerOff ? t("google_error") : raw || t("google_error"));
         return;
       }
       const check = await fetch("/api/auth/oauth-check", {
@@ -77,13 +78,13 @@ export function AuthForm({
       });
       const result = (await check.json().catch(() => null)) as { ok?: boolean } | null;
       if (!result?.ok) {
-        fail(t(locale, "google_error"));
+        fail(t("google_error"));
         return;
       }
       markAnalyticsAuthIntent("google");
       window.location.assign(data.url);
     } catch (error) {
-      fail(error instanceof Error ? error.message : t(locale, "google_error"));
+      fail(error instanceof Error ? error.message : t("google_error"));
     } finally {
       setBusy(false);
     }
@@ -98,7 +99,7 @@ export function AuthForm({
     try {
       if (mode === "signup") {
         if (!privacy) {
-          fail(locale === "fr" ? "Acceptez les conditions générales et la politique de confidentialité." : "Please accept the terms and privacy policy.");
+          fail(t("auth_please_accept_terms_privacy"));
           return;
         }
         const { data, error } = await supabase.auth.signUp({
@@ -117,9 +118,7 @@ export function AuthForm({
         }
         setMessageOk(true);
         setMessage(
-          locale === "fr"
-            ? "Compte créé. Consultez vos e-mails si une confirmation est demandée."
-            : "Account created. Check your email if confirmation is required.",
+          t("auth_account_created_check_email"),
         );
         if (data.session) {
           onSuccess?.();
@@ -155,7 +154,7 @@ export function AuthForm({
     } else {
       markAnalyticsAuthIntent("magic");
       setMessageOk(true);
-      setMessage(locale === "fr" ? "Lien magique envoyé." : "Magic link sent.");
+      setMessage(t("auth_magic_link_sent"));
     }
     setBusy(false);
   }
@@ -163,14 +162,14 @@ export function AuthForm({
   return (
     <div className={variant === "page" ? "studio-auth-card mx-auto w-full max-w-md" : "studio-auth-card"}>
       <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
-        {variant === "modal" && mode === "signup" ? t(locale, "auth_modal_title") : t(locale, mode === "signup" ? "signup_title" : "login_title")}
+        {variant === "modal" && mode === "signup" ? t("auth_modal_title") : t(mode === "signup" ? "signup_title" : "login_title")}
       </h1>
       {variant === "modal" && mode === "signup" ? (
-        <p className="mt-2 text-sm text-[var(--muted)]">{t(locale, "auth_modal_lead")}</p>
+        <p className="mt-2 text-sm text-[var(--muted)]">{t("auth_modal_lead")}</p>
       ) : null}
       <button type="button" onClick={onGoogle} data-testid="auth-google" className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>
         <GoogleMark />
-        {t(locale, "google")}
+        {t("google")}
       </button>
       {mode === "signup" ? (
         <p className="mt-3 text-center text-xs leading-relaxed text-[var(--muted)]">
@@ -204,7 +203,7 @@ export function AuthForm({
       <form onSubmit={onPassword} className="mt-6 grid gap-3">
         <div>
           <label className="ds-label" htmlFor="auth-email">
-            {t(locale, "email")}
+            {t("email")}
           </label>
           <input
             id="auth-email"
@@ -218,7 +217,7 @@ export function AuthForm({
         </div>
         <div>
           <label className="ds-label" htmlFor="auth-password">
-            {t(locale, "password")}
+            {t("password")}
           </label>
           <input
             id="auth-password"
@@ -275,12 +274,12 @@ export function AuthForm({
           </label>
         ) : null}
         <button type="submit" disabled={busy} data-testid="auth-submit" className="ds-cta">
-          {mode === "signup" ? t(locale, "nav_signup") : t(locale, "nav_login")}
+          {mode === "signup" ? t("nav_signup") : t("nav_login")}
         </button>
         <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="ds-text-btn">
-          {t(locale, "magic")}
+          {t("magic")}
         </button>
-        {mode === "login" ? <Link href={`${prefix}/forgot-password`} className="ds-text-btn">{locale === "fr" ? "Mot de passe oublié ?" : "Forgot password?"}</Link> : null}
+        {mode === "login" ? <Link href={`${prefix}/forgot-password`} className="ds-text-btn">{t("auth_forgot_password")}</Link> : null}
       </form>
       {message ? (
         <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message" role={messageOk ? "status" : "alert"}>
@@ -291,16 +290,16 @@ export function AuthForm({
         <p className="mt-6 text-sm text-[var(--muted)]">
           {mode === "signup" ? (
             <>
-              {locale === "fr" ? "Déjà un compte ? " : "Already have an account? "}
+              {t("auth_already_have_account")}
               <Link href={nextPath ? `${prefix}/login?next=${encodeURIComponent(nextPath)}` : `${prefix}/login`} className="ds-link">
-                {t(locale, "nav_login")}
+                {t("nav_login")}
               </Link>
             </>
           ) : (
             <>
-              {locale === "fr" ? "Pas encore de compte ? " : "No account yet? "}
+              {t("auth_no_account_yet")}
               <Link href={nextPath ? `${prefix}/signup?next=${encodeURIComponent(nextPath)}` : `${prefix}/signup`} className="ds-link">
-                {t(locale, "nav_signup")}
+                {t("nav_signup")}
               </Link>
             </>
           )}

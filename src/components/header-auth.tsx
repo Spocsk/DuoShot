@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { t } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { localePrefix } from "@/lib/site";
@@ -14,6 +14,7 @@ export function HeaderAuth({
   locale: Locale;
   variant?: "bar" | "menu";
 }) {
+  const { t } = useI18n();
   const prefix = localePrefix(locale);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
@@ -39,7 +40,7 @@ export function HeaderAuth({
         data-testid={variant === "menu" ? "nav-account-menu" : "nav-account"}
         className={variant === "menu" ? "ds-menu-link" : "ds-cta-ghost"}
       >
-        {t(locale, "nav_account")}
+        {t("nav_account")}
       </Link>
     );
   }
@@ -48,10 +49,10 @@ export function HeaderAuth({
     return (
       <>
         <Link href={`${prefix}/login`} data-testid="nav-login-menu" className="ds-menu-link">
-          {t(locale, "nav_login")}
+          {t("nav_login")}
         </Link>
         <Link href={`${prefix}/signup`} data-testid="nav-signup-menu" className="ds-menu-link">
-          {t(locale, "nav_signup")}
+          {t("nav_signup")}
         </Link>
       </>
     );
@@ -60,10 +61,10 @@ export function HeaderAuth({
   return (
     <>
       <Link href={`${prefix}/login`} data-testid="nav-login" className="ds-nav-link">
-        {t(locale, "nav_login")}
+        {t("nav_login")}
       </Link>
       <Link href={`${prefix}/signup`} data-testid="nav-signup" className="ds-cta">
-        {t(locale, "nav_signup")}
+        {t("nav_signup")}
       </Link>
     </>
   );

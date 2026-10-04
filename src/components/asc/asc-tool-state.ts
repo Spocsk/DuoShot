@@ -1,8 +1,8 @@
 import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE } from "@/lib/asc/config";
 import type { DeviceSlot, Orientation } from "@/lib/specs";
-import type { t } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/types";
 
-type Key = Parameters<typeof t>[1];
+type Key = MessageKey;
 
 /** Status from GET /api/asc/connection; null when the flag is off (404) or the user is signed out. */
 export type AscToolStatus = { owner: boolean; paid: boolean; connected: boolean };

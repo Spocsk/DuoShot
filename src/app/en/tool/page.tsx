@@ -1,4 +1,5 @@
 import { ToolApp } from "@/components/tool-app";
+import { MessagesScope } from "@/components/messages-scope";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { pageMetadata } from "@/lib/seo";
 
@@ -16,7 +17,9 @@ export default function Page() {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader locale="en" path="/tool" />
-      <ToolApp locale="en" />
+      <MessagesScope locale="en" scope="app">
+        <ToolApp locale="en" />
+      </MessagesScope>
       <SiteFooter locale="en" />
     </div>
   );
