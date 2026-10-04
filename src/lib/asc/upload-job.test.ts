@@ -33,7 +33,7 @@ async function admin({ createdAt = new Date().toISOString(), connected = true } 
   for (const [path, content] of Object.entries(files)) zip.file(path, content);
   const archive = await zip.generateAsync({ type: "uint8array" });
   const sealed = sealSecret(pem, master, "ws-1");
-  const rpc = vi.fn(async (_name: string, _args: unknown) => ({ data: true, error: null }));
+  const rpc = vi.fn<(name: string, args: unknown) => Promise<{ data: boolean; error: null }>>(async () => ({ data: true, error: null }));
   const client = {
     from: (table: string) => createQueryBuilder(table === "export_sets"
       ? { data: { storage_path: "user-1/x.zip", created_at: createdAt }, error: null }

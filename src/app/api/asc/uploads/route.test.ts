@@ -21,7 +21,7 @@ function session(plan = "indie", role = "member") {
 }
 
 function admin({ connected = true, include69 = true, createdAt = new Date().toISOString() } = {}) {
-  const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ data: "job-1" as string | null, error: null as { message: string } | null }));
+  const rpc = vi.fn<(name: string, args: Record<string, unknown>) => Promise<{ data: string | null; error: { message: string } | null }>>(async () => ({ data: "job-1", error: null }));
   vi.mocked(createAdminSupabase).mockReturnValue({
     from: (table: string) => createQueryBuilder(table === "asc_connections"
       ? { data: connected ? { id: "c-1" } : null, error: null }

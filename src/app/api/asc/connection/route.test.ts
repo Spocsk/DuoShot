@@ -24,7 +24,7 @@ function session({ role = "owner", plan = "indie", user = true }: { role?: strin
 }
 
 function adminMock(row: Record<string, unknown> | null = null) {
-  const upsert = vi.fn(async (_row: Record<string, unknown>, _options: unknown) => ({ error: null }));
+  const upsert = vi.fn<(row: Record<string, unknown>, options: unknown) => Promise<{ error: null }>>(async () => ({ error: null }));
   const remove = vi.fn();
   const admin = {
     from: () => ({
