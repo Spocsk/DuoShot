@@ -28,6 +28,14 @@ describe("GET /api/workspace/members", () => {
     expect(createAdminSupabase).not.toHaveBeenCalled();
   });
 
+  it("reports a failed membership lookup instead of refusing the owner", async () => {
+    vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({
+      user, from: () => createQueryBuilder({ data: null, error: { message: "timeout" } }),
+    }) as never);
+    expect(await readJson(await GET())).toEqual({ status: 503, body: { error: "WORKSPACE_UNAVAILABLE" } });
+    expect(createAdminSupabase).not.toHaveBeenCalled();
+  });
+
   it("lists the owner's workspace members with their emails", async () => {
     session("owner");
     const eq = vi.fn();
