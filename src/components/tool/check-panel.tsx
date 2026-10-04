@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { Locale, SizeSpec } from "@/lib/specs";
+import type { SizeSpec } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import type { MessageKey, Translator } from "@/lib/i18n/types";
 import type { SourceInspect } from "@/lib/pipeline/source-inspect";
@@ -13,7 +13,6 @@ import { foldStatusText, type FoldCheck } from "@/components/tool/fold-check";
 export type QualityItem = { side: "outer" | "inner"; index: number } & ReturnType<typeof compositionMetrics>;
 
 export function ReviewAlerts({
-  locale,
   severeQualityCount,
   qualityAcknowledged,
   setQualityAcknowledged,
@@ -24,7 +23,6 @@ export function ReviewAlerts({
   cloneAcknowledged,
   setCloneAcknowledged,
 }: {
-  locale: Locale;
   severeQualityCount: number;
   qualityAcknowledged: boolean;
   setQualityAcknowledged: Dispatch<SetStateAction<boolean>>;
@@ -78,7 +76,7 @@ export function ReviewAlerts({
           <li key={item.index}>
             <CloneTip
               label={`${String(item.index + 1).padStart(2, "0")} · ${t(`clone_${item.label}`)} · ${cloneReasonText(t, item)}`}
-              hint={`${cloneReasonText(t, item)} · ${locale === "fr" ? "structure commune" : "shared structure"} ${Math.round((1 - item.distance / 64) * 100)} %`}
+              hint={`${cloneReasonText(t, item)} · ${t("tool_shared_structure")} ${Math.round((1 - item.distance / 64) * 100)} %`}
             >
               <button
                 type="button"
@@ -99,7 +97,6 @@ export function ReviewAlerts({
 }
 
 export function ReadinessReport({
-  locale,
   preparationChecks,
   slideIndex,
   outerInspect,
@@ -118,7 +115,6 @@ export function ReadinessReport({
   demo = false,
 }: {
   demo?: boolean;
-  locale: Locale;
   preparationChecks: boolean[];
   slideIndex: number;
   outerInspect: SourceInspect | null;
@@ -135,26 +131,26 @@ export function ReadinessReport({
   severeQualityCount: number;
   foldWarningCount: number;
 }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   return (
-    <section className="ds-readiness mb-6" aria-label={locale === "fr" ? "Bilan de préparation" : "Readiness report"} data-testid="readiness-report">
-      <h2 className="font-display text-2xl">{locale === "fr" ? "Bilan du set" : "Set report"}</h2>
-      <p className="ds-label mt-4">{locale === "fr" ? "Contrôles techniques" : "Technical checks"}</p>
+    <section className="ds-readiness mb-6" aria-label={t("tool_readiness_report")} data-testid="readiness-report">
+      <h2 className="font-display text-2xl">{t("tool_set_report")}</h2>
+      <p className="ds-label mt-4">{t("home_technical_checks")}</p>
       <ul className="mt-2 space-y-2 text-sm">
         {[
-          [preparationChecks[0], locale === "fr" ? "Captures fermé et ouvert présentes" : "Closed and open screenshots present"],
-          [preparationChecks[1], locale === "fr" ? "Paires complètes" : "Pairs complete"],
-          [preparationChecks[5], locale === "fr" ? "Fichiers finaux vérifiés et enregistrés" : "Final files verified and stored"],
+          [preparationChecks[0], t("tool_closed_open_screenshots_present")],
+          [preparationChecks[1], t("tool_pairs_complete")],
+          [preparationChecks[5], t("tool_final_files_verified_stored")],
         ].map(([passed, label], index) => (
-          <li key={index} className="flex gap-2"><span aria-hidden="true">{passed ? "✓" : "○"}</span><span className="sr-only">{passed ? (locale === "fr" ? "Validé : " : "Passed: ") : (locale === "fr" ? "En attente : " : "Pending: ")}</span>{label}</li>
+          <li key={index} className="flex gap-2"><span aria-hidden="true">{passed ? "✓" : "○"}</span><span className="sr-only">{passed ? t("tool_passed") : t("tool_pending")}</span>{label}</li>
         ))}
       </ul>
       <details className="tool-source-details">
-        <summary>{locale === "fr" ? `Sources de la paire ${String(slideIndex + 1).padStart(2, "0")}` : `Pair ${String(slideIndex + 1).padStart(2, "0")} sources`}</summary>
+        <summary>{tf("tool_pair_sources", { pair: String(slideIndex + 1).padStart(2, "0") })}</summary>
         {([[
-          locale === "fr" ? "Fermé" : "Closed", outerInspect, outerSpec,
+          t("tool_closed"), outerInspect, outerSpec,
         ], [
-          locale === "fr" ? "Ouvert" : "Open", innerInspect, innerSpec,
+          t("tool_open"), innerInspect, innerSpec,
         ]] as const).map(([name, inspect, spec]) => (
           <div key={name} className="tool-source-row">
             <strong>{name} · {spec.width} × {spec.height}</strong>
@@ -164,30 +160,30 @@ export function ReadinessReport({
           </div>
         ))}
       </details>
-      <p className="ds-label mt-5">{locale === "fr" ? "Alertes visuelles" : "Visual alerts"}</p>
+      <p className="ds-label mt-5">{t("tool_visual_alerts")}</p>
       <ul className="mt-2 space-y-2 text-sm">
-        <li className="flex gap-2"><span aria-hidden="true">{preparationChecks[2] ? "✓" : "◇"}</span><span className="sr-only">{preparationChecks[2] ? (locale === "fr" ? "Validé : " : "Passed: ") : (locale === "fr" ? "À examiner : " : "Review: ")}</span>{locale === "fr" ? "Similarité entre les vues" : "Similarity between views"}</li>
-        <li className="flex gap-2"><span aria-hidden="true">{preparationChecks[3] ? "✓" : "◇"}</span><span className="sr-only">{preparationChecks[3] ? (locale === "fr" ? "Validé : " : "Passed: ") : (locale === "fr" ? "À examiner : " : "Review: ")}</span>{locale === "fr" ? "Cadrage de chaque capture" : "Framing of each screenshot"}</li>
+        <li className="flex gap-2"><span aria-hidden="true">{preparationChecks[2] ? "✓" : "◇"}</span><span className="sr-only">{preparationChecks[2] ? t("tool_passed") : t("tool_to_review_prefix")}</span>{t("tool_similarity_between_views")}</li>
+        <li className="flex gap-2"><span aria-hidden="true">{preparationChecks[3] ? "✓" : "◇"}</span><span className="sr-only">{preparationChecks[3] ? t("tool_passed") : t("tool_to_review_prefix")}</span>{t("tool_framing_each_screenshot")}</li>
         {qualityItems.filter((item) => item.severity !== "ok").map((item) => (
           <li key={`${item.side}-${item.index}`} className="pl-5 text-[var(--warn)]">
-            {item.side === "outer" ? (locale === "fr" ? "Fermé" : "Closed") : (locale === "fr" ? "Ouvert" : "Open")} {String(item.index + 1).padStart(2, "0")} · {locale === "fr" ? "rognage" : "crop"} {item.cropPercent.toFixed(0)} % · {locale === "fr" ? "agrandissement" : "upscale"} {item.scale.toFixed(1)}×
+            {item.side === "outer" ? t("tool_closed") : t("tool_open")} {String(item.index + 1).padStart(2, "0")} · {t("tool_crop")} {item.cropPercent.toFixed(0)} % · {t("tool_upscale")} {item.scale.toFixed(1)}×
           </li>
         ))}
         {effectiveInner.map((_, index) => <li key={`fold-${index}`} className={`pl-5 ${foldChecks[index]?.status === "warning" ? "text-[var(--warn)]" : "text-[var(--muted)]"}`} data-testid={`fold-check-${index}`}>
-          {locale === "fr" ? "Ouvert" : "Open"} {String(index + 1).padStart(2, "0")} · {foldStatusText(locale, foldChecks[index])}
+          {t("tool_open")} {String(index + 1).padStart(2, "0")} · {foldStatusText(t, foldChecks[index])}
         </li>)}
         {clones.filter((item) => item.label !== "ok").map((item) => (
           <li key={`clone-${item.index}`} className="pl-5 text-[var(--warn)]">
-            {locale === "fr" ? "Paire" : "Pair"} {String(item.index + 1).padStart(2, "0")} · {t(`clone_${item.label}`)} : {cloneReasonText(t, item)}
+            {t("tool_pair")} {String(item.index + 1).padStart(2, "0")} · {t(`clone_${item.label}`)} : {cloneReasonText(t, item)}
           </li>
         ))}
       </ul>
-      <p className="ds-label mt-5">{locale === "fr" ? "Confirmation humaine" : "Human confirmation"}</p>
+      <p className="ds-label mt-5">{t("tool_human_confirmation")}</p>
       <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
         <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
-        <span>{demo ? t("tool_demo_confirm") : locale === "fr" ? "J’ai vérifié que chaque visuel montre ma vraie app en usage, dans le bon état d’écran, et que le contenu importé reste lisible près du pli." : "I checked that every image shows my real app in use, in the correct screen state, and that imported content remains readable near the fold."}</span>
+        <span>{demo ? t("tool_demo_confirm") : t("tool_i_checked_that_every")}</span>
       </label>
-      {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{locale === "fr" ? "Les alertes restent à examiner, même si vous confirmez la vérification visuelle." : "Warnings still need review, even after visual confirmation."}</p> : null}
+      {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{t("tool_warnings_still_need_review")}</p> : null}
     </section>
   );
 }
@@ -208,7 +204,7 @@ export function cloneReasonText(t: Translator["t"], item: CloneResult): string {
 export type CheckItem = { id: "pairs" | "framing" | "similarity" | "confirm"; done: boolean; label: string; fix: () => void };
 
 /** What still blocks "Prepare files". Each open item is a button that jumps to its fix. */
-export function CheckList({ locale, items }: { locale: Locale; items: CheckItem[] }) {
+export function CheckList({ items }: { items: CheckItem[] }) {
   const { t } = useI18n();
   return (
     <div className="tool-review-actions" data-testid="tool-checklist">
@@ -216,7 +212,7 @@ export function CheckList({ locale, items }: { locale: Locale; items: CheckItem[
       <ul>
         {items.map((item) => (
           <li key={item.id} data-done={item.done} data-testid={`tool-check-${item.id}`}>
-            {item.done ? <span>{item.label}<span className="sr-only">{locale === "fr" ? " : fait" : ": done"}</span></span> : <button type="button" onClick={item.fix}>{item.label}</button>}
+            {item.done ? <span>{item.label}<span className="sr-only">{t("tool_done")}</span></span> : <button type="button" onClick={item.fix}>{item.label}</button>}
           </li>
         ))}
       </ul>

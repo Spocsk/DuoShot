@@ -30,12 +30,12 @@ export function PaywallModal({
   const pass = preferredKind === "pass30";
   const passPrice = formatEurFromCents(ONE_TIME_CATALOG.pass30.amountCents, locale);
   return (
-    <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={locale === "fr" ? "Fermer" : "Close"}>
+    <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={t("asct_close")}>
       <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
         {pass ? t("pricing_pass_title") : reason === "69" ? t("paywall_69") : t("paywall_title")}
       </h2>
       <p className="mt-3 text-[var(--muted)]">{pass ? t("pricing_pass_body") : t("paywall_lead")}</p>
-      {(pass ? !passAvailable : !available) ? <p role="status" className="mt-3 text-sm">{locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet."}</p> : null}
+      {(pass ? !passAvailable : !available) ? <p role="status" className="mt-3 text-sm">{t("account_payments_not_open_yet")}</p> : null}
       {pass ? (
         <button
           type="button"
@@ -54,7 +54,7 @@ export function PaywallModal({
         disabled={busy || !available}
         onClick={() => onCheckout(yearly ? "indie_yearly" : "indie_monthly")}
       >
-        {yearly ? (locale === "fr" ? "Indie · 120 € / an" : "Indie · €120 / year") : t("paywall_cta_indie")}
+        {yearly ? t("paywall_indie_120_year") : t("paywall_cta_indie")}
       </button>
       {pass ? null : (
         <button
@@ -64,7 +64,7 @@ export function PaywallModal({
           disabled={busy || !available}
           onClick={() => onCheckout(yearly ? "studio_yearly" : "studio_monthly")}
         >
-          {yearly ? (locale === "fr" ? "Studio · 490 € / an" : "Studio · €490 / year") : t("paywall_cta_studio")}
+          {yearly ? t("paywall_studio_490_year") : t("paywall_cta_studio")}
         </button>
       )}
       <button

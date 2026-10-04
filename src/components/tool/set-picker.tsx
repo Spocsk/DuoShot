@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import type { Locale } from "@/lib/specs";
 import type { SetMeta } from "@/lib/sets-store";
 import { useI18n } from "@/components/i18n-provider";
 
@@ -90,7 +89,6 @@ export function useSetsMenu() {
 }
 
 export function SetPicker({
-  locale,
   hydrated,
   sets,
   active,
@@ -99,7 +97,6 @@ export function SetPicker({
   addSet,
   removeSet,
 }: {
-  locale: Locale;
   hydrated: boolean;
   sets: SetMeta[];
   active: SetMeta | undefined;

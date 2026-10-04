@@ -4,6 +4,7 @@ import { DeviceCamera } from "@/components/device-camera";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { connectPreviewStyle, duoSpec, type Locale, type Orientation } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
+import type { MessageKey, Translator } from "@/lib/i18n/types";
 
 type Slide = { index: number; clone: "ok" | "review" | "risk"; outer: string; inner: string };
 type Payload = {
@@ -18,13 +19,15 @@ type Payload = {
   slides: Slide[];
 };
 
-function reviewStatusLabel(status: string, locale: Locale) {
-  const labels: Record<string, [string, string]> = {
-    pending: ["En attente", "Pending"],
-    approved: ["Approuvé", "Approved"],
-    changes_requested: ["Corrections demandées", "Changes requested"],
-  };
-  return labels[status]?.[locale === "fr" ? 0 : 1] ?? status;
+const STATUS_KEYS: Record<string, MessageKey> = {
+  pending: "review_status_pending",
+  approved: "review_status_approved",
+  changes_requested: "review_status_changes_requested",
+};
+
+function reviewStatusLabel(status: string, t: Translator["t"]) {
+  const key = STATUS_KEYS[status];
+  return key ? t(key) : status;
 }
 
 /** Header and footer are server components, passed in so this client page does not pull them into its bundle. */
@@ -71,9 +74,9 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
           ? { ...current, status: action === "approve" ? "approved" : "changes_requested", comment }
           : current,
       );
-      setDecisionFeedback({ text: locale === "fr" ? "Décision enregistrée." : "Decision saved.", error: false });
+      setDecisionFeedback({ text: t("review_decision_saved"), error: false });
     } catch {
-      setDecisionFeedback({ text: locale === "fr" ? "La décision n’a pas été enregistrée. Réessayez." : "Your decision was not saved. Please try again.", error: true });
+      setDecisionFeedback({ text: t("review_decision_was_not_saved"), error: true });
     } finally {
       setBusy(false);
     }
@@ -97,17 +100,13 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
             <p className="ds-label">DuoShot Studio</p>
             <h1 className="font-display mt-3 text-5xl">
               {data.revoked
-                ? locale === "fr" ? "Lien de validation révoqué" : "Review revoked"
-                : locale === "fr" ? "Lien de validation expiré" : "Review expired"}
+                ? t("review_review_revoked")
+                : t("review_review_expired")}
             </h1>
             <p className="mt-5 text-[var(--muted)]">
               {data.revoked
-                ? locale === "fr"
-                  ? "Le studio a fermé ce lien. Demandez-lui un nouveau partage si nécessaire."
-                  : "The studio closed this link. Ask for a new share if needed."
-                : locale === "fr"
-                  ? "Les médias de validation sont conservés sept jours, puis supprimés automatiquement."
-                  : "Review media is kept for seven days, then deleted automatically."}
+                ? t("review_studio_closed_link_ask")
+                : t("review_review_media_kept_seven")}
             </p>
           </section>
         ) : (
@@ -120,16 +119,16 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
             ) : null}
             <p className="mt-3 text-[var(--muted)]" data-testid="review-status" role="status">
               {data.client_name ? `${data.client_name} · ` : ""}
-              {data.orientation === "landscape" ? (locale === "fr" ? "Paysage" : "Landscape") : (locale === "fr" ? "Portrait" : "Portrait")} · {reviewStatusLabel(data.status, locale)}
+              {data.orientation === "landscape" ? t("tool_orient_landscape") : ("Portrait")} · {reviewStatusLabel(data.status, t)}
             </p>
             {data.expiresAt ? (
               <p className="mt-2 text-sm text-[var(--muted)]" data-testid="review-expiry">
-                {locale === "fr" ? "Disponible jusqu’au" : "Available until"}{" "}
+                {t("review_available_until")}{" "}
                 {new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(data.expiresAt))}
               </p>
             ) : null}
             <div className="review-view-controls mt-6">
-              <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la validation" : "Review view"}>
+              <div className="review-view-switch" role="group" aria-label={t("review_review_view")}>
                 <button
                   type="button"
                   className={viewMode === "device" ? "is-on" : ""}
@@ -178,7 +177,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                     className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}
                     style={viewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
                   >
-                    <p className="studio-review-label studio-review-label-outer">{locale === "fr" ? "Écran fermé" : "Closed screen"}</p>
+                    <p className="studio-review-label studio-review-label-outer">{t("home_closed_screen")}</p>
                     <div
                       className={`preview-glass preview-outer t-resize${viewMode === "device" ? " device-bezel" : ""}`}
                       data-aspect={viewMode === "pixels" ? `${outerSpec.width}/${outerSpec.height}` : undefined}
@@ -187,7 +186,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                       <img src={slide.outer} alt={tf("review_alt_numbered_outer", { n: slide.index + 1, total: data.slides.length })} />
                       {viewMode === "device" ? <DeviceCamera /> : null}
                     </div>
-                    <p className="studio-review-label studio-review-label-inner">{locale === "fr" ? "Écran ouvert" : "Open screen"}</p>
+                    <p className="studio-review-label studio-review-label-inner">{t("home_open_screen")}</p>
                     <div
                       className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${viewMode === "device" && hinge ? "is-hinge" : "hinge-off"}`}
                       data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
@@ -217,10 +216,10 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
               <button type="button" className="ds-cta" data-testid="review-approve" disabled={busy} onClick={() => void decide("approve")}>
-                {locale === "fr" ? "Approuver" : "Approve"}
+                {t("home_approve")}
               </button>
               <button type="button" className="ds-cta-ghost" data-testid="review-redo" disabled={busy} onClick={() => void decide("redo")}>
-                {locale === "fr" ? "À refaire" : "Needs work"}
+                {t("home_needs_work")}
               </button>
             </div>
             {decisionFeedback ? <p className={decisionFeedback.error ? "ds-warn mt-3" : "mt-3 text-sm text-[var(--studio-sea)]"} role={decisionFeedback.error ? "alert" : "status"} data-testid="review-decision-feedback">{decisionFeedback.text}</p> : null}

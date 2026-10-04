@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { Worker as OcrWorker } from "tesseract.js";
-import { normalizeCropTransform, type CropTransform, type FitMode, type Locale, type Orientation, type SizeSpec } from "@/lib/specs";
+import { normalizeCropTransform, type CropTransform, type FitMode, type Orientation, type SizeSpec } from "@/lib/specs";
 import { checkFoldImage } from "@/lib/fold-ocr-browser";
 import type { FoldCheckStatus } from "@/lib/fold-detection";
+import type { Translator } from "@/lib/i18n/types";
 
 export type FoldCheck = { key: string; status: FoldCheckStatus; count: number };
 
-export function foldStatusText(locale: Locale, check?: FoldCheck): string {
-  if (!check || check.status === "checking") return locale === "fr" ? "Analyse en cours…" : "Checking…";
-  if (check.status === "error") return locale === "fr" ? "Analyse indisponible : vérifiez visuellement le pli." : "Check unavailable: inspect the fold visually.";
-  if (check.status === "warning") return locale === "fr" ? "Texte possiblement sous le pli : vérifiez la lisibilité." : "Possible text beneath the fold: check legibility.";
-  return locale === "fr" ? "Aucun chevauchement détecté ; vérifiez le rendu final." : "No overlap detected; review the final image.";
+export function foldStatusText(t: Translator["t"], check?: FoldCheck): string {
+  if (!check || check.status === "checking") return t("tool_checking");
+  if (check.status === "error") return t("tool_check_unavailable_inspect_fold");
+  if (check.status === "warning") return t("tool_possible_text_beneath_fold");
+  return t("tool_no_overlap_detected_review");
 }
 
 /**

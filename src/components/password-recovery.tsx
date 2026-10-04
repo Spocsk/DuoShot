@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/specs";
+import { localePrefix } from "@/lib/site";
+import { useI18n } from "@/components/i18n-provider";
 
 export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boolean }) {
-  const fr = locale === "fr";
-  const prefix = fr ? "" : "/en";
+  const { t } = useI18n();
+  const prefix = localePrefix(locale);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -19,7 +21,7 @@ export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boo
     event.preventDefault();
     setError(null);
     if (reset && password !== confirmation) {
-      setError(fr ? "Les mots de passe ne correspondent pas." : "Passwords do not match.");
+      setError(t("auth_passwords_do_not_match"));
       return;
     }
     setBusy(true);
@@ -39,29 +41,29 @@ export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boo
       setDone(true);
     } catch {
       setError(reset
-        ? (fr ? "Le mot de passe n’a pas pu être modifié. Vérifiez sa longueur ou demandez un nouveau lien." : "Could not change your password. Check its length or request a new link.")
-        : (fr ? "Envoi indisponible pour le moment. Réessayez dans quelques minutes." : "Sending is currently unavailable. Please try again in a few minutes."));
+        ? t("auth_could_not_change_password")
+        : t("auth_sending_currently_unavailable_please"));
     } finally { setBusy(false); }
   }
 
   return <div className="studio-auth-card mx-auto w-full max-w-md">
-    <h1 className="font-display text-3xl">{reset ? (fr ? "Nouveau mot de passe" : "New password") : (fr ? "Mot de passe oublié" : "Forgot password")}</h1>
+    <h1 className="font-display text-3xl">{reset ? t("auth_new_password") : t("auth_forgot_password_title")}</h1>
     {done ? <p role="status" className="mt-6 text-sm">{reset
-      ? (fr ? "Votre mot de passe a été modifié." : "Your password has been changed.")
-      : (fr ? "Si un compte correspond à cette adresse, vous recevrez un lien de récupération." : "If an account matches this address, you will receive a recovery link.")}</p>
+      ? t("auth_password_has_been_changed")
+      : t("auth_if_account_matches_address")}</p>
       : <form onSubmit={submit} className="mt-6 grid gap-3">
         {reset ? <>
-          <label className="ds-label" htmlFor="new-password">{fr ? "Nouveau mot de passe" : "New password"}</label>
+          <label className="ds-label" htmlFor="new-password">{t("auth_new_password")}</label>
           <input className="ds-input" id="new-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} />
-          <label className="ds-label" htmlFor="confirm-password">{fr ? "Confirmer le mot de passe" : "Confirm password"}</label>
+          <label className="ds-label" htmlFor="confirm-password">{t("auth_confirm_password")}</label>
           <input className="ds-input" id="confirm-password" type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} />
         </> : <>
           <label className="ds-label" htmlFor="recovery-email">Email</label>
           <input className="ds-input" id="recovery-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
         </>}
-        <button className="ds-cta" disabled={busy} type="submit">{reset ? (fr ? "Enregistrer" : "Save password") : (fr ? "Envoyer le lien" : "Send recovery link")}</button>
+        <button className="ds-cta" disabled={busy} type="submit">{reset ? t("auth_save_password") : t("auth_send_recovery_link")}</button>
       </form>}
     {error ? <p className="ds-warn" role="alert">{error}</p> : null}
-    <p className="mt-6 text-sm"><Link className="ds-link" href={`${prefix}/${reset && !done ? "forgot-password" : "login"}`}>{reset && !done ? (fr ? "Demander un nouveau lien" : "Request a new link") : (fr ? "Retour à la connexion" : "Back to sign in")}</Link></p>
+    <p className="mt-6 text-sm"><Link className="ds-link" href={`${prefix}/${reset && !done ? "forgot-password" : "login"}`}>{reset && !done ? t("auth_request_new_link") : t("auth_back_sign_in")}</Link></p>
   </div>;
 }

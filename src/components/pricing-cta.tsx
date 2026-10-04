@@ -7,6 +7,7 @@ import { startCheckout } from "@/lib/checkout";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { toolPath } from "@/lib/site";
 import type { Locale } from "@/lib/specs";
+import { useI18n } from "@/components/i18n-provider";
 
 export function PricingCta({
   locale,
@@ -22,6 +23,7 @@ export function PricingCta({
   /** Server-rendered checkout availability; when omitted the button asks the API after mount. */
   initialAvailable?: boolean;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const dest = `${toolPath(locale)}?upgrade=1&plan=${kind}`;
   const [available, setAvailable] = useState(initialAvailable ?? false);
@@ -46,9 +48,7 @@ export function PricingCta({
       await startCheckout(kind, toolPath(locale));
     } catch {
       setError(
-        locale === "fr"
-          ? "Le paiement est momentanément indisponible. Réessayez plus tard."
-          : "Checkout is temporarily unavailable. Please try again later.",
+        t("pricing_checkout_temporarily_unavailable_please"),
       );
     } finally {
       setBusy(false);
@@ -58,7 +58,7 @@ export function PricingCta({
   return (
     <>
       <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
-        {!available ? (locale === "fr" ? "Paiements bientôt ouverts" : "Payments opening soon") : busy ? (locale === "fr" ? "Ouverture…" : "Opening…") : label}
+        {!available ? t("pricing_payments_opening_soon") : busy ? t("pricing_opening") : label}
       </button>
       {error ? (
         <p className="ds-warn mt-2 text-sm" role="alert" data-testid={`pricing-error-${kind}`}>{error}</p>

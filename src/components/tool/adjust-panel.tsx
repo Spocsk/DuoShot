@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { overlayTextColor, type CropTransform, type FitMode, type Locale, type OutputFormat, type RenderOptions, type SizeSpec, type TextColor } from "@/lib/specs";
+import { overlayTextColor, type CropTransform, type FitMode, type OutputFormat, type RenderOptions, type SizeSpec, type TextColor } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import type { SourceInspect } from "@/lib/pipeline/source-inspect";
 import type { SetMeta } from "@/lib/sets-store";
@@ -13,7 +13,6 @@ import type { BillingStatus } from "@/components/tool/use-billing";
 type Side = "outer" | "inner";
 
 export function AdjustPanel({
-  locale,
   adjustSide,
   setAdjustSide,
   setMobileView,
@@ -30,7 +29,6 @@ export function AdjustPanel({
   innerSlide,
   currentFoldCheck,
 }: {
-  locale: Locale;
   adjustSide: Side;
   setAdjustSide: Dispatch<SetStateAction<Side>>;
   setMobileView: Dispatch<SetStateAction<"outer" | "inner" | "compare">>;
@@ -49,16 +47,16 @@ export function AdjustPanel({
 }) {
   const { t } = useI18n();
   return <>
-          <div className="tool-panel-heading"><h2>{locale === "fr" ? "Ajuster" : "Adjust"}</h2><p>{locale === "fr" ? "Cadrez la vue sélectionnée. Les changements apparaissent sur le canvas." : "Frame the selected view. Changes appear on the canvas."}</p></div>
-          <div className="tool-adjust-side" role="group" aria-label={locale === "fr" ? "Vue à ajuster" : "View to adjust"}>
-            <button type="button" className={adjustSide === "outer" ? "is-on" : ""} aria-pressed={adjustSide === "outer"} onClick={() => {setAdjustSide("outer"); setMobileView("outer");}}>{locale === "fr" ? "Fermé" : "Closed"}</button>
-            <button type="button" className={adjustSide === "inner" ? "is-on" : ""} aria-pressed={adjustSide === "inner"} onClick={() => {setAdjustSide("inner"); setMobileView("inner");}}>{locale === "fr" ? "Ouvert" : "Open"}</button>
+          <div className="tool-panel-heading"><h2>{t("tool_step_adjust")}</h2><p>{t("tool_frame_selected_view_changes")}</p></div>
+          <div className="tool-adjust-side" role="group" aria-label={t("tool_view_adjust")}>
+            <button type="button" className={adjustSide === "outer" ? "is-on" : ""} aria-pressed={adjustSide === "outer"} onClick={() => {setAdjustSide("outer"); setMobileView("outer");}}>{t("tool_closed")}</button>
+            <button type="button" className={adjustSide === "inner" ? "is-on" : ""} aria-pressed={adjustSide === "inner"} onClick={() => {setAdjustSide("inner"); setMobileView("inner");}}>{t("tool_open")}</button>
           </div>
-          <CropControls testId={`preview-${adjustSide}`} locale={locale} previewMode={previewMode} inspect={adjustSide === "outer" ? outerInspect : innerInspect} spec={adjustSide === "outer" ? outerSpec : innerSpec} transform={adjustSide === "outer" ? outerTransform : innerTransform} onTransform={(patch) => updateCropTransform(adjustSide, slideIndex, patch)} />
-          {innerSlide ? <div className={`tool-fold-check is-${currentFoldCheck?.status ?? "checking"}`} role="status" data-testid="tool-fold-check"><strong>{locale === "fr" ? "Texte au pli · vue ouverte" : "Fold text · open view"}</strong><span>{foldStatusText(locale, currentFoldCheck)}</span></div> : null}
+          <CropControls testId={`preview-${adjustSide}`} previewMode={previewMode} inspect={adjustSide === "outer" ? outerInspect : innerInspect} spec={adjustSide === "outer" ? outerSpec : innerSpec} transform={adjustSide === "outer" ? outerTransform : innerTransform} onTransform={(patch) => updateCropTransform(adjustSide, slideIndex, patch)} />
+          {innerSlide ? <div className={`tool-fold-check is-${currentFoldCheck?.status ?? "checking"}`} role="status" data-testid="tool-fold-check"><strong>{t("tool_fold_text_open_view")}</strong><span>{foldStatusText(t, currentFoldCheck)}</span></div> : null}
           <div className="tool-view-settings">
             <div className="review-view-controls">
-      <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la composition" : "Composition view"}>
+      <div className="review-view-switch" role="group" aria-label={t("tool_composition_view")}>
         <button
           type="button"
           className={previewMode === "device" ? "is-on" : ""}
@@ -84,7 +82,6 @@ export function AdjustPanel({
 }
 
 export function AdvancedSettings({
-  locale,
   globalFit,
   updateGlobalFit,
   options,
@@ -100,7 +97,6 @@ export function AdvancedSettings({
   assumeClone,
   setAssumeClone,
 }: {
-  locale: Locale;
   globalFit: FitMode;
   updateGlobalFit: (fit: FitMode) => void;
   options: RenderOptions;
@@ -119,7 +115,7 @@ export function AdvancedSettings({
   const { t } = useI18n();
   return (
     <details className="tool-advanced mt-5">
-      <summary>{locale === "fr" ? "Réglages avancés" : "Advanced settings"}</summary>
+      <summary>{t("tool_advanced_settings")}</summary>
       <div className="pt-2">
     <Seg
       label={t("tool_label_fit")}
@@ -191,7 +187,7 @@ export function AdvancedSettings({
       ]}
       onChange={(value) => updateOptions({ titleFont: value as RenderOptions["titleFont"] })}
     />
-    <TextColorField locale={locale} options={options} updateOptions={updateOptions} />
+    <TextColorField options={options} updateOptions={updateOptions} />
     <Seg
       label={t("tool_label_format")}
       value={options.format}
@@ -244,7 +240,7 @@ export function AdvancedSettings({
 }
 
 /** Burned-in text colour: Auto keeps the contrast rule from specs.ts; the choice is saved with the set and sent to the renderer. */
-function TextColorField({ locale, options, updateOptions }: { locale: Locale; options: RenderOptions; updateOptions: (patch: Partial<RenderOptions>) => void }) {
+function TextColorField({ options, updateOptions }: { options: RenderOptions; updateOptions: (patch: Partial<RenderOptions>) => void }) {
   const { t } = useI18n();
   const current = options.textColor ?? "auto";
   const mode = current.startsWith("#") ? "custom" : current;

@@ -4,6 +4,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
+import { getTranslator } from "@/lib/i18n";
 
 export function LegalPage({
   locale,
@@ -407,22 +408,21 @@ export function CookiesContent({ locale }: { locale: Locale }) {
 }
 
 export function SubprocessorsContent({ locale }: { locale: Locale }) {
+  const { t, tf } = getTranslator(locale);
   return (
     <>
-      <p>{locale === "fr" ? `Liste datée : ${POLICY_VERSION}.` : `Dated list: ${POLICY_VERSION}.`}</p>
+      <p>{tf("legal_dated_list", { policyVersion: POLICY_VERSION })}</p>
       <ul className="list-disc pl-5">
-        <li>{locale === "fr" ? "Hetzner — hébergement de l’application, PostgreSQL, Auth et Storage Supabase auto-hébergés — Falkenstein, Allemagne" : "Hetzner — application hosting and self-hosted Supabase PostgreSQL, Auth and Storage — Falkenstein, Germany"}</li>
-        <li>{locale === "fr" ? "Vercel — enregistrement du domaine et DNS" : "Vercel — domain registration and DNS"}</li>
+        <li>{t("legal_hetzner_application_hosting_self")}</li>
+        <li>{t("legal_vercel_domain_registration_dns")}</li>
         <li>Datafast — optional traffic and product analytics</li>
-        <li>{locale === "fr" ? "Mixpanel — plus de collecte ; conservation des événements antérieurs jusqu’à leur effacement — projet UE" : "Mixpanel — no longer collects data; holds earlier events only until erased — EU project"}</li>
+        <li>{t("legal_mixpanel_no_longer_collects")}</li>
         <li>Stripe — payments — US/EU</li>
         <li>Resend — transactional email — US</li>
         <li>Google — OAuth sign-in — US</li>
       </ul>
       <p>
-        {locale === "fr"
-          ? "Des DPA sont à signer avec ces sous-traitants avant une exploitation commerciale élargie."
-          : "DPAs should be in place with these processors before broader commercial operation."}
+        {t("legal_dpas_should_in_place")}
       </p>
     </>
   );

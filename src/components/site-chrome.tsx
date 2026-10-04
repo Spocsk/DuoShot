@@ -64,7 +64,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={`${prefix}/terms`}>{t("footer_terms")}</Link>
         <Link href={`${prefix}/privacy`}>{t("footer_privacy")}</Link>
         <Link href={`${prefix}/cookies`}>{t("footer_cookies")}</Link>
-        <AnalyticsSettingsButton locale={locale} />
+        <AnalyticsSettingsButton />
         <Link href={`${prefix}/legal/subprocessors`}>{t("footer_subprocessors")}</Link>
         <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t("footer_why")}</Link>
         <Link href={rejectionPath(locale)} data-testid="footer-reject">{t("footer_reject")}</Link>

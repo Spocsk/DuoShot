@@ -3,6 +3,7 @@ import { submitRender, resumeRender } from "@/lib/render-client";
 import { assertBatchSize } from "@/lib/pipeline/limits";
 import { normalizeCropTransform, type CropTransform, type FitMode, type Locale, type Orientation, type RenderOptions } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
+import type { MessageKey } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { trackProduct } from "@/lib/analytics-client";
 import { trackDatafastConversion } from "@/lib/datafast-client";
@@ -102,7 +103,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     const progress = (state: "queued" | "running") => {
       if (!mounted) return;
       setStatusKind("busy");
-      setStatus(state === "queued" ? (locale === "fr" ? "Votre rendu est en attente…" : "Your render is queued…") : t("tool_progress_compose"));
+      setStatus(state === "queued" ? t("tool_render_queued") : t("tool_progress_compose"));
     };
     for (const kind of ["export", "review"] as const) {
       const pending = resumeRender(owner, kind, progress);
@@ -125,7 +126,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         setStatusKind("ok"); setStatus(t(kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
         void refreshBilling();
       }).catch(() => {
-        if (mounted) { setStatusKind("err"); setStatus(locale === "fr" ? "Récupération du rendu indisponible. Rechargez la page pour réessayer sans créer une nouvelle demande." : "Render recovery unavailable. Reload to retry without creating a new request."); }
+        if (mounted) { setStatusKind("err"); setStatus(t("tool_render_recovery_unavailable_reload")); }
       }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
     }
     return () => { mounted = false; };
@@ -199,7 +200,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t("tool_progress_compose"), "busy");
+        flashStatus(state === "queued" ? t("tool_waiting_process_can_return") : t("tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as {
         url?: string; error?: string; warning?: string; filename?: string; exportId?: string; expiresAt?: string;
@@ -262,18 +263,17 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       const response = await fetch(`/api/exports/${downloadId}/download?format=json`, { cache: "no-store" });
       const payload = await response.json() as { url?: string; error?: string };
       if (!response.ok || !payload.url) {
-        const messages: Record<string, [string, string]> = {
-          EXPORT_EXPIRED: ["Ce ZIP a expiré après 24 h. Vos captures locales restent disponibles.", "This ZIP expired after 24 hours. Your local screenshots remain available."],
-          EXPORT_DELETED: ["Ce fichier a été supprimé du serveur.", "This file has been removed from the server."],
-          AUTH_REQUIRED: ["Reconnectez-vous pour récupérer ce fichier.", "Sign in again to retrieve this file."],
+        const messages: Record<string, MessageKey> = {
+          EXPORT_EXPIRED: "tool_download_expired",
+          EXPORT_DELETED: "tool_download_deleted",
+          AUTH_REQUIRED: "tool_download_sign_in_again",
         };
-        const message = messages[payload.error ?? ""];
-        flashStatus(message ? message[locale === "fr" ? 0 : 1] : locale === "fr" ? "Téléchargement indisponible. Réessayez sans générer un nouvel export." : "Download unavailable. Retry without generating another export.", "err");
+        flashStatus(t(messages[payload.error ?? ""] ?? "tool_download_unavailable_retry_without"), "err");
         return;
       }
       setZipUrl(payload.url);
       window.location.assign(payload.url);
-    } catch { flashStatus(locale === "fr" ? "Erreur réseau. Réessayez le téléchargement ; aucun essai supplémentaire n’est consommé." : "Network error. Retry the download; no additional trial is consumed.", "err"); }
+    } catch { flashStatus(t("tool_network_error_retry_download"), "err"); }
   }
 
   async function onReview() {
@@ -339,7 +339,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
             inner: effectiveInner.map((_, index) => normalizeCropTransform(innerTransforms[index], globalFit)),
           },
         }, (state) => {
-        flashStatus(state === "queued" ? (locale === "fr" ? "En attente de traitement… Vous pouvez revenir sur cette page plus tard." : "Waiting to process… You can return to this page later.") : t("tool_progress_compose"), "busy");
+        flashStatus(state === "queued" ? t("tool_waiting_process_can_return") : t("tool_progress_compose"), "busy");
       });
       const payload = (await response.json()) as { url?: string; id?: string; expiresAt?: string; error?: string };
       if (!response.ok) {
@@ -358,7 +358,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         await navigator.clipboard.writeText(absolute);
         setReviewStatus(
           payload.expiresAt
-            ? `${t("tool_review_copied")} · ${locale === "fr" ? "expire le" : "expires"} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payload.expiresAt))}`
+            ? `${t("tool_review_copied")} · ${t("tool_expires")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payload.expiresAt))}`
             : t("tool_review_copied"),
         );
       } catch {

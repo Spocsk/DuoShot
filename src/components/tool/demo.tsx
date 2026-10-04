@@ -24,7 +24,7 @@ export async function fetchHarborFiles(locale: Locale): Promise<{ outer: File[];
 }
 
 /** Empty-state invitation: try the workspace with Harbor before importing anything. */
-export function DemoStart({ locale, state, onLoad }: { locale: Locale; state: DemoState; onLoad: () => void }) {
+export function DemoStart({ state, onLoad }: { state: DemoState; onLoad: () => void }) {
   const { t } = useI18n();
   return (
     <div className="tool-demo-start" data-testid="tool-demo-start">

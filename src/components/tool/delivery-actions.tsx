@@ -13,7 +13,7 @@ type Jobs = ReturnType<typeof useRenderJobs>;
 export const EXAMPLE_ZIP_URL = "/api/example-zip?v=2";
 
 /** Secondary deliveries, folded away so "Prepare files" stays the one obvious action. */
-export function OtherActions({ locale, hasExportable, jobs }: { locale: Locale; hasExportable: boolean; jobs: Jobs }) {
+export function OtherActions({ hasExportable, jobs }: { hasExportable: boolean; jobs: Jobs }) {
   const { t } = useI18n();
   const { busyReview, onReview } = jobs;
   return (
@@ -41,7 +41,7 @@ export function OtherActions({ locale, hasExportable, jobs }: { locale: Locale; 
 }
 
 /** Review-link outcome (Studio): the URL, its client status and the upgrade offer. */
-export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs }: {
+export function ReviewOutcome({ billing, checkoutBusy, onCheckout, jobs }: {
   locale: Locale;
   billing: BillingStatus | null;
   checkoutBusy: boolean;
@@ -77,7 +77,7 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
 }
 
 /** Export step: the delivered file list once the ZIP exists, otherwise what is still missing. */
-export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo, jobs }: {
+export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }: {
   locale: Locale;
   prefix: string;
   zipUrl: string | null;
@@ -92,17 +92,17 @@ export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo
     <div className="tool-panel-heading"><h2>{t("tool_export_title")}</h2><p>{zipUrl ? t("tool_export_lead") : demo ? t("tool_demo_export_hint") : t("tool_export_empty")}</p></div>
     {zipUrl ? (
       <div className="mt-4" data-testid="tool-export-delivery">
-        <p className="ds-label">{locale === "fr" ? "Fichiers prêts" : "Files ready"}</p>
-        <p className="mt-2 text-xs text-[var(--muted)]">{locale === "fr" ? "Chemins dans le dossier de l’app" : "Paths inside the app folder"}</p>
+        <p className="ds-label">{t("tool_files_ready")}</p>
+        <p className="mt-2 text-xs text-[var(--muted)]">{t("tool_paths_inside_app_folder")}</p>
         <ul className="mt-3 space-y-1 text-sm">
           {exportImages.map((image) => (
             <li key={`${image.slot}-${image.index}-${image.width}x${image.height}`} className="studio-delivered-file">
               <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
-              <span>{image.slot === "duo-outer" ? (locale === "fr" ? "Fermé" : "Closed") : image.slot === "duo-inner" ? (locale === "fr" ? "Ouvert" : "Open") : "6.9"} · {image.width} × {image.height}</span>
+              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : "6.9"} · {image.width} × {image.height}</span>
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-sm text-[var(--muted)]">{locale === "fr" ? "Décompressez le ZIP pour obtenir les deux séries d’images. Le fichier reste récupérable pendant 24 h, sans nouvel essai. Le clic demande le téléchargement ; vérifiez ensuite le fichier dans votre navigateur. Le dépôt manuel dépend de l’ouverture des emplacements Duo dans App Store Connect." : "Unzip the archive to get both image sets. Retrieve it again within 24 hours without another trial. Clicking requests a download; check the file in your browser. Manual upload depends on Duo slots becoming available in App Store Connect."}</p>
+        <p className="mt-3 text-sm text-[var(--muted)]">{t("tool_unzip_archive_get_both")}</p>
       </div>
     ) : null}
     {session === "out" && !demo ? (

@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Locale } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
+import { useI18n } from "@/components/i18n-provider";
 
 export function InviteAccept({ token, locale }: { token: string; locale: Locale }) {
+  const { t } = useI18n();
   const prefix = localePrefix(locale);
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   async function accept() {
@@ -20,23 +22,23 @@ export function InviteAccept({ token, locale }: { token: string; locale: Locale 
   return (
     <main id="main" className="mx-auto w-full max-w-2xl px-5 py-20">
       <p className="ds-label">DuoShot Studio</p>
-      <h1 className="font-display mt-3 text-5xl">{locale === "fr" ? "Rejoindre le workspace" : "Join the workspace"}</h1>
+      <h1 className="font-display mt-3 text-5xl">{t("account_join_workspace")}</h1>
       <p className="mt-5 text-[var(--muted)]">
-        {locale === "fr" ? "Connectez-vous avec l’adresse invitée, puis acceptez l’invitation." : "Sign in with the invited email address, then accept the invitation."}
+        {t("account_sign_in_invited_email")}
       </p>
       {state === "done" ? (
-        <Link href={`${prefix}/account`} className="ds-cta mt-8 inline-flex">{locale === "fr" ? "Ouvrir Studio" : "Open Studio"}</Link>
+        <Link href={`${prefix}/account`} className="ds-cta mt-8 inline-flex">{t("account_open_studio")}</Link>
       ) : (
         <div className="mt-8 flex flex-wrap gap-3">
           <button type="button" className="ds-cta" disabled={state === "busy"} onClick={() => void accept()}>
-            {state === "busy" ? "…" : locale === "fr" ? "Accepter" : "Accept"}
+            {state === "busy" ? "…" : t("account_accept")}
           </button>
           <Link href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/invite/${token}`)}`} className="ds-cta-ghost">
-            {locale === "fr" ? "Se connecter" : "Sign in"}
+            {t("account_sign_in")}
           </Link>
         </div>
       )}
-      {state === "error" ? <p className="ds-warn mt-5">{locale === "fr" ? "Invitation invalide, expirée ou ouverte avec une autre adresse." : "Invalid or expired invitation, or signed in with a different email."}</p> : null}
+      {state === "error" ? <p className="ds-warn mt-5">{t("account_invalid_expired_invitation_signed")}</p> : null}
     </main>
   );
 }

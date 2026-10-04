@@ -27,8 +27,8 @@ describe("i18n", () => {
     expect(fr.tf("account_remaining", { n: 1 })).toBe("1 ZIP offert restant");
     expect(en.tf("tool_quality_gate_title", { n: 1 })).toBe("1 crop needs review");
     expect(fr.tf("tool_quality_gate_title", { n: 3 })).toBe("3 cadrages à vérifier");
-    expect(fr.t("tool_download")).toBe("Télécharger le ZIP");
-    expect(en.t("tool_download")).toBe("Download ZIP");
+    expect(fr.t("tool_action_download")).toBe("Télécharger le ZIP");
+    expect(en.t("tool_action_download")).toBe("Download ZIP");
     expect(fr.t("tool_crop_drag_hint")).toContain("PNG exporté");
     expect(en.t("tool_crop_drag_hint")).toContain("exported PNG");
     expect(fr.t("tool_crop_device_hint")).toContain("164,6");

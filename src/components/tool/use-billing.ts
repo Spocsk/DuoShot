@@ -32,7 +32,7 @@ export function useBilling(locale: Locale, searchParams: ReturnType<typeof useSe
     checkoutFlag === "success"
       ? billing?.source === "stripe" && billing.plan !== "free"
         ? t("checkout_success")
-        : locale === "fr" ? (activationTimedOut ? "Activation non confirmée. Vérifiez à nouveau le statut de l’abonnement." : "Retour du paiement. Vérification de l’activation en cours…") : (activationTimedOut ? "Activation not confirmed. Check your subscription status again." : "Returned from checkout. Checking activation…")
+        : t(activationTimedOut ? "tool_activation_not_confirmed" : "tool_checkout_returned_checking")
       : checkoutFlag === "cancel"
         ? t("checkout_cancel")
         : null;
@@ -85,13 +85,11 @@ export function useBilling(locale: Locale, searchParams: ReturnType<typeof useSe
   return { billing, setBilling, billingError, session, activationTimedOut, retryActivation, refreshBilling, urlStatus };
 }
 
-export function quotaLabel({ locale, t, tf }: Translator, billing: BillingStatus | null, billingError: boolean, session: SessionState) {
+export function quotaLabel({ t, tf }: Translator, billing: BillingStatus | null, billingError: boolean, session: SessionState) {
   const remaining = billing?.remainingFreeExports;
   const remainingLabel =
-    billingError ? (locale === "fr" ? "Statut temporairement indisponible" : "Status temporarily unavailable") : !billing && session === "in"
-      ? locale === "fr"
-        ? "Chargement du plan…"
-        : "Loading plan…"
+    billingError ? t("tool_status_temporarily_unavailable") : !billing && session === "in"
+      ? t("tool_loading_plan")
       : billing?.plan === "studio"
       ? t("tool_plan_studio")
       : billing?.plan === "indie"

@@ -67,7 +67,6 @@ type Offer = {
 
 function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
   const { locale, t, tf } = i18n;
-  const fr = locale === "fr";
   if (isPass(id)) {
     const pass = ONE_TIME_CATALOG[id];
     const price = eur(pass.amountCents / 100, locale);
@@ -94,12 +93,12 @@ function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
     const kind = kindsFor(id).find((item) => item.endsWith(showYear ? "_yearly" : "_monthly"));
     const per = showYear ? t("pricing_per_year") : t("pricing_per_month");
     const note = showYear
-      ? `≈ ${eur(Math.round((annual! / 12) * 100) / 100, locale)} ${t("pricing_per_month")} · ${fr ? "2 mois offerts" : "2 months free"}`
+      ? `≈ ${eur(Math.round((annual! / 12) * 100) / 100, locale)} ${t("pricing_per_month")} · ${t("pricing_2_months_free")}`
       : " ";
     return {
       price: `${eur(value, locale)} ${per}`,
       note,
-      cta: kind ? { kind, label: `${title} — ${eur(value, locale).replace(" ", " ")}/${showYear ? (fr ? "an" : "year") : (fr ? "mois" : "month")}` } : null,
+      cta: kind ? { kind, label: `${title} — ${eur(value, locale).replace(" ", " ")}/${showYear ? t("pricing_year") : t("pricing_month")}` } : null,
     };
   }
   return { price: "—", note: "\u00a0", cta: null };
@@ -121,16 +120,15 @@ function planBody(id: PlanId, i18n: Translator) {
 
 /** Comparison rows derived from plan fields. */
 function comparisonRows(i18n: Translator, ids: PlanId[]) {
-  const { locale, t } = i18n;
+  const { t } = i18n;
   const yes = t("pricing_val_yes");
   const no = t("pricing_val_no");
-  const fr = locale === "fr";
   const value = (id: PlanId, pick: (plan: PlanRecord) => string) => pick(entitlements(id));
   const quota = (plan: PlanRecord) => {
     const free = num(plan, "freeExports");
     const daily = num(plan, "dailyHdSets");
-    if (free !== null) return `${free} ${fr ? "ZIP HD" : "HD ZIPs"}`;
-    if (daily !== null) return `${daily} / ${fr ? "jour" : "day"}`;
+    if (free !== null) return `${free} ${t("pricing_hd_zips")}`;
+    if (daily !== null) return `${daily} / ${t("pricing_day")}`;
     return "—";
   };
   const fullFormats = (plan: PlanRecord) => (plan.duoOnly === false ? yes : no);
@@ -140,7 +138,7 @@ function comparisonRows(i18n: Translator, ids: PlanId[]) {
     { label: t("pricing_feat_69"), pick: fullFormats },
     { label: t("pricing_feat_sets"), pick: () => yes },
     { label: t("pricing_feat_prefix"), pick: fullFormats },
-    { label: fr ? "Sièges" : "Seats", pick: (plan) => String(num(plan, "seats") ?? 1) },
+    { label: t("pricing_seats"), pick: (plan) => String(num(plan, "seats") ?? 1) },
     { label: t("pricing_feat_review"), pick: (plan) => ((num(plan, "seats") ?? 1) > 1 ? yes : no) },
   ];
   return rows.map((row) => ({ label: row.label, cells: ids.map((id) => value(id, row.pick)) }));
@@ -174,7 +172,6 @@ export function PricingSection({
   const i18n = useI18n();
   const { t } = i18n;
   const [yearly, setYearly] = useState(false);
-  const fr = locale === "fr";
   const ids = orderedPlans(passAvailable);
   const cards = ids.filter((id) => !isTeam(id));
   const teams = ids.filter(isTeam);
@@ -193,13 +190,13 @@ export function PricingSection({
           <p className="studio-pricing-lead">{t("pricing_lead")}</p>
           <p className="studio-pricing-free">{t("pricing_free_body")}</p>
         </div>
-        <div className="studio-billing-switch" role="group" aria-label={fr ? "Période de facturation" : "Billing period"}>
+        <div className="studio-billing-switch" role="group" aria-label={t("pricing_billing_period")}>
           <button type="button" aria-pressed={!yearly} onClick={() => setYearly(false)} data-testid="billing-monthly">
-            {fr ? "Mensuel" : "Monthly"}
+            {t("pricing_monthly")}
           </button>
           <button type="button" aria-pressed={yearly} onClick={() => setYearly(true)} data-testid="billing-yearly">
-            {fr ? "Annuel" : "Yearly"}
-            <span className="studio-billing-saving">{fr ? "2 mois offerts" : "2 months free"}</span>
+            {t("pricing_yearly")}
+            <span className="studio-billing-saving">{t("pricing_2_months_free")}</span>
           </button>
         </div>
       </div>
@@ -246,7 +243,7 @@ export function PricingSection({
         );
       })}
 
-      <ul className="studio-reassurance" aria-label={fr ? "Paiement" : "Payment"}>
+      <ul className="studio-reassurance" aria-label={t("pricing_payment")}>
         <li>{t("pricing_reassurance_stripe")}</li>
         <li>{t("pricing_reassurance_cancel")}</li>
         <li>{t("pricing_reassurance_invoice")}</li>

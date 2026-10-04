@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 
 /** Set title with an inline rename: Enter or leaving the field saves, Escape cancels. The app name stays separate. */
-export function SetTitle({ locale, name, onRename }: { locale: Locale; name: string; onRename: (name: string) => void }) {
+export function SetTitle({ name, onRename }: { name: string; onRename: (name: string) => void }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState<string | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);

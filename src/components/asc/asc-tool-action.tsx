@@ -28,7 +28,7 @@ type Props = {
  */
 export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscUpload> }) {
   const { t } = useI18n();
-  const { locale, prefix, exportId } = props;
+  const { prefix, exportId } = props;
   const [status, setStatus] = useState<AscToolStatus | null>(null);
   const [open, setOpen] = useState(false);
   // The hook lives in the tool so an upload survives step changes; a finished
@@ -183,7 +183,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
 
       {view === "no69" ? <>
         <p className="mt-3 text-sm text-[var(--muted)]">{t("asct_no69_body")}</p>
-        <SkippedFiles locale={locale} files={plan.skipped} />
+        <SkippedFiles files={plan.skipped} />
         <button type="button" className="ds-cta mt-5 w-full" data-testid="asc-enable-69" onClick={onEnable69}>{t("asct_enable69")}</button>
       </> : null}
 
@@ -212,7 +212,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
           <p className="mt-1 text-sm">{tf("asct_files_count", { n: plan.send.length, size })}</p>
           <FileList files={plan.send} />
         </section>
-        <SkippedFiles locale={locale} files={plan.skipped} />
+        <SkippedFiles files={plan.skipped} />
 
         {owner ? (
           <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm" htmlFor={`${ids}-replace`}>
@@ -236,7 +236,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
           {progress ? tf("asct_progress_summary", { done: progress.done, total: progress.total }) : t("asct_progress_queued")}
         </p>
         {progress ? <progress className="tool-asc-progress mt-3" max={progress.total} value={progress.done} aria-label={t("asct_progress_title")} /> : null}
-        <ProgressList locale={locale} files={progress?.files ?? []} />
+        <ProgressList files={progress?.files ?? []} />
         <p className="mt-4 text-xs text-[var(--muted)]">{t("asct_progress_keep")}</p>
       </> : null}
 
@@ -244,7 +244,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
         <p className="mt-3 text-sm" data-testid="asc-success">{tf("asct_success_body", { n: state.result.uploaded })}</p>
         {state.result.replaced ? <p className="mt-1 text-sm">{tf("asct_success_replaced", { n: state.result.replaced })}</p> : null}
         {state.result.reordered === false ? <p className="ds-warn mt-3">{t("asct_success_order")}</p> : null}
-        <ProgressList locale={locale} files={state.result.files ?? []} />
+        <ProgressList files={state.result.files ?? []} />
         <a className="ds-cta mt-5 w-full" href={ascAppUrl(state.result.appId ?? appId)} target="_blank" rel="noopener noreferrer" data-testid="asc-open">
           {t("asct_open")}
         </a>
@@ -252,14 +252,14 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
 
       {view === "error" && state.phase === "failed" ? <>
         <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(state.error))}</p>
-        <ProgressList locale={locale} files={state.progress?.files ?? []} />
+        <ProgressList files={state.progress?.files ?? []} />
         <button type="button" className="ds-cta-ghost mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t("asct_retry")}</button>
       </> : null}
     </div>
   );
 }
 
-function Picker({ id, label, locale, lookup, empty, value, onChange, options, testId }: {
+function Picker({ id, label, lookup, empty, value, onChange, options, testId }: {
   id: string; label: string; locale: Locale; lookup: Lookup<unknown>; empty: string;
   value: string; onChange: (value: string) => void; options: { value: string; label: string }[]; testId: string;
 }) {
@@ -293,7 +293,7 @@ function FileList({ files }: { files: AscPlannedFile[] }) {
   );
 }
 
-function SkippedFiles({ locale, files }: { locale: Locale; files: AscPlannedFile[] }) {
+function SkippedFiles({ files }: { files: AscPlannedFile[] }) {
   const { t, tf } = useI18n();
   const ids = useId();
   if (!files.length) return null;
@@ -307,14 +307,14 @@ function SkippedFiles({ locale, files }: { locale: Locale; files: AscPlannedFile
   );
 }
 
-function ProgressList({ locale, files }: { locale: Locale; files: AscFileProgress[] }) {
+function ProgressList({ files }: { files: AscFileProgress[] }) {
   const { t } = useI18n();
   if (!files.length) return null;
   return (
     <ol className="tool-asc-files mt-3" data-testid="asc-progress-files">
       {files.map((file) => (
         <li key={`${file.slot}-${file.index}`} data-state={file.state}>
-          <span>{locale === "fr" ? "6,9″" : "6.9″"} · {String(file.index).padStart(2, "0")}</span>
+          <span>{t("asct_size_69")} · {String(file.index).padStart(2, "0")}</span>
           <span className="tool-asc-file-state">
             {t(ascFileStateKey(file.state))}
             {file.state === "failed" && file.error ? ` · ${t(ascFileErrorKey(file.error))}` : ""}

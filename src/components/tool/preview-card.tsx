@@ -2,14 +2,14 @@
 
 import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { DeviceCamera } from "@/components/device-camera";
-import { duoChassisAspect, type CropTransform, type Locale, type Orientation, type SizeSpec } from "@/lib/specs";
+import { duoChassisAspect, type CropTransform, type Orientation, type SizeSpec } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import { compositionMetrics } from "@/lib/pipeline/geometry";
 import type { SourceInspect } from "@/lib/pipeline/source-inspect";
 
-export function CropControls({testId, locale, previewMode, inspect, spec, transform, onTransform}: {testId: string; locale: Locale; previewMode: "device" | "pixels"; inspect: SourceInspect | null; spec: SizeSpec; transform: CropTransform; onTransform: (patch: Partial<CropTransform>) => void}) {
+export function CropControls({testId, previewMode, inspect, spec, transform, onTransform}: {testId: string; previewMode: "device" | "pixels"; inspect: SourceInspect | null; spec: SizeSpec; transform: CropTransform; onTransform: (patch: Partial<CropTransform>) => void}) {
   const { t, tf } = useI18n();
-  if (!inspect) return <p className="tool-adjust-empty">{locale === "fr" ? "Importez cette vue pour régler son cadrage." : "Import this view to adjust its framing."}</p>;
+  if (!inspect) return <p className="tool-adjust-empty">{t("tool_import_view_adjust_its")}</p>;
   const metrics = compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform);
   const cropHint = metrics.fit === "cover" ? t(previewMode === "pixels" ? "tool_crop_drag_hint" : "tool_crop_device_hint") : t("tool_crop_contain_hint");
   const onRangeKey = (event: ReactKeyboardEvent<HTMLInputElement>, axis: "x" | "y") => {
@@ -27,14 +27,14 @@ export function CropControls({testId, locale, previewMode, inspect, spec, transf
         <button type="button" className={metrics.fit === "cover" ? "is-on" : ""} aria-pressed={metrics.fit === "cover"} onClick={() => onTransform({fit: "cover"})}>{t("tool_crop_fill")}</button>
         <button type="button" className={metrics.fit === "contain" ? "is-on" : ""} aria-pressed={metrics.fit === "contain"} onClick={() => onTransform({fit: "contain"})}>{t("tool_crop_show_all")}</button>
       </div>
-      {transform.fit === "smart" ? <p className="crop-hint" data-testid={`${testId}-smart-result`}>{locale === "fr" ? `Smart a choisi « ${metrics.fit === "cover" ? "Remplir" : "Tout afficher"} » pour cette capture.` : `Smart chose “${metrics.fit === "cover" ? "Fill" : "Show all"}” for this capture.`}</p> : null}
+      {transform.fit === "smart" ? <p className="crop-hint" data-testid={`${testId}-smart-result`}>{tf("tool_crop_smart_choice", { mode: t(metrics.fit === "cover" ? "tool_crop_fill" : "tool_crop_show_all") })}</p> : null}
       <button type="button" className="crop-reset" onClick={() => onTransform({x: 0.5, y: 0.5, zoom: 1})}>{t("tool_crop_reset")}</button>
     </div>
     {metrics.fit === "cover" ? <div className="crop-axis-controls">
-      <label><span>{locale === "fr" ? "Zoom" : "Zoom"} · {Math.round((transform.zoom ?? 1) * 100)} %</span><input type="range" min="100" max="200" value={Math.round((transform.zoom ?? 1) * 100)} onChange={(event) => onTransform({zoom: Number(event.currentTarget.value) / 100})} /></label>
+      <label><span>{"Zoom"} · {Math.round((transform.zoom ?? 1) * 100)} %</span><input type="range" min="100" max="200" value={Math.round((transform.zoom ?? 1) * 100)} onChange={(event) => onTransform({zoom: Number(event.currentTarget.value) / 100})} /></label>
       <label><span>{t("tool_crop_horizontal")}</span><input type="range" min="0" max="100" disabled={!canMoveX} value={Math.round(transform.x * 100)} onChange={(event) => onTransform({x: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "x")} /></label>
       <label><span>{t("tool_crop_vertical")}</span><input type="range" min="0" max="100" disabled={!canMoveY} value={Math.round(transform.y * 100)} onChange={(event) => onTransform({y: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "y")} /></label>
-      {!canMoveY ? <p className="crop-hint">{locale === "fr" ? "Aucune marge verticale à cette échelle. Augmentez le zoom pour déplacer l’image vers le haut ou le bas." : "No vertical room at this scale. Increase zoom to move the image up or down."}</p> : null}
+      {!canMoveY ? <p className="crop-hint">{t("tool_no_vertical_room_at")}</p> : null}
     </div> : null}
     <div className="crop-readout"><p className={`crop-metrics is-${metrics.severity}`} data-testid={`${testId}-metrics`}>{tf("tool_crop_metrics", {crop: metrics.cropPercent.toFixed(1), scale: metrics.scale.toFixed(2)})}</p><p className="crop-hint">{cropHint}</p></div>
   </div>;
@@ -47,7 +47,6 @@ export function PreviewCard({
   inspect,
   kind,
   spec,
-  locale,
   orientation,
   previewMode,
   hinge = false,
@@ -62,7 +61,6 @@ export function PreviewCard({
   inspect: SourceInspect | null;
   kind: "outer" | "inner";
   spec: { width: number; height: number };
-  locale: Locale;
   orientation: Orientation;
   previewMode: "device" | "pixels";
   hinge?: boolean;
@@ -71,6 +69,7 @@ export function PreviewCard({
   onTransform: (patch: Partial<CropTransform>) => void;
   onImportFiles: (files: FileList | null) => void;
 }) {
+  const { t } = useI18n();
   const dragRef = useRef<{ pointerId: number; x: number; y: number; focusX: number; focusY: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
@@ -133,9 +132,9 @@ export function PreviewCard({
             <div className="preview-empty-copy">
               <span className="preview-empty-label">{label}</span>
               <span className="preview-empty-size">{spec.width} × {spec.height}</span>
-              <button type="button" className="tool-empty-action" onClick={() => inputRef.current?.click()}>{locale === "fr" ? "Importer" : "Import"}</button>
-              <span className="preview-empty-drop">{locale === "fr" ? "ou déposez un PNG/JPEG" : "or drop a PNG/JPEG"}</span>
-              <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${locale === "fr" ? "Importer" : "Import"} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
+              <button type="button" className="tool-empty-action" onClick={() => inputRef.current?.click()}>{t("tool_step_import")}</button>
+              <span className="preview-empty-drop">{t("tool_drop_png_jpeg")}</span>
+              <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${t("tool_step_import")} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
             </div>
           )}
           {kind === "outer" && previewMode === "device" ? <DeviceCamera /> : null}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { MAX_IMAGES, WARN_MIN_IMAGES, type Locale, type SizeSpec } from "@/lib/specs";
+import { MAX_IMAGES, WARN_MIN_IMAGES, type SizeSpec } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import type { SetMeta } from "@/lib/sets-store";
 import { DsToggle } from "@/components/tool/controls";
@@ -10,7 +10,6 @@ import { DropZone } from "@/components/tool/drop-zone";
 type FileInput = FileList | File[] | DataTransfer | null;
 
 export function CapturesPanel({
-  locale,
   active,
   outerSpec,
   innerSpec,
@@ -27,7 +26,6 @@ export function CapturesPanel({
   patchActive,
   setZipUrl,
 }: {
-  locale: Locale;
   active: SetMeta | undefined;
   outerSpec: SizeSpec;
   innerSpec: SizeSpec;
@@ -46,7 +44,7 @@ export function CapturesPanel({
 }) {
   const { t, tf } = useI18n();
   return <>
-          <div className="tool-panel-heading"><h2>{locale === "fr" ? "Vos captures" : "Your screenshots"}</h2><p>{locale === "fr" ? "Importez les vues de votre app. Jusqu’à 10 paires." : "Import your app screens. Up to 10 pairs."}</p></div>
+          <div className="tool-panel-heading"><h2>{t("tool_screenshots")}</h2><p>{t("tool_import_app_screens_up")}</p></div>
           <div id="tool-import" className="tool-import-stack">
             <div className="mt-5 grid gap-4 md:grid-cols-2">
       <DropZone
