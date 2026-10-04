@@ -1,6 +1,11 @@
-// Per-IP fixed-window limits for the API, applied in src/proxy.ts. Production is one
-// standalone Node process behind Traefik, so counters live in memory: they reset on
-// restart and would need a shared store if the app ever ran on several instances.
+// Per-IP fixed-window limits for the API, applied in src/proxy.ts.
+//
+// ASSUMPTION: production runs exactly ONE `web` container (one standalone Node process
+// behind Traefik; see infra/deploy.md). Counters live in this process's memory, so they
+// reset on every restart/redeploy, and with N replicas each one counts on its own and the
+// effective limit becomes N times the configured value. Scaling `web` out first requires
+// moving these windows to a shared store (Redis, or a PostgreSQL table/RPC).
+// The `render` container runs the same image but is not routed, so it never counts here.
 
 type Rule = { name: string; methods: string[]; pattern: RegExp; limit: number; windowMs: number };
 
@@ -12,6 +17,8 @@ export const RATE_LIMIT_RULES: Rule[] = [
   { name: "account", methods: ["GET", "POST"], pattern: /^\/api\/account\/(?:export|delete)$/, limit: 10, windowMs: 60 * MINUTE },
   { name: "invitations", methods: ["POST"], pattern: /^\/api\/workspace\/invitations(?:\/accept)?$/, limit: 30, windowMs: 60 * MINUTE },
   { name: "billing", methods: ["POST"], pattern: /^\/api\/stripe\/(?:checkout|portal)$/, limit: 20, windowMs: 10 * MINUTE },
+  // Public, unauthenticated sign-up that sends e-mail, plus its confirm/unsubscribe links.
+  { name: "waitlist", methods: ["GET", "POST"], pattern: /^\/api\/waitlist(?:\/(?:confirm|unsubscribe))?$/, limit: 10, windowMs: 10 * MINUTE },
   { name: "oauth-check", methods: ["POST"], pattern: /^\/api\/auth\/oauth-check$/, limit: 30, windowMs: 10 * MINUTE },
   { name: "example-zip", methods: ["GET"], pattern: /^\/api\/example-zip$/, limit: 10, windowMs: 10 * MINUTE },
   { name: "review-decision", methods: ["POST"], pattern: /^\/api\/reviews\/[^/]+\/decision$/, limit: 30, windowMs: 10 * MINUTE },

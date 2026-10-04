@@ -28,7 +28,7 @@ Conséquence : aujourd’hui, seul un export qui inclut le 6,9″ (offres Indie 
 
 ## Architecture
 
-- `asc_connections` (migration `20261004150000_asc_connector.sql`) : une ligne par espace, avec RLS activé, aucune policy et aucun droit pour `anon`/`authenticated`, donc accessible au service role seulement. La clé .p8 est chiffrée par l’application en AES-256-GCM avec `ASC_ENCRYPTION_KEY` (IV aléatoire de 12 octets, tag de 16 octets, `workspace_id` lié en AAD). Elle n’est jamais renvoyée au client.
+- `asc_connections` (migration `20261004190000_asc_connector.sql`) : une ligne par espace, avec RLS activé, aucune policy et aucun droit pour `anon`/`authenticated`, donc accessible au service role seulement. La clé .p8 est chiffrée par l’application en AES-256-GCM avec `ASC_ENCRYPTION_KEY` (IV aléatoire de 12 octets, tag de 16 octets, `workspace_id` lié en AAD). Elle n’est jamais renvoyée au client.
 - `src/lib/asc/jwt.ts` : signature ES256 avec `node:crypto` (`dsaEncoding: ieee-p1363`, aucune dépendance ajoutée). Le jeton dure 15 min et se renouvelle 2 min avant expiration.
 - `src/lib/asc/client.ts` : client typé (listApps, listEditableVersions, listLocalizations, ensureScreenshotSet, deleteExistingScreenshots, uploadScreenshot, waitForScreenshots, reorderScreenshots). Les erreurs Apple sont converties en codes stables (`ASC_UNAUTHORIZED`, `ASC_CONFLICT` pour 409, `ASC_INVALID` pour 422, etc.). Le JWT n’est jamais envoyé ailleurs qu’à `api.appstoreconnect.apple.com`, ni aux URL d’envoi, ni aux liens de pagination.
 - File de rendu : nouveau type `asc_upload` dans `render_jobs`, sans réservation de quota. Le worker télécharge le ZIP de l’export (`export_sets.storage_path`, 24 h), sélectionne les fichiers du set, envoie toutes les réservations puis interroge Apple en parallèle (budget de 10 min). La progression par fichier passe par `report_render_progress` (protégé par le bail) et la colonne `render_jobs.progress`, que `GET /api/render-jobs/:id` renvoie.
@@ -53,7 +53,7 @@ La suppression de l’espace ou du compte qui a fourni la clé efface `asc_conne
 
 ## Mise en production
 
-1. Appliquer la migration `20261004150000_asc_connector.sql`.
+1. Appliquer la migration `20261004190000_asc_connector.sql`.
 2. Générer la clé maître avec `openssl rand -base64 32` et la placer dans `ASC_ENCRYPTION_KEY`. Si elle change, toutes les connexions deviennent illisibles (`ASC_KEY_UNREADABLE`) et doivent être recréées.
 3. Vérifier que `RENDER_QUEUE_ENABLED=true` et que le worker tourne.
 4. Définir `ASC_CONNECTOR_ENABLED=true`, puis lancer `node scripts/check-deployment-env.mjs`.

@@ -73,7 +73,7 @@ const fr: Dict = {
   pricing_val_no: "—",
   pricing_val_quota_free: "0 ZIP HD",
   pricing_val_quota_trial: "2 ZIP HD",
-  pricing_val_unlimited: "100 / jour",
+  pricing_val_daily_quota: "100 / jour",
   pricing_val_preview: "Preview + exemple",
   pricing_val_card_no: "Non",
   pricing_val_card_stripe: "Stripe",
@@ -311,6 +311,24 @@ const fr: Dict = {
   asc_error_key: "Ce fichier n’est pas une clé .p8 App Store Connect valide.",
   asc_error_rejected: "Apple a refusé ces identifiants. Vérifiez l’Issuer ID, le Key ID, le fichier .p8 et le rôle de la clé.",
   asc_error_generic: "Connexion impossible pour le moment. Réessayez plus tard.",
+  // --- stream A: launch ---
+  pricing_pass_title: "Pass 30 jours",
+  pricing_pass_price: "{price} une fois",
+  pricing_pass_body: "Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.",
+  pricing_pass_cta: "Pass 30 jours — {price}",
+  pricing_local_projects: "Les projets sont enregistrés sur cet appareil et ne sont pas encore synchronisés entre membres.",
+  waitlist_email_label: "Adresse e-mail",
+  waitlist_placeholder: "vous@exemple.fr",
+  waitlist_submit: "Prévenez-moi",
+  waitlist_sending: "Envoi…",
+  waitlist_hint_apple_duo_open: "Recevez un e-mail quand Apple ouvre le dépôt des captures iPhone Duo.",
+  waitlist_hint_launch: "Recevez un e-mail au lancement de DuoShot.",
+  waitlist_privacy: "Un seul e-mail, après confirmation. Désinscription en un clic.",
+  waitlist_success: "Vérifiez votre boîte mail et confirmez votre adresse pour recevoir l’alerte.",
+  waitlist_error_email: "Saisissez une adresse e-mail valide.",
+  waitlist_error_rate: "Trop de tentatives. Réessayez dans quelques minutes.",
+  waitlist_error: "L’inscription est momentanément indisponible. Réessayez plus tard.",
+  // --- end stream A ---
 };
 
 const en: Dict = {
@@ -382,7 +400,7 @@ const en: Dict = {
   pricing_val_no: "—",
   pricing_val_quota_free: "0 HD ZIPs",
   pricing_val_quota_trial: "2 HD ZIPs",
-  pricing_val_unlimited: "100 / day",
+  pricing_val_daily_quota: "100 / day",
   pricing_val_preview: "Preview + example",
   pricing_val_card_no: "No",
   pricing_val_card_stripe: "Stripe",
@@ -621,6 +639,24 @@ const en: Dict = {
   asc_error_key: "This file is not a valid App Store Connect .p8 key.",
   asc_error_rejected: "Apple rejected these credentials. Check the Issuer ID, Key ID, .p8 file and the key’s role.",
   asc_error_generic: "Could not connect right now. Try again later.",
+  // --- stream A: launch ---
+  pricing_pass_title: "30-day pass",
+  pricing_pass_price: "{price} one-time",
+  pricing_pass_body: "Indie access for 30 days, for a single launch: no subscription, no renewal.",
+  pricing_pass_cta: "30-day pass — {price}",
+  pricing_local_projects: "Projects are saved on this device and are not yet synced between members.",
+  waitlist_email_label: "Email address",
+  waitlist_placeholder: "you@example.com",
+  waitlist_submit: "Notify me",
+  waitlist_sending: "Sending…",
+  waitlist_hint_apple_duo_open: "Get an email when Apple opens iPhone Duo screenshot uploads.",
+  waitlist_hint_launch: "Get an email when DuoShot launches.",
+  waitlist_privacy: "One email, after confirmation. One-click removal.",
+  waitlist_success: "Check your inbox and confirm your address to get the notice.",
+  waitlist_error_email: "Enter a valid email address.",
+  waitlist_error_rate: "Too many attempts. Try again in a few minutes.",
+  waitlist_error: "Sign-up is temporarily unavailable. Please try again later.",
+  // --- end stream A ---
 };
 
 export function t(locale: Locale, key: keyof typeof fr): string {
@@ -680,6 +716,10 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
       q: "Conservez-vous mes fichiers ?",
       a: "Oui, le temps du traitement : sources et ZIP expirent après 24 h, les médias de revue après 7 jours ou révocation. La purge serveur est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les brouillons locaux restent sur votre appareil.",
     },
+    {
+      q: "Les projets Studio sont-ils partagés entre membres ?",
+      a: "Pas encore. Les projets sont enregistrés sur cet appareil et ne sont pas encore synchronisés entre membres. Les membres Studio partagent l’abonnement, le quota quotidien et les liens de validation client ; pour transmettre un set, exportez le ZIP ou envoyez un lien de validation.",
+    },
   ],
   en: [
     {
@@ -717,6 +757,10 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     {
       q: "Do you keep our files?",
       a: "Only for processing: sources and ZIPs expire after 24 hours; review media after 7 days or revocation. Server cleanup is scheduled every 15 minutes, with retries on failure. Local drafts remain on your device.",
+    },
+    {
+      q: "Are Studio projects shared between members?",
+      a: "Not yet. Projects are saved on this device and are not yet synced between members. Studio members share the subscription, the daily quota and client review links; to hand over a set, export the ZIP or send a review link.",
     },
   ],
 };

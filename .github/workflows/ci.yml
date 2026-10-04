@@ -24,6 +24,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Runtime dependencies only: dev tooling never ships in the image.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm test
@@ -53,6 +55,9 @@ jobs:
           browser: chrome
         env:
           NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          # /pricing renders checkout availability on the server; with no Stripe here,
+          # this enables the buttons only (specs stub /api/stripe/checkout).
+          E2E_CHECKOUT_DISPLAY: "true"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

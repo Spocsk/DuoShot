@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { removeStorageObjects } from "@/lib/storage-cleanup";
 
@@ -6,8 +7,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!verifyBearer(request, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
   const admin = createAdminSupabase();

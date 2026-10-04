@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
-import { CHECKOUT_CATALOG, type CheckoutKind } from "@/lib/plans";
-import { checkoutAvailable } from "@/lib/billing-availability";
+import { CHECKOUT_CATALOG, ONE_TIME_CATALOG, isOneTimeKind, pass30PriceId, type PurchaseKind } from "@/lib/plans";
+import { checkoutAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -14,8 +14,13 @@ function safeNextPath(value: unknown): string {
   return value === "/en/tool" ? "/en/tool" : "/tool";
 }
 
-function priceIdFor(kind: CheckoutKind): string | undefined {
+function isPurchaseKind(value: unknown): value is PurchaseKind {
+  return typeof value === "string" && (Object.hasOwn(CHECKOUT_CATALOG, value) || isOneTimeKind(value));
+}
+
+function priceIdFor(kind: PurchaseKind): string | undefined {
   switch (kind) {
+    case "pass30": return pass30PriceId();
     case "indie_monthly": return process.env.STRIPE_INDIE_PRICE_ID;
     case "studio_monthly": return process.env.STRIPE_STUDIO_PRICE_ID;
     case "indie_yearly": return process.env.STRIPE_INDIE_YEARLY_PRICE_ID;
@@ -29,11 +34,12 @@ async function checkout(request: Request) {
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
 
   const body = (await request.json().catch(() => ({}))) as { kind?: string; next?: string };
-  if (!body.kind || !Object.hasOwn(CHECKOUT_CATALOG, body.kind)) {
+  if (!isPurchaseKind(body.kind)) {
     return NextResponse.json({ error: "INVALID_PLAN" }, { status: 400 });
   }
-  if (!checkoutAvailable(user.id)) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
-  const kind = body.kind as CheckoutKind;
+  const kind = body.kind;
+  const available = isOneTimeKind(kind) ? passCheckoutAvailable(user.id) : checkoutAvailable(user.id);
+  if (!available) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
   const priceId = priceIdFor(kind);
   const stripe = getStripe();
   const admin = createAdminSupabase();
@@ -86,11 +92,18 @@ async function checkout(request: Request) {
   const origin = getSiteUrl();
 
   const nextPath = safeNextPath(attempt.return_path);
-  const selectedKind = attempt.kind as CheckoutKind;
+  // A reused attempt can carry another offer than the button clicked; it decides the session.
+  const selectedKind = attempt.kind as unknown;
+  if (!isPurchaseKind(selectedKind)) return NextResponse.json({ error: "CHECKOUT_UNAVAILABLE" }, { status: 503 });
+  const oneTime = isOneTimeKind(selectedKind);
+  if (oneTime && !passCheckoutAvailable(user.id)) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
   const selectedPrice = priceIdFor(selectedKind);
   if (!selectedPrice) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
+  const metadata = { kind: selectedKind, workspace_id: membership.workspace_id };
   const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
+    ...(oneTime
+      ? { mode: ONE_TIME_CATALOG[selectedKind].mode, payment_intent_data: { metadata } }
+      : { mode: "subscription" as const, subscription_data: { metadata } }),
     integration_identifier: `duoshot-checkout-${createHash("sha256").update(attempt.attempt_id).digest("hex").slice(0, 8).replace(/[0-9a-f]/g, (char) => String.fromCharCode(97 + parseInt(char, 16)))}`,
     expires_at: Math.floor(Date.parse(attempt.expires_at) / 1000),
     customer: customerId,
@@ -102,8 +115,7 @@ async function checkout(request: Request) {
     ...(process.env.STRIPE_TAX_ENABLED === "true" ? { automatic_tax: { enabled: true } } : {}),
     success_url: `${origin}${nextPath}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${nextPath}?checkout=cancel`,
-    metadata: { kind: selectedKind, workspace_id: membership.workspace_id },
-    subscription_data: { metadata: { kind: selectedKind, workspace_id: membership.workspace_id } },
+    metadata,
   }, { idempotencyKey: `duoshot-checkout-${attempt.attempt_id}` });
   const { error: saveError } = await admin.from("checkout_attempts").update({ session_id: session.id }).eq("workspace_id", membership.workspace_id).eq("attempt_id", attempt.attempt_id);
   if (saveError) return NextResponse.json({ error: "CHECKOUT_UNAVAILABLE" }, { status: 503 });

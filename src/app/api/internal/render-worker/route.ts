@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { renderWorkerSecret, verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { executeExport } from "@/lib/render/export";
 import { executeReview } from "@/lib/render/review";
@@ -13,8 +14,7 @@ function leaseLost(job: RenderJob) {
 }
 export const maxDuration = 900;
 export async function POST(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  if (!verifyBearer(request, renderWorkerSecret())) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   if (process.env.RENDER_QUEUE_ENABLED !== "true") return NextResponse.json({ error: "QUEUE_DISABLED" }, { status: 503 });
   const admin = createAdminSupabase();
   if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });

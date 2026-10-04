@@ -4,12 +4,18 @@ const missing = required.filter((name) => !process.env[name]);
 if (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missing.push('SUPABASE_PUBLIC_KEY');
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY) missing.push('SUPABASE_ADMIN_KEY');
 if (!process.env.CRON_SECRET || process.env.CRON_SECRET.length < 32) missing.push('CRON_SECRET (32+ characters)');
+if (process.env.RENDER_QUEUE_ENABLED === 'true') {
+  if (!process.env.RENDER_WORKER_SECRET || process.env.RENDER_WORKER_SECRET.length < 32) missing.push('RENDER_WORKER_SECRET (32+ characters)');
+  // One shared value would let a leaked cron secret drive renders again.
+  else if (process.env.RENDER_WORKER_SECRET === process.env.CRON_SECRET) missing.push('RENDER_WORKER_SECRET (must differ from CRON_SECRET)');
+}
 for (const name of required) {
   if (!process.env[name]) continue;
   try { if (new URL(process.env[name]).protocol !== 'https:') missing.push(`${name} (HTTPS required)`); }
   catch { missing.push(`${name} (invalid URL)`); }
 }
 if (process.env.APP_ENV !== 'production') missing.push('APP_ENV (production required on the VPS)');
+if (process.env.E2E_CHECKOUT_DISPLAY) missing.push('E2E_CHECKOUT_DISPLAY (CI only, must be unset)');
 if (process.env.STRIPE_CHECKOUT_ENABLED === 'true') {
   for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_INDIE_PRICE_ID', 'STRIPE_STUDIO_PRICE_ID', 'STRIPE_INDIE_YEARLY_PRICE_ID', 'STRIPE_STUDIO_YEARLY_PRICE_ID']) {
     if (!process.env[name]) missing.push(name);
@@ -27,6 +33,8 @@ console.log(JSON.stringify({
   renderQueueEnabled: process.env.RENDER_QUEUE_ENABLED === 'true',
   checkoutEnabled: process.env.STRIPE_CHECKOUT_ENABLED === 'true',
   ascConnectorEnabled: process.env.ASC_CONNECTOR_ENABLED === 'true',
+  // Optional: the one-time pass is hidden unless its Stripe price is set.
+  pass30Configured: Boolean(process.env.STRIPE_PRICE_PASS30),
   mixpanelErasureConfigured: Boolean(process.env.MIXPANEL_PROJECT_TOKEN && process.env.MIXPANEL_GDPR_OAUTH_TOKEN),
   invitationsConfigured: Boolean(process.env.RESEND_API_KEY),
 }, null, 2));
