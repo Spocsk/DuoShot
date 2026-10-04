@@ -4,6 +4,10 @@ import { pageLocale, type LocaleParams } from "../params";
 
 // English slug of /pourquoi-pas-ia (same page, localized URL).
 
+export function generateStaticParams() {
+  return [{ locale: "en" }];
+}
+
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await pageLocale(params, "en");
   return pageMetadata({

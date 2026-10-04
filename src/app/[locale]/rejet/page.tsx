@@ -4,6 +4,10 @@ import { pageLocale, type LocaleParams } from "../params";
 
 // French slug of /en/rejection (same page, localized URL).
 
+export function generateStaticParams() {
+  return [{ locale: "fr" }];
+}
+
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await pageLocale(params, "fr");
   return pageMetadata({

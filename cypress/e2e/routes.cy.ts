@@ -112,4 +112,17 @@ describe("public routes", () => {
       cy.request({ url, headers: CRAWLER, failOnStatusCode: false, followRedirect: false }).its("status").should("eq", 404);
     });
   });
+
+  it("navigates client-side between unprefixed French pages", () => {
+    cy.visitFr("/");
+    cy.window().then((win) => {
+      (win as Window & { routesMarker?: boolean }).routesMarker = true;
+    });
+    cy.get("header [data-testid='nav-tool']").click();
+    cy.location("pathname").should("eq", "/tool");
+    cy.get('[data-testid="drop-outer"]').should("be.visible");
+    cy.get("html").should("have.attr", "lang", "fr");
+    // Still the same document: the rewrite did not force a full reload.
+    cy.window().its("routesMarker").should("eq", true);
+  });
 });

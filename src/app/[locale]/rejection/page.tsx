@@ -4,6 +4,10 @@ import { pageLocale, type LocaleParams } from "../params";
 
 // English slug of /rejet (same page, localized URL).
 
+export function generateStaticParams() {
+  return [{ locale: "en" }];
+}
+
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await pageLocale(params, "en");
   return pageMetadata({
