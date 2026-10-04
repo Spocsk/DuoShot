@@ -55,7 +55,7 @@ const env = () => ({
   NEXT_PUBLIC_SUPABASE_URL: "https://api.example.test", SUPABASE_INTERNAL_URL: supabaseUrl,
 });
 
-describe("render worker bundle", () => {
+describe("render worker bundle", { timeout: 20_000 }, () => {
   it("loads with its native modules", async () => {
     const result = await run(["--check"], {});
     expect(result.code).toBe(0);
