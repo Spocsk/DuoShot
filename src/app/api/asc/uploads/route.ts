@@ -15,6 +15,8 @@ export async function POST(request: Request) {
   const gate = await ascContext();
   if (!gate.ok) return gate.response;
   const { admin, workspaceId, userId } = gate.context;
+  // Without the worker the job would only wait and expire.
+  if (process.env.RENDER_QUEUE_ENABLED !== "true") return json({ error: "QUEUE_DISABLED" }, 503);
   const key = request.headers.get("idempotency-key");
   if (!key || !KEY.test(key)) return json({ error: "IDEMPOTENCY_KEY_REQUIRED" }, 400);
   const text = await request.text();

@@ -35,7 +35,7 @@ const post = (body: unknown = BODY, key: string | null = KEY) => POST(new Reques
   method: "POST", body: JSON.stringify(body), headers: key ? { "Idempotency-Key": key } : {},
 }));
 
-beforeEach(() => vi.stubEnv("ASC_CONNECTOR_ENABLED", "true"));
+beforeEach(() => { vi.stubEnv("ASC_CONNECTOR_ENABLED", "true"); vi.stubEnv("RENDER_QUEUE_ENABLED", "true"); });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 describe("POST /api/asc/uploads", () => {
@@ -51,6 +51,9 @@ describe("POST /api/asc/uploads", () => {
   it("needs an idempotency key, a connection and a live export", async () => {
     session();
     admin();
+    vi.stubEnv("RENDER_QUEUE_ENABLED", "false");
+    expect(await readJson(await post())).toEqual({ status: 503, body: { error: "QUEUE_DISABLED" } });
+    vi.stubEnv("RENDER_QUEUE_ENABLED", "true");
     expect((await post(BODY, null)).status).toBe(400);
     admin({ connected: false });
     expect(await readJson(await post())).toEqual({ status: 409, body: { error: "ASC_NOT_CONNECTED" } });
