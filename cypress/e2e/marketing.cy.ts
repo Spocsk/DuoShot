@@ -57,16 +57,23 @@ describe("marketing", () => {
       cy.viewport(1397, 920);
       if (locale === "fr") cy.visitFr(path);
       else cy.visitEn(path);
+      const layer = (name: string) => cy.get(`.studio-sequence-stage .studio-sequence-${name}`);
       cy.get(".studio-sequence-step").eq(0).scrollIntoView();
-      cy.get('.studio-sequence-stage > [data-sequence-scene="import"]').should("be.visible");
+      layer("import").should("be.visible");
       cy.get(".studio-sequence-step").eq(1).scrollIntoView();
-      cy.get('.studio-sequence-stage > [data-sequence-scene="inspect"]').should("be.visible").should("contain", "83 / 100");
+      layer("analysis").should("be.visible").should("contain", "83 / 100");
+      layer("import").should("not.be.visible");
       cy.get(".studio-sequence-step").eq(2).scrollIntoView();
-      cy.get('.studio-sequence-stage > [data-sequence-scene="report"]').should("be.visible");
+      layer("report").should("be.visible");
+      layer("analysis").should("not.be.visible");
       cy.get(".studio-sequence-step").eq(3).scrollIntoView();
-      cy.get('.studio-sequence-stage > [data-sequence-scene="prevent"]').should("be.visible");
+      layer("prevent").should("be.visible");
+      layer("report").should("not.be.visible");
+      // Scrolling back up replays the transitions in reverse.
       cy.get(".studio-sequence-step").eq(1).scrollIntoView();
-      cy.get('.studio-sequence-stage > [data-sequence-scene="inspect"]').should("be.visible");
+      layer("analysis").should("be.visible");
+      layer("report").should("not.be.visible");
+      layer("prevent").should("not.be.visible");
     });
   }
 
@@ -168,8 +175,8 @@ describe("camera and review preparation", () => {
     });
     cy.get(".studio-sequence-step").should("have.length", 4).eq(2).should("contain", "Sachez ce qui reste à vérifier.").and("contain", "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations.");
     cy.get(".studio-sequence-step").eq(3).scrollIntoView({ offset: { top: -120, left: 0 } });
-    cy.get('.studio-sequence-stage > [data-sequence-scene="prevent"] .studio-prevent-outcome').should("be.visible");
-    cy.get('.studio-sequence-stage > [data-sequence-scene="prevent"] .studio-prevent-marker').should("have.length", 4).each(($marker) => cy.wrap($marker).should("have.css", "visibility", "visible").and("have.css", "opacity", "1"));
+    cy.get(".studio-sequence-stage .studio-prevent-outcome").should("be.visible");
+    cy.get(".studio-sequence-stage .studio-prevent-marker").should("have.length", 4).each(($marker) => cy.wrap($marker).should("have.css", "visibility", "visible").and("have.css", "opacity", "1"));
     cy.contains("button", "DuoShot peut-il éviter des retards").click();
     cy.contains("DuoShot ne garantit ni l’approbation ni un délai de validation").should("be.visible");
   });

@@ -2,9 +2,6 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 export function LandingMotion({ children }: { children: ReactNode }) {
   const root = useRef<HTMLDivElement>(null);
@@ -150,24 +147,39 @@ export function LandingMotion({ children }: { children: ReactNode }) {
 
         master.set({}, {}, steps.length);
 
-        // Each step's text sweeps through a short window; the time is the sum of the window progresses,
-        // so the scene holds still while a step is read and survives uneven step heights.
-        let windows: ScrollTrigger[] = [];
-        const progress = () => windows.reduce((sum, trigger) => sum + trigger.progress, 0);
-        const seek = () => gsap.to(master, { time: progress(), duration: 0.6, ease: "power2.out", overwrite: true });
-        windows = steps.map((step) => ScrollTrigger.create({ trigger: step, start: "top 78%", end: "top 38%", onUpdate: seek }));
-        master.time(progress());
+        // Each step's text sweeps through a short window (top of the step from 78% to 38% of the
+        // viewport); the time is the sum of the window progresses, so the scene holds while a step
+        // is read and survives uneven step heights. Read from live rects: a ScrollTrigger refresh
+        // would reset the scroll position and cut short smooth scrolls started during load.
+        const progress = () => {
+          const height = window.innerHeight;
+          return steps.reduce((sum, step) => sum + gsap.utils.clamp(0, 1, (height * 0.78 - step.getBoundingClientRect().top) / (height * 0.4)), 0);
+        };
+        let frame = 0;
+        const seek = () => {
+          frame = 0;
+          gsap.to(master, { time: progress(), duration: 0.6, ease: "power2.out", overwrite: true });
+        };
+        const scheduleSeek = () => {
+          if (!frame) frame = requestAnimationFrame(seek);
+        };
         // Layout changed: replay from the start so measured flights and recorded start values are fresh.
+        let disposed = false;
         const remeasure = () => {
+          if (disposed) return;
           gsap.killTweensOf(master);
           master.time(0).invalidate().time(progress());
         };
-        ScrollTrigger.addEventListener("refresh", remeasure);
-        // Headings use clamp() sizes, so step offsets move once the web fonts land.
-        document.fonts?.ready.then(() => ScrollTrigger.refresh());
+        master.time(progress());
+        window.addEventListener("scroll", scheduleSeek, { passive: true });
+        window.addEventListener("resize", remeasure);
+        document.fonts?.ready.then(remeasure);
 
         return () => {
-          ScrollTrigger.removeEventListener("refresh", remeasure);
+          disposed = true;
+          window.removeEventListener("scroll", scheduleSeek);
+          window.removeEventListener("resize", remeasure);
+          cancelAnimationFrame(frame);
           score.textContent = scoreText;
           sequence.classList.remove("is-motion");
         };
