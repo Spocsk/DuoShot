@@ -37,3 +37,14 @@ describe("email delivery logging", () => {
     vi.doUnmock("resend");
   });
 });
+
+describe("textToHtml", () => {
+  it("escapes text, keeps paragraphs and turns https links into anchors", async () => {
+    const { textToHtml } = await import("./email");
+    const html = textToHtml("Bonjour <b>vous</b>\n\nConfirmez : https://duoshot.site/api/waitlist/confirm?token=a&lang=fr", "fr");
+    expect(html).toContain('lang="fr"');
+    expect(html).toContain("Bonjour &lt;b&gt;vous&lt;/b&gt;");
+    expect(html).toContain('<a href="https://duoshot.site/api/waitlist/confirm?token=a&amp;lang=fr"');
+    expect(html.match(/<p /g)).toHaveLength(3);
+  });
+});
