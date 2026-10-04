@@ -51,14 +51,14 @@ describe("DELETE /api/workspace/members/[id]", () => {
 
   it("only deletes non-owner members of the owner's workspace", async () => {
     session("owner");
-    const queries = admin({ id: "m-2", user_id: "user-2" }, null);
+    const queries = admin({ id: "m-2", user_id: "user-2", active: true }, null);
     expect(await readJson(await call())).toEqual({ status: 200, body: { id: "m-2", revoked: true } });
     expect(queries[0]).toEqual([
       ["delete"],
       ["eq", "id", "m-2"],
       ["eq", "workspace_id", "ws-1"],
       ["neq", "role", "owner"],
-      ["select", "id, user_id"],
+      ["select", "id, user_id, active"],
     ]);
   });
 
@@ -71,7 +71,7 @@ describe("DELETE /api/workspace/members/[id]", () => {
 
   it("reactivates the removed user's oldest remaining workspace", async () => {
     session("owner");
-    const queries = admin({ id: "m-2", user_id: "user-2" }, { id: "m-personal" });
+    const queries = admin({ id: "m-2", user_id: "user-2", active: true }, { id: "m-personal" });
     expect((await call()).status).toBe(200);
     expect(queries[1]).toEqual([
       ["select", "id"],
@@ -84,7 +84,7 @@ describe("DELETE /api/workspace/members/[id]", () => {
 
   it("skips reactivation when the user has no other workspace", async () => {
     session("owner");
-    const queries = admin({ id: "m-2", user_id: "user-2" }, null);
+    const queries = admin({ id: "m-2", user_id: "user-2", active: true }, null);
     expect((await call()).status).toBe(200);
     expect(queries).toHaveLength(2);
   });
@@ -95,5 +95,30 @@ describe("DELETE /api/workspace/members/[id]", () => {
     expect((await call()).status).toBe(503);
   });
 
-  it.todo("should only reactivate a fallback when the removed membership was active, and surface the update error (route.ts:35-42)");
+  it("leaves the user's active workspace alone when the removed membership was inactive", async () => {
+    session("owner");
+    const queries = admin({ id: "m-2", user_id: "user-2", active: false }, { id: "m-personal" });
+    expect(await readJson(await call())).toEqual({ status: 200, body: { id: "m-2", revoked: true } });
+    expect(queries).toHaveLength(1);
+  });
+
+  it("still confirms the removal when the fallback cannot be activated", async () => {
+    session("owner");
+    const queries: unknown[][][] = [];
+    const results = [
+      { data: { id: "m-2", user_id: "user-2", active: true }, error: null },
+      { data: { id: "m-personal" }, error: null },
+      { data: null, error: { code: "23505" } },
+    ];
+    vi.mocked(createAdminSupabase).mockReturnValue({ from: () => {
+      const calls: unknown[][] = [];
+      queries.push(calls);
+      return chain(results[queries.length - 1], calls);
+    } } as never);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await call()).status).toBe(200);
+    expect(queries).toHaveLength(3);
+    expect(consoleError).toHaveBeenCalledWith("member_fallback_activation_failed", { membershipId: "m-personal" });
+    consoleError.mockRestore();
+  });
 });

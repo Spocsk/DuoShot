@@ -52,11 +52,12 @@ describe("DELETE /api/workspace/invitations/[id]", () => {
       ["eq", "id", "inv-1"],
       ["eq", "workspace_id", "ws-1"],
       ["is", "accepted_at", null],
+      ["is", "revoked_at", null],
       ["select", "id"],
     ]);
   });
 
-  it("returns 404 for unknown, foreign or accepted invitations", async () => {
+  it("returns 404 for unknown, foreign, accepted or already revoked invitations", async () => {
     session("owner");
     admin(null);
     expect(await readJson(await call())).toEqual({ status: 404, body: { error: "NOT_FOUND" } });
@@ -67,6 +68,4 @@ describe("DELETE /api/workspace/invitations/[id]", () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null as never);
     expect((await call()).status).toBe(503);
   });
-
-  it.todo("should not re-revoke: without a revoked_at filter a second DELETE returns 200 and overwrites revoked_at (route.ts:27-34)");
 });

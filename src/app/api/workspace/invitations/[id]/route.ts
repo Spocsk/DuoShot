@@ -30,6 +30,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     .eq("id", id)
     .eq("workspace_id", membership.workspace_id)
     .is("accepted_at", null)
+    .is("revoked_at", null)
     .select("id")
     .maybeSingle();
   if (!data) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
