@@ -21,7 +21,6 @@ import {
 } from "@/lib/specs";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { publicSupabaseUrl } from "@/lib/supabase/server-env";
-import { trackServerEvent } from "@/lib/analytics-server";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { completeRender, type RenderJob } from "./jobs";
@@ -190,12 +189,6 @@ export async function executeExport(request: Request, supabase: SupabaseClient, 
       const { error } = await admin.rpc("finish_export", { p_reservation: reservation, p_export: exported });
       if (error) throw new Error("EXPORT_FAILED");
     }
-    await trackServerEvent(supabase, user.id, "export_succeeded", zipPath, {
-      plan: entitlements.plan,
-      image_count: count,
-      include_69: include69,
-      format: options.format,
-    });
 
     return NextResponse.json(result);
   } catch (error) {

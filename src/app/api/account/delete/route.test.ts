@@ -34,6 +34,28 @@ describe("POST /api/account/delete", () => {
     expect(order).toEqual(["cancel", "storage", "erase"]);
   });
 
+  it("queues erasure of historical Mixpanel data even though no Mixpanel token is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_MIXPANEL_TOKEN", "");
+    vi.stubEnv("MIXPANEL_PROJECT_TOKEN", "");
+    const order: string[] = [];
+    vi.mocked(removeStorageObjects).mockResolvedValue({ removed: 0, complete: true });
+    vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({
+      from: (table) => {
+        const builder = createQueryBuilder({ data: null, error: null });
+        return { ...builder, upsert: (row: unknown) => { order.push(`${table}:${JSON.stringify(row)}`); return builder; } } as never;
+      },
+      rpc: async () => { order.push("erase"); return { data: null, error: null }; },
+    }) as never);
+    vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({
+      user: { id: "user-1" },
+      from: () => createQueryBuilder({ data: [], error: null }),
+    }) as never);
+    const { status } = await readJson(await POST());
+    vi.unstubAllEnvs();
+    expect(status).toBe(200);
+    expect(order).toEqual(['analytics_erasure_jobs:{"distinct_id":"user-1","status":"pending"}', "erase"]);
+  });
+
   it("keeps the account if Stripe cancellation fails", async () => {
     const rpc = vi.fn();
     vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({
