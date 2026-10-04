@@ -21,10 +21,10 @@ import {
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { publicSupabaseUrl } from "@/lib/supabase/server-env";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { completeRender, type RenderJob } from "./jobs";
 
-export async function executeExport(request: Request, supabase: SupabaseClient, user: { id: string }, job?: RenderJob) {
+export async function executeExport(request: Request, supabase: DbClient, user: { id: string }, job?: RenderJob) {
   let body: RenderBody;
   try { body = parseRenderBody(await readRenderBody(request), user.id); } catch (error) {
     const code = error instanceof SyntaxError ? "INVALID_REQUEST" : error instanceof Error ? error.message : "INVALID_REQUEST";

@@ -16,7 +16,7 @@ describe("removeStorageObjects", () => {
   it("scans globally by default and stops on an empty batch", async () => {
     const { client, rpc, remove } = admin([[]]);
     expect(await removeStorageObjects(client)).toEqual({ removed: 0, complete: true });
-    expect(rpc).toHaveBeenCalledWith("storage_cleanup_candidates", { p_user_id: null });
+    expect(rpc).toHaveBeenCalledWith("storage_cleanup_candidates", {});
     expect(remove).not.toHaveBeenCalled();
   });
 

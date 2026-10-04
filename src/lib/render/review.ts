@@ -12,10 +12,10 @@ import { reviewPath } from "@/lib/site";
 import { DEFAULT_RENDER_OPTIONS, type Locale, type RenderOptions } from "@/lib/specs";
 import { reviewExpiresAt } from "@/lib/reviews";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { completeRender, type RenderJob } from "./jobs";
 
-export async function executeReview(request: Request, supabase: SupabaseClient, user: { id: string }, job?: RenderJob) {
+export async function executeReview(request: Request, supabase: DbClient, user: { id: string }, job?: RenderJob) {
   const context = await readWorkspaceBilling(supabase, user.id);
   if (!context.ok) return Response.json({ error: context.error }, { status: context.status });
   if (job && context.membership.workspace_id !== job.workspace_id) return Response.json({ error: "NO_WORKSPACE" }, { status: 409 });

@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import type { Database, DbClient } from "./types";
 import { getSupabaseServerUrl } from "./server-env";
 
 export function createAdminSupabase() {
@@ -11,12 +12,12 @@ export function createAdminSupabase() {
     }
     return null;
   }
-  return createClient(getSupabaseServerUrl(), key, {
+  return createClient<Database>(getSupabaseServerUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
 /** Admin when configured, otherwise the authenticated user client (RLS). */
-export function createReviewWriter(userClient: SupabaseClient) {
+export function createReviewWriter(userClient: DbClient) {
   return createAdminSupabase() ?? userClient;
 }

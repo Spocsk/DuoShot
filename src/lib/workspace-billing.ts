@@ -1,9 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { readActiveMembership } from "./active-membership";
 import { resolveEntitlements } from "./billing";
 
 /** Never turn a failed database lookup into a fresh free trial. */
-export async function readWorkspaceBilling(supabase: SupabaseClient, userId: string) {
+export async function readWorkspaceBilling(supabase: DbClient, userId: string) {
   const { failed, membership } = await readActiveMembership(supabase, userId);
   if (failed) return { ok: false as const, error: "BILLING_UNAVAILABLE", status: 503 };
   if (!membership) return { ok: false as const, error: "NO_WORKSPACE", status: 409 };
