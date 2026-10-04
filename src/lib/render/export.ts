@@ -1,5 +1,4 @@
-import { readRenderBody } from "./read-body";
-import { renderSlots } from "@/lib/pipeline/render-slots";
+import { admitRenderBody, admitRenderSlot } from "./admission";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { mapLimit } from "@/lib/map-limit";
 import { FREE_EXPORTS, isProPlan } from "@/lib/plans";
@@ -9,7 +8,7 @@ import { scorePair, worstCloneLabel, type CloneResult } from "@/lib/pipeline/clo
 import { composeZipImages } from "@/lib/pipeline/compose";
 import { buildZip } from "@/lib/pipeline/zip";
 import { loadSources } from "@/lib/pipeline/sources";
-import { parseRenderBody, renderErrorStatus, type RenderBody } from "@/lib/pipeline/request";
+import { renderErrorStatus } from "@/lib/pipeline/request";
 import { MAX_ZIP_BYTES } from "@/lib/pipeline/limits";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import {
@@ -25,11 +24,9 @@ import type { DbClient } from "@/lib/supabase/types";
 import { completeRender, type RenderJob } from "./jobs";
 
 export async function executeExport(request: Request, supabase: DbClient, user: { id: string }, job?: RenderJob) {
-  let body: RenderBody;
-  try { body = parseRenderBody(await readRenderBody(request), user.id); } catch (error) {
-    const code = error instanceof SyntaxError ? "INVALID_REQUEST" : error instanceof Error ? error.message : "INVALID_REQUEST";
-    return Response.json({ error: code }, { status: renderErrorStatus(code) });
-  }
+  const admitted = await admitRenderBody(request, user.id, "INVALID_REQUEST");
+  if (!admitted.ok) return admitted.response;
+  const body = admitted.value;
   const sameSet = Boolean(body.sameSet);
   const outerPaths = body.outerPaths ?? body.paths ?? [];
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? body.paths ?? []);
@@ -81,11 +78,9 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
     );
   }
 
-  let release: () => void;
-  try { release = await renderSlots.acquire(request.signal); } catch (error) {
-    const code = error instanceof Error ? error.message : "RENDER_BUSY";
-    return Response.json({ error: code }, { status: renderErrorStatus(code), headers: { "Retry-After": "5" } });
-  }
+  const slot = await admitRenderSlot(request.signal);
+  if (!slot.ok) return slot.response;
+  const release = slot.value;
 
   try {
     if (!reservation) {
@@ -96,7 +91,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
         const code = ["TRIAL_EXHAUSTED", "DAILY_LIMIT"].find((value) => reserveError?.message?.includes(value));
         return Response.json({ error: code ?? "EXPORT_UNAVAILABLE" }, { status: code ? 402 : 503 });
       }
-      reservation = reserved as string;
+      reservation = reserved;
     }
     const sources = await loadSources(supabase, user.id, [...outerPaths, ...innerPaths]);
     const outerBuffers = outerPaths.map((path) => sources.get(path)!);

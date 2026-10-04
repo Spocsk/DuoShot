@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createAdminSupabase, createReviewWriter } from "./admin";
+import { createAdminSupabase } from "./admin";
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://supabase.example.invalid");
@@ -27,14 +27,5 @@ describe("createAdminSupabase", () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     vi.stubEnv("SUPABASE_SECRET_KEY", "secret-key-test");
     expect(createAdminSupabase()).not.toBeNull();
-  });
-});
-
-describe("createReviewWriter", () => {
-  it("returns the user client when admin is missing", () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
-    vi.stubEnv("SUPABASE_SECRET_KEY", "");
-    const userClient = { kind: "user" };
-    expect(createReviewWriter(userClient as never)).toBe(userClient);
   });
 });
