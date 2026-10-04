@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
 import { DeviceCamera } from "@/components/device-camera";
 import { t } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { HarborCover, HarborInnerMain, HarborInnerSide } from "@/components/harbor-ui";
 
-export function DuoDevice({ locale }: { locale: Locale }) {
+/** `openOverlay` is drawn over the open device's own box, so it follows the device's transforms. */
+export function DuoDevice({ locale, openOverlay }: { locale: Locale; openOverlay?: ReactNode }) {
   return (
     <div className="duo-stage">
       <p className="ds-label">{t(locale, "example_listing")}</p>
@@ -21,21 +23,42 @@ export function DuoDevice({ locale }: { locale: Locale }) {
           <figcaption className="duo-caption">{t(locale, "closed_caption")}</figcaption>
         </figure>
         <figure className="duo-open">
-          <div className="duo-book">
-            <div className="duo-book-inner">
-              <div className="duo-leaf duo-leaf-left">
-                <div className="duo-screen harbor-skin harbor-skin-left">
-                  <HarborInnerMain />
+          {openOverlay ? (
+            <div className="duo-book-frame">
+              <div className="duo-book">
+                <div className="duo-book-inner">
+                  <div className="duo-leaf duo-leaf-left">
+                    <div className="duo-screen harbor-skin harbor-skin-left">
+                      <HarborInnerMain />
+                    </div>
+                  </div>
+                  <div className="duo-leaf duo-leaf-right">
+                    <div className="duo-screen harbor-skin harbor-skin-right">
+                      <HarborInnerSide />
+                    </div>
+                  </div>
+                  <span className="duo-crease" />
                 </div>
               </div>
-              <div className="duo-leaf duo-leaf-right">
-                <div className="duo-screen harbor-skin harbor-skin-right">
-                  <HarborInnerSide />
-                </div>
-              </div>
-              <span className="duo-crease" />
+              {openOverlay}
             </div>
-          </div>
+          ) : (
+            <div className="duo-book">
+              <div className="duo-book-inner">
+                <div className="duo-leaf duo-leaf-left">
+                  <div className="duo-screen harbor-skin harbor-skin-left">
+                    <HarborInnerMain />
+                  </div>
+                </div>
+                <div className="duo-leaf duo-leaf-right">
+                  <div className="duo-screen harbor-skin harbor-skin-right">
+                    <HarborInnerSide />
+                  </div>
+                </div>
+                <span className="duo-crease" />
+              </div>
+            </div>
+          )}
           <figcaption className="duo-caption">{t(locale, "open_caption")}</figcaption>
         </figure>
       </div>
