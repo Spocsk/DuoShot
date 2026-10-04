@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const context = await readWorkspaceBilling(supabase, user.id);
   if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
   const { membership, workspace } = context;
-  if (membership.role !== "owner" && membership.role !== "admin") {
+  if (membership.role !== "owner") {
     return NextResponse.json({ error: "BILLING_OWNER_REQUIRED" }, { status: 403 });
   }
   if (!workspace?.stripe_customer_id) {

@@ -49,12 +49,12 @@ async function checkout(request: Request) {
   const context = await readWorkspaceBilling(supabase, user.id);
   if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
   const { membership, workspace } = context;
-  if (membership.role !== "owner" && membership.role !== "admin") {
+  if (membership.role !== "owner") {
     return NextResponse.json({ error: "BILLING_OWNER_REQUIRED" }, { status: 403 });
   }
 
 
-  let customerId = workspace.stripe_customer_id as string | null;
+  let customerId = workspace.stripe_customer_id;
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: user.email ?? undefined,
