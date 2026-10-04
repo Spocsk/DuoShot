@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Overlay } from "@/components/overlay";
 import { t, tf } from "@/lib/i18n";
@@ -77,11 +78,13 @@ export function AscToolAction(props: Props) {
       <button type="button" className="ds-cta-ghost w-full" data-testid="asc-tool-open" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {label}
       </button>
-      {open ? (
+      {/* Portaled: the dock's backdrop-filter would otherwise contain the fixed overlay. */}
+      {open ? createPortal(
         <Overlay onClose={() => setOpen(false)} labelledBy={`${ids}-title`} closeLabel={t(locale, "asct_close")}>
           <AscUploadDialog {...props} titleId={`${ids}-title`} owner={status?.owner === true} upload={upload}
             onEnable69={() => { setOpen(false); props.onEnable69(); }} />
-        </Overlay>
+        </Overlay>,
+        document.body,
       ) : null}
     </div>
   );
