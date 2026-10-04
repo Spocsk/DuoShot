@@ -38,6 +38,10 @@ La production tourne uniquement sur le VPS DuoShot : Docker Compose derrière Tr
 - **Déployer** : procédure pas à pas (pull, sauvegarde du compose, deux tags d’image, worker, health checks) dans [`infra/deploy.md`](infra/deploy.md).
 - **Tâches planifiées et worker** : unités systemd dans [`infra/systemd/`](infra/systemd/README.md) ; sécurité et alertes de l’hôte dans [`infra/host/`](infra/host/README.md).
 
+## Connecteur App Store Connect
+
+Backend et connexion d’une clé d’API d’équipe App Store Connect livrés derrière le flag `ASC_CONNECTOR_ENABLED` (désactivé par défaut ; `ASC_ENCRYPTION_KEY` côté serveur). Le bouton d’envoi dans l’outil viendra dans une PR séparée ; aucun envoi réel n’a été validé de bout en bout, et Apple n’expose pas encore de type d’affichage iPhone Duo (seul le 6,9″ est envoyable). Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
+
 ## Auth
 
 Google OAuth, e-mail + mot de passe, magic link OTP. **Pas** de Sign in with Apple en v1.
@@ -71,9 +75,14 @@ En local, pointer `NEXT_PUBLIC_SUPABASE_URL` vers une instance Supabase de déve
 | Essai | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
 | Indie | 12 €/mo ou 120 €/an | 100 ZIP/jour UTC, 6,9″, multi-sets, préfixe Client/App |
 | Studio | 49 €/mo ou 490 €/an | + 3 sièges et reviews client pendant 7 jours |
+| Pass 30 jours | 19 € une fois | Droits Indie pendant 30 jours, sans renouvellement ; masqué tant que `STRIPE_PRICE_PASS30` n’est pas renseigné |
 
-Ne pas passer Stripe **live** tant que le checkout n’est pas validé.
+Stripe Checkout est ouvert en mode live depuis le 4 octobre 2026. Restent à faire : un achat réel suivi d’un remboursement par le propriétaire, puis la validation fiscale et la décision sur Stripe Tax. Voir [`docs/stripe-billing-setup.md`](docs/stripe-billing-setup.md).
 
 ## Specs
 
-Voir [`docs/`](docs/) et la page publique `/specs` (date de version + disclaimer guideline 2.3.3).
+Voir la page publique `/specs` (date de version + disclaimer guideline 2.3.3) et [`docs/iphone-duo-base-connaissances.md`](docs/iphone-duo-base-connaissances.md).
+
+## Documentation
+
+Index des documents à jour : [`docs/README.md`](docs/README.md). Les comptes rendus datés (audits, recettes, bascule de production, configuration Stripe live) sont dans [`docs/journal/`](docs/journal/).

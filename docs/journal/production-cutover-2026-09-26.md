@@ -102,3 +102,74 @@ L’authentification habituelle fonctionne de nouveau sur les deux VPS sans chan
 Fronts HTTP 200 depuis le Mac, API Auth HTTP 200 avec la clé publique ; TLS valide sur les trois domaines (88 jours restants). Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, dernières maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis le dernier contrôle interne complet du 27 septembre à 18:59 UTC. Les journaux de cet intervalle ne montrent aucun indicateur d’erreur Auth/SMTP/webhook ou HTTP 5xx ; un message Storage « Connection terminated » à 03:01:27 correspond à la sauvegarde de 03:01:26.
 
 Sauvegarde du 28 septembre désormais vérifiée : `20260928T030126Z.tar.gz.age`, 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique sur les deux serveurs. Marqueur de succès au 28 septembre ; six archives distantes et 13,9 Gio libres. Disque VPS stable à 23,2 % utilisés et 27,0 Gio libres. Inscriptions/Google ouverts, confirmation email requise, Checkout volontairement fermé. Aucun test utilisateur ni aucune modification de production ; suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 08:24 UTC
+
+Contrôles externes et internes stables : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec la clé publique ; TLS valide sur les trois domaines (88 jours restants). Huit conteneurs sains, image `919b630b042d08d6599db53e99bc1fd3b39429e9` inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, avec bail expiré, en attente depuis plus de 30 minutes ou échoué depuis 07:15 UTC. Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 07:15 UTC.
+
+Disque VPS : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde chiffrée `20260928T030126Z.tar.gz.age` confirmée sur les deux serveurs : 120 786 octets, SHA-256 identique à celui consigné à 07:16 UTC ; succès quotidien daté du 28 septembre. Six archives hors serveur, 13,9 Gio libres sur leur volume. Inscriptions et Google ouverts, confirmation email requise, Checkout volontairement fermé. Aucune modification de production ni action utilisateur nécessaire ; suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 09:17 UTC
+
+Disponibilité stable : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec la clé publique (401 attendu sans clé depuis le Mac). Certificats vérifiés sur les trois domaines, expiration le 25 décembre 2026. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs ; maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 08:24 UTC. Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 08:24 UTC.
+
+Disque VPS stable : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde chiffrée `20260928T030126Z.tar.gz.age` vérifiée sur les deux serveurs : 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique ; marqueur quotidien au 28 septembre. Six archives hors serveur, 13,9 Gio libres. Inscriptions et Google ouverts, confirmation email requise ; Checkout volontairement fermé. Aucune modification de production ni action utilisateur nécessaire. Suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 10:17 UTC
+
+Contrôles stables : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec la clé publique (401 attendu sans clé depuis le Mac). TLS vérifié sur les trois domaines, certificats valides jusqu’au 25 décembre 2026. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 09:17 UTC. Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 09:17 UTC.
+
+Disque VPS : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde chiffrée `20260928T030126Z.tar.gz.age` présente sur les deux serveurs : 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique ; succès quotidien daté du 28 septembre. Six archives hors serveur, 13,9 Gio libres sur le volume de destination. Inscriptions et Google ouverts, confirmation email requise ; Checkout volontairement fermé. Aucune modification de production ni action utilisateur nécessaire. Suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 12:30 UTC
+
+Contrôle effectué à 12:30 UTC pour le déclenchement horodaté 11:31 UTC. Fronts HTTP 200 depuis le Mac et le VPS ; API Auth HTTP 200 avec la clé publique, 401 attendu sans clé. TLS vérifié sur les trois domaines, certificats valides jusqu’au 25 décembre 2026. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 10:17 UTC. Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 10:17 UTC.
+
+Disque VPS stable : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde chiffrée `20260928T030126Z.tar.gz.age` confirmée sur les deux serveurs : 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique ; succès quotidien daté du 28 septembre. Six archives hors serveur, 13,9 Gio libres sur le volume de destination. Inscriptions et Google ouverts, confirmation email requise ; Checkout volontairement fermé. Aucune modification de production ni action utilisateur nécessaire. Suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 12:32 UTC
+
+Nouveau déclenchement rapproché du contrôle de 12:30 UTC. État reconfirmé : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec clé publique (401 attendu sans clé), TLS valide sur les trois domaines jusqu’au 25 décembre. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage ; worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué et aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 12:30 UTC.
+
+Disque VPS à 23,2 % utilisés, 27,0 Gio libres. Archive chiffrée `20260928T030126Z.tar.gz.age` toujours identique sur les deux serveurs (120 786 octets, SHA-256 consigné au contrôle précédent), succès quotidien au 28 septembre ; six archives distantes et 13,9 Gio libres. Inscriptions et Google ouverts, confirmation email requise, Checkout volontairement fermé. Aucune intervention nécessaire ; suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 13:32 UTC
+
+Disponibilité stable : fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec la clé publique (401 attendu sans clé). TLS vérifié sur les trois domaines, certificats valides jusqu’au 25 décembre. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 12:32 UTC. Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 12:32 UTC.
+
+Disque VPS : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde chiffrée `20260928T030126Z.tar.gz.age` confirmée sur les deux serveurs : 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique ; succès quotidien daté du 28 septembre. Six archives hors serveur, 13,9 Gio libres sur le volume de destination. Inscriptions et Google ouverts, confirmation email requise ; Checkout volontairement fermé. Aucune modification de production ni action utilisateur nécessaire. Suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 18:33 UTC
+
+Contrôle exécuté à 18:33 UTC pour le déclenchement horodaté 14:39 UTC ; absence de sondage intermédiaire depuis 13:32 UTC. Fronts HTTP 200 depuis le Mac et le VPS ; API Auth HTTP 200 avec la clé publique (401 attendu sans clé). TLS vérifié sur les trois domaines, certificats valides jusqu’au 25 décembre. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis 13:32 UTC. Aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 13:32 UTC ; ces contrôles rétrospectifs ne prouvent pas une disponibilité continue entre les sondages.
+
+Disque VPS stable : 23,2 % utilisés, 27,0 Gio libres. Sauvegarde chiffrée `20260928T030126Z.tar.gz.age` confirmée sur les deux serveurs : 120 786 octets, SHA-256 `bcdd61535b4688cc7985c6e6a3e6a17c4193818f63c1809015e29caa0dc3488b` identique ; succès quotidien daté du 28 septembre. Six archives hors serveur, 13,9 Gio libres. Inscriptions et Google ouverts, confirmation email requise ; Checkout volontairement fermé. Aucune modification de production ni action utilisateur nécessaire. Suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Suivi — 28 septembre 2026, 18:34 UTC
+
+Déclenchement rapproché du contrôle de 18:33 UTC : disponibilité et état interne reconfirmés. Fronts HTTP 200 depuis le Mac et le VPS, API Auth HTTP 200 avec clé publique (401 attendu sans clé), TLS valide sur les trois domaines jusqu’au 25 décembre. Huit conteneurs sains, image de référence inchangée, aucun OOM ni redémarrage ; worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué, et aucun indicateur d’erreur applicative, Auth/SMTP/webhook ou HTTP 5xx dans les journaux contrôlés depuis 18:33 UTC.
+
+Disque VPS inchangé à 23,2 % utilisés et 27,0 Gio libres. Archive chiffrée `20260928T030126Z.tar.gz.age` vérifiée sur les deux serveurs : 120 786 octets, même SHA-256 que celui consigné à 18:33 UTC ; succès quotidien au 28 septembre. Six archives hors serveur, 13,9 Gio libres. Inscriptions et Google ouverts, confirmation email requise, Checkout volontairement fermé. Aucune intervention nécessaire ; suivi maintenu jusqu’à 20:39 UTC.
+
+
+## Clôture du suivi — 29 septembre 2026, 06:17 UTC
+
+Échéance prévue : 28 septembre à 20:39 UTC. Le déclenchement horodaté 19:45 UTC a été exécuté le lendemain matin ; ce contrôle final est donc tardif. Dernier sondage précédent : 28 septembre à 18:34 UTC. Les journaux conservés depuis ce sondage ont été contrôlés rétrospectivement, sans pouvoir attester une disponibilité continue entre les sondages.
+
+État final : fronts HTTP 200 depuis le Mac et le VPS ; API Auth HTTP 200 avec la clé publique, 401 attendu sans clé. Certificats TLS vérifiés sur les trois domaines, valides jusqu’au 25 décembre 2026 (87 jours restants). Huit conteneurs sains, image `919b630b042d08d6599db53e99bc1fd3b39429e9` inchangée, aucun OOM ni redémarrage signalé. Worker et timers actifs, maintenances réussies, aucune unité en échec. Aucun rendu en attente, actif, bloqué ou échoué depuis le dernier sondage.
+
+Journaux : aucun indicateur d’erreur Auth/SMTP/webhook ou HTTP 5xx dans les sources contrôlées. Quatre erreurs web « Server Reference ID did not match » le 28 septembre (trois à 19:08:58–59 et une à 19:52:39), sans impact durable observé ; cause et impact ponctuel non établis par ces sondages. Une erreur Storage « Connection terminated » le 29 septembre à 03:00:17 correspond à la sauvegarde démarrée à 03:00:16, suivie du retour de tous les services à un état sain.
+
+Sauvegarde quotidienne du 29 septembre vérifiée sur le VPS et le serveur distinct : `20260929T030016Z.tar.gz.age`, 120 790 octets, SHA-256 `8a4554af3ddc982cdd64f6e9813bd5fab3df266b96d3f06e2dd5262d00b7c3b9` identique. Marqueur quotidien au 29 septembre, sept archives conservées hors serveur, 13,9 Gio libres sur leur volume. VPS : 23,2 % utilisés, 27,0 Gio libres. Cette vérification d’intégrité ne constitue pas un nouvel exercice complet de restauration avec Storage, rôles et permissions.
+
+Bilan : aucun incident durable de production observé pendant les contrôles. Le blocage SSH du 28 septembre au matin a été signalé puis résolu ; les retards de déclenchement et ce blocage limitent la couverture du suivi. Inscriptions et Google ouverts, confirmation email requise ; Stripe Checkout demeure volontairement désactivé faute d’accès live. Le suivi ne valide pas un paiement réel ni un parcours utilisateur complet supplémentaire.
+
+L’automation `surveiller-la-production-duoshot-pendant-48-h` a été supprimée à l’issue du contrôle final, confirmation de l’application reçue. Les timers de sauvegarde et de maintenance sur le VPS restent actifs. Aucun compte créé, message client envoyé, paiement déclenché, DNS modifié ou service ancien résilié pendant cette clôture.
