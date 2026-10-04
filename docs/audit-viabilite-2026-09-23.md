@@ -1,5 +1,7 @@
 # DuoShot — audit de viabilité produit
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 **Date : 23 septembre 2026.** Audit du dépôt local et de sources publiques consultées à cette date. Les prix et capacités des concurrents sont leurs propres déclarations ; aucun entretien client, chiffre de ventes ou taux de conversion DuoShot n'est disponible. Ce document distingue faits, constats du code et hypothèses commerciales.
 
 ## Décision

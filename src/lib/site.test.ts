@@ -39,8 +39,6 @@ describe("site", () => {
 
   it("falls back to localhost without a public URL", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
-    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "");
-    vi.stubEnv("VERCEL_URL", "");
     expect(getSiteUrl()).toBe("http://localhost:3000");
   });
 });

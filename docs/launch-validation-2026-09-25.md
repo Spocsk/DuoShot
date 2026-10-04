@@ -1,5 +1,7 @@
 # Recette de lancement DuoShot — 25 septembre 2026
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 > **Note (4 octobre 2026)** : Mixpanel a été retiré ; DataFast est l’unique outil d’analytics. Ce document décrit l’état à sa date. État actuel : [`analytics.md`](analytics.md).
 
 Le lancement payant n’est pas ouvert. Le domaine principal retenu est désormais **https://duoshot.site**, acheté par le propriétaire pendant l’exécution. Les validations ci-dessous distinguent le code local, les services réels et le déploiement public, qui sert encore la version précédente.

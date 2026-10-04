@@ -1,5 +1,7 @@
 # Apprentissage commercial et suivi GEO
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 Statut : protocole prêt ; recrutement, publications et envois non réalisés. Jour 0 = date du lancement technique validé, à renseigner après déploiement. Ne pas dater artificiellement le début de l’expérience au jour de création de ces documents.
 
 ## Promesse et démonstration

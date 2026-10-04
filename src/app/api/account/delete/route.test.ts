@@ -56,6 +56,30 @@ describe("POST /api/account/delete", () => {
     expect(order).toEqual(['analytics_erasure_jobs:{"distinct_id":"user-1","status":"pending"}', "erase"]);
   });
 
+  it("returns a stable code and logs the database error server-side when erasure fails", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(removeStorageObjects).mockResolvedValue({ removed: 0, complete: true });
+    const removeQueuedJob = vi.fn();
+    vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({
+      from: () => {
+        const builder = createQueryBuilder({ data: null, error: null });
+        return { ...builder, delete: () => { removeQueuedJob(); return builder; } } as never;
+      },
+      rpc: async () => ({ data: null, error: { message: "relation \"workspaces\" violates constraint fk_internal" } }),
+    }) as never);
+    vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({
+      user: { id: "user-1" },
+      from: () => createQueryBuilder({ data: [], error: null }),
+    }) as never);
+    const { status, body } = await readJson(await POST());
+    expect(status).toBe(500);
+    expect(body).toEqual({ error: "ACCOUNT_DELETE_FAILED" });
+    expect(JSON.stringify(body)).not.toContain("fk_internal");
+    expect(removeQueuedJob).toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith("account_delete_failed", { message: expect.stringContaining("fk_internal") });
+    log.mockRestore();
+  });
+
   it("keeps the account if Stripe cancellation fails", async () => {
     const rpc = vi.fn();
     vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({

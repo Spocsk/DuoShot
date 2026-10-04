@@ -1,5 +1,7 @@
 # Audit SEO / GEO — DuoShot, 26 septembre 2026
 
+> **Note (4 octobre 2026)** : la production tourne désormais uniquement sur le VPS (Docker Compose derrière Traefik) ; Vercel ne sert plus aux déploiements. Ce document décrit l’état à sa date. Procédure actuelle : [`infra/deploy.md`](../infra/deploy.md).
+
 ## Résumé exécutif
 
 Les corrections techniques sont vérifiées sur le site privé du nouveau VPS ; le domaine public reste sur l'ancien déploiement Vercel. Ne pas confondre « corrigé dans l'image VPS » et « corrigé en production ». La migration des comptes et les contrôles fonctionnels conditionnent la bascule.

@@ -50,3 +50,7 @@ __pycache__/
 
 # self-hosted OCR assets, copied by scripts/copy-ocr-assets.mjs
 /public/ocr/
+
+# local tool output
+/.playwright-cli/
+/supabase/.temp/

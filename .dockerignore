@@ -3,7 +3,6 @@ node_modules
 .git
 .env*
 !.env.example
-.vercel
 coverage
 cypress
 *.tsbuildinfo

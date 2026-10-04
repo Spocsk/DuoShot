@@ -5,7 +5,7 @@ import { checkoutAvailable } from "./billing-availability";
 beforeEach(() => {
   for (const key of ["STRIPE_INDIE_PRICE_ID", "STRIPE_STUDIO_PRICE_ID", "STRIPE_INDIE_YEARLY_PRICE_ID", "STRIPE_STUDIO_YEARLY_PRICE_ID", "STRIPE_WEBHOOK_SECRET", "SUPABASE_SECRET_KEY"]) vi.stubEnv(key, "configured");
   vi.stubEnv("STRIPE_CHECKOUT_ENABLED", "true"); vi.stubEnv("STRIPE_LIVE_ENABLED", "true");
-  vi.stubEnv("BILLING_ALLOWED_USER_IDS", ""); vi.stubEnv("VERCEL_ENV", "");
+  vi.stubEnv("BILLING_ALLOWED_USER_IDS", "");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -32,9 +32,5 @@ describe("explicit billing environment", () => {
     vi.stubEnv("BILLING_ALLOWED_USER_IDS", " owner-a, owner-b ");
     expect(checkoutAvailable()).toBe(false); expect(checkoutAvailable("other")).toBe(false);
     expect(checkoutAvailable("owner-a")).toBe(true); expect(billingUserAllowed("owner")).toBe(false);
-  });
-  it("rejects a test deployment label on Vercel production", () => {
-    vi.stubEnv("APP_ENV", "test"); vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_example"); vi.stubEnv("VERCEL_ENV", "production");
-    expect(checkoutAvailable()).toBe(false);
   });
 });

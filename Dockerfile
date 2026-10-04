@@ -2,7 +2,8 @@ FROM node:24-bookworm-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
-RUN npm ci
+# The Cypress binary is only needed for e2e runs, never inside the image.
+RUN CYPRESS_INSTALL_BINARY=0 npm ci
 COPY . .
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_SUPABASE_URL

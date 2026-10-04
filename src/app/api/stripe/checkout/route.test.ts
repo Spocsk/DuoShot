@@ -47,7 +47,6 @@ beforeEach(() => {
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_example");
   vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_example");
   vi.stubEnv("SUPABASE_SECRET_KEY", "example");
-  vi.stubEnv("VERCEL_ENV", "preview");
   vi.stubEnv("APP_ENV", "test");
   vi.stubEnv("BILLING_ALLOWED_USER_IDS", "");
 });
@@ -71,7 +70,7 @@ describe("POST /api/stripe/checkout", () => {
 
   it("rejects a test key on the production VPS before any Stripe operation", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
-    vi.stubEnv("APP_ENV", "production"); vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("APP_ENV", "production");
     expect((await POST(request("indie_monthly"))).status).toBe(503);
     expect(getStripe).not.toHaveBeenCalled();
   });

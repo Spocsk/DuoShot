@@ -53,9 +53,10 @@ export async function POST() {
 
   const { error } = await storageAdmin.rpc("erase_account", { p_user_id: user.id });
   if (error) {
+    console.error("account_delete_failed", { message: error.message });
     await storageAdmin.from("analytics_erasure_jobs").delete()
       .eq("distinct_id", user.id).eq("status", "pending").is("tracking_id", null);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "ACCOUNT_DELETE_FAILED" }, { status: 500 });
   }
   await supabase.auth.signOut();
   return NextResponse.json({ ok: true });
