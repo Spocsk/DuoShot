@@ -28,6 +28,8 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npx tsc --noEmit
+      # The committed Supabase types must match the migration chain.
+      - run: node scripts/gen-db-types.mjs --check
       - run: npm test
       - run: python3 -m unittest discover -s infra/supabase -p 'test_*.py'
       - run: python3 -m unittest discover -s infra/host -p 'test_*.py'

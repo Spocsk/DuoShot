@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFile, readdir } from "node:fs/promises";
+import { applyMigrations } from "../../scripts/lib/pglite-migrate.mjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const db = new PGlite();
@@ -7,15 +7,7 @@ const uid = "00000000-0000-4000-8000-000000000001";
 let workspace: string;
 beforeAll(async () => {
   // Supabase platform schemas only; application schema and functions are the real migrations.
-  await db.exec(`create role anon; create role authenticated; create role service_role;
-    create schema auth; create schema storage;
-    create table auth.users(id uuid primary key,email text);
-    create function auth.uid() returns uuid language sql as $$ select null::uuid $$;
-    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
-    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,created_at timestamptz default now());`);
-  for (const file of (await readdir("supabase/migrations")).filter((f) => f.endsWith(".sql")).sort()) {
-    await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
-  }
+  await applyMigrations(db);
   await db.query("insert into auth.users values($1,'fixture@example.invalid')", [uid]);
   workspace = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [uid])).rows[0].workspace_id;
 }, 30000);

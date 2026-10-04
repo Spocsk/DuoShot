@@ -14,7 +14,8 @@
     "test:integration": "vitest run src/app/api",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "test:e2e": "start-server-and-test start http://localhost:3000 cypress:run"
+    "test:e2e": "start-server-and-test start http://localhost:3000 cypress:run",
+    "db:types": "node scripts/gen-db-types.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
