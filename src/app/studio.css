@@ -484,7 +484,7 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 .studio-frame-guide i:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; border-top-right-radius: 0.7rem; transform-origin: top right; }
 .studio-frame-guide i:nth-child(3) { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-bottom-right-radius: 0.7rem; transform-origin: bottom right; }
 .studio-frame-guide i:nth-child(4) { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-bottom-left-radius: 0.7rem; transform-origin: bottom left; }
-.studio-hinge-glow { position: absolute; z-index: 2; top: 4%; bottom: 4%; left: calc((100% + var(--duo-book-left)) / 2 - 0.9rem); width: 1.8rem; border-radius: 1rem; background: radial-gradient(50% 50% at 50% 50%, rgb(255 214 150 / 0.75), rgb(255 214 150 / 0) 100%); mix-blend-mode: screen; pointer-events: none; }
+.studio-hinge-glow { position: absolute; z-index: 2; top: 4%; bottom: 4%; left: calc((100% + var(--duo-book-left)) / 2 - 0.9rem); width: 1.8rem; border-radius: 1rem; border: 2px solid #f0a65a; background: rgb(240 166 90 / 0.22); box-shadow: 0 0 1.4rem rgb(240 166 90 / 0.55); pointer-events: none; }
 .studio-sequence-thumb.is-outer { aspect-ratio: 84.1 / 117.8; height: 5rem; width: auto; }
 .studio-sequence-thumb.is-inner { aspect-ratio: 164.6 / 117.8; height: 5rem; width: auto; }
 .studio-prevent-markers { position: absolute; inset: 0; pointer-events: none; }
