@@ -338,6 +338,8 @@ const fr: Dict = {
   tool_demo_replace: "Remplacer par mes captures",
   tool_demo_confirm: "J’ai compris que Harbor est une app fictive. Avec mes captures, je confirmerai ici qu’elles montrent ma vraie app en usage.",
   tool_demo_export_hint: "Les fichiers de l’exemple sont dans le ZIP exemple, sans compte ni essai consommé.",
+  tool_set_rename: "Renommer",
+  tool_set_rename_label: "Nom du set",
   // --- end stream B ---
   // --- stream A: launch ---
   pricing_pass_title: "Pass 30 jours",
@@ -694,6 +696,8 @@ const en: Dict = {
   tool_demo_replace: "Replace with my screenshots",
   tool_demo_confirm: "I understand Harbor is a fictional app. With my own screenshots, I will confirm here that they show my real app in use.",
   tool_demo_export_hint: "The example files are in the example ZIP, with no account and no trial used.",
+  tool_set_rename: "Rename",
+  tool_set_rename_label: "Set name",
   // --- end stream B ---
   // --- stream A: launch ---
   pricing_pass_title: "30-day pass",

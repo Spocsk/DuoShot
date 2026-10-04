@@ -1,4 +1,4 @@
-import { PRO_CHECKOUT_KIND, type CheckoutKind, type PurchaseKind } from "./plans";
+import { PRO_CHECKOUT_KIND, isOneTimeKind, type CheckoutKind, type PurchaseKind } from "./plans";
 import { localePrefix } from "./site";
 import type { Locale } from "./specs";
 import { trackProduct } from "./analytics-client";
@@ -51,4 +51,9 @@ export function checkoutReturnPath(locale: Locale): string {
 
 export function isCheckoutKind(value: string | undefined): value is CheckoutKind {
   return value === "indie_monthly" || value === "studio_monthly" || value === "indie_yearly" || value === "studio_yearly";
+}
+
+/** Any plan the tool's upgrade link may carry: subscriptions and the one-time pass. */
+export function isPurchaseKind(value: string | undefined): value is PurchaseKind {
+  return isCheckoutKind(value) || isOneTimeKind(value);
 }

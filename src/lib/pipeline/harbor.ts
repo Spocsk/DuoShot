@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
-import { JPEG_QUALITY, SIZE_SPECS } from "../specs";
+import { JPEG_QUALITY, SIZE_SPECS, type Locale } from "../specs";
 
 export const DEMO_REVIEW_ID = "harbor";
 
@@ -22,6 +22,7 @@ export const HARBOR_SLIDES = [
     sideKicker: "Spots",
     sidePlace: "West reef",
     sideMetric: "Clean · glassy",
+    headline: "1.4 m",
   },
   {
     kicker: "Tide",
@@ -30,6 +31,7 @@ export const HARBOR_SLIDES = [
     sideKicker: "Hours",
     sidePlace: "Incoming",
     sideMetric: "High 18:12",
+    headline: "2.1 m",
   },
   {
     kicker: "Spots",
@@ -38,8 +40,28 @@ export const HARBOR_SLIDES = [
     sideKicker: "Now",
     sidePlace: "Cove",
     sideMetric: "Glassy · 14 °C",
+    headline: "1.4 m",
   },
 ] as const;
+
+export type HarborSlide = { [K in keyof (typeof HARBOR_SLIDES)[number]]: string };
+
+/** French Harbor copy, matching the landing (harbor-ui.tsx). Harbor stays a fictional app in both languages. */
+const HARBOR_SLIDES_FR: readonly HarborSlide[] = [
+  { kicker: "Aujourd’hui", place: "Nord", metric: "1,4 m · 12 s · ONO", sideKicker: "Spots", sidePlace: "Récif ouest", sideMetric: "Propre · lisse", headline: "1,4 m" },
+  { kicker: "Marée", place: "2,1 m", metric: "Pleine mer 18:12 · Montante", sideKicker: "Heures", sidePlace: "À venir", sideMetric: "Pleine mer 18:12", headline: "2,1 m" },
+  { kicker: "Spots", place: "Nord", metric: "Meilleur créneau · 16:00", sideKicker: "Maintenant", sidePlace: "Crique", sideMetric: "Lisse · 14 °C", headline: "1,4 m" },
+];
+
+const HARBOR_LABELS = {
+  en: { westReef: "West reef", clean: "Clean", cove: "Cove", glassy: "Glassy", incoming: "INCOMING", high: "High 18:12" },
+  fr: { westReef: "Récif ouest", clean: "Propre", cove: "Crique", glassy: "Lisse", incoming: "À VENIR", high: "Pleine mer 18:12" },
+} as const;
+type HarborLabels = (typeof HARBOR_LABELS)[Locale];
+
+export function harborSlides(locale: Locale = "en"): readonly HarborSlide[] {
+  return locale === "fr" ? HARBOR_SLIDES_FR : HARBOR_SLIDES;
+}
 
 export function isDemoReview(id: string): boolean {
   return id === DEMO_REVIEW_ID;
@@ -50,7 +72,7 @@ function fontFace(): string {
       .t{font-family:'Harbor Sans','DejaVu Sans';fill:#f7f9f8;}.small{font-size:28px;letter-spacing:2px;opacity:.86}</style>`;
 }
 
-export function harborOuterSvg(width: number, height: number, slide: (typeof HARBOR_SLIDES)[number]) {
+export function harborOuterSvg(width: number, height: number, slide: HarborSlide) {
   const titleSize = Math.round(width * 0.13);
   const metricSize = Math.round(width * 0.18);
   const subSize = Math.round(width * 0.028);
@@ -70,12 +92,12 @@ export function harborOuterSvg(width: number, height: number, slide: (typeof HAR
     <path d="M0 ${height * 0.84} Q${width * 0.52} ${height * 0.67} ${width} ${height * 0.79} L${width} ${height} H0Z" fill="#1f4a5a" opacity=".94"/>
     <text class="t" x="${pad}" y="${Math.round(height * 0.085)}" font-size="${subSize}">Harbor</text>
     <text class="t" x="${pad}" y="${Math.round(height * 0.225)}" font-size="${titleSize}">${slide.place}</text>
-    <text class="t" x="${pad}" y="${Math.round(height * 0.37)}" font-size="${metricSize}">${slide.kicker === "Tide" ? slide.place : "1.4 m"}</text>
+    <text class="t" x="${pad}" y="${Math.round(height * 0.37)}" font-size="${metricSize}">${slide.headline}</text>
     <text class="t" x="${pad}" y="${Math.round(height * 0.41)}" font-size="${subSize}" opacity=".88">${slide.metric}</text>
   </svg>`;
 }
 
-export function harborInnerSvg(width: number, height: number, slide: (typeof HARBOR_SLIDES)[number]) {
+export function harborInnerSvg(width: number, height: number, slide: HarborSlide, labels: HarborLabels = HARBOR_LABELS.en) {
   const pane = width / 2;
   const titleSize = Math.round(pane * 0.13);
   const subSize = Math.round(pane * 0.031);
@@ -90,9 +112,9 @@ export function harborInnerSvg(width: number, height: number, slide: (typeof HAR
     return `<rect x="${x}" y="${height * 0.46 - barHeight}" width="${pane * 0.045}" height="${barHeight}" rx="${pane * 0.0225}" fill="#eff8f8" opacity=".75"/>`;
   }).join("");
   const spotRows = [
-    ["West reef", "Clean"],
+    [labels.westReef, labels.clean],
     [slide.sidePlace, slide.sideMetric],
-    ["Cove", "Glassy"],
+    [labels.cove, labels.glassy],
   ].map(([name, metric], index) => {
     const y = height * (0.27 + index * 0.17);
     return `<rect x="${pane + pad}" y="${y}" width="${pane - pad * 2}" height="${height * 0.115}" rx="${pane * 0.05}" fill="#163f50" opacity=".48"/>
@@ -122,8 +144,8 @@ export function harborInnerSvg(width: number, height: number, slide: (typeof HAR
     ${bars}
     <path d="M${pad} ${height * 0.6} C${pane * 0.25} ${height * 0.6}, ${pane * 0.3} ${height * 0.52}, ${pane * 0.4} ${height * 0.56} S${pane * 0.58} ${height * 0.64}, ${pane * 0.65} ${height * 0.59} S${pane * 0.83} ${height * 0.53}, ${pane - pad} ${height * 0.57}" fill="none" stroke="#eff8f8" stroke-width="${Math.max(4, width * 0.003)}" stroke-linecap="round" opacity=".82"/>
     <rect x="${pad}" y="${height * 0.78}" width="${pane - pad * 2}" height="${height * 0.13}" rx="${pane * 0.05}" fill="#163f50" opacity=".56"/>
-    <text class="t" x="${pad * 1.5}" y="${height * 0.825}" font-size="${Math.round(subSize * 0.83)}">INCOMING</text>
-    <text class="t" x="${pad * 1.5}" y="${height * 0.875}" font-size="${Math.round(subSize * 1.55)}">High 18:12</text>
+    <text class="t" x="${pad * 1.5}" y="${height * 0.825}" font-size="${Math.round(subSize * 0.83)}">${labels.incoming}</text>
+    <text class="t" x="${pad * 1.5}" y="${height * 0.875}" font-size="${Math.round(subSize * 1.55)}">${labels.high}</text>
     <text class="t" x="${pane + pad}" y="${yKicker}" font-size="${subSize}" opacity=".86">${slide.sideKicker.toUpperCase()}</text>
     ${spotRows}
   </svg>`;
@@ -138,25 +160,25 @@ export async function pngFromSvg(svg: string, width: number, height: number): Pr
     .toBuffer();
 }
 
-export async function harborSlidePng(index: number, side: "outer" | "inner"): Promise<Buffer | null> {
-  const slide = HARBOR_SLIDES[index];
+export async function harborSlidePng(index: number, side: "outer" | "inner", locale: Locale = "en"): Promise<Buffer | null> {
+  const slide = harborSlides(locale)[index];
   if (!slide) return null;
   const spec = SIZE_SPECS.find((item) => item.id === (side === "outer" ? "outer-p" : "inner-p"));
   if (!spec) return null;
   const svg =
     side === "outer"
       ? harborOuterSvg(spec.width, spec.height, slide)
-      : harborInnerSvg(spec.width, spec.height, slide);
+      : harborInnerSvg(spec.width, spec.height, slide, HARBOR_LABELS[locale]);
   return pngFromSvg(svg, spec.width, spec.height);
 }
 
 const jpegCache = new Map<string, Buffer>();
 
-export async function harborReviewJpeg(index: number, side: "outer" | "inner"): Promise<Buffer | null> {
-  const key = `${index}-${side}`;
+export async function harborReviewJpeg(index: number, side: "outer" | "inner", locale: Locale = "en"): Promise<Buffer | null> {
+  const key = `${index}-${side}-${locale}`;
   const hit = jpegCache.get(key);
   if (hit) return hit;
-  const png = await harborSlidePng(index, side);
+  const png = await harborSlidePng(index, side, locale);
   if (!png) return null;
   const jpeg = await sharp(png)
     .jpeg({ quality: JPEG_QUALITY, chromaSubsampling: "4:4:4" })

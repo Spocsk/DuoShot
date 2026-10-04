@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import {
   DEMO_REVIEW_ID,
+  HARBOR_SLIDES,
+  harborInnerSvg,
+  harborOuterSvg,
+  harborSlides,
   EXAMPLE_ZIP_TREE,
   harborReviewJpeg,
   harborReviewPayload,
@@ -40,5 +44,15 @@ describe("harbor demo review", () => {
     expect(innerMeta.width).toBe(2007);
     expect(innerMeta.height).toBe(2853);
     expect(await harborReviewJpeg(9, "outer")).toBeNull();
+  });
+
+  it("writes the demo in French for the French tool", () => {
+    expect(harborSlides("fr").map((slide) => slide.place)).toEqual(["Nord", "2,1 m", "Nord"]);
+    expect(harborSlides("en")).toBe(HARBOR_SLIDES);
+    const svg = harborInnerSvg(2007, 2853, harborSlides("en")[0]!);
+    expect(svg).toContain("West reef");
+    const outer = harborOuterSvg(1398, 2034, harborSlides("fr")[0]!);
+    expect(outer).toContain("1,4 m");
+    expect(outer).not.toContain("1.4 m");
   });
 });

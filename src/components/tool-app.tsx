@@ -30,9 +30,9 @@ import { checkSourceCount } from "@/lib/pipeline/validate";
 import { inspectFile } from "@/lib/pipeline/source-inspect";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics } from "@/lib/pipeline/geometry";
-import { checkoutReturnPath, isCheckoutKind, startCheckout } from "@/lib/checkout";
+import { checkoutReturnPath, isPurchaseKind, startCheckout } from "@/lib/checkout";
 import { trackProduct } from "@/lib/analytics-client";
-import type { CheckoutKind } from "@/lib/plans";
+import type { PurchaseKind } from "@/lib/plans";
 import {
   defaultSet,
   nextSetName,
@@ -62,6 +62,7 @@ import { isAllowedImage, takeFiles } from "@/components/tool/files";
 import { Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
 import { PairStrip, ToolCanvas, ToolStepBar, type ToolPanel } from "@/components/tool/canvas";
 import { PreviewCard } from "@/components/tool/preview-card";
+import { SetTitle } from "@/components/tool/set-title";
 
 type Props = { locale: Locale };
 
@@ -136,7 +137,17 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
   const requestedPlan = searchParams.get("plan") ?? undefined;
-  const preferredUpgradeKind = isCheckoutKind(requestedPlan) ? requestedPlan : undefined;
+  const preferredUpgradeKind = isPurchaseKind(requestedPlan) ? requestedPlan : undefined;
+  // The one-time pass has its own Stripe price; ask whether it is configured before offering it.
+  const [passAvailable, setPassAvailable] = useState(false);
+  useEffect(() => {
+    if (preferredUpgradeKind !== "pass30") return;
+    let current = true;
+    void fetch("/api/billing/availability").then((response) => response.ok ? response.json() : null)
+      .then((data: { passAvailable?: boolean } | null) => { if (current) setPassAvailable(data?.passAvailable === true); })
+      .catch(() => {});
+    return () => { current = false; };
+  }, [preferredUpgradeKind]);
   const sameSet = active?.sameSet ?? false;
   const effectiveInner = sameSet ? outerFiles : innerFiles;
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
@@ -448,8 +459,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setZipUrl(null);
   }
 
-  async function onCheckout(kind: CheckoutKind) {
-    if (!billing?.checkoutAvailable) { flashStatus(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet.", "info"); return; }
+  async function onCheckout(kind: PurchaseKind) {
+    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(locale === "fr" ? "Les paiements ne sont pas encore ouverts." : "Payments are not open yet.", "info"); return; }
     if (!signedIn) {
       setPaywall(null);
       setShowAuth(true);
@@ -505,7 +516,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (demoState === "loading") return;
     setDemoState("loading");
     try {
-      const files = await fetchHarborFiles();
+      const files = await fetchHarborFiles(locale);
       const existing = sets.find((item) => item.demo);
       const reusable = active && !active.demo && outerFiles.length === 0 && innerFiles.length === 0 ? active : null;
       const base = existing ?? reusable ?? defaultSet(sets);
@@ -640,7 +651,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       <div className="tool-workspace">
         <section className="studio-tool-main min-w-0" aria-label={locale === "fr" ? "Aperçu des captures" : "Screenshot preview"}>
           <div className="tool-canvas-heading" id="tool-inspect">
-            <div><p className="tool-eyebrow">{locale === "fr" ? "Votre composition" : "Your composition"}</p><h1>{active?.name?.trim() || "Composition"}</h1></div>
+            <div><p className="tool-eyebrow">{locale === "fr" ? "Votre composition" : "Your composition"}</p><SetTitle locale={locale} name={active?.name ?? ""} onRename={(name) => patchActive({ name })} /></div>
             <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : (locale === "fr" ? "Aucune paire" : "No pairs")}</span>
           </div>
           {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
@@ -782,6 +793,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       {paywall || (upgradeRequested && session === "in") ? (
         <PaywallModal
           available={billing?.checkoutAvailable === true}
+          passAvailable={passAvailable}
           locale={locale}
           reason={paywall ?? "trial"}
           busy={checkoutBusy}

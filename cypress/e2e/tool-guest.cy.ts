@@ -260,4 +260,19 @@ describe("tool guest", () => {
     cy.get('[data-seg="jpeg"]').should("have.attr", "aria-checked", "true");
   });
 
+  it("renames the set without touching the app name", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]');
+    cy.get('#tool-input-app').type("Harbor Pro");
+    cy.get('[data-testid="tool-set-rename"]').click();
+    cy.get('[data-testid="tool-set-name"]').should("be.focused").clear().type("Lancement printemps{enter}");
+    cy.contains(".tool-canvas-heading h1", "Lancement printemps");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Lancement printemps");
+    cy.get('#tool-input-app').should("have.value", "Harbor Pro");
+    cy.get('[data-testid="tool-set-rename"]').click();
+    cy.get('[data-testid="tool-set-name"]').clear().type("Abandon{esc}");
+    cy.contains(".tool-canvas-heading h1", "Lancement printemps");
+    cy.reload();
+    cy.get('[data-testid="tool-sets"][data-ready="true"]').should("contain", "Lancement printemps");
+  });
 });

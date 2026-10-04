@@ -11,6 +11,22 @@ export function authDestination(value: string | null): URL {
   } catch { return fallback; }
 }
 
+/**
+ * `next` for the login and signup pages: a same-origin path only ("/tool?upgrade=1&plan=pass30").
+ * Rejects absolute and protocol-relative URLs, backslashes, control characters and auth routes.
+ */
+export function safeNextPath(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length > 300) return undefined;
+  if (!value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020]/.test(value)) return undefined;
+  try {
+    const parsed = new URL(value, "https://duoshot.invalid");
+    if (parsed.origin !== "https://duoshot.invalid" || parsed.pathname.startsWith("//") || parsed.pathname.startsWith("/auth/") || parsed.pathname.startsWith("/api/")) return undefined;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return undefined;
+  }
+}
+
 export function authFailure(next: URL): URL {
   const failure = new URL(next.pathname.startsWith("/en/") ? "/en/login" : "/login", new URL(getSiteUrl()).origin);
   failure.searchParams.set("auth_error", "invalid_link");

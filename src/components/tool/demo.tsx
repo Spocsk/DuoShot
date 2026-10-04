@@ -10,10 +10,10 @@ export type DemoState = "idle" | "loading" | "error";
  * Harbor (fictional demo app) captures at the exact Duo sizes. The demo review media route renders them
  * server side without touching the database, so no PNG has to ship in public/.
  */
-export async function fetchHarborFiles(): Promise<{ outer: File[]; inner: File[] }> {
+export async function fetchHarborFiles(locale: Locale): Promise<{ outer: File[]; inner: File[] }> {
   const side = (kind: "outer" | "inner") => Promise.all(
     Array.from({ length: HARBOR_PAIRS }, async (_, index) => {
-      const response = await fetch(`/api/reviews/harbor/media?slide=${index}&side=${kind}`);
+      const response = await fetch(`/api/reviews/harbor/media?slide=${index}&side=${kind}&locale=${locale}`);
       if (!response.ok) throw new Error("DEMO_UNAVAILABLE");
       const blob = await response.blob();
       return new File([blob], `harbor-${String(index + 1).padStart(2, "0")}-${kind === "outer" ? "ferme" : "ouvert"}.jpg`, { type: "image/jpeg" });

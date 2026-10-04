@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
-import type { CheckoutKind } from "@/lib/plans";
+import type { PurchaseKind } from "@/lib/plans";
 import { SwapLabel } from "@/components/tool/controls";
 import type { BillingStatus, SessionState } from "@/components/tool/use-billing";
 import type { useRenderJobs } from "@/components/tool/use-render-jobs";
@@ -44,7 +44,7 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
   locale: Locale;
   billing: BillingStatus | null;
   checkoutBusy: boolean;
-  onCheckout: (kind: CheckoutKind) => Promise<void>;
+  onCheckout: (kind: PurchaseKind) => Promise<void>;
   jobs: Jobs;
 }) {
   const { reviewUrl, reviewStatus, reviewSetStatus, reviewUpgrade } = jobs;

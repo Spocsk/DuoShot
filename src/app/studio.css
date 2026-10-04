@@ -577,3 +577,8 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
   .tool-step { min-height: 3rem; font-size: 0.7rem; }
   .tool-primary-dock { margin-inline: -1rem; padding-inline: 1rem; }
 }
+.tool-set-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.75rem; margin-top: 0.15rem; }
+.tool-set-title.is-editing .ds-input { width: min(100%, 22rem); min-height: 2.6rem; font-size: 1.05rem; font-weight: 620; }
+.tool-set-rename { color: #315f69; font-size: 0.78rem; font-weight: 620; text-decoration: underline; text-decoration-color: rgb(36 87 101 / 0.35); text-underline-offset: 0.2em; }
+.tool-set-rename:hover { text-decoration-color: currentColor; }
+.tool-set-rename:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; border-radius: 0.2rem; }
