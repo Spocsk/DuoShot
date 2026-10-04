@@ -54,3 +54,6 @@ __pycache__/
 # local tool output
 /.playwright-cli/
 /supabase/.temp/
+
+# local research notes and assets, kept out of git
+/research/
