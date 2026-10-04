@@ -321,7 +321,7 @@ const en: Dict = {
   skip_main: "Skip to content",
   cta_tool: "Prepare my screenshots",
   cta_open_tool: "Open the tool",
-  cta_specs: "See the pixels",
+  cta_specs: "See all sizes",
   cta_example: "Download example ZIP",
   cta_review_demo: "See a client review",
   example_listing: "Example listing — not the product.",

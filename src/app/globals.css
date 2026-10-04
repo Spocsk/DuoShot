@@ -10,6 +10,15 @@
   --studio-mist: #e9eff1;
   --studio-sea: #245765;
   --studio-warning: #88502f;
+  --studio-sea-soft: #e3eef0;
+  --studio-sea-line: #8fb0b8;
+  --studio-sea-wash: #d9e5e8;
+  --studio-ok: #4d8b7b;
+  --studio-ok-soft: #dff0e9;
+  --studio-review: #bc9664;
+  --studio-review-soft: #f6ebdc;
+  --studio-deep: #21333b;
+  --studio-deep-muted: #c5d5d8;
   --background: var(--studio-canvas);
   --foreground: var(--studio-ink);
   --muted: var(--studio-muted);

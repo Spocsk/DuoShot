@@ -1,9 +1,9 @@
-import { OUTER_PORTRAIT, INNER_PORTRAIT } from "@/lib/screenshot-copy";
-import { AppleAvailability } from "./apple-availability";
+import type { CSSProperties } from "react";
 import Link from "next/link";
+import { AppleAvailability } from "./apple-availability";
 import { FaqList } from "@/components/faq-list";
 import { FAQ, t } from "@/lib/i18n";
-import type { Locale } from "@/lib/specs";
+import { duoSpec, formatInches, type Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { DuoDevice } from "@/components/duo-device";
@@ -11,98 +11,214 @@ import { LandingMotion } from "@/components/landing-motion";
 import { PricingSection } from "@/components/pricing-section";
 import { TrustLine } from "@/components/trust-line";
 import { localePrefix, reviewPath } from "@/lib/site";
-import { DEMO_REVIEW_ID, EXAMPLE_ZIP_TREE } from "@/lib/pipeline/harbor";
+import { screenshotDimensions } from "@/lib/screenshot-copy";
+import { DEMO_REVIEW_ID } from "@/lib/pipeline/harbor";
 import { HarborCover, HarborInnerMain, ShelfInnerShot } from "@/components/harbor-ui";
+import { exampleDeliveredFiles, formatBytes } from "@/lib/landing-delivery";
+
+const OUTER = duoSpec("duo-outer", "portrait");
+const INNER = duoSpec("duo-inner", "portrait");
+
+/* ------------------------------------------------------------------ */
+/* Avant / après: raw captures in, the delivered ZIP out.              */
+/* ------------------------------------------------------------------ */
+
+function RawCapture({ fr, kind }: { fr: boolean; kind: "outer" | "inner" }) {
+  const outer = kind === "outer";
+  const locale = fr ? "fr" : "en";
+  return <figure className={`studio-raw is-${kind}`}>
+    <div className="studio-raw-shot">
+      {outer ? <HarborCover locale={locale} /> : <ShelfInnerShot index={0} locale={locale} />}
+    </div>
+    <figcaption>
+      <code>{outer ? "Simulator Screenshot 09.14.12.png" : "IMG_0418.PNG"}</code>
+      <span className="studio-raw-meta">{outer ? "1206 × 2622 · PNG" : "1920 × 2560 · PNG"}</span>
+      <span className="studio-raw-flag">{outer
+        ? (fr ? "Taille non acceptée" : "Size not accepted")
+        : (fr ? "Transparence à aplatir" : "Transparency to flatten")}</span>
+    </figcaption>
+  </figure>;
+}
+
+function DeliveredFiles({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  const files = exampleDeliveredFiles();
+  return <div className="studio-files">
+    <div className="studio-files-head">
+      <span>{fr ? "Fichier" : "File"}</span>
+      <span>Pixels</span>
+      <span>{fr ? "Poids" : "Size"}</span>
+    </div>
+    <ol className="studio-files-list" data-testid="zip-tree">
+      {files.map((file) => <li key={file.path} className={`is-${file.side}`}>
+        <code><span>{file.folder}/</span>{file.name}</code>
+        <span className="studio-files-px">{screenshotDimensions(file.spec)}</span>
+        <span className="studio-files-kb">{file.bytes ? formatBytes(file.bytes, locale) : "—"}</span>
+      </li>)}
+      <li className="is-readme">
+        <code><span>exampleapp/</span>README.txt</code>
+        <span className="studio-files-px">{fr ? "bilan" : "report"}</span>
+        <span className="studio-files-kb">1 {fr ? "Ko" : "KB"}</span>
+      </li>
+    </ol>
+  </div>;
+}
+
+function ProofSection({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  const prefix = localePrefix(locale);
+  return <section className="studio-proof" aria-labelledby="studio-proof-title" data-reveal>
+    <div className="studio-proof-lead">
+      <p className="studio-eyebrow">{fr ? "Avant / après" : "Before / after"}</p>
+      <h2 id="studio-proof-title">{fr ? "Les deux vues, à leur juste place." : "Both views, exactly where they belong."}</h2>
+      <p>{fr
+        ? "Vous importez des captures de simulateur ou d’appareil, de toutes tailles. Vous récupérez un ZIP rangé par écran, aux dimensions App Store Connect, sans coque ni transparence."
+        : "Import simulator or device captures of any size. Get back a ZIP sorted by screen, at App Store Connect dimensions, with no chassis and no transparency."}</p>
+    </div>
+    <div className="studio-proof-board">
+      <div className="studio-proof-before">
+        <p className="studio-proof-label"><b>{fr ? "Avant" : "Before"}</b>{fr ? "Vos captures brutes" : "Your raw captures"}</p>
+        <div className="studio-raw-pair">
+          <RawCapture fr={fr} kind="outer" />
+          <RawCapture fr={fr} kind="inner" />
+        </div>
+      </div>
+      <div className="studio-proof-arrow" aria-hidden="true"><span>DuoShot</span></div>
+      <div className="studio-proof-after">
+        <p className="studio-proof-label"><b>{fr ? "Après" : "After"}</b>{fr ? "Le ZIP livré · Harbor, 3 paires" : "The delivered ZIP · Harbor, 3 pairs"}</p>
+        <div className="studio-final-pair" aria-hidden="true">
+          <div className="studio-final is-outer"><div><HarborCover locale={locale} /></div><span>{screenshotDimensions(OUTER)}</span></div>
+          <div className="studio-final is-inner"><div><ShelfInnerShot index={0} locale={locale} /></div><span>{screenshotDimensions(INNER)}</span></div>
+        </div>
+        <DeliveredFiles locale={locale} />
+      </div>
+    </div>
+    <div className="studio-proof-actions">
+      <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t(locale, "cta_example")}</a>
+      <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
+        {fr ? "Ouvrir l’exemple dans l’outil" : "Open the example in the tool"} <span aria-hidden="true">↗</span>
+      </Link>
+      <small>{fr ? "Noms et dimensions issus de l’export réel ; poids mesurés sur l’exemple Harbor (app fictive)." : "Names and dimensions come from the real export; sizes measured on the Harbor example (fictional app)."}</small>
+    </div>
+  </section>;
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll sequence: one distinct visual per step.                      */
+/* ------------------------------------------------------------------ */
 
 type SequencePhase = "import" | "inspect" | "report" | "prevent";
 
-function ImportPanel({ fr }: { fr: boolean }) {
-  return <div className="studio-sequence-import">
-    <div className="studio-sequence-import-thumbs" aria-hidden="true">
-      <div className="studio-sequence-thumb is-outer"><HarborCover /><span>{fr ? "Fermé" : "Closed"}</span></div>
-      <div className="studio-sequence-thumb is-inner"><ShelfInnerShot index={0} /><span>{fr ? "Ouvert" : "Open"}</span></div>
+function ImportVisual({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  return <div className="studio-sequence-import studio-panel">
+    <div className="studio-panel-top"><span>{fr ? "Captures" : "Screenshots"}</span><strong>Harbor</strong></div>
+    <ol className="studio-import-pairs">
+      {([0, 1, 2] as const).map((index) => <li key={index} className="studio-import-pair">
+        <b>{String(index + 1).padStart(2, "0")}</b>
+        <div className="studio-import-thumb is-outer"><HarborCover locale={locale} /></div>
+        <div className="studio-import-thumb is-inner"><ShelfInnerShot index={index} locale={locale} /></div>
+        <span className="studio-import-meta"><code>{String(index + 1).padStart(2, "0")}.png</code>{fr ? "fermé · ouvert" : "closed · open"}</span>
+      </li>)}
+    </ol>
+    <div className="studio-import-status"><span>{fr ? "6 fichiers · 3 paires alignées" : "6 files · 3 aligned pairs"}</span><strong>3 / 10</strong><i /></div>
+  </div>;
+}
+
+function InspectVisual({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  return <div className="studio-sequence-analysis studio-panel">
+    <div className="studio-panel-top"><span>{fr ? "Pixels exportés · écran ouvert" : "Export pixels · open screen"}</span><strong>{screenshotDimensions(INNER)}</strong></div>
+    <div className="studio-inspect-frame">
+      <ShelfInnerShot index={1} locale={locale} />
+      <div className="studio-frame-guide"><i /><i /><i /><i /></div>
+      <span className="studio-hinge-band" />
     </div>
-    <div className="studio-sequence-import-status"><span>{fr ? "2 vues importées" : "2 views imported"}</span><strong>2 / 2</strong><i /></div>
+    <div className="studio-inspect-readout">
+      <span><i className="studio-check" />Dimensions</span>
+      <span><i className="studio-check" />{fr ? "Opaque, sRGB" : "Opaque, sRGB"}</span>
+      <span><i className="studio-review-dot" />{fr ? "Texte près du pli" : "Text near the fold"}</span>
+      <span className="studio-sequence-score"><small>Score</small><strong>83 / 100</strong></span>
+    </div>
   </div>;
 }
 
-function AnalysisCard({ fr }: { fr: boolean }) {
-  return <div className="studio-sequence-info studio-sequence-analysis">
-    <div><span>{fr ? "DÉMO HARBOR · RÉSULTAT" : "HARBOR DEMO · RESULT"}</span><strong>{fr ? "2 / 2 vues analysées" : "2 / 2 views analyzed"}</strong></div>
-    <div className="studio-sequence-score"><span>{fr ? "Score de préparation" : "Preparation score"}</span><strong>83 / 100</strong></div>
-    <p>{fr ? "Dimensions contrôlées · cadrage à examiner" : "Dimensions checked · framing to review"}</p>
-  </div>;
-}
-
-function ReportCard({ fr }: { fr: boolean }) {
-  return <div className="studio-sequence-info studio-sequence-report">
-    <span>{fr ? "DÉMO HARBOR · BILAN" : "HARBOR DEMO · REPORT"}</span>
-    <strong>{fr ? "Ce qui reste à vérifier" : "What still needs review"}</strong>
-    <ul>
-      <li><i className="studio-check" />{fr ? "Dimensions et format contrôlés" : "Dimensions and format checked"}</li>
-      <li><i className="studio-review-dot" />{fr ? "Cadrage à examiner" : "Framing to review"}</li>
-      <li><i className="studio-human-dot" />{fr ? "App en usage à confirmer" : "App in use to confirm"}</li>
+function ReportVisual({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  const rows = [
+    { label: fr ? "Contrôles techniques" : "Technical checks", value: "6 / 6", fill: 1, tone: "ok" },
+    { label: fr ? "Alertes visuelles à examiner" : "Visual alerts to review", value: "2", fill: 0.33, tone: "review" },
+    { label: fr ? "Vos confirmations" : "Your confirmations", value: "0 / 2", fill: 0, tone: "human" },
+  ];
+  return <div className="studio-sequence-report studio-panel">
+    <div className="studio-panel-top"><span>{fr ? "Bilan de préparation" : "Preparation report"}</span><strong>Harbor · set 01</strong></div>
+    <ul className="studio-report-rows">
+      {rows.map((row) => <li key={row.label} className={`is-${row.tone}`}>
+        <span>{row.label}</span><strong>{row.value}</strong>
+        <i style={{ "--fill": row.fill } as CSSProperties} />
+      </li>)}
     </ul>
+    <p className="studio-panel-note">{fr ? "Exemple illustratif · ne prédit pas la décision d’Apple" : "Illustrative example · does not predict Apple’s decision"}</p>
   </div>;
 }
 
-function PreventMarkers() {
-  return <div className="studio-prevent-markers" aria-hidden="true">
-    <span className="studio-prevent-marker is-format">1</span>
-    <span className="studio-prevent-marker is-framing">2</span>
-    <span className="studio-prevent-marker is-similarity">3</span>
-    <span className="studio-prevent-marker is-fold">4</span>
-  </div>;
-}
-
-function PreventPanel({ fr }: { fr: boolean }) {
-  return <div className="studio-sequence-info studio-sequence-prevent">
-    <strong>{fr ? "Avant de soumettre" : "Before you submit"}</strong>
+function PreventVisual({ locale }: { locale: Locale }) {
+  const fr = locale === "fr";
+  const checks = fr
+    ? [["Dimensions et format", "Contrôle automatique"], ["Cadrage", "Alerte à examiner"], ["Similarité des vues", "Comparaison à examiner"], ["Lisibilité près du pli", "Vérification humaine"]]
+    : [["Dimensions and format", "Automatic check"], ["Framing", "Warning to review"], ["View similarity", "Comparison to review"], ["Legibility near the fold", "Human review"]];
+  return <div className="studio-sequence-prevent studio-panel">
+    <div className="studio-panel-top"><span>{fr ? "Avant de soumettre" : "Before you submit"}</span><strong>4 / 4</strong></div>
     <ol className="studio-prevent-checks">
-      <li><b>1</b><div>{fr ? "Dimensions et format" : "Dimensions and format"}<small>{fr ? "Contrôles automatiques" : "Automatic checks"}</small></div></li>
-      <li><b>2</b><div>{fr ? "Cadrage" : "Framing"}<small>{fr ? "Alertes à examiner" : "Warnings to review"}</small></div></li>
-      <li><b>3</b><div>{fr ? "Similarité des vues" : "View similarity"}<small>{fr ? "Comparaison à examiner" : "Comparison to review"}</small></div></li>
-      <li><b>4</b><div>{fr ? "Lisibilité près du pli" : "Legibility near the fold"}<small>{fr ? "Vérification humaine" : "Human review"}</small></div></li>
+      {checks.map(([title, detail], index) => <li key={title}><b>{index + 1}</b><div>{title}<small>{detail}</small></div></li>)}
     </ol>
     <p className="studio-prevent-outcome">{fr ? "Corrigez avant de soumettre. Limitez les allers-retours." : "Fix issues before submitting. Reduce back-and-forth."}</p>
-    <small className="studio-prevent-note">{fr ? "Démonstration illustrative. La décision et les délais restent ceux d’Apple." : "Illustrative demo. Apple determines the outcome and review time."}</small>
   </div>;
 }
 
-/** Static per-step visual: the linear layout for small screens, reduced motion and no script. */
-function SequenceScene({ locale, phase }: { locale: Locale; phase: SequencePhase }) {
-  const fr = locale === "fr";
-  return <div className={`studio-sequence-scene is-${phase}`}>
-    <div className="studio-sequence-device">
-      <DuoDevice locale={locale} />
-      {phase === "prevent" ? <PreventMarkers /> : null}
-    </div>
-    {phase === "import" ? <ImportPanel fr={fr} /> : null}
-    {phase === "inspect" ? <AnalysisCard fr={fr} /> : null}
-    {phase === "report" ? <ReportCard fr={fr} /> : null}
-    {phase === "prevent" ? <PreventPanel fr={fr} /> : null}
-  </div>;
+function SequenceVisual({ locale, phase }: { locale: Locale; phase: SequencePhase }) {
+  if (phase === "import") return <ImportVisual locale={locale} />;
+  if (phase === "inspect") return <InspectVisual locale={locale} />;
+  if (phase === "report") return <ReportVisual locale={locale} />;
+  return <PreventVisual locale={locale} />;
 }
 
-/** One persistent device with every step's overlay stacked; LandingMotion scrubs between them. */
-function SequenceStage({ locale }: { locale: Locale }) {
+const PHASES: SequencePhase[] = ["import", "inspect", "report", "prevent"];
+
+function SequenceSection({ locale }: { locale: Locale }) {
   const fr = locale === "fr";
-  return <div className="studio-sequence-scene">
-    <div className="studio-sequence-device">
-      <DuoDevice locale={locale} openOverlay={<>
-        <div className="studio-frame-guide"><i /><i /><i /><i /></div>
-        <span className="studio-hinge-glow" />
-      </>} />
-      <PreventMarkers />
+  const steps = fr
+    ? [
+      ["Importez chaque état.", "Glissez vos captures fermé et ouvert. Les paires restent alignées, de la première à la dixième."],
+      ["Voyez le résultat avant l’export.", "Examinez chaque écran au pixel près. Ajustez le cadrage, la lisibilité et la charnière."],
+      ["Sachez ce qui reste à vérifier.", "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations."],
+      ["Repérez les problèmes avant Apple.", "Corriger avant la soumission peut vous éviter des allers-retours et des jours de retard."],
+    ]
+    : [
+      ["Import each state.", "Drop in closed and open captures. Every pair stays aligned, from the first to the tenth."],
+      ["See the result before export.", "Inspect every screen at pixel level. Adjust framing, legibility and the hinge."],
+      ["Know what still needs review.", "The report separates technical checks, visual alerts and your confirmations."],
+      ["Spot issues before Apple does.", "Fixing them before submission can save back-and-forth and days of delay."],
+    ];
+  return <section className="studio-sequence" aria-label={fr ? "Parcours de préparation" : "Preparation journey"}>
+    <div className="studio-sequence-stage" aria-hidden="true">
+      <div className="studio-stage-panels">
+        {PHASES.map((phase) => <SequenceVisual key={phase} locale={locale} phase={phase} />)}
+      </div>
+      <ol className="studio-stage-progress">{PHASES.map((phase) => <li key={phase}><i /></li>)}</ol>
     </div>
-    <div className="studio-stage-panels">
-      <ImportPanel fr={fr} />
-      <AnalysisCard fr={fr} />
-      <ReportCard fr={fr} />
-      <PreventPanel fr={fr} />
+    <div className="studio-sequence-steps">
+      {steps.map(([title, body], index) => <div key={title} className="studio-sequence-step" data-sequence-step>
+        <span>{String(index + 1).padStart(2, "0")}</span>
+        <h2>{title}</h2>
+        <p>{body}</p>
+        <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceVisual locale={locale} phase={PHASES[index]!} /></div>
+      </div>)}
     </div>
-  </div>;
+  </section>;
 }
+
+/* ------------------------------------------------------------------ */
 
 export function HomePage({ locale }: { locale: Locale }) {
   const prefix = localePrefix(locale);
@@ -116,109 +232,52 @@ export function HomePage({ locale }: { locale: Locale }) {
         <main id="main">
           <section className="studio-hero" aria-labelledby="studio-hero-title">
             <div className="studio-hero-copy">
+              <p className="studio-eyebrow">iPhone Duo · App{" "}Store Connect</p>
               <h1 id="studio-hero-title">
-                {fr ? "Captures iPhone Duo." : "iPhone Duo screenshots."}<br />
-                <span>{fr ? "Aux dimensions App Store." : "Exact App Store sizes."}</span>
+                {fr ? "Captures iPhone Duo." : "iPhone Duo screenshots."}{" "}
+                <span>{fr ? "Aux dimensions App Store." : "Exact App Store sizes."}</span>
               </h1>
-              <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
-                <div><dt>{fr ? "Écran externe" : "Outer display"}</dt><dd>{OUTER_PORTRAIT}<small>px · portrait</small></dd></div>
-                <div><dt>{fr ? "Écran interne" : "Inner display"}</dt><dd>{INNER_PORTRAIT}<small>px · portrait</small></dd></div>
-              </dl>
-              <p>
+              <p className="studio-hero-lead">
                 {fr
-                  ? "Préparez deux séries à partir des captures de votre app, vérifiez les fichiers et exportez-les en PNG ou JPEG opaque pour App Store Connect."
-                  : "Prepare both sets from your app screenshots, check the files, and export opaque PNG or JPEG images for App Store Connect."}
+                  ? "Importez les captures fermé et ouvert de votre app. DuoShot les cadre, les vérifie et exporte deux séries PNG ou JPEG opaques pour App Store Connect."
+                  : "Import closed and open captures of your app. DuoShot frames them, checks them and exports two opaque PNG or JPEG sets for App Store Connect."}
               </p>
-              <AppleAvailability locale={locale} />
               <div className="studio-hero-actions">
                 <Link href={`${prefix}/tool`} data-testid="cta-tool" className="ds-cta">
-                  {fr ? "Préparer vos captures" : "Prepare your screenshots"}
+                  {t(locale, "cta_tool")}
                 </Link>
-                <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link">
-                  {fr ? "Voir les dimensions" : "See screenshot sizes"}
-                  <span aria-hidden="true">↗</span>
+                <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo" className="ds-cta-ghost">
+                  {fr ? "Voir l’exemple" : "See the example"}
                 </Link>
               </div>
             </div>
             <div className="studio-hero-object">
               <DuoDevice locale={locale} />
+              <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
+                <div className="is-outer">
+                  <dt>{fr ? "Écran fermé" : "Closed screen"} · {formatInches(OUTER.inches, locale)}</dt>
+                  <dd>{screenshotDimensions(OUTER)}<small> px · portrait</small></dd>
+                </div>
+                <div className="is-inner">
+                  <dt>{fr ? "Écran ouvert" : "Open screen"} · {formatInches(INNER.inches, locale)}</dt>
+                  <dd>{screenshotDimensions(INNER)}<small> px · portrait</small></dd>
+                </div>
+              </dl>
+              <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link studio-hero-specs">
+                {t(locale, "cta_specs")} <span aria-hidden="true">↗</span>
+              </Link>
             </div>
-            <p className="studio-hero-footnote">
-              <span>{fr ? "Harbor · app fictive" : "Harbor · fictional app"}</span>
-              <span>{fr ? "Écran fermé / écran ouvert" : "Closed screen / open screen"}</span>
-            </p>
-          </section>
-
-          <section className="studio-intro" id="studio-story" data-reveal>
-            <h2>{fr ? "Les deux vues, à leur juste place." : "Both views, exactly where they belong."}</h2>
-            <div className="studio-intro-copy">
-            <p>
-              {fr
-                ? "DuoShot réunit les captures fermé et ouvert dans un même flux de préparation, sans masquer ce qui demande votre jugement."
-                : "DuoShot brings closed and open screenshots into one preparation flow, while keeping human decisions visible."}
-            </p>
-            <p className="studio-intro-benefit">{fr ? "Évitez qu’un problème de captures retarde votre publication de plusieurs jours." : "Avoid screenshot issues that could delay your release by days."}</p>
-            </div>
-          </section>
-
-          <section className="studio-sequence" aria-label={fr ? "Parcours de préparation" : "Preparation journey"}>
-            <div className="studio-sequence-stage" aria-hidden="true">
-              <SequenceStage locale={locale} />
-            </div>
-            <div className="studio-sequence-steps">
-              <div className="studio-sequence-step" data-sequence-step>
-                <span>01</span>
-                <h2>{fr ? "Importez chaque état." : "Import each state."}</h2>
-                <p>{fr ? "Glissez vos captures fermé et ouvert. Les paires restent alignées, de la première à la dixième." : "Drop in closed and open captures. Every pair stays aligned, from the first to the tenth."}</p>
-                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="import" /></div>
-              </div>
-              <div className="studio-sequence-step" data-sequence-step>
-                <span>02</span>
-                <h2>{fr ? "Voyez le résultat avant l’export." : "See the result before export."}</h2>
-                <p>{fr ? "Examinez les écrans sur l’appareil et au pixel près. Ajustez le cadrage, la lisibilité et la charnière." : "Inspect device and pixel previews. Adjust framing, legibility, and the hinge."}</p>
-                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="inspect" /></div>
-              </div>
-              <div className="studio-sequence-step" data-sequence-step>
-                <span>03</span>
-                <h2>{fr ? "Sachez ce qui reste à vérifier." : "Know what still needs review."}</h2>
-                <p>{fr ? "Le bilan sépare les contrôles techniques, les alertes visuelles et vos confirmations." : "The report separates technical checks, visual alerts, and your confirmations."}</p>
-                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="report" /></div>
-              </div>
-              <div className="studio-sequence-step" data-sequence-step>
-                <span>04</span>
-                <h2>{fr ? "Repérez les problèmes avant Apple." : "Spot issues before Apple does."}</h2>
-                <p>{fr ? "DuoShot contrôle vos fichiers et signale les points à examiner dans vos captures. Les corriger avant la soumission peut éviter des allers-retours avec Apple et des jours de retard sur votre publication." : "DuoShot checks your files and flags screenshot issues to review. Fixing them before submission can avoid back-and-forth with Apple and days of delay to your release."}</p>
-                <div className="studio-sequence-step-visual" aria-hidden="true"><SequenceScene locale={locale} phase="prevent" /></div>
+            <div className="studio-hero-meta">
+              <p className="studio-hero-footnote">{fr ? "Harbor · app fictive" : "Harbor · fictional app"}</p>
+              <div className="studio-availability">
+                <AppleAvailability locale={locale} />
               </div>
             </div>
           </section>
 
-          <section className="studio-delivery" data-reveal>
-            <div className="studio-delivery-lead">
-              <h2>{fr ? "Des fichiers prêts. Rien de flou." : "Ready files. No guesswork."}</h2>
-              <p>{fr ? "Avant de télécharger, vous voyez les images finales, leur format et leurs dimensions. Le dépôt dans App Store Connect reste manuel." : "Before download, see every final image, its format, and dimensions. Upload to App Store Connect remains manual."}</p>
-              <a href="/api/example-zip?v=2" data-testid="cta-example" className="studio-inline-link">
-                {t(locale, "cta_example")} <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-            <div className="studio-delivery-proof">
-              <div className="studio-report-preview">
-                <p>{fr ? "Bilan de préparation" : "Preparation report"}</p>
-                <ul>
-                  <li><span className="studio-check" />{fr ? "Dimensions et format contrôlés" : "Dimensions and format checked"}</li>
-                  <li><span className="studio-review-dot" />{fr ? "Cadrage et similarité à examiner" : "Framing and similarity to review"}</li>
-                  <li><span className="studio-human-dot" />{fr ? "App en usage à confirmer" : "App in use to confirm"}</li>
-                </ul>
-                <small>{fr ? "Exemple illustratif · ne prédit pas l’approbation Apple" : "Illustrative example · does not predict Apple approval"}</small>
-              </div>
-              <div className="studio-files-preview">
-                <p>{fr ? "Dans votre ZIP" : "Inside your ZIP"}</p>
-                <ol className="zip-tree" data-testid="zip-tree">
-                  {EXAMPLE_ZIP_TREE.map((entry) => <li key={entry}>{entry}</li>)}
-                </ol>
-              </div>
-            </div>
-          </section>
+          <ProofSection locale={locale} />
+
+          <SequenceSection locale={locale} />
 
           <section className="studio-review-invite" data-reveal>
             <div>
@@ -230,16 +289,16 @@ export function HomePage({ locale }: { locale: Locale }) {
             </div>
             <div className="studio-review-preview" aria-label={fr ? "Aperçu de la revue client Harbor" : "Preview of the Harbor client review"}>
               <div className="studio-review-preview-top">
-                <span>{fr ? "APERÇU DE LA REVUE" : "REVIEW PREVIEW"}</span>
+                <span>{fr ? "Aperçu de la revue" : "Review preview"}</span>
                 <span className="studio-review-preview-status"><i />{fr ? "En attente" : "Awaiting decision"}</span>
               </div>
               <div className="studio-review-preview-heading">
                 <strong>Harbor</strong>
-                <span>{fr ? "Set 01 · Écran fermé + ouvert" : "Set 01 · Closed + open screens"}</span>
+                <span>{fr ? "Set 01 · Écrans fermé et ouvert" : "Set 01 · Closed and open screens"}</span>
               </div>
               <div className="studio-review-preview-pair">
-                <div className="studio-review-preview-shot is-outer"><HarborCover /><span>{fr ? "Écran fermé" : "Closed screen"}</span></div>
-                <div className="studio-review-preview-shot is-inner"><HarborInnerMain /><span>{fr ? "Écran ouvert" : "Open screen"}</span></div>
+                <div className="studio-review-preview-shot is-outer"><HarborCover locale={locale} /><span>{fr ? "Écran fermé" : "Closed screen"}</span></div>
+                <div className="studio-review-preview-shot is-inner"><HarborInnerMain locale={locale} /><span>{fr ? "Écran ouvert" : "Open screen"}</span></div>
               </div>
               <div className="studio-review-preview-decision">
                 <span>{fr ? "Votre décision" : "Your decision"}</span>
@@ -249,7 +308,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             </div>
           </section>
 
-          <PricingSection locale={locale} />
+          <PricingSection locale={locale} compact />
 
           <section className="studio-faq" data-reveal>
             <h2>{t(locale, "faq_title")}</h2>
