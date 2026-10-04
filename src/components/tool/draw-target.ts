@@ -1,6 +1,17 @@
 import { normalizeCropTransform, overlayTextColor, textOverlayLayout, type CropTransform, type RenderOptions, type SizeSpec } from "@/lib/specs";
 import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
 
+/** Same families as the server renderer (src/lib/pipeline/process.ts), served from public/fonts via studio.css. */
+export function overlayFontFamily(font: RenderOptions["titleFont"]): string {
+  return font === "serif" ? '"DuoShot serif", "DejaVu Serif", serif' : '"DuoShot sans", "DejaVu Sans", sans-serif';
+}
+
+/** Canvas text does not wait for @font-face: load the face before the first draw. */
+export async function loadOverlayFont(font: RenderOptions["titleFont"]): Promise<void> {
+  if (typeof document === "undefined" || !document.fonts) return;
+  try { await document.fonts.load(`700 48px ${overlayFontFamily(font)}`); } catch { /* fallback font */ }
+}
+
 export function drawTarget(
   bitmap: ImageBitmap,
   options: RenderOptions,
@@ -37,18 +48,30 @@ export function drawTarget(
   ).rect;
   ctx.drawImage(bitmap, rect.left, rect.top, rect.width, rect.height);
   const layout = textOverlayLayout(spec, options.titlePosition);
-  if (options.title || options.subtitle) {
+  const title = options.title?.trim();
+  const subtitle = options.subtitle?.trim();
+  if (title || subtitle) {
     ctx.fillStyle = overlayTextColor(options);
     ctx.textAlign = "center";
-    const family = options.titleFont === "serif" ? "Georgia, serif" : "system-ui";
-    if (options.title) {
-      ctx.font = `700 ${layout.titleSize}px ${family}`;
-      ctx.fillText(options.title, layout.x, layout.yTitle, layout.maxWidth);
-    }
-    if (options.subtitle) {
+    const family = overlayFontFamily(options.titleFont);
+    // Mirrors process.ts: same font files, and long lines are fitted to maxWidth like SVG textLength.
+    const draw = (text: string, size: number, y: number) => {
+      ctx.font = `700 ${size}px ${family}`;
+      if (Array.from(text).length * size * 0.68 > layout.maxWidth) {
+        const measured = Math.max(ctx.measureText(text).width, 1);
+        ctx.save();
+        ctx.translate(layout.x, y);
+        ctx.scale(layout.maxWidth / measured, 1);
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      } else {
+        ctx.fillText(text, layout.x, y);
+      }
+    };
+    if (title) draw(title, layout.titleSize, layout.yTitle);
+    if (subtitle) {
       ctx.globalAlpha = 0.82;
-      ctx.font = `700 ${layout.subtitleSize}px ${family}`;
-      ctx.fillText(options.subtitle, layout.x, layout.ySubtitle, layout.maxWidth);
+      draw(subtitle, layout.subtitleSize, layout.ySubtitle);
       ctx.globalAlpha = 1;
     }
   }

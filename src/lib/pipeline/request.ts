@@ -1,4 +1,4 @@
-import { MAX_IMAGES, type CropTransforms, type Locale, type RenderOptions } from "../specs";
+import { MAX_IMAGES, isTextColor, type CropTransforms, type Locale, type RenderOptions } from "../specs";
 
 export type RenderBody = {
   paths?: string[];
@@ -57,6 +57,7 @@ export function parseRenderBody(value: unknown, userId: string): RenderBody {
       if (options[key] !== undefined && (typeof options[key] !== "string" || options[key].length > 500)) throw new Error("INVALID_OPTIONS");
     }
     if (options.burnHinge !== undefined && typeof options.burnHinge !== "boolean") throw new Error("INVALID_OPTIONS");
+    if (options.textColor !== undefined && !isTextColor(options.textColor)) throw new Error("INVALID_OPTIONS");
   }
   if (value.transforms !== undefined) {
     if (!record(value.transforms)) throw new Error("INVALID_TRANSFORMS");

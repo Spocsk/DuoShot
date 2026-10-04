@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { duoSpec, type CropTransform, type RenderOptions } from "@/lib/specs";
-import { drawTarget } from "@/components/tool/draw-target";
+import { drawTarget, loadOverlayFont } from "@/components/tool/draw-target";
 
 /** Client-side JPEG previews of the selected pair, redrawn whenever its inputs change. */
 export function usePreviews(
@@ -26,6 +26,7 @@ export function usePreviews(
       const outerSpec = duoSpec("duo-outer", next.orientation);
       const innerSpec = duoSpec("duo-inner", next.orientation);
       const nextPreviews = { outer: "", inner: "" };
+      if (next.title?.trim() || next.subtitle?.trim()) await loadOverlayFont(next.titleFont);
       if (outer) {
         const bitmap = await createImageBitmap(outer);
         nextPreviews.outer = drawTarget(bitmap, next, outerSpec, transforms.outer);

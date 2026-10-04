@@ -13,6 +13,14 @@ describe("render input boundary", () => {
     expect(() => parseRenderBody({ options: { gradientFrom: '#fff"/><image href="https://example.com' } }, "user")).toThrow("INVALID_OPTIONS");
     expect(() => parseRenderBody({ options: { orientation: "sideways" } }, "user")).toThrow("INVALID_OPTIONS");
   });
+  it("accepts text colour presets and hex values only", () => {
+    for (const textColor of ["auto", "ink", "white", "#A1b2C3"]) {
+      expect(() => parseRenderBody({ options: { textColor } }, "user")).not.toThrow();
+    }
+    for (const textColor of ["red", "#fff", "#123456;fill:url(x)", 12, "#12345g"]) {
+      expect(() => parseRenderBody({ options: { textColor } }, "user")).toThrow("INVALID_OPTIONS");
+    }
+  });
   it("enforces a total batch budget in addition to per-file limits", () => {
     expect(() => assertBatchSize(Array.from({ length: 5 }, () => ({ size: MAX_SOURCE_BYTES })))).toThrow("BATCH_TOO_LARGE");
     expect(() => assertBatchSize([{ size: MAX_SOURCE_BYTES + 1 }])).toThrow("INPUT_TOO_LARGE");
