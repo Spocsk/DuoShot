@@ -58,8 +58,10 @@ so export rendering never competes with public traffic in `web` for memory or CP
 ## Deploy procedure
 
 Run as root on the VPS. Pick the image built from the merged `main` commit.
+Confirm the compose directory and the service names (`web`, `render`) against
+the live file before the first run; step 3 prints the service names.
 
-```sh
+```bash
 SHA=<full commit sha>                       # must have a green "Build VPS image" run
 IMAGE=ghcr.io/spocsk/duoshot:$SHA
 cd /data/coolify/services/i9qtpe5bpyig86s1aljxr5gv
@@ -74,6 +76,7 @@ cp -p docker-compose.yml "docker-compose.yml.before-${SHA:0:7}-$(date -u +%Y%m%d
 #    Edit the two image: lines, then:
 grep -n 'image: ghcr.io/spocsk/duoshot' docker-compose.yml   # both lines show $SHA
 docker compose config --quiet
+docker compose config --services                             # must list web and render
 
 # 4. Stop the worker, recreate render, start the worker.
 systemctl stop duoshot-render-worker.service
