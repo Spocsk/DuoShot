@@ -23,11 +23,22 @@ echo "docker $*" >> "$STUB_LOG"
 case "$*" in
   "ps -q --filter label=com.docker.compose.project=$LIVE_PROJECT --filter label=com.docker.compose.service=web") printf '%s' "$WEB_IDS" ;;
   "ps -q --filter label=com.docker.compose.project=$LIVE_PROJECT --filter label=com.docker.compose.service=render") printf '%s' "$RENDER_IDS" ;;
-  "top "*) echo "PID COMMAND"; echo "4242 node scripts/run-render-worker.mjs" ;;
+  "top "*)
+    echo "PID COMMAND"
+    # Once signalled, the worker drains for DRAIN_POLLS more `docker top` calls, then is gone.
+    if [ -e "$STUB_LOG.killed" ]; then
+      polls=$(cat "$STUB_LOG.polls" 2>/dev/null || echo 0); echo $((polls + 1)) > "$STUB_LOG.polls"
+      [ "$polls" -ge "${DRAIN_POLLS:-0}" ] && exit 0
+    fi
+    echo "4242 node scripts/run-render-worker.mjs" ;;
 esac
 """
 STUB_KILL = """#!/bin/sh
 echo "kill $*" >> "$STUB_LOG"
+touch "$STUB_LOG.killed"
+"""
+STUB_SLEEP = """#!/bin/sh
+echo "sleep $*" >> "$STUB_LOG"
 """
 
 
@@ -50,20 +61,20 @@ class SystemdUnits(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
-        for name, body in [('docker', STUB_DOCKER), ('kill', STUB_KILL)]:
+        for name, body in [('docker', STUB_DOCKER), ('kill', STUB_KILL), ('sleep', STUB_SLEEP)]:
             path = root / name
             path.write_text(body)
             path.chmod(path.stat().st_mode | stat.S_IEXEC)
         self.log = root / 'log'
         self.log.touch()
-        self.env = {**os.environ, 'PATH': f'{root}:{os.environ["PATH"]}', 'STUB_LOG': str(self.log)}
+        self.env = {**{k: v for k, v in os.environ.items() if k != 'RENDER_WORKER_MODE'}, 'PATH': f'{root}:{os.environ["PATH"]}', 'STUB_LOG': str(self.log)}
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_unit(self, unit, key, web='', render='', instance='storage', override=None):
+    def run_unit(self, unit, key, web='', render='', instance='storage', override=None, extra=None):
         args = command(unit, key, instance)
-        env = {**self.env, **unit_environment(unit), 'LIVE_PROJECT': PROJECT, 'WEB_IDS': web, 'RENDER_IDS': render}
+        env = {**self.env, **unit_environment(unit), 'LIVE_PROJECT': PROJECT, 'WEB_IDS': web, 'RENDER_IDS': render, **(extra or {})}
         if override is not None:
             env['DUOSHOT_COMPOSE_PROJECT'] = override
         result = subprocess.run(args, env=env,
@@ -107,12 +118,37 @@ class SystemdUnits(unittest.TestCase):
         result, _ = self.run_unit('duoshot-render-worker.service', 'ExecStart', web='web1\n', render='')
         self.assertEqual(result.returncode, 1)
 
+    def test_render_worker_mode_override_reaches_the_container(self):
+        # RENDER_WORKER_MODE=http in /etc/duoshot/compose.env rolls back without recreating render.
+        result, calls = self.run_unit('duoshot-render-worker.service', 'ExecStart', render='rnd1\n', extra={'RENDER_WORKER_MODE': 'http'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(calls[-1], 'docker exec -e RENDER_WORKER_MODE=http rnd1 node scripts/run-render-worker.mjs')
+
+    def test_render_worker_stop_leaves_room_for_the_drain(self):
+        text = (UNITS / 'duoshot-render-worker.service').read_text()
+        timeout = int(re.search(r'^TimeoutStopSec=(\d+)$', text, re.M).group(1))
+        # 60 s stop grace + 30 s App Store Connect rollback inside the worker.
+        self.assertGreaterEqual(timeout, 100)
+        self.assertIn('$$i -lt 110', text)
+        self.assertLessEqual(110, timeout)
+
     def test_render_worker_stop_signals_workers_in_render_and_web(self):
         result, calls = self.run_unit('duoshot-render-worker.service', 'ExecStop', web='web1\n', render='rnd1\n')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('docker top rnd1 -o pid,args', calls)
         self.assertIn('docker top web1 -o pid,args', calls)
-        self.assertEqual([call for call in calls if call.startswith('kill')], ['kill -TERM 4242', 'kill -TERM 4242'])
+        self.assertEqual([call for call in calls if call.startswith('kill')], ['kill -TERM 4242 4242'])
+        # The worker exited at once: no wait.
+        self.assertFalse(any(call.startswith('sleep') for call in calls))
+
+    def test_render_worker_stop_waits_for_the_worker_to_drain(self):
+        result, calls = self.run_unit('duoshot-render-worker.service', 'ExecStop', web='web1\n', render='rnd1\n', extra={'DRAIN_POLLS': '4'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([call for call in calls if call.startswith('kill')], ['kill -TERM 4242 4242'])
+        kill = calls.index('kill -TERM 4242 4242')
+        # Polled again after the signal, sleeping while the worker still runs, until it is gone.
+        self.assertEqual([call for call in calls[kill:] if call.startswith('sleep')], ['sleep 1', 'sleep 1'])
+        self.assertEqual(calls[-1], 'docker top web1 -o pid,args')
 
     def test_backup_resolves_web_by_label_before_stopping_it(self):
         text = BACKUP.read_text()

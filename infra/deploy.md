@@ -49,11 +49,24 @@ truth; this is not a verbatim copy):
       - i9qtpe5bpyig86s1aljxr5gv
 ```
 
-The render container runs its own Next server on its loopback. The systemd unit
-`duoshot-render-worker.service` (see `infra/systemd/`) starts
-`scripts/run-render-worker.mjs` in it with `docker exec`; the worker calls
-`http://127.0.0.1:3000/api/internal/render-worker` inside that same container,
-so export rendering never competes with public traffic in `web` for memory or CPU.
+The render container runs its own Next server on its loopback (for its health
+check and the rollback route). The systemd unit `duoshot-render-worker.service`
+(see `infra/systemd/`) starts `scripts/run-render-worker.mjs` in it with
+`docker exec`. By default (`RENDER_WORKER_MODE=process`) that script runs the
+standalone worker bundle `dist/render-worker.mjs` in its own Node process: it
+claims jobs with the service-role key, heartbeats their leases and renders with
+Sharp **outside any Next server**, so a heavy render can neither stall an HTTP
+request nor outlive its timeout (`RENDER_JOB_TIMEOUT_MS`, default 15 minutes:
+the job fails with `RENDER_INTERRUPTED`, its quota is refunded and the worker
+restarts). Export rendering also never competes with public traffic in `web`
+for memory or CPU. The image build runs `node dist/render-worker.mjs --check`,
+so an image whose bundle cannot load Sharp is never published.
+
+Rollback without recreating anything: put `RENDER_WORKER_MODE=http` in
+`/etc/duoshot/compose.env` and `systemctl restart duoshot-render-worker.service`.
+The script then polls `http://127.0.0.1:3000/api/internal/render-worker` inside
+the render container as before (renders run in that container's Next server).
+Remove the line and restart the unit to return to the standalone worker.
 
 The systemd units in `infra/systemd/` and `nightly-backup.sh` find these
 containers by their compose labels (`com.docker.compose.project` =
@@ -107,7 +120,8 @@ grep -n 'image: ghcr.io/spocsk/duoshot' docker-compose.yml   # both lines show $
 docker compose config --quiet
 docker compose config --services                             # must list web and render
 
-# 4. Stop the worker, recreate render, start the worker.
+# 4. Stop the worker, recreate render, start the worker. The stop waits (up to
+#    TimeoutStopSec=120) for the running job to finish or be given up.
 systemctl stop duoshot-render-worker.service
 docker compose up -d --no-deps --force-recreate --wait render
 systemctl start duoshot-render-worker.service
@@ -120,7 +134,7 @@ docker inspect -f '{{.State.Health.Status}}' render-i9qtpe5bpyig86s1aljxr5gv web
 curl -fsS http://127.0.0.1:3000/api/health
 curl -fsS https://duoshot.site/api/health
 systemctl is-active duoshot-render-worker.service
-journalctl -u duoshot-render-worker.service -n 20 --no-pager
+journalctl -u duoshot-render-worker.service -n 20 --no-pager   # render_worker_mode { mode: 'process' }, render_worker_started
 ```
 
 Apply additive database migrations before step 4 when the release needs them.
