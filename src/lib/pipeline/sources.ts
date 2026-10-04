@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import sharp from "sharp";
 import { assertBatchSize, MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "./limits";
 
@@ -10,7 +10,7 @@ export async function assertSourceImage(buffer: Buffer) {
 }
 
 /** Unique paths are loaded once; serial reads cap peak buffering per render. */
-export async function loadSources(client: SupabaseClient, userId: string, paths: string[]) {
+export async function loadSources(client: DbClient, userId: string, paths: string[]) {
   const unique = [...new Set(paths)];
   const bucket = client.storage.from("uploads");
   const metadata: { size: number }[] = [];

@@ -5,7 +5,7 @@ import { createQueryBuilder, createSupabaseMock, readJson } from "@/test/supabas
 import type { RenderJob } from "./jobs";
 import { executeReview } from "./review";
 
-vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: vi.fn(), createReviewWriter: vi.fn((client: unknown) => client) }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: vi.fn() }));
 
 const USER = { id: "user-1" };
 const PAYLOAD = { outerPaths: ["user-1/a.png"], innerPaths: ["user-1/b.png"] };
@@ -26,7 +26,10 @@ function render(body: unknown = PAYLOAD) {
   return new Request("http://localhost/render", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) });
 }
 
-beforeEach(() => vi.mocked(createAdminSupabase).mockReset());
+beforeEach(() => {
+  vi.mocked(createAdminSupabase).mockReset();
+  vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({ user: USER }) as never);
+});
 
 describe("executeReview early validation", () => {
   it("refuses a job whose workspace is no longer the user's active one", async () => {

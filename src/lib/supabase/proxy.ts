@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicKey, getSupabaseUrl } from "./env";
 import { getSupabaseAuthCookieName, getSupabaseServerUrl } from "./server-env";
 import { supabaseCookieOptions } from "./cookie-options";
+import type { Database } from "./types";
 
 export async function updateSession(request: NextRequest, requestHeaders?: Headers) {
   const headers = requestHeaders ?? new Headers(request.headers);
@@ -12,7 +13,7 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
   if (!getSupabaseUrl() || !getSupabasePublicKey()) {
     return supabaseResponse;
   }
-  const supabase = createServerClient(getSupabaseServerUrl(), getSupabasePublicKey(), {
+  const supabase = createServerClient<Database>(getSupabaseServerUrl(), getSupabasePublicKey(), {
     cookieOptions: { ...supabaseCookieOptions(), name: getSupabaseAuthCookieName() },
     cookies: {
       getAll() {
@@ -32,6 +33,11 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
     },
   });
 
-  await supabase.auth.getUser();
+  // Refresh only: getClaims() goes through getSession(), which rotates an expiring
+  // token and writes the cookies through setAll above. It then verifies the access
+  // token locally against the cached JWKS (asymmetric signing keys) and only falls
+  // back to a getUser() round-trip for HS256 tokens. Route handlers still call
+  // getUser() themselves before trusting the identity.
+  await supabase.auth.getClaims();
   return supabaseResponse;
 }

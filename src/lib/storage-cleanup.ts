@@ -1,12 +1,12 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 
 /** Select metadata in SQL, delete physical objects only through Storage. */
-export async function removeStorageObjects(admin: SupabaseClient, userId: string | null = null) {
+export async function removeStorageObjects(admin: DbClient, userId: string | null = null) {
   let removed = 0;
   for (let batch = 0; batch < 20; batch++) {
-    const { data, error } = await admin.rpc("storage_cleanup_candidates", { p_user_id: userId });
+    const { data, error } = await admin.rpc("storage_cleanup_candidates", userId ? { p_user_id: userId } : {});
     if (error) throw new Error("STORAGE_SCAN_FAILED");
-    const objects = (data ?? []) as Array<{ bucket_id: string; name: string }>;
+    const objects = data ?? [];
     if (!objects.length) return { removed, complete: true };
     for (const bucket of ["uploads", "exports", "reviews"]) {
       const paths = objects.filter((object) => object.bucket_id === bucket).map((object) => object.name);

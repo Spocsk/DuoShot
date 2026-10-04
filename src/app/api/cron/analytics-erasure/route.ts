@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { verifyBearer } from "@/lib/bearer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
-  if (!verifyBearer(request, process.env.CRON_SECRET)) {
+  if (!verifyBearer(request, serverEnv.cronSecret)) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
   // Mixpanel no longer collects anything; this job only erases data sent before DataFast became
   // the single analytics tool. The GDPR API still needs the project token, now a runtime-only secret.
-  const token = process.env.MIXPANEL_PROJECT_TOKEN;
-  const oauthToken = process.env.MIXPANEL_GDPR_OAUTH_TOKEN;
+  const token = serverEnv.analytics.mixpanelProjectToken;
+  const oauthToken = serverEnv.analytics.mixpanelGdprOAuthToken;
   const admin = createAdminSupabase();
   if (!token || !oauthToken || !admin) return NextResponse.json({ processed: 0, configured: false });
 

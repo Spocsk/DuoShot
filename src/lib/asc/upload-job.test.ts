@@ -87,7 +87,7 @@ describe("asc_upload job", () => {
     expect(reports[0]!.files.map((file) => file.state)).toEqual(["pending", "pending"]);
     expect(reports.at(-1)).toMatchObject({ total: 2, done: 2, files: [{ state: "complete" }, { state: "complete" }] });
     const complete = rpc.mock.calls.find(([name]) => name === "complete_render")!;
-    expect(complete[1]).toMatchObject({ p_job: "job-1", p_lease: "lease-1", p_error: null, p_result: { uploaded: 2, reordered: true, skipped: ["duo-outer", "duo-inner"] } });
+    expect(complete[1]).toMatchObject({ p_job: "job-1", p_lease: "lease-1", p_error: undefined, p_result: { uploaded: 2, reordered: true, skipped: ["duo-outer", "duo-inner"] } });
     expect(apple.calls.some((call) => call.url.includes("/relationships/appScreenshots"))).toBe(true);
   });
 

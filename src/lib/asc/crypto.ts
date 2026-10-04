@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { serverEnv } from "../env";
 
 export type SealedSecret = { ciphertext: string; iv: string; authTag: string };
 
@@ -7,7 +8,7 @@ export type SealedSecret = { ciphertext: string; iv: string; authTag: string };
  * Returns null when it is missing or malformed so callers answer 503 instead of
  * ever storing a key with a weak or truncated master key.
  */
-export function readMasterKey(value = process.env.ASC_ENCRYPTION_KEY): Buffer | null {
+export function readMasterKey(value = serverEnv.asc.encryptionKey): Buffer | null {
   if (!value || !/^[A-Za-z0-9+/]+={0,2}$/.test(value.trim())) return null;
   const key = Buffer.from(value.trim(), "base64");
   return key.length === 32 ? key : null;

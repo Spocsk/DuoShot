@@ -5,8 +5,10 @@ import { checkoutAvailable, passCheckoutAvailable } from "@/lib/billing-availabi
 import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
+import type { Tables } from "@/lib/supabase/types";
 import { getSiteUrl } from "@/lib/site";
 import { createHash } from "node:crypto";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -21,10 +23,10 @@ function isPurchaseKind(value: unknown): value is PurchaseKind {
 function priceIdFor(kind: PurchaseKind): string | undefined {
   switch (kind) {
     case "pass30": return pass30PriceId();
-    case "indie_monthly": return process.env.STRIPE_INDIE_PRICE_ID;
-    case "studio_monthly": return process.env.STRIPE_STUDIO_PRICE_ID;
-    case "indie_yearly": return process.env.STRIPE_INDIE_YEARLY_PRICE_ID;
-    case "studio_yearly": return process.env.STRIPE_STUDIO_YEARLY_PRICE_ID;
+    case "indie_monthly": return serverEnv.stripe.prices.indieMonthly;
+    case "studio_monthly": return serverEnv.stripe.prices.studioMonthly;
+    case "indie_yearly": return serverEnv.stripe.prices.indieYearly;
+    case "studio_yearly": return serverEnv.stripe.prices.studioYearly;
   }
 }
 
@@ -48,12 +50,12 @@ async function checkout(request: Request) {
   const context = await readWorkspaceBilling(supabase, user.id);
   if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
   const { membership, workspace } = context;
-  if (membership.role !== "owner" && membership.role !== "admin") {
+  if (membership.role !== "owner") {
     return NextResponse.json({ error: "BILLING_OWNER_REQUIRED" }, { status: 403 });
   }
 
 
-  let customerId = workspace.stripe_customer_id as string | null;
+  let customerId = workspace.stripe_customer_id;
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: user.email ?? undefined,
@@ -77,9 +79,11 @@ async function checkout(request: Request) {
     return NextResponse.json({ error: "SUBSCRIPTION_EXISTS", manageUrl: "/api/stripe/portal" }, { status: 409 });
   }
 
-  const { data: attempt, error: attemptError } = await admin.rpc("begin_checkout", {
+  const { data: attemptJson, error: attemptError } = await admin.rpc("begin_checkout", {
     p_workspace_id: membership.workspace_id, p_kind: kind, p_return_path: safeNextPath(body.next),
   });
+  // begin_checkout returns to_jsonb() of the checkout_attempts row.
+  const attempt = attemptJson as Tables<"checkout_attempts"> | null;
   if (attemptError || !attempt) return NextResponse.json({ error: "CHECKOUT_UNAVAILABLE" }, { status: 503 });
   if (attempt.session_id) {
     const existing = await stripe.checkout.sessions.retrieve(attempt.session_id);
@@ -112,7 +116,7 @@ async function checkout(request: Request) {
     billing_address_collection: "required",
     customer_update: { address: "auto", name: "auto" },
     tax_id_collection: { enabled: true },
-    ...(process.env.STRIPE_TAX_ENABLED === "true" ? { automatic_tax: { enabled: true } } : {}),
+    ...(serverEnv.stripe.taxEnabled ? { automatic_tax: { enabled: true } } : {}),
     success_url: `${origin}${nextPath}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${nextPath}?checkout=cancel`,
     metadata,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminSupabase, createReviewWriter } from "@/lib/supabase/admin";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { harborReviewPayload, isDemoReview } from "@/lib/pipeline/harbor";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { readActiveMembership } from "@/lib/active-membership";
@@ -62,7 +62,7 @@ export async function GET(_request: Request, { params }: Params) {
     .select("slide_index, clone_label")
     .eq("review_id", review.id)
     .order("slide_index");
-  return reviewJson(id, review as ReviewRow, (slides ?? []) as SlideRow[]);
+  return reviewJson(id, review, slides ?? []);
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
@@ -77,7 +77,8 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (lookup.failed) return NextResponse.json({ error: "WORKSPACE_UNAVAILABLE" }, { status: 503 });
   const membership = lookup.membership;
   if (!membership) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-  const writer = createReviewWriter(supabase);
+  const writer = createAdminSupabase();
+  if (!writer) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
   const revokedAt = new Date().toISOString();
   const { data, error } = await writer
     .from("review_links")

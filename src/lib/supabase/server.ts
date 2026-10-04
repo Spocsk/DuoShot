@@ -3,10 +3,11 @@ import { cookies } from "next/headers";
 import { getSupabasePublicKey } from "./env";
 import { getSupabaseAuthCookieName, getSupabaseServerUrl } from "./server-env";
 import { supabaseCookieOptions } from "./cookie-options";
+import type { Database } from "./types";
 
 export async function createServerSupabase() {
   const cookieStore = await cookies();
-  return createServerClient(getSupabaseServerUrl(), getSupabasePublicKey(), {
+  return createServerClient<Database>(getSupabaseServerUrl(), getSupabasePublicKey(), {
     cookieOptions: { ...supabaseCookieOptions(), name: getSupabaseAuthCookieName() },
     cookies: {
       getAll() {

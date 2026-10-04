@@ -1,5 +1,6 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
+import { applyMigrations, PLATFORM_STUBS } from "../../scripts/lib/pglite-migrate.mjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const db = new PGlite();
@@ -7,15 +8,7 @@ const uid = "00000000-0000-4000-8000-000000000001";
 let workspace: string;
 beforeAll(async () => {
   // Supabase platform schemas only; application schema and functions are the real migrations.
-  await db.exec(`create role anon; create role authenticated; create role service_role;
-    create schema auth; create schema storage;
-    create table auth.users(id uuid primary key,email text);
-    create function auth.uid() returns uuid language sql as $$ select null::uuid $$;
-    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
-    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,created_at timestamptz default now());`);
-  for (const file of (await readdir("supabase/migrations")).filter((f) => f.endsWith(".sql")).sort()) {
-    await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
-  }
+  await applyMigrations(db);
   await db.query("insert into auth.users values($1,'fixture@example.invalid')", [uid]);
   workspace = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [uid])).rows[0].workspace_id;
 }, 30000);
@@ -249,4 +242,27 @@ describe("one-time pass and waitlist contracts", () => {
     await expect(db.query("insert into waitlist(email,topic,token) values('dev@example.invalid','launch','another-token-0123456789abcdef0123456789')")).rejects.toThrow();
     await expect(db.query("insert into waitlist(email,topic,token) values('x@example.invalid','newsletter','third-token-0123456789abcdef0123456789')")).rejects.toThrow();
   });
+});
+
+describe("workspace roles", () => {
+  const ROLE_MIGRATION = "20261005120000_drop_admin_workspace_role.sql";
+  it("accepts only owner and member", async () => {
+    const [{ id }] = (await db.query<{ id: string }>("select id from workspace_members where user_id=$1", [uid])).rows;
+    await expect(db.query("update workspace_members set role='admin' where id=$1", [id])).rejects.toThrow("workspace_members_role_check");
+  });
+  it("refuses to drop the admin role while a row still uses it", async () => {
+    const legacy = new PGlite();
+    try {
+      await legacy.exec(PLATFORM_STUBS);
+      const files = (await readdir("supabase/migrations")).filter((file) => file.endsWith(".sql")).sort();
+      for (const file of files.filter((file) => file < ROLE_MIGRATION)) await legacy.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
+      await legacy.query("insert into auth.users values($1,'legacy@example.invalid')", [uid]);
+      await legacy.query("update workspace_members set role='admin' where user_id=$1", [uid]);
+      await expect(legacy.exec(await readFile(`supabase/migrations/${ROLE_MIGRATION}`, "utf8"))).rejects.toThrow("role admin");
+      const [{ def }] = (await legacy.query<{ def: string }>("select pg_get_constraintdef(oid) def from pg_constraint where conname='workspace_members_role_check'")).rows;
+      expect(def).toContain("admin");
+    } finally {
+      await legacy.close();
+    }
+  }, 30000);
 });

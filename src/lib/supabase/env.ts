@@ -1,11 +1,8 @@
+import { publicEnv } from "../env-public";
 export function getSupabaseUrl(): string {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  return publicEnv.supabaseUrl;
 }
 
 export function getSupabasePublicKey(): string {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    ""
-  );
+  return publicEnv.supabasePublicKey;
 }

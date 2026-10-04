@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { serverEnv } from "./env";
 
 /**
  * Constant-time check of `Authorization: Bearer <secret>`. Both sides are hashed first so the
@@ -20,14 +21,14 @@ let warnedFallback = false;
  * working with CRON_SECRET and warns once per process.
  */
 export function renderWorkerSecret(): string | undefined {
-  const dedicated = process.env.RENDER_WORKER_SECRET;
+  const dedicated = serverEnv.render.workerSecret;
   if (dedicated) return dedicated;
-  const legacy = process.env.CRON_SECRET;
+  const legacy = serverEnv.cronSecret;
   if (legacy && !warnedFallback) {
     warnedFallback = true;
     console.warn("render_worker_secret_fallback", { using: "CRON_SECRET" });
   }
-  return legacy || undefined;
+  return legacy;
 }
 
 export function resetRenderWorkerSecretWarning() {

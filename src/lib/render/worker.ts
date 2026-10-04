@@ -1,8 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { executeExport } from "./export";
 import { executeReview } from "./review";
 import { executeAscUpload } from "../asc/upload-job";
 import { completeRender, type RenderJob } from "./jobs";
+import { serverEnv } from "../env";
 
 /**
  * One claim → execute → complete cycle of the durable render queue, shared by the
@@ -43,10 +44,10 @@ export const HEARTBEAT_MS = 15_000;
 export const TIMEOUT_CODES: Record<RenderLane, string> = { render: "RENDER_INTERRUPTED", asc: "ASC_INTERRUPTED" };
 
 export function laneEnabled(lane: RenderLane) {
-  return lane === "render" || process.env.ASC_CONNECTOR_ENABLED === "true";
+  return lane === "render" || serverEnv.asc.enabled;
 }
 
-async function execute(admin: SupabaseClient, job: RenderJob, signal: AbortSignal): Promise<Response> {
+async function execute(admin: DbClient, job: RenderJob, signal: AbortSignal): Promise<Response> {
   const input = () => new Request("http://localhost/render", { method: "POST", body: JSON.stringify(job.payload), signal });
   if (job.kind === "export") return executeExport(input(), admin, { id: job.user_id }, job);
   if (job.kind === "review") return executeReview(input(), admin, { id: job.user_id }, job);
@@ -55,7 +56,7 @@ async function execute(admin: SupabaseClient, job: RenderJob, signal: AbortSigna
 }
 
 /** Records the executor's result exactly as the HTTP worker always has. */
-async function settle(admin: SupabaseClient, job: RenderJob, run: Promise<Response>): Promise<TickOutcome> {
+async function settle(admin: DbClient, job: RenderJob, run: Promise<Response>): Promise<TickOutcome> {
   try {
     const response = await run;
     if (!response.ok) {
@@ -88,10 +89,11 @@ function wait(ms: number | undefined, signal?: AbortSignal): Promise<"elapsed" |
   });
 }
 
-export async function runRenderTick(admin: SupabaseClient, lane: RenderLane, options: TickOptions = {}): Promise<TickOutcome> {
+export async function runRenderTick(admin: DbClient, lane: RenderLane, options: TickOptions = {}): Promise<TickOutcome> {
   if (!laneEnabled(lane)) return { kind: "idle" };
   const claimed = await admin.rpc(lane === "asc" ? "claim_asc_upload" : "claim_render");
   if (claimed.error) return { kind: "unavailable" };
+  // claim_* return to_jsonb() of the leased render_jobs row (or null when idle).
   const job = claimed.data as RenderJob | null;
   if (!job) return { kind: "idle" };
 

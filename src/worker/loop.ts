@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient } from "@/lib/supabase/types";
 import { runRenderTick, type RenderLane, type TickOutcome } from "../lib/render/worker";
 
 export type WorkerConfig = {
@@ -25,7 +25,7 @@ export type WorkerResult = {
  * so an upload waiting on Apple never holds up an export. stop() stops claiming at once
  * and gives running jobs `stopGraceMs` to finish.
  */
-export function createRenderWorker(admin: SupabaseClient, config: WorkerConfig, tick = runRenderTick) {
+export function createRenderWorker(admin: DbClient, config: WorkerConfig, tick = runRenderTick) {
   const stopping = new AbortController();
   const deadline = new AbortController();
   let deadlineTimer: ReturnType<typeof setTimeout> | undefined;

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DbClient, Json } from "@/lib/supabase/types";
 import type { RenderBody } from "../pipeline/request";
 import type { AscUploadPayload } from "../asc/upload-job";
 export type RenderJob = {
@@ -7,9 +7,9 @@ export type RenderJob = {
   /** Claim count, including the current one. */
   attempts?: number;
 };
-export async function completeRender(client: SupabaseClient, job: RenderJob, result: unknown, exported: unknown = null, error: string | null = null) {
+export async function completeRender(client: DbClient, job: RenderJob, result: Json, exported: Json = null, error: string | null = null) {
   const response = await client.rpc("complete_render", {
-    p_job: job.id, p_lease: job.lease_token, p_result: result, p_export: exported, p_error: error,
+    p_job: job.id, p_lease: job.lease_token, p_result: result, p_export: exported, p_error: error ?? undefined,
   });
   if (response.error) throw new Error(response.error.message.includes("RENDER_LEASE_LOST") ? "RENDER_LEASE_LOST" : "RENDER_COMMIT_FAILED");
 }

@@ -233,7 +233,7 @@ type Invitation = {
 type WorkspaceMember = {
   id: string;
   email: string | null;
-  role: "owner" | "admin" | "member";
+  role: "owner" | "member";
 };
 
 function StudioWorkspace({ locale }: { locale: Locale }) {

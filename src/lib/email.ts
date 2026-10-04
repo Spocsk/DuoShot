@@ -1,7 +1,8 @@
 import { Resend } from "resend";
+import { serverEnv } from "./env";
 
 export function isResendConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY);
+  return Boolean(serverEnv.email.resendApiKey);
 }
 
 export async function sendTransactionalEmail(options: {
@@ -9,13 +10,13 @@ export async function sendTransactionalEmail(options: {
   subject: string;
   text: string;
 }): Promise<{ sent: boolean; mocked: boolean }> {
-  const key = process.env.RESEND_API_KEY;
+  const key = serverEnv.email.resendApiKey;
   if (!key) {
     return { sent: false, mocked: true };
   }
   const resend = new Resend(key);
   const { error } = await resend.emails.send({
-    from: process.env.RESEND_FROM || "DuoShot <noreply@duoshot.site>",
+    from: serverEnv.email.from,
     to: options.to,
     subject: options.subject,
     text: options.text,
