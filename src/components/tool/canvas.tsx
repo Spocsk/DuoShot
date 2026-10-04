@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import gsap from "gsap";
 import { MAX_IMAGES } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import type { MessageKey } from "@/lib/i18n/types";
@@ -11,6 +10,12 @@ export type StepStatus = "done" | "todo" | "current";
 
 const STEPS = ["captures", "adjust", "review", "export"] as const;
 const STEP_KEYS: Record<ToolPanel, MessageKey> = { captures: "tool_step_import", adjust: "tool_step_adjust", review: "tool_step_review", export: "tool_step_export" };
+
+type Gsap = typeof import("gsap").default;
+let gsapModule: Promise<Gsap> | null = null;
+/** GSAP only animates slide changes, so it is fetched after the tool loads, never in its first chunks. */
+const loadGsap = () => (gsapModule ??= import("gsap").then((module) => module.default));
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Importer → Ajuster → Vérifier → Exporter. A tablist: arrows move between steps, each tab says whether it is done. */
 export function ToolStepBar({ value, done, onChange }: { value: ToolPanel; done: Record<ToolPanel, boolean>; onChange: (value: ToolPanel) => void }) {
@@ -54,11 +59,21 @@ export function ToolCanvas({mobileView, onMobileView, slideIndex, children}: {mo
   const canvasRef = useRef<HTMLDivElement>(null);
   const initialSlide = useRef(true);
   useEffect(() => {
+    // Warm the module once the tool is interactive so the first slide change does not wait for it.
+    if (!reducedMotion()) loadGsap().catch(() => { gsapModule = null; });
+  }, []);
+  useEffect(() => {
     if (initialSlide.current) { initialSlide.current = false; return; }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !canvasRef.current) return;
+    if (reducedMotion() || !canvasRef.current) return;
     const stages = canvasRef.current.querySelectorAll(".preview-stage");
-    const tween = gsap.fromTo(stages, {opacity: 0.65, y: 6}, {opacity: 1, y: 0, duration: 0.22, ease: "power2.out", clearProps: "all"});
-    return () => { tween.kill(); gsap.set(stages, {clearProps: "all"}); };
+    let cancelled = false;
+    let stop: (() => void) | null = null;
+    loadGsap().then((gsap) => {
+      if (cancelled) return;
+      const tween = gsap.fromTo(stages, {opacity: 0.65, y: 6}, {opacity: 1, y: 0, duration: 0.22, ease: "power2.out", clearProps: "all"});
+      stop = () => { tween.kill(); gsap.set(stages, {clearProps: "all"}); };
+    }).catch(() => { gsapModule = null; }); // Decorative: without GSAP the slide simply appears.
+    return () => { cancelled = true; stop?.(); };
   }, [slideIndex]);
   return <div ref={canvasRef} className="tool-canvas" data-mobile-view={mobileView}>
     <div className="tool-mobile-view" role="group" aria-label={t("tool_canvas_view")}>{(["outer", "inner", "compare"] as const).map((view) => <button key={view} type="button" aria-pressed={mobileView === view} className={mobileView === view ? "is-on" : ""} onClick={() => onMobileView(view)}>{labels[view]}</button>)}</div>
