@@ -23,7 +23,14 @@ export function LandingMotion({ children }: { children: ReactNode }) {
       cleanup = null;
       document.documentElement.classList.toggle("duo-motion", query.matches);
       if (!query.matches) return;
-      const { default: gsap } = await import("gsap");
+      let gsap: Gsap;
+      try {
+        gsap = (await import("gsap")).default;
+      } catch {
+        // Without GSAP, fall back to the static layout so every step visual stays visible.
+        document.documentElement.classList.remove("duo-motion");
+        return;
+      }
       if (disposed || !query.matches) return;
       cleanup = mountSequence(gsap, node);
     };

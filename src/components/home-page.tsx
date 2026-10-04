@@ -77,7 +77,7 @@ function ProofSection({ locale }: { locale: Locale }) {
     </div>
     <div className="studio-proof-board">
       <div className="studio-proof-before">
-        <p className="studio-proof-label"><b>{fr ? "Avant" : "Before"}</b>{fr ? "Vos captures brutes" : "Your raw captures"}</p>
+        <p className="studio-proof-label"><b>{fr ? "Avant" : "Before"}</b>{fr ? "Vos captures brutes · exemple" : "Your raw captures · example"}</p>
         <div className="studio-raw-pair">
           <RawCapture fr={fr} kind="outer" />
           <RawCapture fr={fr} kind="inner" />
@@ -98,7 +98,7 @@ function ProofSection({ locale }: { locale: Locale }) {
       <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
         {fr ? "Ouvrir l’exemple dans l’outil" : "Open the example in the tool"} <span aria-hidden="true">↗</span>
       </Link>
-      <small>{fr ? "Noms et dimensions issus de l’export réel ; poids mesurés sur l’exemple Harbor (app fictive)." : "Names and dimensions come from the real export; sizes measured on the Harbor example (fictional app)."}</small>
+      <small>{fr ? "Avant : fichiers d’exemple. Après : noms et dimensions issus de l’export réel, poids mesurés sur le ZIP exemple Harbor (app fictive)." : "Before: example files. After: names and dimensions from the real export, sizes measured on the Harbor example ZIP (fictional app)."}</small>
     </div>
   </section>;
 }

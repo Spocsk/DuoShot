@@ -96,8 +96,9 @@ header.sticky .site-wordmark { font-family: var(--font-sans), sans-serif; font-s
 .studio-hero-meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 2rem; margin-top: clamp(1.5rem, 4vh, 2.5rem); padding-block: 1rem 1.4rem; border-top: 1px solid var(--studio-line); }
 .studio-hero-footnote { color: var(--studio-muted); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .studio-availability { flex: 1 1 28rem; max-width: 46rem; }
-.studio-availability [data-testid="apple-availability"] { margin-top: 0; max-width: none; color: var(--studio-muted); font-size: 0.8rem; line-height: 1.5; }
-[data-testid="apple-availability"] a { display: inline-flex; min-height: 24px; align-items: center; }
+/* The availability block also hosts the waitlist form: only spacing here, and only the source link is enlarged. */
+.studio-availability [data-testid="apple-availability"] { margin-top: 0; max-width: none; line-height: 1.5; }
+[data-testid="apple-availability"] > a[href^="https://developer.apple.com"] { display: inline-flex; min-height: 24px; align-items: center; }
 @media (prefers-reduced-motion: no-preference) {
   .studio-hero-object .duo-closed { animation: studio-settle-closed 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .studio-hero-object .duo-open { animation: studio-settle-open 1.25s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both; }
