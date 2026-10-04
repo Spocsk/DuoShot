@@ -15,18 +15,26 @@ import unittest
 UNITS = Path(__file__).resolve().parent.parent / 'systemd'
 BACKUP = Path(__file__).resolve().parent.parent / 'supabase' / 'nightly-backup.sh'
 PINNED = re.compile(r'(web|render)-[a-z0-9]{24}')
+PROJECT = 'i9qtpe5bpyig86s1aljxr5gv'
 
+# Containers exist only in the production project; any other project (staging) matches nothing.
 STUB_DOCKER = """#!/bin/sh
 echo "docker $*" >> "$STUB_LOG"
 case "$*" in
-  "ps -q --filter label=com.docker.compose.service=web") printf '%s' "$WEB_IDS" ;;
-  "ps -q --filter label=com.docker.compose.service=render") printf '%s' "$RENDER_IDS" ;;
+  "ps -q --filter label=com.docker.compose.project=$LIVE_PROJECT --filter label=com.docker.compose.service=web") printf '%s' "$WEB_IDS" ;;
+  "ps -q --filter label=com.docker.compose.project=$LIVE_PROJECT --filter label=com.docker.compose.service=render") printf '%s' "$RENDER_IDS" ;;
   "top "*) echo "PID COMMAND"; echo "4242 node scripts/run-render-worker.mjs" ;;
 esac
 """
 STUB_KILL = """#!/bin/sh
 echo "kill $*" >> "$STUB_LOG"
 """
+
+
+def unit_environment(unit):
+    """Environment= defaults of the unit, as systemd passes them to the command."""
+    lines = (UNITS / unit).read_text().splitlines()
+    return dict(l.split('=', 1)[1].split('=', 1) for l in lines if l.startswith('Environment='))
 
 
 def command(unit, key, instance='storage'):
@@ -53,9 +61,12 @@ class SystemdUnits(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_unit(self, unit, key, web='', render='', instance='storage'):
+    def run_unit(self, unit, key, web='', render='', instance='storage', override=None):
         args = command(unit, key, instance)
-        result = subprocess.run(args, env={**self.env, 'WEB_IDS': web, 'RENDER_IDS': render},
+        env = {**self.env, **unit_environment(unit), 'LIVE_PROJECT': PROJECT, 'WEB_IDS': web, 'RENDER_IDS': render}
+        if override is not None:
+            env['DUOSHOT_COMPOSE_PROJECT'] = override
+        result = subprocess.run(args, env=env,
                                 capture_output=True, text=True, timeout=10)
         return result, self.log.read_text().splitlines()
 
@@ -76,6 +87,19 @@ class SystemdUnits(unittest.TestCase):
             self.assertIn('expected one running web container', result.stderr)
             self.assertFalse(any(call.startswith('docker exec') for call in calls))
 
+    def test_units_default_to_the_production_project_and_allow_an_override_file(self):
+        for unit in ['duoshot-maintenance@.service', 'duoshot-render-worker.service', 'duoshot-backup.service']:
+            text = (UNITS / unit).read_text()
+            self.assertEqual(unit_environment(unit), {'DUOSHOT_COMPOSE_PROJECT': PROJECT}, unit)
+            self.assertIn('EnvironmentFile=-/etc/duoshot/compose.env', text, unit)
+
+    def test_another_project_never_matches(self):
+        # A staging stack (other project) is invisible: with only its containers, the unit refuses.
+        result, calls = self.run_unit('duoshot-maintenance@.service', 'ExecStart', web='abc123\n', override='staging')
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(any(call.startswith('docker exec') for call in calls))
+        self.assertTrue(all('label=com.docker.compose.project=staging' in call for call in calls if call.startswith('docker ps')))
+
     def test_render_worker_targets_the_render_service(self):
         result, calls = self.run_unit('duoshot-render-worker.service', 'ExecStart', web='web1\n', render='rnd1\n')
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -92,6 +116,8 @@ class SystemdUnits(unittest.TestCase):
 
     def test_backup_resolves_web_by_label_before_stopping_it(self):
         text = BACKUP.read_text()
+        self.assertIn(f'DUOSHOT_COMPOSE_PROJECT:-{PROJECT}', text)
+        self.assertIn('label=com.docker.compose.project=$project', text)
         lookup = text.index('label=com.docker.compose.service=web')
         self.assertLess(lookup, text.index('docker stop'))
         self.assertIn('docker start "$web_id"', text)

@@ -4,13 +4,17 @@ After=docker.service network-online.target
 Requires=docker.service
 
 [Service]
+# Compose project that owns the containers; a staging stack on the same host has another one.
+# Override in /etc/duoshot/compose.env (DUOSHOT_COMPOSE_PROJECT=...) without editing the unit.
+Environment=DUOSHOT_COMPOSE_PROJECT=i9qtpe5bpyig86s1aljxr5gv
+EnvironmentFile=-/etc/duoshot/compose.env
 Type=simple
-# Resolve the render container by its compose service label (names change when Coolify
+# Resolve the render container by its compose project and service labels (names change when Coolify
 # recreates the project) and refuse to guess when zero or several match. $$ is a literal $.
-ExecStart=/bin/sh -c 'set -- $$(docker ps -q --filter label=com.docker.compose.service=render); [ $$# -eq 1 ] || { echo "expected one running render container, found $$#" >&2; exit 1; }; exec docker exec "$$1" node scripts/run-render-worker.mjs'
+ExecStart=/bin/sh -c 'set -- $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=render); [ $$# -eq 1 ] || { echo "expected one running render container, found $$#" >&2; exit 1; }; exec docker exec "$$1" node scripts/run-render-worker.mjs'
 # docker exec does not forward the stop to the process it started; signal it directly
 # so a restart never leaves a second worker looping inside the container.
-ExecStop=/bin/sh -c 'for c in $$(docker ps -q --filter label=com.docker.compose.service=render) $$(docker ps -q --filter label=com.docker.compose.service=web); do docker top $$c -o pid,args 2>/dev/null | awk "/run-render-worker/ {print \\$$1}" | xargs -r kill -TERM; done'
+ExecStop=/bin/sh -c 'for c in $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=render) $$(docker ps -q --filter label=com.docker.compose.project=$${DUOSHOT_COMPOSE_PROJECT:?} --filter label=com.docker.compose.service=web); do docker top $$c -o pid,args 2>/dev/null | awk "/run-render-worker/ {print \\$$1}" | xargs -r kill -TERM; done'
 Restart=always
 RestartSec=5
 TimeoutStopSec=20

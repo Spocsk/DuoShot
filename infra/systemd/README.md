@@ -4,9 +4,13 @@ Production runs only on the VPS (see [`../deploy.md`](../deploy.md)). These
 systemd timers run the scheduled jobs: Storage every 15 minutes,
 analytics erasure daily at 04:00 UTC. Run only after the compatible application
 and schema have been installed. The units find their containers by compose
-service label (`docker ps -q --filter label=com.docker.compose.service=web` or
-`=render`), so a recreated or renamed container needs no unit change. They fail
-instead of guessing when zero or several running containers carry the label.
+project and service labels (`com.docker.compose.project=$DUOSHOT_COMPOSE_PROJECT`
+plus `com.docker.compose.service=web` or `=render`), so a recreated or renamed
+container needs no unit change and a staging stack on the same host (another
+project) is never matched. They fail instead of guessing when zero or several
+running containers match. `DUOSHOT_COMPOSE_PROJECT` defaults to
+`i9qtpe5bpyig86s1aljxr5gv` in each unit (and in `nightly-backup.sh`); override it
+in `/etc/duoshot/compose.env` if the project is ever renamed.
 
 `infra/host/test_systemd_units.py` runs every `ExecStart`/`ExecStop` against a
 stub `docker`, the way systemd unescapes them (`$$` is a literal `$`).

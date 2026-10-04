@@ -56,9 +56,11 @@ The render container runs its own Next server on its loopback. The systemd unit
 so export rendering never competes with public traffic in `web` for memory or CPU.
 
 The systemd units in `infra/systemd/` and `nightly-backup.sh` find these
-containers by their compose label (`com.docker.compose.service=web|render`),
-not by name, and refuse to act when the label matches zero or several running
-containers. Keep the service names `web` and `render`.
+containers by their compose labels (`com.docker.compose.project` =
+`DUOSHOT_COMPOSE_PROJECT`, default `i9qtpe5bpyig86s1aljxr5gv`, and
+`com.docker.compose.service=web|render`), not by name, and refuse to act when
+zero or several running containers match. Keep the service names `web` and
+`render`; override the project in `/etc/duoshot/compose.env` if it changes.
 
 **Run exactly one `web` container.** The API rate limits in
 `src/lib/rate-limit.ts` keep their counters in that process's memory: with

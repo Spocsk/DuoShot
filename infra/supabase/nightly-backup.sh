@@ -7,9 +7,10 @@ stamp="$(date -u +%F)"
 if [[ -f /data/duoshot/backup-last-success ]] && [[ "$(cat /data/duoshot/backup-last-success)" == "$stamp" ]]; then exit 0; fi
 pending="$(docker exec db-5if8qfnj7o1bi2lrd3nbncff psql -U supabase_admin -d postgres -Atc "select count(*) from render_jobs where state in ('queued','running');")"
 if [[ "$pending" != 0 ]]; then echo 'Backup deferred: renders pending; retry at the next timer tick.'; exit 0; fi
-# Capture the web container ID by compose service label before stopping it: a stopped
+# Capture the web container ID by compose project + service label before stopping it: a stopped
 # container no longer shows in `docker ps`, and its name changes when Coolify recreates it.
-web_id="$(docker ps -q --filter label=com.docker.compose.service=web)"
+project="${DUOSHOT_COMPOSE_PROJECT:-i9qtpe5bpyig86s1aljxr5gv}"
+web_id="$(docker ps -q --filter "label=com.docker.compose.project=$project" --filter label=com.docker.compose.service=web)"
 if [[ -z "$web_id" || "$web_id" == *$'\n'* ]]; then echo 'Backup aborted: expected exactly one running web container.' >&2; exit 1; fi
 restart_web() { docker start "$web_id" >/dev/null; }
 trap restart_web EXIT
