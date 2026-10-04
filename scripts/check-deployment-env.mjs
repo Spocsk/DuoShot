@@ -4,6 +4,11 @@ const missing = required.filter((name) => !process.env[name]);
 if (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missing.push('SUPABASE_PUBLIC_KEY');
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SECRET_KEY) missing.push('SUPABASE_ADMIN_KEY');
 if (!process.env.CRON_SECRET || process.env.CRON_SECRET.length < 32) missing.push('CRON_SECRET (32+ characters)');
+if (process.env.RENDER_QUEUE_ENABLED === 'true') {
+  if (!process.env.RENDER_WORKER_SECRET || process.env.RENDER_WORKER_SECRET.length < 32) missing.push('RENDER_WORKER_SECRET (32+ characters)');
+  // One shared value would let a leaked cron secret drive renders again.
+  else if (process.env.RENDER_WORKER_SECRET === process.env.CRON_SECRET) missing.push('RENDER_WORKER_SECRET (must differ from CRON_SECRET)');
+}
 for (const name of required) {
   if (!process.env[name]) continue;
   try { if (new URL(process.env[name]).protocol !== 'https:') missing.push(`${name} (HTTPS required)`); }

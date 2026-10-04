@@ -7,6 +7,7 @@ import {
 } from "@/lib/locale";
 import { updateSession } from "@/lib/supabase/proxy";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { isInternalRequest } from "@/lib/internal-request";
 
 function needsSessionRefresh(pathname: string) {
   // Status handlers authenticate and refresh their own cookies. Repeating that
@@ -17,6 +18,12 @@ function needsSessionRefresh(pathname: string) {
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // Internal routes are only reachable from the container itself or the private Docker
+  // network; from the Internet they do not exist. Their bearer secret still applies.
+  if (/^\/api\/internal(?:\/|$)/.test(pathname) && !isInternalRequest(request.headers)) {
+    return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
+  }
 
   const rate = checkRateLimit(request.method, pathname, clientIp(request.headers));
   if (rate.limited) {
