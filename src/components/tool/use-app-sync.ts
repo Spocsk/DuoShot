@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
-import type { SetMeta } from "@/lib/sets-store";
+import { appNameOf, type SetMeta } from "@/lib/sets-store";
 
 /** Debounced POST /api/apps so a renamed app is mirrored server side once typing pauses. */
 export function useAppSync(saveSetMetas: (sets: SetMeta[]) => void, setSets: Dispatch<SetStateAction<SetMeta[]>>) {
@@ -20,7 +20,7 @@ export function useAppSync(saveSetMetas: (sets: SetMeta[]) => void, setSets: Dis
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: set.appId,
-          name: set.name,
+          name: appNameOf(set),
           clientName: set.clientName,
           orientation: set.orientation,
         }),

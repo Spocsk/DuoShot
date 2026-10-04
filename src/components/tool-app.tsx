@@ -25,7 +25,7 @@ import {
   type Orientation,
   type RenderOptions,
 } from "@/lib/specs";
-import { t } from "@/lib/i18n";
+import { t, tf } from "@/lib/i18n";
 import { checkSourceCount } from "@/lib/pipeline/validate";
 import { inspectFile } from "@/lib/pipeline/source-inspect";
 import { createBrowserSupabase } from "@/lib/supabase/client";
@@ -35,6 +35,7 @@ import { trackProduct } from "@/lib/analytics-client";
 import type { CheckoutKind } from "@/lib/plans";
 import {
   defaultSet,
+  nextSetName,
   createSetStore,
   importLocalDrafts,
   loadSetMetas as readDraftMetas,
@@ -50,15 +51,16 @@ import { quotaLabel, useBilling } from "@/components/tool/use-billing";
 import { SetPicker, useSetsMenu } from "@/components/tool/set-picker";
 import { CapturesPanel } from "@/components/tool/captures-panel";
 import { AdjustPanel, AdvancedSettings } from "@/components/tool/adjust-panel";
-import { ReadinessReport, ReviewAlerts } from "@/components/tool/check-panel";
-import { DeliveryActions } from "@/components/tool/delivery-actions";
+import { CheckList, ReadinessReport, ReviewAlerts, type CheckItem } from "@/components/tool/check-panel";
+import { EXAMPLE_ZIP_URL, ExportPanel, OtherActions, ReviewOutcome } from "@/components/tool/delivery-actions";
+import { DemoStart, fetchHarborFiles, type DemoState } from "@/components/tool/demo";
 import { useAppSync } from "@/components/tool/use-app-sync";
 import { usePreviews } from "@/components/tool/use-previews";
 import { useSourceChecks } from "@/components/tool/use-source-checks";
 import { useRenderJobs } from "@/components/tool/use-render-jobs";
 import { isAllowedImage, takeFiles } from "@/components/tool/files";
-import { Seg, StatusLine } from "@/components/tool/controls";
-import { PairStrip, ToolCanvas, ToolPanelTabs } from "@/components/tool/canvas";
+import { Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
+import { PairStrip, ToolCanvas, ToolStepBar, type ToolPanel } from "@/components/tool/canvas";
 import { PreviewCard } from "@/components/tool/preview-card";
 
 type Props = { locale: Locale };
@@ -67,7 +69,8 @@ const subscribeNever = () => () => {};
 
 const BOOT_SET: SetMeta = {
   id: "boot",
-  name: "App",
+  name: "Composition 01",
+  appName: "",
   clientName: "",
   orientation: "portrait",
   sameSet: false,
@@ -116,7 +119,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [statusKind, setStatusKind] = useState<"ok" | "err" | "busy" | "info">("info");
   const [zipUrl, setZipUrl] = useState<string | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
-  const [toolPanel, setToolPanel] = useState<"captures" | "adjust" | "review">("captures");
+  const [toolPanel, setToolPanel] = useState<ToolPanel>("captures");
+  const [adjustSeen, setAdjustSeen] = useState(false);
+  const [demoState, setDemoState] = useState<DemoState>("idle");
+  const demoRequested = useRef(false);
   const [mobileView, setMobileView] = useState<"outer" | "inner" | "compare">("outer");
   const [adjustSide, setAdjustSide] = useState<"outer" | "inner">("outer");
   const completedSetsRef = useRef<Set<string>>(new Set());
@@ -214,6 +220,24 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     };
   }, [loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
 
+  const loadDemoRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => { loadDemoRef.current = loadDemo; });
+  useEffect(() => {
+    // /tool?demo=harbor (linked from the landing): load once, then drop the parameter so reloads keep user edits.
+    if (!draftsLoaded || demoRequested.current || searchParams.get("demo") !== "harbor") return;
+    demoRequested.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("demo");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    if (active?.demo && outerFiles.length > 0) return;
+    queueMicrotask(() => void loadDemoRef.current());
+  }, [draftsLoaded, searchParams, active?.demo, outerFiles.length]);
+  const lastZipUrl = useRef<string | null>(null);
+  useEffect(() => {
+    if (zipUrl && !lastZipUrl.current) queueMicrotask(() => setToolPanel("export"));
+    lastZipUrl.current = zipUrl;
+  }, [zipUrl]);
+
   const setsMenu = useSetsMenu();
   const syncApp = useAppSync(saveSetMetas, setSets);
 
@@ -292,13 +316,36 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     Boolean(zipUrl && jobs.exportImages.length),
   ];
   const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
-  // Mirrors the Check panel's "To do" list so the export action says what is still open.
-  const missingSteps = [
-    unpaired ? (locale === "fr" ? "compléter les vues fermé et ouvert" : "complete the closed and open views") : null,
-    severeQualityCount > 0 || cloneAlert ? (locale === "fr" ? "examiner les alertes de cadrage et de similarité" : "review framing and similarity alerts") : null,
-    !appUsageConfirmed ? (locale === "fr" ? "confirmer le contenu de l’app" : "confirm the app content") : null,
-  ].filter((step): step is string => step !== null);
-
+  const isDemo = Boolean(active?.demo);
+  const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /** Opens the panel holding a fix and moves focus to the control that resolves it. */
+  function jumpTo(panel: ToolPanel, selector: string) {
+    setToolPanel(panel);
+    window.setTimeout(() => {
+      const target = document.querySelector<HTMLElement>(selector);
+      target?.scrollIntoView({ behavior: reducedMotion() ? "instant" : "smooth", block: "center" });
+      target?.focus({ preventScroll: true });
+    }, 60);
+  }
+  const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
+  const checklist: CheckItem[] = [
+    { id: "pairs", done: hasExportable && !unpaired, label: t(locale, "tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}"]`) },
+    { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t(locale, "tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
+    { id: "similarity", done: !cloneAlert || assumeClone, label: t(locale, "tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
+    { id: "confirm", done: appUsageConfirmed, label: t(locale, "tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
+  ];
+  const readyToPrepare = checklist.every((item) => item.done);
+  const importDone = hasExportable && !unpaired;
+  const stepsDone: Record<ToolPanel, boolean> = {
+    captures: importDone,
+    adjust: importDone && (adjustSeen || toolPanel === "review" || toolPanel === "export" || Boolean(zipUrl)),
+    review: importDone && readyToPrepare,
+    export: Boolean(zipUrl),
+  };
+  function goToPanel(panel: ToolPanel) {
+    if (panel === "adjust") setAdjustSeen(true);
+    setToolPanel(panel);
+  }
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
     const selected = takeFiles(list);
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
@@ -307,8 +354,16 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }));
     const incoming = checked.filter((file): file is File => file !== null);
     if (incoming.length < selected.length) flashStatus(locale === "fr" ? "Certains fichiers ont été ignorés : PNG ou JPEG lisibles, 50 Mo et 40 mégapixels maximum, 10 captures par côté." : "Some files were skipped: readable PNG or JPEG, up to 50 MB and 40 megapixels, 10 screenshots per side.", "err");
-    const current = side === "outer" ? outerFiles : innerFiles;
+    // The Harbor example is replaced, never mixed with the user's own captures.
+    const replacingDemo = Boolean(active?.demo) && incoming.length > 0;
+    const current = replacingDemo ? [] : side === "outer" ? outerFiles : innerFiles;
     const next = mergeSideFiles(current, incoming);
+    if (replacingDemo && active) {
+      const other = side === "outer" ? "inner" : "outer";
+      (other === "outer" ? setOuterFiles : setInnerFiles)([]);
+      void saveSetFiles(active.id, other, []).catch(() => {});
+      patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id)), appName: "", transforms: { outer: [], inner: [] } });
+    }
     if (next.length > current.length) {
       void trackProduct("captures_added", { side, count: next.length - current.length });
     }
@@ -422,7 +477,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
 
   function addSet() {
     setsMenu.closeSets();
-    const next = defaultSet();
+    const next = defaultSet(sets);
     const list = [...sets, next];
     setSets(list);
     saveSetMetas(list);
@@ -439,10 +494,105 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     await switchSet(nextList[0]!.id);
   }
 
+  async function loadDemo() {
+    if (demoState === "loading") return;
+    setDemoState("loading");
+    try {
+      const files = await fetchHarborFiles();
+      const existing = sets.find((item) => item.demo);
+      const reusable = active && !active.demo && outerFiles.length === 0 && innerFiles.length === 0 ? active : null;
+      const base = existing ?? reusable ?? defaultSet(sets);
+      const demoSet: SetMeta = {
+        ...base,
+        name: t(locale, "tool_demo_set_name"),
+        appName: "Harbor",
+        demo: true,
+        sameSet: false,
+        orientation: "portrait",
+        transforms: { outer: [], inner: [] },
+        lastReviewId: null,
+        lastReviewStatus: null,
+      };
+      if (active && active.id !== demoSet.id) {
+        await saveSetFiles(active.id, "outer", outerFiles).catch(() => {});
+        await saveSetFiles(active.id, "inner", innerFiles).catch(() => {});
+      }
+      const list = sets.some((item) => item.id === demoSet.id) ? sets.map((item) => item.id === demoSet.id ? demoSet : item) : [...sets, demoSet];
+      setSets(list);
+      saveSetMetas(list);
+      saveActiveId(demoSet.id);
+      setActiveId(demoSet.id);
+      setOuterFiles(files.outer);
+      setInnerFiles(files.inner);
+      void saveSetFiles(demoSet.id, "outer", files.outer).catch(() => {});
+      void saveSetFiles(demoSet.id, "inner", files.inner).catch(() => {});
+      completedSetsRef.current.add(demoSet.id);
+      setSlideIndex(0);
+      setMobileView("outer");
+      setAdjustSide("outer");
+      setQualityAcknowledged(false);
+      setAppUsageConfirmed(false);
+      setAssumeClone(false);
+      setZipUrl(null);
+      setStatus(null);
+      setToolPanel("adjust");
+      setDemoState("idle");
+    } catch {
+      setDemoState("error");
+    }
+  }
+
+  function replaceDemo() {
+    if (!active) return;
+    setOuterFiles([]);
+    setInnerFiles([]);
+    void saveSetFiles(active.id, "outer", []).catch(() => {});
+    void saveSetFiles(active.id, "inner", []).catch(() => {});
+    patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id)), appName: "", transforms: { outer: [], inner: [] } });
+    completedSetsRef.current.delete(active.id);
+    setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
+    setAssumeClone(false);
+    setZipUrl(null);
+    setToolPanel("captures");
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="drop-outer-input"]')?.focus());
+  }
+
   const remaining = billing?.remainingFreeExports;
   const remainingLabel = quotaLabel(locale, billing, billingError, session);
   const pillMute = remaining === 0 && billing?.plan === "free";
   const cloneLabel = clones[slideIndex]?.label ?? (cloneForced && hasExportable ? "risk" : null);
+
+  const hasAny = outerFiles.length > 0 || innerFiles.length > 0;
+  function openPicker(side: "outer" | "inner") {
+    const pick = () => document.querySelector<HTMLInputElement>(`[data-testid="drop-${side}-input"]`)?.click();
+    if (toolPanel === "captures") { pick(); return; }
+    setToolPanel("captures");
+    window.setTimeout(pick, 40);
+  }
+  type PrimaryAction = { label: string; testId: string; onClick: (event: { preventDefault: () => void }) => void; disabled?: boolean; href?: string; download?: string };
+  let primary: PrimaryAction;
+  if (toolPanel === "captures" || (toolPanel === "adjust" && !importDone)) {
+    primary = importDone
+      ? { label: t(locale, "tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
+      : { label: t(locale, !hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
+  } else if (toolPanel === "adjust") {
+    primary = { label: t(locale, "tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
+  } else if (zipUrl && toolPanel === "export") {
+    primary = {
+      label: t(locale, "tool_action_download"), testId: "tool-zip-link", href: jobs.downloadId ? `/api/exports/${jobs.downloadId}/download` : zipUrl, download: jobs.zipName,
+      onClick: (event) => { event.preventDefault(); void jobs.onDownload(); },
+    };
+  } else if (isDemo) {
+    // Harbor is fictional: its files come from the example ZIP, so no export trial is spent on it.
+    primary = { label: t(locale, "tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
+  } else {
+    primary = {
+      label: jobs.busyExport ? t(locale, "tool_preparing") : t(locale, "tool_action_prepare"), testId: "tool-download",
+      disabled: jobs.busyExport || !readyToPrepare, onClick: () => void jobs.onExport(),
+    };
+  }
+  const showMissing = (toolPanel === "review" || toolPanel === "export") && !zipUrl && !readyToPrepare;
 
   return (
     <div className="studio-tool-shell mx-auto max-w-[92rem] px-5 pb-24 pt-5" data-tool-panel={toolPanel}>
@@ -478,13 +628,19 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           {session === "loading" ? <span className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">{locale === "fr" ? "Chargement…" : "Loading…"}</span> : !signedIn ? <button type="button" className="ds-pill ds-pill-ink" data-testid="tool-quota" onClick={() => setShowAuth(true)}>{locale === "fr" ? "Invité" : "Guest"}</button> : <span className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">{remainingLabel}</span>}
         </div>
       </header>
-      {urlStatus && toolPanel !== "review" ? <div className="tool-return-status"><StatusLine text={urlStatus} kind="info" testId="tool-status" /></div> : null}
+      {urlStatus && toolPanel !== "review" && toolPanel !== "export" ? <div className="tool-return-status"><StatusLine text={urlStatus} kind="info" testId="tool-status" /></div> : null}
       <div className="tool-workspace">
         <section className="studio-tool-main min-w-0" aria-label={locale === "fr" ? "Aperçu des captures" : "Screenshot preview"}>
           <div className="tool-canvas-heading" id="tool-inspect">
-            <div><p className="tool-eyebrow">{locale === "fr" ? "Votre composition" : "Your composition"}</p><h1>{active?.name?.trim() || t(locale, "tool_label_app")}</h1></div>
+            <div><p className="tool-eyebrow">{locale === "fr" ? "Votre composition" : "Your composition"}</p><h1>{active?.name?.trim() || "Composition"}</h1></div>
             <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : (locale === "fr" ? "Aucune paire" : "No pairs")}</span>
           </div>
+          {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
+            <span className="tool-demo-badge">{t(locale, "tool_demo_badge")}</span>
+            <p>{t(locale, "tool_demo_banner")}</p>
+            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t(locale, "tool_demo_replace")}</button>
+          </div> : null}
+          {!hasAny && draftsLoaded ? <DemoStart locale={locale} state={demoState} onLoad={() => void loadDemo()} /> : null}
           <ToolCanvas mobileView={mobileView} locale={locale} slideIndex={slideIndex} onMobileView={setMobileView}>
         <div
           className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}${previewMode === "pixels" ? " is-pixels" : ""}`}
@@ -524,10 +680,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
         </div>
           </ToolCanvas>
           <PairStrip outerFiles={outerFiles} innerFiles={effectiveInner} active={slideIndex} locale={locale} sameSet={sameSet} onSelect={setSlideIndex} onRemove={(side, index) => removeSideFile(side === "inner" && sameSet ? "outer" : side, index)} />
-          {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{locale === "fr" ? "Des points demandent votre attention dans Vérifier." : "Some items need your attention in Check."}</span><button type="button" onClick={() => setToolPanel("review")}>{locale === "fr" ? "Voir le bilan" : "View report"}</button></div> : null}
+          {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{locale === "fr" ? "Des points demandent votre attention dans Vérifier." : "Some items need your attention in Check."}</span><button type="button" onClick={() => goToPanel("review")}>{locale === "fr" ? "Voir le bilan" : "View report"}</button></div> : null}
         </section>
         <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={locale === "fr" ? "Commandes de l’atelier" : "Workspace controls"}>
-          <ToolPanelTabs value={toolPanel} onChange={setToolPanel} locale={locale} />
+          <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} locale={locale} />
           <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
             {toolPanel === "captures" ? <CapturesPanel
               locale={locale} active={active} outerSpec={outerSpec} innerSpec={innerSpec} outerFiles={outerFiles} innerFiles={innerFiles}
@@ -548,29 +704,46 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               />
             </> : null}
             {toolPanel === "review" ? <>
-              <div className="tool-panel-heading"><h2>{locale === "fr" ? "Vérifier" : "Check"}</h2><p>{locale === "fr" ? "Terminez ces étapes avant de préparer les fichiers." : "Complete these steps before preparing files."}</p></div>
-              <div className="tool-review-actions">
-                <p className="tool-eyebrow">{locale === "fr" ? "À faire" : "To do"}</p>
-                <ul>
-                  <li data-done={hasExportable && !unpaired}>{locale === "fr" ? "Compléter les vues fermé et ouvert" : "Complete the closed and open views"}</li>
-                  <li data-done={severeQualityCount === 0 && !cloneAlert}>{locale === "fr" ? "Examiner les alertes de cadrage et de similarité" : "Review framing and similarity alerts"}</li>
-                  <li data-done={appUsageConfirmed}>{locale === "fr" ? "Confirmer le contenu de l’app" : "Confirm the app content"}</li>
-                </ul>
-              </div>
-              <ReviewAlerts locale={locale} severeQualityCount={severeQualityCount} qualityAcknowledged={qualityAcknowledged} setQualityAcknowledged={setQualityAcknowledged} clones={clones} slideIndex={slideIndex} setSlideIndex={setSlideIndex} />
+              <div className="tool-panel-heading"><h2>{t(locale, "tool_step_review")}</h2><p>{locale === "fr" ? "Réglez chaque point de la liste, puis préparez les fichiers." : "Clear every item on the list, then prepare the files."}</p></div>
+              <CheckList locale={locale} items={checklist} />
+              <ReviewAlerts
+                locale={locale} severeQualityCount={severeQualityCount} qualityAcknowledged={qualityAcknowledged} setQualityAcknowledged={setQualityAcknowledged}
+                clones={clones} slideIndex={slideIndex} setSlideIndex={setSlideIndex} cloneAlert={cloneAlert} cloneAcknowledged={assumeClone} setCloneAcknowledged={setAssumeClone}
+              />
               <ReadinessReport
-                locale={locale} preparationScore={preparationScore} preparationChecks={preparationChecks} slideIndex={slideIndex}
+                locale={locale} preparationChecks={preparationChecks} slideIndex={slideIndex} demo={isDemo}
                 outerInspect={outerInspect} innerInspect={innerInspect} outerSpec={outerSpec} innerSpec={innerSpec} qualityItems={qualityItems}
                 effectiveInner={effectiveInner} foldChecks={foldChecks} clones={clones} appUsageConfirmed={appUsageConfirmed}
                 setAppUsageConfirmed={setAppUsageConfirmed} cloneAlert={cloneAlert} severeQualityCount={severeQualityCount} foldWarningCount={foldWarningCount}
               />
-              <DeliveryActions
-                locale={locale} prefix={prefix} active={active} patchActive={patchActive} zipUrl={zipUrl} setZipUrl={setZipUrl}
-                hasExportable={hasExportable} missingSteps={missingSteps} session={session} setShowAuth={setShowAuth} status={status}
-                statusKind={statusKind} urlStatus={urlStatus} orientation={orientation} billing={billing} checkoutBusy={checkoutBusy}
-                onCheckout={onCheckout} jobs={jobs}
-              />
+              <OtherActions locale={locale} hasExportable={hasExportable} jobs={jobs} />
+              <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
+            {toolPanel === "export" ? <>
+              <ExportPanel locale={locale} prefix={prefix} zipUrl={zipUrl} session={session} orientation={orientation} demo={isDemo} jobs={jobs} />
+              <OtherActions locale={locale} hasExportable={hasExportable} jobs={jobs} />
+              <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
+            </> : null}
+          </div>
+          <div className="tool-primary-dock" data-testid="tool-primary-dock" data-step={toolPanel}>
+            {showMissing ? <p className="tool-dock-missing" data-testid="tool-missing-steps">
+              <span>{t(locale, "tool_action_missing")}</span>{" "}
+              {checklist.filter((item) => !item.done).map((item, index) => <span key={item.id}>{index ? <span aria-hidden="true"> · </span> : null}<button type="button" onClick={item.fix}>{item.label}</button></span>)}
+            </p> : null}
+            {(toolPanel === "review" || toolPanel === "export") && (status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
+            {primary.href ? (
+              <a href={primary.href} download={primary.download} data-testid={primary.testId} className="ds-cta w-full" onClick={primary.onClick}>{primary.label}</a>
+            ) : (
+              <button type="button" className="ds-cta w-full" data-testid={primary.testId} disabled={primary.disabled} onClick={primary.onClick}>
+                <SwapLabel text={primary.label} />
+              </button>
+            )}
+            {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
+              <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
+                {t(locale, "tool_create_account")}
+              </button>
+            ) : null}
+            {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf(locale, "tool_score_line", { score: preparationScore })}</p> : null}
           </div>
         </aside>
       </div>

@@ -8,12 +8,12 @@ import { trackProduct } from "@/lib/analytics-client";
 import { trackDatafastConversion } from "@/lib/datafast-client";
 import { reviewPath } from "@/lib/site";
 import { mapLimit } from "@/lib/map-limit";
-import type { SetMeta } from "@/lib/sets-store";
+import { appNameOf, type SetMeta } from "@/lib/sets-store";
+import type { ToolPanel } from "@/components/tool/canvas";
 import { explainError } from "@/components/tool/errors";
 import type { BillingStatus } from "@/components/tool/use-billing";
 
 type StatusKind = "ok" | "err" | "busy" | "info";
-type ToolPanel = "captures" | "adjust" | "review";
 
 export type RenderJobsContext = {
   locale: Locale;
@@ -118,7 +118,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
           setReviewStatus(t(locale, "tool_review_ready"));
           void trackDatafastConversion("review_created", payload.id ?? payload.url.split("/").filter(Boolean).pop());
         }
-        setToolPanel("review");
+        setToolPanel(kind === "export" ? "export" : "review");
         setStatusKind("ok"); setStatus(t(locale, kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
         void refreshBilling();
       }).catch(() => {
@@ -191,7 +191,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
           outerPaths,
           innerPaths,
           sameSet: cloneForced,
-          appName: active?.name || "App",
+          appName: appNameOf(active),
           clientName: active?.clientName || "",
           include69,
           assumeCloneRisk: assumeClone,
@@ -331,7 +331,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
           outerPaths,
           innerPaths,
           sameSet: cloneForced,
-          appName: active?.name || "App",
+          appName: appNameOf(active),
           clientName: active?.clientName || "",
           orientation,
           locale,
