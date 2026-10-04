@@ -1,5 +1,6 @@
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CHECKOUT_CATALOG, FREE_EXPORTS, PLANS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
+import { CHECKOUT_CATALOG, FREE_EXPORTS, PLANS, STUDIO_SEATS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
 
 describe("plans", () => {
   it("gives two lifetime free exports", () => {
@@ -20,6 +21,7 @@ describe("plans", () => {
 
   it("includes three seats in Studio", () => {
     expect(PLANS.studio.seats).toBe(3);
+    expect(STUDIO_SEATS).toBe(PLANS.studio.seats);
   });
 
   it("offers two months free on annual subscriptions", () => {
@@ -31,5 +33,14 @@ describe("plans", () => {
     expect(formatEurFromCents(1200, "fr")).toBe("12 €");
     expect(formatEurFromCents(1200, "en")).toBe("€12");
     expect(formatEurFromCents(4900, "fr")).toBe("49 €");
+  });
+});
+
+describe("seat limit", () => {
+  it("matches the latest private.seat_limit definition in the migrations", () => {
+    const definitions = readdirSync("supabase/migrations").filter((file) => file.endsWith(".sql")).sort()
+      .flatMap((file) => readFileSync(`supabase/migrations/${file}`, "utf8").match(/private\.seat_limit\(p_plan text\)[\s\S]*?when p_plan = 'studio' then (\d+)/g) ?? []);
+    const latest = definitions.at(-1)?.match(/then (\d+)$/)?.[1];
+    expect(Number(latest)).toBe(STUDIO_SEATS);
   });
 });
