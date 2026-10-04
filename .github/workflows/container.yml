@@ -61,7 +61,7 @@ jobs:
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: duoshot-image-${{ env.IMAGE_SHA }}
           path: ${{ runner.temp }}/duoshot.tar
