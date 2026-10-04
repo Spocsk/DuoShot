@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminSupabase, createPublicSupabase, createReviewWriter } from "@/lib/supabase/admin";
+import { createAdminSupabase, createReviewWriter } from "@/lib/supabase/admin";
 import { harborReviewPayload, isDemoReview } from "@/lib/pipeline/harbor";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { readActiveMembership } from "@/lib/active-membership";
@@ -47,29 +47,22 @@ export async function GET(_request: Request, { params }: Params) {
       headers: { "Cache-Control": "public, max-age=300" },
     });
   }
+  // Public review reads go through the service role only: the review RPCs are
+  // not executable by anon, so the app never depends on the publishable key here.
   const admin = createAdminSupabase();
-  if (admin) {
-    const { data: review } = await admin
-      .from("review_links")
-      .select("id, public_id, set_name, client_name, orientation, status, comment, expires_at, revoked_at")
-      .eq("public_id", id)
-      .maybeSingle();
-    if (!review) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-    const { data: slides } = await admin
-      .from("review_slides")
-      .select("slide_index, clone_label")
-      .eq("review_id", review.id)
-      .order("slide_index");
-    return reviewJson(id, review as ReviewRow, (slides ?? []) as SlideRow[]);
-  }
-
-  const { data } = await createPublicSupabase().rpc("get_review_payload", { pid: id });
-  if (!data || typeof data !== "object") {
-    return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-  }
-  const payload = data as ReviewRow & { slides?: SlideRow[] };
-  if (!payload.public_id) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-  return reviewJson(id, payload, payload.slides ?? []);
+  if (!admin) return NextResponse.json({ error: "UNAVAILABLE" }, { status: 503 });
+  const { data: review } = await admin
+    .from("review_links")
+    .select("id, public_id, set_name, client_name, orientation, status, comment, expires_at, revoked_at")
+    .eq("public_id", id)
+    .maybeSingle();
+  if (!review) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+  const { data: slides } = await admin
+    .from("review_slides")
+    .select("slide_index, clone_label")
+    .eq("review_id", review.id)
+    .order("slide_index");
+  return reviewJson(id, review as ReviewRow, (slides ?? []) as SlideRow[]);
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
