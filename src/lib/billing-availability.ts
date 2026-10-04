@@ -1,4 +1,5 @@
 import { billingEnvironmentMatches, billingUserAllowed } from "./billing-environment";
+import { pass30PriceId } from "./plans";
 
 export function checkoutAvailable(userId?: string) {
   const key = process.env.STRIPE_SECRET_KEY ?? "";
@@ -9,4 +10,9 @@ export function checkoutAvailable(userId?: string) {
     process.env.STRIPE_INDIE_PRICE_ID && process.env.STRIPE_INDIE_YEARLY_PRICE_ID &&
     process.env.STRIPE_STUDIO_PRICE_ID && process.env.STRIPE_STUDIO_YEARLY_PRICE_ID
   ) && (!live || process.env.STRIPE_LIVE_ENABLED === "true");
+}
+
+/** The one-time pass is offered only once its Stripe price is configured. */
+export function passCheckoutAvailable(userId?: string) {
+  return checkoutAvailable(userId) && Boolean(pass30PriceId());
 }

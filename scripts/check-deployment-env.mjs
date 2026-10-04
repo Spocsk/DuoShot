@@ -21,6 +21,8 @@ console.log(JSON.stringify({
   configured: missing.length === 0, missing,
   renderQueueEnabled: process.env.RENDER_QUEUE_ENABLED === 'true',
   checkoutEnabled: process.env.STRIPE_CHECKOUT_ENABLED === 'true',
+  // Optional: the one-time pass is hidden unless its Stripe price is set.
+  pass30Configured: Boolean(process.env.STRIPE_PRICE_PASS30),
   mixpanelErasureConfigured: Boolean(process.env.MIXPANEL_PROJECT_TOKEN && process.env.MIXPANEL_GDPR_OAUTH_TOKEN),
   invitationsConfigured: Boolean(process.env.RESEND_API_KEY),
 }, null, 2));

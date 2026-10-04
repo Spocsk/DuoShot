@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CHECKOUT_CATALOG, FREE_EXPORTS, PLANS, STUDIO_SEATS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
+import { CHECKOUT_CATALOG, FREE_EXPORTS, ONE_TIME_CATALOG, PASS30, isOneTimeKind, PLANS, STUDIO_SEATS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
 
 describe("plans", () => {
   it("gives two lifetime free exports", () => {
@@ -27,6 +27,16 @@ describe("plans", () => {
   it("offers two months free on annual subscriptions", () => {
     expect(CHECKOUT_CATALOG.indie_yearly.amountCents).toBe(10 * CHECKOUT_CATALOG.indie_monthly.amountCents);
     expect(CHECKOUT_CATALOG.studio_yearly.amountCents).toBe(10 * CHECKOUT_CATALOG.studio_monthly.amountCents);
+  });
+
+  it("derives the one-time pass amount from a single configured price", () => {
+    expect(PASS30.priceEur).toBe(19);
+    expect(ONE_TIME_CATALOG.pass30.amountCents).toBe(PASS30.priceEur * 100);
+    expect(ONE_TIME_CATALOG.pass30.mode).toBe("payment");
+    expect(PASS30.days).toBe(30);
+    expect(isOneTimeKind("pass30")).toBe(true);
+    expect(isOneTimeKind("indie_monthly")).toBe(false);
+    expect(Object.keys(CHECKOUT_CATALOG)).not.toContain("pass30");
   });
 
   it("formats euro amounts per locale", () => {
