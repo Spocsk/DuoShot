@@ -20,7 +20,7 @@ export function isKeyId(value: unknown): value is string {
  * Throws ASC_KEY_INVALID for anything else, without echoing the input.
  */
 export function parseAscPrivateKey(pem: unknown): KeyObject {
-  if (typeof pem !== "string" || pem.length > MAX_PEM_BYTES || !pem.includes("-----BEGIN PRIVATE KEY-----")) {
+  if (typeof pem !== "string" || pem.length > MAX_PEM_BYTES || pem.split("-----BEGIN ").length !== 2 || !pem.includes("-----BEGIN PRIVATE KEY-----")) {
     throw new Error("ASC_KEY_INVALID");
   }
   let key: KeyObject;

@@ -128,7 +128,7 @@ export async function executeAscUpload(admin: SupabaseClient, job: RenderJob, op
   };
   const report = async () => {
     progress.done = progress.files.filter((file) => file.state === "complete" || file.state === "failed").length;
-    const { error } = await admin.rpc("report_render_progress", { p_job: job.id, p_lease: job.lease_token, p_progress: progress });
+    const { error } = await admin.rpc("report_render_progress", { p_job: job.id, p_lease: job.lease_token, p_progress: structuredClone(progress) });
     if (error) console.warn("asc_progress_failed", { jobId: job.id });
   };
 

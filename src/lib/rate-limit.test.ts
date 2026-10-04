@@ -29,6 +29,14 @@ describe("API rate limits", () => {
     expect(checkRateLimit("GET", "/api/workspace/invitations", "203.0.113.1").limited).toBe(false);
   });
 
+  it("gives App Store Connect calls their own budgets", () => {
+    expect(hit(11, "POST", "/api/asc/connection")).toMatchObject({ limited: true, rule: "asc-connection" });
+    expect(hit(21, "POST", "/api/asc/uploads")).toMatchObject({ limited: true, rule: "asc-upload" });
+    expect(hit(61, "GET", "/api/asc/apps/app-1/versions")).toMatchObject({ limited: true, rule: "asc-read" });
+    // Reading the connection status stays on the generic budget.
+    expect(checkRateLimit("GET", "/api/asc/connection", "203.0.113.1").limited).toBe(false);
+  });
+
   it("allows frequent render polling", () => {
     expect(hit(600, "GET", "/api/render-jobs/job-1").limited).toBe(false);
     expect(hit(1, "GET", "/api/render-jobs/job-1")).toMatchObject({ limited: true, rule: "polling" });

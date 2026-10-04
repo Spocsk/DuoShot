@@ -3,10 +3,12 @@ import { POST } from "./route";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { executeExport } from "@/lib/render/export";
 import { executeReview } from "@/lib/render/review";
+import { executeAscUpload } from "@/lib/asc/upload-job";
 import { NextResponse } from "next/server";
 vi.mock("@/lib/supabase/admin",()=>({createAdminSupabase:vi.fn()}));
 vi.mock("@/lib/render/export",()=>({executeExport:vi.fn()}));
 vi.mock("@/lib/render/review",()=>({executeReview:vi.fn()}));
+vi.mock("@/lib/asc/upload-job",()=>({executeAscUpload:vi.fn()}));
 afterEach(()=>{vi.unstubAllEnvs();vi.clearAllMocks();vi.restoreAllMocks();});
 describe("private worker access",()=>{
   it("rejects requests without the server secret before accessing the queue",async()=>{
@@ -63,5 +65,23 @@ describe("lost render leases",()=>{
     expect(response.status).toBe(500);
     expect(completions(rpc)).toHaveLength(1);
     expect(completions(rpc)[0]![1]).toMatchObject({p_error:"RENDER_FAILED"});
+  });
+});
+
+describe("job kind dispatch",()=>{
+  it("runs App Store Connect uploads with the heartbeat's abort signal and records their failure code",async()=>{
+    const rpc=worker({...JOB,kind:"asc_upload",reservation_id:null});
+    vi.mocked(executeAscUpload).mockResolvedValue(NextResponse.json({error:"ASC_RETRY_UNSAFE"},{status:400}));
+    expect((await tick()).status).toBe(200);
+    expect(vi.mocked(executeAscUpload).mock.calls[0]![2]!.signal).toBeInstanceOf(AbortSignal);
+    expect(executeExport).not.toHaveBeenCalled();
+    expect(executeReview).not.toHaveBeenCalled();
+    expect(completions(rpc)[0]![1]).toMatchObject({p_error:"ASC_RETRY_UNSAFE"});
+  });
+  it("fails an unknown kind instead of treating it as a review",async()=>{
+    const rpc=worker({...JOB,kind:"mystery"});
+    expect((await tick()).status).toBe(200);
+    expect(executeReview).not.toHaveBeenCalled();
+    expect(completions(rpc)[0]![1]).toMatchObject({p_error:"INVALID_REQUEST"});
   });
 });
