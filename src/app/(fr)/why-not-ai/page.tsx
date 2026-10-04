@@ -4,8 +4,8 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   locale: "fr",
   path: "/why-not-ai",
-  title: "Pourquoi pas ton IA",
-  description: "Ton IA resize. DuoShot flatten l’alpha, score le clone 2.3.3, masque la charnière et pack un ZIP Connect.",
+  title: "Pourquoi pas votre IA",
+  description: "Votre IA redimensionne. DuoShot aplatit l’alpha, évalue le risque clone 2.3.3, masque la charnière et prépare un ZIP pour Connect.",
 });
 
 export default function Page() {

@@ -5,7 +5,7 @@ describe("auth", () => {
     cy.get('[data-testid="auth-email"]').type("e2e@duoshot.test");
     cy.get('[data-testid="auth-password"]').type("password12");
     cy.get('[data-testid="auth-submit"]').click();
-    cy.get('[data-testid="auth-message"]').should("contain", "Accepte les conditions");
+    cy.get('[data-testid="auth-message"]').should("contain", "Acceptez les conditions");
   });
 
   it("sends a magic link through GoTrue", () => {

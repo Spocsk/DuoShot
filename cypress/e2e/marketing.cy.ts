@@ -117,9 +117,9 @@ describe("marketing", () => {
     cy.visitFr("/specs");
     cy.contains("h1", "Tailles des captures iPhone Duo").should("be.visible");
     cy.visitFr("/pourquoi-pas-ia");
-    cy.contains("h1", "Pourquoi pas ton IA").should("be.visible");
+    cy.contains("h1", "Pourquoi pas votre IA").should("be.visible");
     cy.visitFr("/why-not-ai");
-    cy.contains("h1", "Pourquoi pas ton IA").should("be.visible");
+    cy.contains("h1", "Pourquoi pas votre IA").should("be.visible");
     cy.visitFr("/rejet");
     cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
     cy.visitFr("/rejection");

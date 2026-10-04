@@ -39,16 +39,16 @@ export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boo
       setDone(true);
     } catch {
       setError(reset
-        ? (fr ? "Le mot de passe n’a pas pu être modifié. Vérifie sa longueur ou demande un nouveau lien." : "Could not change your password. Check its length or request a new link.")
-        : (fr ? "Envoi indisponible pour le moment. Réessaie dans quelques minutes." : "Sending is currently unavailable. Please try again in a few minutes."));
+        ? (fr ? "Le mot de passe n’a pas pu être modifié. Vérifiez sa longueur ou demandez un nouveau lien." : "Could not change your password. Check its length or request a new link.")
+        : (fr ? "Envoi indisponible pour le moment. Réessayez dans quelques minutes." : "Sending is currently unavailable. Please try again in a few minutes."));
     } finally { setBusy(false); }
   }
 
   return <div className="studio-auth-card mx-auto w-full max-w-md">
     <h1 className="font-display text-3xl">{reset ? (fr ? "Nouveau mot de passe" : "New password") : (fr ? "Mot de passe oublié" : "Forgot password")}</h1>
     {done ? <p role="status" className="mt-6 text-sm">{reset
-      ? (fr ? "Ton mot de passe a été modifié." : "Your password has been changed.")
-      : (fr ? "Si un compte correspond à cette adresse, tu recevras un lien de récupération." : "If an account matches this address, you will receive a recovery link.")}</p>
+      ? (fr ? "Votre mot de passe a été modifié." : "Your password has been changed.")
+      : (fr ? "Si un compte correspond à cette adresse, vous recevrez un lien de récupération." : "If an account matches this address, you will receive a recovery link.")}</p>
       : <form onSubmit={submit} className="mt-6 grid gap-3">
         {reset ? <>
           <label className="ds-label" htmlFor="new-password">{fr ? "Nouveau mot de passe" : "New password"}</label>

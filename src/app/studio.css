@@ -45,7 +45,11 @@ body { background: var(--background); color: var(--foreground); }
 .ds-input:focus { outline-color: #276b7a; }
 .ds-text-btn, .ds-link, .studio-inline-link { color: #175d70; font-weight: 600; text-decoration: none; }
 .ds-text-btn:hover, .ds-link:hover, .studio-inline-link:hover { text-decoration: underline; text-underline-offset: 0.25em; }
-.ds-dialog { border: 1px solid #dce3e6; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 100px rgb(14 32 39 / 0.22); padding: clamp(1.4rem, 4vw, 2.2rem); }
+.ds-dialog { position: relative; border: 1px solid #dce3e6; border-radius: 1.25rem; background: #fff; box-shadow: 0 30px 100px rgb(14 32 39 / 0.22); padding: clamp(1.4rem, 4vw, 2.2rem); }
+.ds-dialog-close { position: absolute; top: 0.6rem; right: 0.6rem; display: inline-flex; width: var(--target, 2.85rem); height: var(--target, 2.85rem); align-items: center; justify-content: center; border-radius: 0.8rem; color: var(--studio-muted, #536168); background: transparent; }
+.ds-dialog-close:hover { background: var(--studio-mist, #e9eff1); color: var(--studio-ink, #172126); }
+.ds-dialog-close:focus-visible { outline: 2px solid var(--studio-sea, #245765); outline-offset: 2px; }
+.ds-dialog-close + * { padding-right: 2.5rem; }
 .ds-overlay { background: rgb(19 33 39 / 0.56); backdrop-filter: blur(6px); }
 
 header.sticky { background: #fafcfc; border-color: #e2e7e9; backdrop-filter: none; }

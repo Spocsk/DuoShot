@@ -96,8 +96,8 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
             <p className="ds-label">DuoShot Studio</p>
             <h1 className="font-display mt-3 text-5xl">
               {data.revoked
-                ? locale === "fr" ? "Review révoquée" : "Review revoked"
-                : locale === "fr" ? "Review expirée" : "Review expired"}
+                ? locale === "fr" ? "Lien de validation révoqué" : "Review revoked"
+                : locale === "fr" ? "Lien de validation expiré" : "Review expired"}
             </h1>
             <p className="mt-5 text-[var(--muted)]">
               {data.revoked
@@ -105,7 +105,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
                   ? "Le studio a fermé ce lien. Demandez-lui un nouveau partage si nécessaire."
                   : "The studio closed this link. Ask for a new share if needed."
                 : locale === "fr"
-                  ? "Les médias de review sont conservés sept jours, puis supprimés automatiquement."
+                  ? "Les médias de validation sont conservés sept jours, puis supprimés automatiquement."
                   : "Review media is kept for seven days, then deleted automatically."}
             </p>
           </section>
@@ -128,7 +128,7 @@ export function ReviewPage({ id, locale, demo = false }: { id: string; locale: L
               </p>
             ) : null}
             <div className="review-view-controls mt-6">
-              <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la review" : "Review view"}>
+              <div className="review-view-switch" role="group" aria-label={locale === "fr" ? "Affichage de la validation" : "Review view"}>
                 <button
                   type="button"
                   className={viewMode === "device" ? "is-on" : ""}

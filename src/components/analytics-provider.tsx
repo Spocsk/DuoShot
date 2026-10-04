@@ -132,15 +132,16 @@ export function AnalyticsProvider() {
   return (
     <>
       {configured && ready && (choice === null || settingsOpen) ? (
-        <div className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-xl border border-[var(--line)] bg-[var(--background)] p-5 shadow-2xl" role="dialog" aria-label={fr ? "Préférences statistiques" : "Analytics preferences"}>
-          <p className="font-display text-lg">{fr ? "Mesure des parcours" : "Product analytics"}</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">{fr
-            ? "Avec votre accord, Datafast et Mixpanel mesurent les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
-            : "With your permission, Datafast and Mixpanel measure pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
-          {choiceError ? <p className="mt-2 text-sm text-[var(--warn)]" role="alert">{fr ? "Choix non enregistré. Réessayez." : "Preference not saved. Please retry."}</p> : null}
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button type="button" className="ds-cta" onClick={() => void choose("accepted")}>{fr ? "Accepter" : "Accept"}</button>
-            <button type="button" className="ds-cta-ghost" onClick={() => void choose("rejected")}>{fr ? "Refuser" : "Decline"}</button>
+        <div className="fixed inset-x-3 bottom-3 z-[100] mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 shadow-xl sm:flex-row sm:items-center sm:gap-5" role="dialog" aria-label={fr ? "Préférences statistiques" : "Analytics preferences"}>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs leading-snug text-[var(--muted)] sm:text-sm"><strong className="font-semibold text-[var(--foreground)]">{fr ? "Mesure des parcours. " : "Product analytics. "}</strong>{fr
+              ? "Avec votre accord, Datafast et Mixpanel mesurent les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail."
+              : "With your permission, Datafast and Mixpanel measure pages, visible time and creation steps, without receiving your screenshots or email address."}</p>
+            {choiceError ? <p className="mt-1 text-xs text-[var(--warn)] sm:text-sm" role="alert">{fr ? "Choix non enregistré. Réessayez." : "Preference not saved. Please retry."}</p> : null}
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button type="button" className="ds-cta flex-1 sm:flex-none" onClick={() => void choose("accepted")}>{fr ? "Accepter" : "Accept"}</button>
+            <button type="button" className="ds-cta-ghost flex-1 sm:flex-none" onClick={() => void choose("rejected")}>{fr ? "Refuser" : "Decline"}</button>
           </div>
         </div>
       ) : null}

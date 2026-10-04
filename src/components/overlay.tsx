@@ -6,10 +6,12 @@ export function Overlay({
   children,
   onClose,
   labelledBy,
+  closeLabel,
 }: {
   children: ReactNode;
   onClose: () => void;
   labelledBy: string;
+  closeLabel: string;
 }) {
   const [open, setOpen] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -81,6 +83,11 @@ export function Overlay({
         className={`ds-dialog t-modal ${open ? "is-open" : ""} ${closing ? "is-closing" : ""}`}
         onClick={(event) => event.stopPropagation()}
       >
+        <button type="button" className="ds-dialog-close" aria-label={closeLabel} onClick={requestClose}>
+          <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+            <path d="M3.5 3.5l9 9m0-9l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
         {children}
       </div>
     </div>

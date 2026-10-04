@@ -108,7 +108,7 @@ export const SIZE_SPECS: SizeSpec[] = [
 
 export function appStoreDisclaimer233(locale: Locale): string {
   return locale === "fr"
-    ? "Apple App Store Review Guideline 2.3.3 : les captures doivent représenter l’app avec précision. DuoShot redimensionne et compose tes visuels ; il ne fabrique pas de fausses fonctionnalités. Vérifie chaque set avant soumission."
+    ? "Apple App Store Review Guideline 2.3.3 : les captures doivent représenter l’app avec précision. DuoShot redimensionne et compose vos visuels ; il ne fabrique pas de fausses fonctionnalités. Vérifiez chaque set avant soumission."
     : "Apple App Store Review Guideline 2.3.3 requires screenshots to represent the app accurately. DuoShot resizes and composes your visuals; it does not invent features. Check every set before submitting.";
 }
 
@@ -247,4 +247,33 @@ export function hingeBand(spec: Pick<SizeSpec, "width" | "height" | "orientation
   }
   const height = Math.max(1, Math.round(spec.height * INNER_DIVISION_RATIO));
   return { x: 0, y: Math.round((spec.height - height) / 2), width: spec.width, height };
+}
+
+const LIGHT_OVERLAY_TEXT = "#FFFFFF";
+const DARK_OVERLAY_TEXT = "#172126";
+
+function relativeLuminance(hex: string): number | null {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return null;
+  const channel = (offset: number) => {
+    const value = parseInt(match[1]!.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+}
+
+/** Title colour with the stronger contrast against the slide background; blur backgrounds are darkened, so they take light text. */
+export function overlayTextColor(options: Pick<RenderOptions, "background" | "solidColor" | "gradientFrom" | "gradientTo">): string {
+  const backgrounds = options.background === "solid"
+    ? [options.solidColor]
+    : options.background === "gradient"
+      ? [options.gradientFrom, options.gradientTo]
+      : [];
+  const luminances = backgrounds.map(relativeLuminance).filter((value): value is number => value !== null);
+  if (!luminances.length) return LIGHT_OVERLAY_TEXT;
+  const background = luminances.reduce((sum, value) => sum + value, 0) / luminances.length;
+  const inkLuminance = relativeLuminance(DARK_OVERLAY_TEXT)!;
+  const contrastWithWhite = 1.05 / (background + 0.05);
+  const contrastWithInk = (background + 0.05) / (inkLuminance + 0.05);
+  return contrastWithWhite >= contrastWithInk ? LIGHT_OVERLAY_TEXT : DARK_OVERLAY_TEXT;
 }

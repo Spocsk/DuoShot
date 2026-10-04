@@ -81,5 +81,17 @@ describe("real PostgreSQL migration contracts", () => {
     expect(renewed.rows[0].begin_checkout.attempt_id).not.toBe(attempts[0].rows[0].begin_checkout.attempt_id);
     expect(renewed.rows[0].begin_checkout.kind).toBe("studio_yearly");
   });
-
+  it("grants signed-in clients no quota, export, membership or public review writes", async () => {
+    const privileges = (await db.query<Record<string, boolean>>(`select
+      has_function_privilege('authenticated','public.refund_free_export(uuid)','execute') as refund,
+      has_function_privilege('authenticated','public.consume_free_export(uuid,integer)','execute') as consume,
+      has_function_privilege('authenticated','public.increment_daily_export(uuid)','execute') as increment,
+      has_function_privilege('authenticated','public.erase_current_user()','execute') as erase,
+      has_table_privilege('authenticated','public.export_sets','insert') as export_insert,
+      has_table_privilege('authenticated','public.workspace_members','insert') as member_insert,
+      has_table_privilege('authenticated','public.workspace_members','delete') as member_delete`)).rows[0];
+    expect(Object.entries(privileges).filter(([, granted]) => granted).map(([name]) => name)).toEqual([]);
+    expect((await db.query("select public from storage.buckets where id='reviews'")).rows).toEqual([{ public: false }]);
+    expect((await db.query("select policyname from pg_policies where schemaname='storage' and policyname like 'reviews_%'")).rows).toEqual([]);
+  });
 });

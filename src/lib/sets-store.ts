@@ -2,6 +2,8 @@ import type { CropTransforms, FitMode, Orientation, RenderOptions } from "./spec
 
 export type SetMeta = {
   id: string;
+  /** Server app row this set syncs its name, client and orientation to. */
+  appId?: string;
   name: string;
   clientName: string;
   orientation: Orientation;

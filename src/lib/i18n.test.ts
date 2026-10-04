@@ -10,7 +10,10 @@ describe("i18n", () => {
 
   it("interpolates placeholders", () => {
     expect(tf("fr", "account_remaining", { n: 2 })).toBe("2 ZIP offerts restants");
-    expect(tf("en", "account_remaining", { n: 1 })).toBe("1 free ZIPs left");
+    expect(tf("en", "account_remaining", { n: 1 })).toBe("1 free ZIP left");
+    expect(tf("fr", "account_remaining", { n: 1 })).toBe("1 ZIP offert restant");
+    expect(tf("en", "tool_quality_gate_title", { n: 1 })).toBe("1 crop needs review");
+    expect(tf("fr", "tool_quality_gate_title", { n: 3 })).toBe("3 cadrages à vérifier");
     expect(t("fr", "tool_download")).toBe("Télécharger le ZIP");
     expect(t("en", "tool_download")).toBe("Download ZIP");
     expect(t("fr", "tool_crop_drag_hint")).toContain("PNG exporté");

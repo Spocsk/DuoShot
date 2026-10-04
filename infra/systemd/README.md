@@ -1,6 +1,6 @@
 # Application maintenance on the dedicated VPS
 
-These systemd timers replace `vercel.json` crons: Storage every 15 minutes,
+These systemd timers replace the former Vercel crons (Vercel git deployments are disabled in `vercel.json`): Storage every 15 minutes,
 analytics erasure daily at 04:00 UTC. Run only after the compatible application
 and schema have been installed. The container name is pinned to the current
 Coolify service; update it if that resource is recreated.
