@@ -3,22 +3,18 @@
 import { submitRender, resumeRender } from "@/lib/render-client";
 import { assertBatchSize, MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
 
-import { DeviceCamera } from "@/components/device-camera";
 import {
   Suspense,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
 } from "react";
 import Link from "next/link";
-import gsap from "gsap";
 import { useSearchParams } from "next/navigation";
 import {
   DEFAULT_RENDER_OPTIONS,
@@ -26,10 +22,7 @@ import {
   WARN_MIN_IMAGES,
   normalizeCropTransform,
   connectPreviewStyle,
-  duoChassisAspect,
   duoSpec,
-  overlayTextColor,
-  textOverlayLayout,
   zipFolderName,
   type CropTransform,
   type DeviceSlot,
@@ -38,7 +31,6 @@ import {
   type Orientation,
   type OutputFormat,
   type RenderOptions,
-  type SizeSpec,
 } from "@/lib/specs";
 import { t, tf } from "@/lib/i18n";
 import { checkSourceCount } from "@/lib/pipeline/validate";
@@ -46,7 +38,7 @@ import { hashFromFile } from "@/lib/pipeline/clone-hash-browser";
 import { inspectFile, type SourceInspect } from "@/lib/pipeline/source-inspect";
 import { scorePair, type CloneResult } from "@/lib/pipeline/clone-score";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { compositionMetrics, coverRect } from "@/lib/pipeline/geometry";
+import { compositionMetrics } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, isCheckoutKind, startCheckout } from "@/lib/checkout";
 import { trackProduct } from "@/lib/analytics-client";
 import { trackDatafastConversion } from "@/lib/datafast-client";
@@ -65,7 +57,14 @@ import { localePrefix, reviewPath } from "@/lib/site";
 import { mapLimit } from "@/lib/map-limit";
 import { mergeSideFiles } from "@/lib/merge-side-files";
 import { checkFoldImage } from "@/lib/fold-ocr-browser";
-import type { FoldCheckStatus } from "@/lib/fold-detection";
+import { foldStatusText, type FoldCheck } from "@/components/tool/fold-check";
+import { explainError } from "@/components/tool/errors";
+import { isAllowedImage, takeFiles } from "@/components/tool/files";
+import { CloneTip, DsToggle, Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
+import { DropZone } from "@/components/tool/drop-zone";
+import { PairStrip, ToolCanvas, ToolPanelTabs } from "@/components/tool/canvas";
+import { CropControls, PreviewCard } from "@/components/tool/preview-card";
+import { drawTarget } from "@/components/tool/draw-target";
 import type { Worker as OcrWorker } from "tesseract.js";
 
 type Props = { locale: Locale };
@@ -89,7 +88,6 @@ const BOOT_SET: SetMeta = {
 };
 
 const EMPTY_TRANSFORMS: CropTransform[] = [];
-type FoldCheck = { key: string; status: FoldCheckStatus; count: number };
 
 export function ToolApp({ locale }: Props) {
   const [owner, setOwner] = useState<string | null>(null);
@@ -571,10 +569,6 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     };
   }, [active?.lastReviewId, active?.lastReviewStatus, locale]);
 
-  function isAllowedImage(file: File) {
-    return /image\/(png|jpeg)/.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
-  }
-
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
     const selected = takeFiles(list);
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
@@ -666,27 +660,6 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
     setStatus(message);
     setStatusKind(kind);
-  }
-
-  function explainError(code: string) {
-    if (code === "AUTH_REQUIRED") return t(locale, "error_auth");
-    if (code === "TRIAL_EXHAUSTED") return t(locale, "error_trial");
-    if (code === "DAILY_LIMIT") return t(locale, "error_daily");
-    if (code === "IPHONE_69_GATED") return t(locale, "error_69");
-    if (code === "CLONE_RISK") return t(locale, "error_clone");
-    if (code === "STUDIO_REQUIRED") return t(locale, "error_studio");
-    if (code === "NO_WORKSPACE") return t(locale, "error_workspace");
-    if (code === "RENDER_BUSY") return locale === "fr" ? "Le serveur traite déjà plusieurs lots. Réessayez dans quelques secondes ; aucun quota n’a été consommé." : "The server is processing other batches. Retry shortly; no quota was consumed.";
-    if (code === "NO_IMAGES") return t(locale, "error_no_images");
-    if (code === "UPLOAD_FAILED" || code === "UPLOAD_MISSING") return t(locale, "error_upload");
-    if (code === "EXPORT_TOO_LARGE") return locale === "fr" ? "Le ZIP dépasse la limite de stockage. Réduisez le nombre de paires ou choisissez JPEG." : "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.";
-    if (code === "RENDER_PENDING") return locale === "fr" ? "Le rendu continue sur le serveur. Revenez sur cette page pour récupérer le résultat." : "Rendering continues on the server. Return to this page to retrieve it.";
-    if (code === "RENDER_ALREADY_PENDING") return locale === "fr" ? "Un rendu est déjà en cours sur ce compte. Rechargez la page pour le retrouver." : "A render is already pending for this account. Reload to recover it.";
-    if (code === "RENDER_INTERRUPTED") return locale === "fr" ? "Ce rendu a été interrompu. Votre essai a été restitué ; vous pouvez réessayer." : "This render was interrupted. Your trial was restored; you can retry.";
-    if (code === "RENDER_GEOMETRY_TOO_LARGE") return locale === "fr" ? "Cette capture est trop allongée pour ce recadrage. Choisissez le mode Tout afficher ou réduisez le zoom." : "This screenshot is too narrow or wide for this crop. Choose Contain or reduce the zoom.";
-    if (code === "INPUT_TOO_LARGE" || code === "BATCH_TOO_LARGE") return locale === "fr" ? "Limite dépassée : 50 Mo et 40 mégapixels par capture, 200 Mo par lot." : "Limit exceeded: 50 MB and 40 megapixels per screenshot, 200 MB per batch.";
-    if (code === "STORAGE_UNAVAILABLE") return t(locale, "error_storage");
-    return t(locale, "error_export");
   }
 
   useEffect(() => {
@@ -823,7 +796,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           flashStatus(t(locale, "error_clone"), "err");
           return;
         }
-        flashStatus(explainError(payload.error || "EXPORT_FAILED"), "err");
+        flashStatus(explainError(locale, payload.error || "EXPORT_FAILED"), "err");
         return;
       }
       if (!payload.url) throw new Error("STORAGE_UNAVAILABLE");
@@ -847,7 +820,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       void refreshBilling();
     } catch (error) {
       void trackProduct("export_failed", { reason: "network_or_storage" });
-      flashStatus(error instanceof Error ? explainError(error.message) : t(locale, "error_export"), "err");
+      flashStatus(error instanceof Error ? explainError(locale, error.message) : t(locale, "error_export"), "err");
     } finally {
       setBusyExport(false);
     }
@@ -943,7 +916,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       if (!response.ok) {
         void trackProduct("review_failed", { reason: ["STUDIO_REQUIRED", "INPUT_TOO_LARGE", "BATCH_TOO_LARGE", "UPLOAD_MISSING"].includes(payload.error ?? "") ? payload.error! : "other" });
         if (payload.error === "STUDIO_REQUIRED") setReviewUpgrade(true);
-        flashStatus(explainError(payload.error || "STUDIO_REQUIRED"), "err");
+        flashStatus(explainError(locale, payload.error || "STUDIO_REQUIRED"), "err");
         return;
       }
       const publicId = payload.id ?? payload.url?.split("/").filter(Boolean).pop();
@@ -967,7 +940,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       void trackProduct("review_failed", { reason: "network_or_storage" });
       const code = error instanceof Error ? error.message : "STUDIO_REQUIRED";
       if (code === "STUDIO_REQUIRED") setReviewUpgrade(true);
-      flashStatus(explainError(code), "err");
+      flashStatus(explainError(locale, code), "err");
     } finally {
       setBusyReview(false);
     }
@@ -1769,581 +1742,4 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       ) : null}
     </div>
   );
-}
-
-function takeFiles(list: FileList | File[] | DataTransfer | null | undefined): File[] {
-  if (!list) return [];
-  if (typeof DataTransfer !== "undefined" && list instanceof DataTransfer) {
-    const fromFiles = Array.from(list.files);
-    if (fromFiles.length) return fromFiles;
-    const fromItems: File[] = [];
-    for (const item of Array.from(list.items)) {
-      if (item.kind === "file") {
-        const file = item.getAsFile();
-        if (file) fromItems.push(file);
-      }
-    }
-    return fromItems;
-  }
-  return Array.from(list as FileList | File[]);
-}
-
-function DropZone({
-  testId,
-  label,
-  hint,
-  count,
-  names = [],
-  disabled = false,
-  onFiles,
-}: {
-  testId: string;
-  label: string;
-  hint: string;
-  count: number;
-  names?: string[];
-  disabled?: boolean;
-  onFiles: (list: FileList | File[] | DataTransfer | null) => void;
-}) {
-  const [over, setOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const onFilesRef = useRef(onFiles);
-  useEffect(() => {
-    onFilesRef.current = onFiles;
-  }, [onFiles]);
-  useEffect(() => {
-    const node = inputRef.current;
-    if (!node) return;
-    const handler = () => {
-      const files = takeFiles(node.files);
-      if (files.length) onFilesRef.current(files);
-      node.value = "";
-    };
-    node.addEventListener("change", handler);
-    return () => node.removeEventListener("change", handler);
-  }, []);
-  return (
-    <label
-      className={`ds-drop ${over ? "is-over" : ""} ${disabled ? "is-disabled" : ""}`}
-      data-testid={testId}
-      data-count={count}
-      onDragEnter={() => {
-        if (!disabled) setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDragOver={(event) => {
-        event.preventDefault();
-        if (!disabled) setOver(true);
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        setOver(false);
-        if (disabled) return;
-        const files = takeFiles(event.dataTransfer);
-        if (files.length) onFiles(files);
-      }}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/png,image/jpeg"
-        multiple
-        disabled={disabled}
-        aria-label={label}
-        data-testid={`${testId}-input`}
-        className="absolute inset-0 cursor-pointer opacity-0"
-      />
-      <span>{label}</span>
-      <span className="t-shimmer mt-2 text-sm text-[var(--muted)]" data-text={hint}>
-        {hint}
-      </span>
-      <span className="mt-2 text-sm text-[var(--muted)]">
-        <DigitCount value={`${count}`} /> / {MAX_IMAGES}
-      </span>
-      {names.length ? (
-        <span className="drop-names" title={names.join(", ")}>
-          {names.join(" · ")}
-        </span>
-      ) : null}
-    </label>
-  );
-}
-
-function Seg({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-}) {
-  const labelId = useId();
-  const barRef = useRef<HTMLDivElement>(null);
-  const pillRef = useRef<HTMLSpanElement>(null);
-  const first = useRef(true);
-
-  const movePill = useCallback((animate: boolean) => {
-    const bar = barRef.current;
-    const pill = pillRef.current;
-    if (!bar || !pill) return;
-    const tab = bar.querySelector<HTMLElement>(`[data-seg="${value}"]`);
-    if (!tab) return;
-    if (!animate) pill.style.transition = "none";
-    pill.style.transform = `translateX(${tab.offsetLeft}px)`;
-    pill.style.width = `${tab.offsetWidth}px`;
-    if (!animate) {
-      void pill.offsetWidth;
-      pill.style.transition = "";
-    }
-  }, [value]);
-
-  useEffect(() => {
-    movePill(!first.current);
-    first.current = false;
-    const onResize = () => movePill(false);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [movePill, options]);
-
-  return (
-    <div className="ds-field">
-      <p className="ds-label" id={labelId}>
-        {label}
-      </p>
-      <div
-        ref={barRef}
-        className="ds-seg t-tabs"
-        role="radiogroup"
-        aria-labelledby={labelId}
-        onKeyDown={(event) => {
-          const dir =
-            event.key === "ArrowRight" || event.key === "ArrowDown"
-              ? 1
-              : event.key === "ArrowLeft" || event.key === "ArrowUp"
-                ? -1
-                : 0;
-          if (!dir) return;
-          event.preventDefault();
-          const group = event.currentTarget;
-          const index = options.findIndex((option) => option.value === value);
-          const next = options[(index + dir + options.length) % options.length];
-          if (!next) return;
-          onChange(next.value);
-          queueMicrotask(() => {
-            (group.querySelector(`[data-seg="${next.value}"]`) as HTMLButtonElement | null)?.focus();
-          });
-        }}
-      >
-        <span ref={pillRef} className="t-tabs-pill" aria-hidden="true" />
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            data-seg={option.value}
-            className={`t-tab ${value === option.value ? "is-on" : ""}`}
-            aria-checked={value === option.value}
-            tabIndex={value === option.value ? 0 : -1}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-type ToolPanel = "captures" | "adjust" | "review";
-
-function ToolPanelTabs({ value, onChange, locale }: {value: ToolPanel; onChange: (value: ToolPanel) => void; locale: Locale}) {
-  const labels = locale === "fr" ? {captures: "Captures", adjust: "Ajuster", review: "Vérifier"} : {captures: "Screenshots", adjust: "Adjust", review: "Check"};
-  return <div className="tool-panel-tabs" role="tablist" aria-label={locale === "fr" ? "Commandes" : "Controls"}>{(["captures", "adjust", "review"] as const).map((panel) => <button key={panel} type="button" role="tab" id={`tool-tab-${panel}`} data-testid={`tool-tab-${panel}`} aria-controls={value === panel ? `tool-panel-${panel}` : undefined} aria-selected={value === panel} tabIndex={value === panel ? 0 : -1} className={value === panel ? "is-on" : ""} onClick={() => onChange(panel)} onKeyDown={(event) => { const dir = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0; if (!dir) return; event.preventDefault(); const panels = ["captures", "adjust", "review"] as const; const next = panels[(panels.indexOf(panel) + dir + panels.length) % panels.length]; onChange(next); requestAnimationFrame(() => document.getElementById(`tool-tab-${next}`)?.focus()); }}>{labels[panel]}</button>)}</div>;
-}
-
-function ToolCanvas({mobileView, onMobileView, slideIndex, locale, children}: {mobileView: "outer" | "inner" | "compare"; onMobileView: (value: "outer" | "inner" | "compare") => void; slideIndex: number; locale: Locale; children: ReactNode}) {
-  const labels = locale === "fr" ? {outer: "Fermé", inner: "Ouvert", compare: "Comparer"} : {outer: "Closed", inner: "Open", compare: "Compare"};
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const initialSlide = useRef(true);
-  useEffect(() => {
-    if (initialSlide.current) { initialSlide.current = false; return; }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !canvasRef.current) return;
-    const stages = canvasRef.current.querySelectorAll(".preview-stage");
-    const tween = gsap.fromTo(stages, {opacity: 0.65, y: 6}, {opacity: 1, y: 0, duration: 0.22, ease: "power2.out", clearProps: "all"});
-    return () => { tween.kill(); gsap.set(stages, {clearProps: "all"}); };
-  }, [slideIndex]);
-  return <div ref={canvasRef} className="tool-canvas" data-mobile-view={mobileView}>
-    <div className="tool-mobile-view" role="group" aria-label={locale === "fr" ? "Vue du canvas" : "Canvas view"}>{(["outer", "inner", "compare"] as const).map((view) => <button key={view} type="button" aria-pressed={mobileView === view} className={mobileView === view ? "is-on" : ""} onClick={() => onMobileView(view)}>{labels[view]}</button>)}</div>
-    {children}
-  </div>;
-}
-
-function PairStrip({outerFiles, innerFiles, active, locale, sameSet, onSelect, onRemove}: {outerFiles: File[]; innerFiles: File[]; active: number; locale: Locale; sameSet: boolean; onSelect: (index: number) => void; onRemove: (side: "outer" | "inner", index: number) => void}) {
-  const count = Math.max(outerFiles.length, innerFiles.length);
-  if (!count) return <p className="tool-pair-empty">{locale === "fr" ? "Importez votre première paire depuis Captures." : "Import your first pair in Screenshots."}</p>;
-  return <div className="tool-pair-strip" aria-label={locale === "fr" ? "Paires de captures" : "Screenshot pairs"}><div className="tool-pair-strip-head"><span>{locale === "fr" ? "Paires" : "Pairs"}</span><span>{count} / {MAX_IMAGES}</span></div><div className="tool-pair-list">{Array.from({length: count}, (_, index) => { const outer = outerFiles[index]; const inner = innerFiles[index]; return <div className={`tool-pair-item ${index === active ? "is-active" : ""}`} key={index}><button type="button" className="tool-pair-select" aria-current={index === active ? "true" : undefined} aria-label={`${locale === "fr" ? "Paire" : "Pair"} ${index + 1}: ${outer ? (locale === "fr" ? "fermé présent" : "closed present") : (locale === "fr" ? "fermé manquant" : "closed missing")}, ${inner ? (locale === "fr" ? "ouvert présent" : "open present") : (locale === "fr" ? "ouvert manquant" : "open missing")}`} onClick={() => onSelect(index)}><strong>{String(index + 1).padStart(2, "0")}</strong><span className="tool-pair-marks"><i data-present={Boolean(outer)} /><i data-present={Boolean(inner)} /></span></button><div className="tool-pair-remove">{outer ? <button type="button" aria-label={`${locale === "fr" ? "Retirer la vue fermé de la paire" : "Remove closed view from pair"} ${index + 1}`} onClick={() => onRemove("outer", index)}>× <span>{locale === "fr" ? "Fermé" : "Closed"}</span></button> : null}{inner && !sameSet ? <button type="button" aria-label={`${locale === "fr" ? "Retirer la vue ouvert de la paire" : "Remove open view from pair"} ${index + 1}`} onClick={() => onRemove("inner", index)}>× <span>{locale === "fr" ? "Ouvert" : "Open"}</span></button> : null}</div></div>; })}</div></div>;
-}
-
-function foldStatusText(locale: Locale, check?: FoldCheck): string {
-  if (!check || check.status === "checking") return locale === "fr" ? "Analyse en cours…" : "Checking…";
-  if (check.status === "error") return locale === "fr" ? "Analyse indisponible : vérifiez visuellement le pli." : "Check unavailable: inspect the fold visually.";
-  if (check.status === "warning") return locale === "fr" ? "Texte possiblement sous le pli : vérifiez la lisibilité." : "Possible text beneath the fold: check legibility.";
-  return locale === "fr" ? "Aucun chevauchement détecté ; vérifiez le rendu final." : "No overlap detected; review the final image.";
-}
-
-function CropControls({testId, locale, previewMode, inspect, spec, transform, onTransform}: {testId: string; locale: Locale; previewMode: "device" | "pixels"; inspect: SourceInspect | null; spec: SizeSpec; transform: CropTransform; onTransform: (patch: Partial<CropTransform>) => void}) {
-  if (!inspect) return <p className="tool-adjust-empty">{locale === "fr" ? "Importez cette vue pour régler son cadrage." : "Import this view to adjust its framing."}</p>;
-  const metrics = compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform);
-  const cropHint = metrics.fit === "cover" ? t(locale, previewMode === "pixels" ? "tool_crop_drag_hint" : "tool_crop_device_hint") : t(locale, "tool_crop_contain_hint");
-  const onRangeKey = (event: ReactKeyboardEvent<HTMLInputElement>, axis: "x" | "y") => {
-    const delta = event.key === "ArrowRight" || event.key === "ArrowUp" ? 0.01 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -0.01 : null;
-    const next = event.key === "Home" ? 0 : event.key === "End" ? 1 : delta == null ? null : Math.max(0, Math.min(1, Math.round((transform[axis] + delta) * 100) / 100));
-    if (next == null) return;
-    event.preventDefault();
-    onTransform({[axis]: next});
-  };
-  const canMoveX = metrics.overflowX >= 1;
-  const canMoveY = metrics.overflowY >= 1;
-  return <div className="crop-controls tool-crop-controls" data-testid={`${testId}-crop-controls`}>
-    <div className="crop-toolbar">
-      <div className="crop-fit" role="group" aria-label={t(locale, "tool_crop_mode")}>
-        <button type="button" className={metrics.fit === "cover" ? "is-on" : ""} aria-pressed={metrics.fit === "cover"} onClick={() => onTransform({fit: "cover"})}>{t(locale, "tool_crop_fill")}</button>
-        <button type="button" className={metrics.fit === "contain" ? "is-on" : ""} aria-pressed={metrics.fit === "contain"} onClick={() => onTransform({fit: "contain"})}>{t(locale, "tool_crop_show_all")}</button>
-      </div>
-      {transform.fit === "smart" ? <p className="crop-hint" data-testid={`${testId}-smart-result`}>{locale === "fr" ? `Smart a choisi « ${metrics.fit === "cover" ? "Remplir" : "Tout afficher"} » pour cette capture.` : `Smart chose “${metrics.fit === "cover" ? "Fill" : "Show all"}” for this capture.`}</p> : null}
-      <button type="button" className="crop-reset" onClick={() => onTransform({x: 0.5, y: 0.5, zoom: 1})}>{t(locale, "tool_crop_reset")}</button>
-    </div>
-    {metrics.fit === "cover" ? <div className="crop-axis-controls">
-      <label><span>{locale === "fr" ? "Zoom" : "Zoom"} · {Math.round((transform.zoom ?? 1) * 100)} %</span><input type="range" min="100" max="200" value={Math.round((transform.zoom ?? 1) * 100)} onChange={(event) => onTransform({zoom: Number(event.currentTarget.value) / 100})} /></label>
-      <label><span>{t(locale, "tool_crop_horizontal")}</span><input type="range" min="0" max="100" disabled={!canMoveX} value={Math.round(transform.x * 100)} onChange={(event) => onTransform({x: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "x")} /></label>
-      <label><span>{t(locale, "tool_crop_vertical")}</span><input type="range" min="0" max="100" disabled={!canMoveY} value={Math.round(transform.y * 100)} onChange={(event) => onTransform({y: Number(event.currentTarget.value) / 100})} onKeyDown={(event) => onRangeKey(event, "y")} /></label>
-      {!canMoveY ? <p className="crop-hint">{locale === "fr" ? "Aucune marge verticale à cette échelle. Augmentez le zoom pour déplacer l’image vers le haut ou le bas." : "No vertical room at this scale. Increase zoom to move the image up or down."}</p> : null}
-    </div> : null}
-    <div className="crop-readout"><p className={`crop-metrics is-${metrics.severity}`} data-testid={`${testId}-metrics`}>{tf(locale, "tool_crop_metrics", {crop: metrics.cropPercent.toFixed(1), scale: metrics.scale.toFixed(2)})}</p><p className="crop-hint">{cropHint}</p></div>
-  </div>;
-}
-
-function PreviewCard({
-  testId,
-  label,
-  src,
-  inspect,
-  kind,
-  spec,
-  locale,
-  orientation,
-  previewMode,
-  hinge = false,
-  slide,
-  transform,
-  onTransform,
-  onImportFiles,
-}: {
-  testId: string;
-  label: string;
-  src?: string;
-  inspect: SourceInspect | null;
-  kind: "outer" | "inner";
-  spec: { width: number; height: number };
-  locale: Locale;
-  orientation: Orientation;
-  previewMode: "device" | "pixels";
-  hinge?: boolean;
-  slide: number;
-  transform: CropTransform;
-  onTransform: (patch: Partial<CropTransform>) => void;
-  onImportFiles: (files: FileList | null) => void;
-}) {
-  const dragRef = useRef<{ pointerId: number; x: number; y: number; focusX: number; focusY: number } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const effectiveFit = inspect ? compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform).fit : transform.fit;
-  const canvasAspect = previewMode === "pixels"
-    ? `${spec.width}/${spec.height}`
-    : duoChassisAspect(kind, orientation);
-  return (
-    <figure data-testid={testId} data-slide={slide}>
-      <figcaption className="duo-caption text-left">{label}</figcaption>
-      <div className="preview-stage">
-        <div
-          className={`preview-glass t-resize ${kind === "outer" ? "preview-outer" : "preview-inner"} ${src ? "t-skel is-revealed" : "preview-empty"} ${kind === "inner" && hinge && src ? "is-hinge" : "hinge-off"} ${src && previewMode === "pixels" && effectiveFit === "cover" ? "is-draggable" : ""}`}
-          data-testid={`${testId}-canvas`}
-          data-aspect={canvasAspect}
-          onPointerDown={(event) => {
-            if (!src || previewMode !== "pixels" || effectiveFit !== "cover") return;
-            event.currentTarget.setPointerCapture(event.pointerId);
-            dragRef.current = {
-              pointerId: event.pointerId,
-              x: event.clientX,
-              y: event.clientY,
-              focusX: transform.x,
-              focusY: transform.y,
-            };
-          }}
-          onPointerMove={(event) => {
-            const drag = dragRef.current;
-            if (!drag || drag.pointerId !== event.pointerId) return;
-            const rect = event.currentTarget.getBoundingClientRect();
-            if (!inspect) return;
-            const metrics = compositionMetrics(inspect.width, inspect.height, spec.width, spec.height, transform);
-            onTransform({
-              x: metrics.overflowX >= 1 ? drag.focusX - (event.clientX - drag.x) * spec.width / Math.max(rect.width * metrics.overflowX, 1) : drag.focusX,
-              y: metrics.overflowY >= 1 ? drag.focusY - (event.clientY - drag.y) * spec.height / Math.max(rect.height * metrics.overflowY, 1) : drag.focusY,
-            });
-          }}
-          onPointerUp={(event) => {
-            if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
-          }}
-          onPointerCancel={() => {
-            dragRef.current = null;
-          }}
-        >
-          {src ? (
-            <>
-              <div className="t-skel-skeleton" aria-hidden="true">
-                <span />
-              </div>
-              <div className="t-skel-content">
-                {/* User-generated preview from canvas.toDataURL */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={label} />
-              </div>
-            </>
-          ) : (
-            <div className="preview-empty-copy">
-              <span>{label} · {spec.width} × {spec.height}</span>
-              <button type="button" className="tool-empty-action" onClick={() => inputRef.current?.click()}>{locale === "fr" ? "Importer" : "Import"}</button>
-              <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${locale === "fr" ? "Importer" : "Import"} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
-            </div>
-          )}
-          {kind === "outer" && previewMode === "device" ? <DeviceCamera /> : null}
-          {kind === "inner" ? <span className="division" aria-hidden="true" /> : null}
-        </div>
-      </div>
-    </figure>
-  );
-}
-
-function DigitCount({ value }: { value: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const group = ref.current;
-    if (!group) return;
-    group.classList.remove("is-animating");
-    group.replaceChildren();
-    value.split("").forEach((ch, index, chars) => {
-      const span = document.createElement("span");
-      span.className = "t-digit";
-      span.textContent = ch;
-      if (index === chars.length - 2) span.dataset.stagger = "1";
-      else if (index === chars.length - 1) span.dataset.stagger = "2";
-      group.appendChild(span);
-    });
-    void group.offsetHeight;
-    group.classList.add("is-animating");
-  }, [value]);
-  return (
-    <>
-      <span className="sr-only">{value}</span>
-      <span ref={ref} className="t-digit-group" aria-hidden="true" />
-    </>
-  );
-}
-
-function SwapLabel({ text }: { text: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const prev = useRef(text);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || prev.current === text) {
-      if (el) el.textContent = text;
-      return;
-    }
-    const dur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur")) || 150;
-    el.classList.add("is-exit");
-    const timer = window.setTimeout(() => {
-      el.textContent = text;
-      el.classList.remove("is-exit");
-      el.classList.add("is-enter-start");
-      void el.offsetHeight;
-      el.classList.remove("is-enter-start");
-      prev.current = text;
-    }, dur);
-    return () => window.clearTimeout(timer);
-  }, [text]);
-  return <span ref={ref} className="t-text-swap">{text}</span>;
-}
-
-function DsToggle({
-  pressed,
-  onToggle,
-  testId,
-  children,
-}: {
-  pressed: boolean;
-  onToggle: () => void;
-  testId: string;
-  children: ReactNode;
-}) {
-  const [init, setInit] = useState(false);
-  return (
-    <button
-      type="button"
-      className="ds-toggle"
-      data-testid={testId}
-      aria-pressed={pressed}
-      onClick={() => {
-        setInit(true);
-        onToggle();
-      }}
-    >
-      <span className="text-sm">{children}</span>
-      <span className={`ds-toggle-track t-toggle ${init ? "is-init" : ""}`} data-on={pressed ? "true" : "false"}>
-        <span className="ds-toggle-thumb t-toggle-thumb" />
-      </span>
-    </button>
-  );
-}
-
-function CloneTip({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {
-  const groupRef = useRef<HTMLSpanElement>(null);
-  function hide() {
-    const tip = groupRef.current?.querySelector<HTMLElement>(".t-tt");
-    if (!tip) return;
-    tip.setAttribute("data-show", "false");
-    tip.setAttribute("aria-hidden", "true");
-  }
-  function place() {
-    const group = groupRef.current;
-    const tip = group?.querySelector<HTMLElement>(".t-tt");
-    const text = group?.querySelector<HTMLElement>(".t-tt-text");
-    const trigger = group?.querySelector<HTMLElement>(".t-tt-trigger");
-    if (!group || !tip || !text || !trigger) return;
-    const showing = tip.getAttribute("data-show") === "true";
-    text.textContent = hint;
-    const cs = getComputedStyle(tip);
-    const width = Math.ceil(text.scrollWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight));
-    const g = group.getBoundingClientRect();
-    const r = trigger.getBoundingClientRect();
-    const x = r.left - g.left + r.width / 2 - width / 2;
-    if (!showing) {
-      tip.style.transition = "none";
-      tip.style.width = `${width}px`;
-      tip.style.setProperty("--tt-x", `${x}px`);
-      void tip.offsetWidth;
-      tip.style.transition = "";
-    } else {
-      tip.style.width = `${width}px`;
-      tip.style.setProperty("--tt-x", `${x}px`);
-    }
-    tip.setAttribute("data-show", "true");
-    tip.setAttribute("aria-hidden", "false");
-  }
-  return (
-    <span ref={groupRef} className="t-tt-group" onPointerLeave={hide}>
-      <span className="t-tt-trigger" data-tooltip={hint} onPointerEnter={place} onFocus={place} onBlur={hide}>
-        {children}
-      </span>
-      <span className="t-tt" data-show="false" aria-hidden="true">
-        <span className="t-tt-text">{label}</span>
-      </span>
-    </span>
-  );
-}
-
-function StatusLine({
-  text,
-  kind,
-  testId,
-}: {
-  text: string | null;
-  kind: "ok" | "err" | "busy" | "info";
-  testId: string;
-}) {
-  if (!text) return null;
-  return (
-    <p
-      className={`t-toast is-open mt-3 text-sm ${kind === "err" ? "t-input is-error is-shaking" : ""}`}
-      data-testid={testId}
-      data-kind={kind}
-      role={kind === "err" ? "alert" : "status"}
-      aria-live={kind === "err" ? "assertive" : "polite"}
-    >
-      {kind === "busy" ? (
-        <span className="t-think">
-          <span className="t-think-sizer">{text}</span>
-          <span className="t-think-text" data-text={text}>
-            {text}
-          </span>
-        </span>
-      ) : (
-        <>
-          {kind === "ok" ? (
-            <span className="t-success-check mr-2 inline-block align-middle" data-state="in">
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M3 8.5L6.2 12L13 4.5" />
-              </svg>
-            </span>
-          ) : null}
-          {text}
-        </>
-      )}
-    </p>
-  );
-}
-
-function drawTarget(
-  bitmap: ImageBitmap,
-  options: RenderOptions,
-  spec: Pick<SizeSpec, "slot" | "orientation" | "width" | "height">,
-  cropTransform?: CropTransform,
-): string {
-  const canvas = document.createElement("canvas");
-  canvas.width = spec.width;
-  canvas.height = spec.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-  if (options.background === "gradient") {
-    const gradient = ctx.createLinearGradient(0, 0, 0, spec.height);
-    gradient.addColorStop(0, options.gradientFrom);
-    gradient.addColorStop(1, options.gradientTo);
-    ctx.fillStyle = gradient;
-  } else {
-    ctx.fillStyle = options.solidColor;
-  }
-  ctx.fillRect(0, 0, spec.width, spec.height);
-  if (options.background === "blur") {
-    ctx.filter = "blur(28px)";
-    const cover = coverRect(bitmap.width, bitmap.height, spec.width, spec.height);
-    ctx.drawImage(bitmap, cover.left, cover.top, cover.width, cover.height);
-    ctx.filter = "none";
-  }
-  const transform = normalizeCropTransform(cropTransform, options.fit);
-  const rect = compositionMetrics(
-    bitmap.width,
-    bitmap.height,
-    spec.width,
-    spec.height,
-    transform,
-  ).rect;
-  ctx.drawImage(bitmap, rect.left, rect.top, rect.width, rect.height);
-  const layout = textOverlayLayout(spec, options.titlePosition);
-  if (options.title || options.subtitle) {
-    ctx.fillStyle = overlayTextColor(options);
-    ctx.textAlign = "center";
-    const family = options.titleFont === "serif" ? "Georgia, serif" : "system-ui";
-    if (options.title) {
-      ctx.font = `700 ${layout.titleSize}px ${family}`;
-      ctx.fillText(options.title, layout.x, layout.yTitle, layout.maxWidth);
-    }
-    if (options.subtitle) {
-      ctx.globalAlpha = 0.82;
-      ctx.font = `700 ${layout.subtitleSize}px ${family}`;
-      ctx.fillText(options.subtitle, layout.x, layout.ySubtitle, layout.maxWidth);
-      ctx.globalAlpha = 1;
-    }
-  }
-  return canvas.toDataURL("image/jpeg", 0.7);
 }
