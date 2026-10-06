@@ -46,7 +46,7 @@
     "eslint-config-next": "16.3.8",
     "start-server-and-test": "^2.1.2",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^7",
     "vitest": "^4.1.11"
   }
 }
