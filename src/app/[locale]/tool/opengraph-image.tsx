@@ -1,14 +1,14 @@
 import { ogImage, ogImageMetadata } from "@/lib/og";
-import { pageLocale, type LocaleParams } from "../params";
+import { LOCALES, pageLocale, type LocaleParams } from "../params";
 
 export function generateStaticParams() {
-  return [{ locale: "fr" }];
+  return LOCALES.map((locale) => ({ locale }));
 }
 
 export function generateImageMetadata({ params }: { params: { locale: string } }) {
-  return ogImageMetadata("rejection", params);
+  return ogImageMetadata("tool", params);
 }
 
 export default async function Image({ params }: LocaleParams) {
-  return ogImage("rejection", await pageLocale(params, "fr"));
+  return ogImage("tool", await pageLocale(params));
 }
