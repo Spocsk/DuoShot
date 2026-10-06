@@ -6,9 +6,9 @@ export function generateStaticParams() {
 }
 
 export function generateImageMetadata({ params }: { params: { locale: string } }) {
-  return ogImageMetadata("rejection", params);
+  return ogImageMetadata("why-not-ai", params);
 }
 
 export default async function Image({ params }: LocaleParams) {
-  return ogImage("rejection", await pageLocale(params, "fr"));
+  return ogImage("why-not-ai", await pageLocale(params, "fr"));
 }

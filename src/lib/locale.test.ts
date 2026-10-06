@@ -91,7 +91,7 @@ describe("locale", () => {
   });
 
   it("leaves static resources alone", () => {
-    for (const path of ["/sitemap.xml", "/robots.txt", "/font.woff2", "/_next/anything", "/api", "/auth", "/opengraph-image-35za9p", "/en/opengraph-image", "/en/specs/opengraph-image", "/specs/opengraph-image-vneuru", "/en/rejection/twitter-image"]) {
+    for (const path of ["/sitemap.xml", "/robots.txt", "/font.woff2", "/_next/anything", "/api", "/auth", "/opengraph-image-35za9p", "/en/opengraph-image", "/en/specs/opengraph-image", "/specs/opengraph-image-vneuru", "/en/rejection/twitter-image", "/fr/opengraph-image/card", "/en/pricing/opengraph-image/card"]) {
       expect(shouldSkipLocaleRewrite(path)).toBe(true);
     }
   });

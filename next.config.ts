@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     "/api/example-zip": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews/[id]/media": ["./src/lib/pipeline/fonts/**/*"],
-    "/[locale]/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
+    "/[locale]/**/opengraph-image/*": ["./src/lib/og/fonts/**/*"],
   },
   poweredByHeader: false,
   async headers() {
@@ -39,9 +39,12 @@ const nextConfig: NextConfig = {
       // images rather than documents, are served under /fr.
       { source: "/fr", has: [HTML_DOCUMENT], destination: "/", permanent: true },
       { source: "/fr/:path+", has: [HTML_DOCUMENT], destination: "/:path+", permanent: true },
-      // Social cards cached before the single [locale] tree (route groups added a hash).
-      { source: "/opengraph-image-:hash", destination: "/fr/opengraph-image", permanent: true },
-      { source: "/:page(specs|rejet)/opengraph-image-:hash", destination: "/fr/:page/opengraph-image", permanent: true },
+      // Social cards cached before the single [locale] tree (route groups added a hash), then
+      // before each card got an id for its localized alt text.
+      { source: "/opengraph-image-:hash", destination: "/fr/opengraph-image/card", permanent: true },
+      { source: "/:page(specs|rejet)/opengraph-image-:hash", destination: "/fr/:page/opengraph-image/card", permanent: true },
+      { source: "/:locale(fr|en)/opengraph-image", destination: "/:locale/opengraph-image/card", permanent: true },
+      { source: "/:locale(fr|en)/:page(specs|rejet|rejection)/opengraph-image", destination: "/:locale/:page/opengraph-image/card", permanent: true },
     ];
   },
   async rewrites() {

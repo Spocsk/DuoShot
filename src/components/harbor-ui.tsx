@@ -1,7 +1,7 @@
 import type { Locale } from "@/lib/specs";
 
 /** Harbor is a fictional surf app; its interface follows the page language. */
-const COPY = {
+export const HARBOR_COPY = {
   en: {
     today: "Today", spots: "Spots", incoming: "Incoming", high: "High 18:12", tide: "Tide", hours: "Hours",
     rising: "High 18:12 · Rising", bestWindow: "Best window · 16:00", now: "Now", swell: "Swell",
@@ -18,7 +18,9 @@ const COPY = {
   },
 } as const;
 
-const HOURS = [
+const COPY = HARBOR_COPY;
+
+export const HARBOR_HOURS = [
   ["06", "38%"],
   ["09", "58%"],
   ["12", "92%"],
@@ -27,11 +29,13 @@ const HOURS = [
   ["21", "32%"],
 ] as const;
 
+/** The tide curve, drawn in a 160×48 box; its low point sits at (80, 36). */
+export const HARBOR_TIDE_PATH = "M0 30 C 18 30 22 10 40 12 C 58 14 62 38 80 36 C 98 34 104 8 122 10 C 140 12 146 28 160 26";
 
 function SwellHours() {
   return (
     <ol className="harbor-hours" aria-hidden="true">
-      {HOURS.map(([label, height]) => (
+      {HARBOR_HOURS.map(([label, height]) => (
         <li key={label}>
           <i style={{ height }} />
           <span>{label}</span>
@@ -45,7 +49,7 @@ function TideSpark({ className }: { className: string }) {
   return (
     <svg className={className} viewBox="0 0 160 48" fill="none" aria-hidden="true">
       <path
-        d="M0 30 C 18 30 22 10 40 12 C 58 14 62 38 80 36 C 98 34 104 8 122 10 C 140 12 146 28 160 26"
+        d={HARBOR_TIDE_PATH}
         stroke="rgb(247 243 236 / 0.82)"
         strokeWidth="2.2"
         strokeLinecap="round"
