@@ -151,7 +151,7 @@ export const fr = {
   pricing_studio_title: "Studio",
   pricing_studio_body: "Tout Indie + 3 sièges + validation client pendant 7 jours.",
   pricing_studio_cta: "Studio — 49 €/mois",
-  pricing_note: "Prix affichés en euros. Le total et les taxes applicables sont confirmés dans Stripe Checkout.",
+  pricing_note: "Prix affichés en euros. TVA non applicable, art. 293 B du CGI : le prix affiché est le prix payé.",
   pricing_feat_zip: "ZIP HD écrans fermé et ouvert",
   pricing_feat_quota: "Quota",
   pricing_feat_69: "Tailles 6,9″",

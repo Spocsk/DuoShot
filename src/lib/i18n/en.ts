@@ -148,7 +148,7 @@ export const en: Messages = {
   pricing_studio_title: "Studio",
   pricing_studio_body: "Everything in Indie plus 3 seats and a 7-day client review workflow.",
   pricing_studio_cta: "Studio — €49/month",
-  pricing_note: "Prices shown in euros. Stripe Checkout confirms the total and applicable taxes.",
+  pricing_note: "Prices shown in euros. VAT not applicable (French VAT franchise, art. 293 B CGI): the price shown is the price you pay.",
   pricing_feat_zip: "HD ZIP, closed and open screens",
   pricing_feat_quota: "Quota",
   pricing_feat_69: "6.9″ sizes",
