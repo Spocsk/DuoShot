@@ -244,7 +244,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
         <Block title="Trial and plans">
           <p>
             Trial: 2 HD ZIPs (closed and open screens), no card, Duo sizes only. Indie: €12/month or €120/year billed annually, up to 100 ZIP exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €49/month or €490/year billed annually, everything in Indie plus
-            three seats and client reviews retained for seven days. Prices include VAT where applicable.
+            three seats and client reviews retained for seven days. 30-day pass: €19 one-time payment, Indie features for 30 days, no renewal. VAT not applicable (French VAT franchise, art. 293 B of the French tax code): the price shown is the price paid.
             Billing via Stripe, cancel from Stripe.
           </p>
         </Block>
@@ -311,7 +311,7 @@ export function TermsContent({ locale }: { locale: Locale }) {
       <Block title="Essai et offres">
         <p>
           Essai : 2 ZIP HD (écrans fermé et ouvert), sans carte, tailles Duo seulement. Indie : 12 €/mois ou 120 €/an facturés annuellement, 100 exports ZIP par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois ou 490 €/an facturés annuellement, tout Indie plus trois
-          sièges et des reviews client conservées sept jours. Prix TTC le cas échéant. Paiement via Stripe, résiliation
+          sièges et des reviews client conservées sept jours. Pass 30 jours : 19 € en paiement unique, fonctions Indie pendant 30 jours, sans renouvellement. TVA non applicable, art. 293 B du CGI : le prix affiché est le prix payé. Paiement via Stripe, résiliation
           depuis Stripe.
         </p>
       </Block>
