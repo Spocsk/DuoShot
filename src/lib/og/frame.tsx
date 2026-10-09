@@ -2,20 +2,13 @@ import type { ReactNode } from "react";
 import { SITE_NAME } from "@/lib/site";
 import { OG } from "./theme";
 
-/** The DuoShot mark: the closed and the open display side by side, as in public/icon.svg. */
+/** The selected "Le pli" mark, matching src/app/icon.svg. */
 export function OgMark({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64">
-      <defs>
-        <linearGradient id="og-mark-screen" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset="1" stopColor="#bcd0d4" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="15" fill={OG.ink} />
-      <rect x="9" y="21" width="15.5" height="22" rx="3.6" fill="url(#og-mark-screen)" />
-      <rect x="27.5" y="21" width="27.5" height="22" rx="4.4" fill="url(#og-mark-screen)" />
-      <rect x="40.6" y="21" width="1.3" height="22" fill={OG.ink} opacity="0.35" />
+      <rect width="64" height="64" fill={OG.sea} />
+      <rect x="12.3" y="14.3" width="14.5" height="35.4" rx="2.6" fill="#ffffff" />
+      <rect x="29.2" y="14.3" width="22.4" height="35.4" rx="2.6" fill="#ffffff" />
     </svg>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Locale } from "@/lib/specs";
 import { getTranslator } from "@/lib/i18n";
 import { localePrefix, localizedPath, pricingPath, rejectionPath } from "@/lib/site";
@@ -30,8 +31,17 @@ export function SiteHeader({ locale, path }: Props) {
         {t("skip_main")}
       </a>
       <div className="mx-auto flex min-h-[var(--header-h)] max-w-6xl items-center justify-between gap-x-4 px-5">
-        <Link href={home} className="site-wordmark relative z-[60] font-display text-xl tracking-tight">
-          DuoShot
+        <Link href={home} className="site-wordmark relative z-[60] inline-flex shrink-0 items-center gap-2 font-display text-xl tracking-tight">
+          <Image
+            src="/brand/duoshot-logo.png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 rounded-md"
+            loading="eager"
+            unoptimized
+          />
+          <span>DuoShot</span>
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-x-2">
           <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
