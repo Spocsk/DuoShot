@@ -518,7 +518,7 @@ export const en: Messages = {
   tool_done: ": done",
   tool_files_ready: "Files ready",
   tool_paths_inside_app_folder: "Paths inside the app folder",
-  tool_unzip_archive_get_both: "Unzip the archive to get both image sets. Retrieve it again within 24 hours without another trial. Clicking requests a download; check the file in your browser. Manual upload depends on Duo slots becoming available in App Store Connect.",
+  tool_unzip_archive_get_both: "Unzip the archive to get both image sets. Retrieve it again within 24 hours without another trial. Clicking requests a download; check the file in your browser. Upload the Duo sets manually in App Store Connect.",
   tool_server_processing_other_batches: "The server is processing other batches. Retry shortly; no quota was consumed.",
   tool_zip_exceeds_storage_limit: "The ZIP exceeds the storage limit. Use fewer pairs or choose JPEG.",
   tool_rendering_continues_on_server: "Rendering continues on the server. Return to this page to retrieve it.",
