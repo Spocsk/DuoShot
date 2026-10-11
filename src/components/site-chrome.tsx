@@ -79,6 +79,21 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t("footer_why")}</Link>
         <Link href={rejectionPath(locale)} data-testid="footer-reject">{t("footer_reject")}</Link>
         <Link href="/llms.txt">llms.txt</Link>
+        <a
+          href="https://fazier.com/launches/duoshot.site"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="DuoShot on Fazier"
+          className="inline-flex items-center"
+        >
+          <Image
+            src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched&theme=light"
+            width={120}
+            height={51}
+            unoptimized
+            alt="Launched on Fazier"
+          />
+        </a>
       </div>
     </footer>
   );
