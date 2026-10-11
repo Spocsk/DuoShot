@@ -521,7 +521,7 @@ export const fr = {
   tool_done: " : fait",
   tool_files_ready: "Fichiers prêts",
   tool_paths_inside_app_folder: "Chemins dans le dossier de l’app",
-  tool_unzip_archive_get_both: "Décompressez le ZIP pour obtenir les deux séries d’images. Le fichier reste récupérable pendant 24 h, sans nouvel essai. Le clic demande le téléchargement ; vérifiez ensuite le fichier dans votre navigateur. Le dépôt manuel dépend de l’ouverture des emplacements Duo dans App Store Connect.",
+  tool_unzip_archive_get_both: "Décompressez le ZIP pour obtenir les deux séries d’images. Le fichier reste récupérable pendant 24 h, sans nouvel essai. Le clic demande le téléchargement ; vérifiez ensuite le fichier dans votre navigateur. Déposez les séries Duo à la main dans App Store Connect.",
   tool_server_processing_other_batches: "Le serveur traite déjà plusieurs lots. Réessayez dans quelques secondes ; aucun quota n’a été consommé.",
   tool_zip_exceeds_storage_limit: "Le ZIP dépasse la limite de stockage. Réduisez le nombre de paires ou choisissez JPEG.",
   tool_rendering_continues_on_server: "Le rendu continue sur le serveur. Revenez sur cette page pour récupérer le résultat.",

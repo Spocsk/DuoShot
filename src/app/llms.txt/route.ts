@@ -24,7 +24,7 @@ ${sizes}
 - Optional 6.9" sizes are Indie / Studio
 - Trial: 2 HD ZIP exports after signup, no card
 - Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year. Annual billing upfront; paid limit 100 ZIPs per UTC day.
-- Apple upload status checked 2026-09-25: Duo upload support is announced for later this year. Prepare files now, upload manually when available.
+- Apple upload status checked 2026-10-11: since 2026-10-05, App Store Connect accepts iPhone Duo optimized apps; from April 2027, every app submission must include iPhone Duo screenshots (apps built with the iOS 27.1 SDK or later). Upload files manually.
 - Apple source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
 - Harbor is a fictional demonstration. No approval guarantee.
 - Projects are saved locally on the device, not synchronized.

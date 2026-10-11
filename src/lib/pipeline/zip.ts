@@ -77,7 +77,7 @@ export function buildReadme(options: {
     "",
     "PNG (default) or JPEG q90. RGB, no alpha. Review these files before manual upload.",
     "Unzip this archive to get separate closed and open image sets. Manual upload only.",
-    "Apple status checked 2026-09-25: Duo uploads are announced for later this year.",
+    "Apple status checked 2026-10-11: App Store Connect accepts iPhone Duo optimized apps since 2026-10-05; Duo screenshots are required for every submission from April 2027.",
     "Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/",
     "Visual checks are advisory; this report does not predict App Store approval.",
     "Sources and ZIP expire after 24 hours. Server cleanup runs every 15 minutes; failed cleanup is retried. Local drafts stay on your device.",
