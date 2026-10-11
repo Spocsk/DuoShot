@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { connectPreviewStyle, duoChassisAspect, duoSpec, formatInches, SIZE_SPECS, specRowDetail } from "./specs";
 
 describe("duoChassisAspect", () => {
-  it("keeps the inner as the open landscape book in both screenshot orientations", () => {
-    expect(duoChassisAspect("inner", "portrait")).toBe("164.6/117.8");
+  it("turns the open device a quarter turn for portrait screenshots", () => {
+    expect(duoChassisAspect("inner", "portrait")).toBe("117.8/164.6");
     expect(duoChassisAspect("inner", "landscape")).toBe("164.6/117.8");
   });
 

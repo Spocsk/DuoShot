@@ -1046,13 +1046,18 @@ button.ds-pill {
   }
 }
 
+/*
+ * An open-screen capture in the portrait App Store slot (2007 × 2853). The device is turned a quarter turn,
+ * so the fold runs across the middle height: one pane on top, one below, nothing in the middle band.
+ * Each pane is wide, so it lays its copy out in two columns (text left, visuals right).
+ */
 .shelf-book {
   position: relative;
   display: grid;
   height: 100%;
   min-height: 0;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .shelf-book-pane {
@@ -1063,56 +1068,90 @@ button.ds-pill {
   overflow: hidden;
 }
 
+.shelf-book .harbor-skin {
+  background-size: 100% 200%;
+}
+
+.shelf-book .harbor-skin-left {
+  background-position: center top;
+}
+
+.shelf-book .harbor-skin-right {
+  background-position: center bottom;
+}
+
 .shelf-book .harbor-inner-main,
 .shelf-book .harbor-inner-side {
-  padding: 7% 8%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-auto-rows: min-content;
+  grid-auto-flow: row dense;
+  align-content: start;
+  column-gap: 7%;
+  row-gap: 5cqh;
+  padding: 9cqh 6cqi 7cqh;
   overflow: hidden;
 }
 
+.shelf-book .harbor-inner-main > :is(.harbor-kicker, .harbor-place, .harbor-metric),
+.shelf-book .harbor-inner-side > :is(.harbor-status-solo, .harbor-place, .harbor-metric) {
+  grid-column: 1;
+  margin-top: 0;
+}
+
+.shelf-book .harbor-inner-main > :is(.harbor-hours, .harbor-spark, .harbor-glass, .harbor-spots),
+.shelf-book .harbor-inner-side > :is(.harbor-hours, .harbor-spark, .harbor-glass, .harbor-spots) {
+  grid-column: 2;
+  margin-top: 0;
+}
+
 .shelf-book .harbor-place {
-  font-size: clamp(0.8rem, 11cqi, 1.35rem);
+  font-size: clamp(0.8rem, 5.5cqi, 1.35rem);
 }
 
 .shelf-book .harbor-metric,
 .shelf-book .harbor-kicker,
 .shelf-book .harbor-status-solo {
-  font-size: clamp(0.42rem, 3.4cqi, 0.62rem);
+  font-size: clamp(0.42rem, 1.7cqi, 0.62rem);
 }
 
 .shelf-book .harbor-glass-title {
-  font-size: clamp(0.7rem, 6.5cqi, 1.05rem);
+  font-size: clamp(0.55rem, 3.25cqi, 1.05rem);
+  white-space: nowrap;
+}
+
+.shelf-book .harbor-glass {
+  padding: 4cqh 5cqi;
 }
 
 .shelf-book .harbor-spot {
-  font-size: clamp(0.4rem, 3.6cqi, 0.62rem);
+  min-height: 11cqh;
+  font-size: clamp(0.4rem, 1.8cqi, 0.62rem);
 }
 
 .shelf-book .harbor-hours {
-  height: 14%;
-  margin-top: 4%;
+  height: 22cqh;
 }
 
 .shelf-book .harbor-spark {
-  height: 12%;
+  height: 14cqh;
   min-height: 0;
-  flex-shrink: 1;
 }
 
 .shelf-book .harbor-spots {
-  margin-top: 5%;
-  gap: 5%;
+  gap: 3cqh;
 }
 
 .shelf-book-crease {
   pointer-events: none;
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(50% - 3px);
+  left: 0;
+  right: 0;
+  top: calc(50% - 3px);
   z-index: 2;
-  width: 6px;
+  height: 6px;
   background: linear-gradient(
-    90deg,
+    180deg,
     rgb(0 0 0 / 0.22),
     rgb(255 255 255 / 0.1) 45%,
     rgb(0 0 0 / 0.32)
@@ -1326,8 +1365,9 @@ button.ds-pill {
 
 .preview-duo {
   display: grid;
-  /* Physical Duo: closed 84.1×117.8 mm, open 164.6×117.8 mm, same height. */
-  grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
+  /* Physical Duo: closed 84.1×117.8 mm, open 164.6×117.8 mm. A portrait open screen is the device
+     turned a quarter turn (117.8 mm wide), so the fold runs across its middle height. */
+  grid-template-columns: minmax(0, 84.1fr) minmax(0, 117.8fr);
   grid-template-rows: auto minmax(0, auto) auto auto;
   align-items: stretch;
   column-gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -1410,7 +1450,7 @@ button.ds-pill {
   }
 
   .preview-stage .preview-outer {
-    width: calc(84.1 / 164.6 * 100%);
+    width: calc(84.1 / 117.8 * 100%);
     max-width: 100%;
     height: auto;
   }
@@ -1654,9 +1694,17 @@ img.preview-glass {
   position: relative;
   overflow: hidden;
   container-type: inline-size;
+  /* Portrait open screen: the device turned a quarter turn, long side vertical. */
+  aspect-ratio: 117.8 / 164.6;
+  border-radius: 10% / 7.3%;
+  background: #0b0c0f;
+}
+
+/* Landscape open screen: the natural open pose, 164.6 × 117.8 mm. */
+.preview-duo.is-landscape .preview-inner,
+.review-pair.is-landscape .preview-inner {
   aspect-ratio: 164.6 / 117.8;
   border-radius: 7.3% / 10%;
-  background: #0b0c0f;
 }
 
 .preview-duo.is-landscape .preview-outer,
@@ -1701,20 +1749,24 @@ img.preview-glass {
   border-radius: 0;
 }
 
-.preview-duo.is-pixels .preview-glass::after,
-.preview-duo.is-pixels .division {
+.preview-duo.is-pixels .preview-glass::after {
   display: none;
 }
 
+/*
+ * The fold halves the long side of the open display (Apple: 164.6 × 117.8 mm open, 84.1 × 117.8 mm closed).
+ * Portrait slot (2007 × 2853): horizontal band across the middle height. Mirrors hingeBand() in src/lib/specs.ts.
+ */
 .preview-inner .division {
   content: "";
   pointer-events: none;
   position: absolute;
-  inset: 0 auto 0 50%;
-  width: 6%;
-  translate: -50% 0;
+  inset: 50% 0 auto 0;
+  width: 100%;
+  height: 6%;
+  translate: 0 -50%;
   background: linear-gradient(
-    90deg,
+    180deg,
     rgb(0 0 0 / 0.18),
     rgb(255 255 255 / 0.08) 45%,
     rgb(0 0 0 / 0.28)
@@ -1723,14 +1775,15 @@ img.preview-glass {
   z-index: 2;
 }
 
-.preview-duo.is-pixels.is-landscape .preview-inner .division,
-.review-pair.is-pixels.is-landscape .preview-inner .division {
-  inset: 50% 0 auto 0;
-  width: 100%;
-  height: 6%;
-  translate: 0 -50%;
+/* Landscape slot (2853 × 2007), the natural open pose: vertical band across the middle width. */
+.preview-duo.is-landscape .preview-inner .division,
+.review-pair.is-landscape .preview-inner .division {
+  inset: 0 auto 0 50%;
+  width: 6%;
+  height: 100%;
+  translate: -50% 0;
   background: linear-gradient(
-    180deg,
+    90deg,
     rgb(0 0 0 / 0.18),
     rgb(255 255 255 / 0.08) 45%,
     rgb(0 0 0 / 0.28)
@@ -1761,7 +1814,7 @@ img.preview-glass {
 
 .review-pair {
   display: grid;
-  grid-template-columns: minmax(0, 84.1fr) minmax(0, 164.6fr);
+  grid-template-columns: minmax(0, 84.1fr) minmax(0, 117.8fr);
   gap: 1rem;
   align-items: end;
 }
@@ -1811,8 +1864,7 @@ img.preview-glass {
   border-radius: 0;
 }
 
-.review-pair.is-pixels .preview-glass::after,
-.review-pair.is-pixels .division {
+.review-pair.is-pixels .preview-glass::after {
   display: none;
 }
 
@@ -1825,7 +1877,7 @@ img.preview-glass {
   }
 
   .review-pair .preview-outer {
-    width: calc(84.1 / 164.6 * 100%);
+    width: calc(84.1 / 117.8 * 100%);
   }
 
   .review-pair.is-landscape .preview-outer {

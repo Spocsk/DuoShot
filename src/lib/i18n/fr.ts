@@ -348,7 +348,7 @@ export const fr = {
   tool_crop_vertical: "Vertical",
   tool_crop_metrics: "Rognage {crop}% · agrandissement {scale}×",
   tool_crop_drag_hint: "Ce cadre est le PNG exporté. Faites glisser l’image ou utilisez les curseurs ; la coque disparaît du ZIP.",
-  tool_crop_device_hint: "Coque Duo réelle : ouvert 164,6×117,8 mm, même hauteur que le fermé. La coque n’est pas dans le ZIP.",
+  tool_crop_device_hint: "Coque Duo réelle : ouverte 164,6×117,8 mm, le pli coupe le grand côté en deux. Un écran ouvert portrait montre l’appareil tourné d’un quart de tour : le pli est horizontal. La coque n’est pas dans le ZIP.",
   tool_crop_contain_hint: "Le visuel entier est conservé dans le PNG exporté ; le fond complète le format. La coque disparaît du ZIP.",
   tool_quality_gate_title: "{n} cadrages à vérifier",
   tool_quality_gate_title_one: "{n} cadrage à vérifier",

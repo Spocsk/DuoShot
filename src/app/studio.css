@@ -185,8 +185,8 @@ html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { display: b
 .studio-panel-note { color: var(--studio-muted); font-size: 0.72rem; }
 .studio-import-pairs { display: grid; gap: 0.5rem; }
 .studio-import-pair { display: grid; grid-template-columns: 1.6rem auto auto minmax(0, 1fr); align-items: center; gap: 0.6rem; padding: 0.45rem 0.6rem 0.45rem 0.4rem; border: 1px solid var(--studio-mist); border-radius: 0.7rem; }
-.studio-import-thumb .shelf-book .harbor-place { font-size: 15cqi; }
-.studio-import-thumb .shelf-book .harbor-inner-main, .studio-import-thumb .shelf-book .harbor-inner-side { padding: 12% 10%; }
+.studio-import-thumb .shelf-book .harbor-place { font-size: 7.5cqi; }
+.studio-import-thumb .shelf-book .harbor-inner-main, .studio-import-thumb .shelf-book .harbor-inner-side { padding: 12cqh 8cqi; }
 .studio-import-meta { display: grid; gap: 0.1rem; justify-items: end; color: var(--studio-muted); font-size: 0.72rem; }
 .studio-import-meta code { color: var(--studio-ink); font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.72rem; }
 .studio-import-pair:first-child { border-color: var(--studio-sea-line); background: var(--studio-sea-soft); }
@@ -210,7 +210,8 @@ html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { display: b
 .studio-frame-guide i:nth-child(2) { top: 0; right: 0; border-width: 2px 2px 0 0; border-top-right-radius: 0.6rem; transform-origin: top right; }
 .studio-frame-guide i:nth-child(3) { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-bottom-right-radius: 0.6rem; transform-origin: bottom right; }
 .studio-frame-guide i:nth-child(4) { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-bottom-left-radius: 0.6rem; transform-origin: bottom left; }
-.studio-hinge-band { position: absolute; z-index: 2; top: 0; bottom: 0; left: 47%; width: 6%; border-inline: 1px dashed var(--studio-review); background: rgb(188 150 100 / 0.22); pointer-events: none; }
+/* The open portrait slot folds across its middle height (see hingeBand in src/lib/specs.ts). */
+.studio-hinge-band { position: absolute; z-index: 2; left: 0; right: 0; top: 47%; height: 6%; border-block: 1px dashed var(--studio-review); background: rgb(188 150 100 / 0.22); pointer-events: none; }
 .studio-inspect-readout { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; color: var(--studio-muted); font-size: 0.75rem; }
 .studio-inspect-readout > span { display: inline-flex; align-items: center; gap: 0.35rem; }
 .studio-inspect-readout > .studio-sequence-score { margin-left: auto; align-items: baseline; }

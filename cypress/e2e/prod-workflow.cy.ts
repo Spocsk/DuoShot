@@ -37,7 +37,13 @@ describe("prod workflow", () => {
     cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-0"]').should("be.visible");
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-2"]').should("be.visible");
-    cy.get('[data-testid="preview-inner"] .division').should("not.be.visible");
+    // Portrait open screen: the fold is a horizontal band across the middle height (device turned a quarter turn).
+    cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
+      const band = $band[0]!.getBoundingClientRect();
+      const frame = $band[0]!.parentElement!.getBoundingClientRect();
+      expect(band.width).to.be.greaterThan(band.height);
+      expect(Math.abs(band.top + band.height / 2 - (frame.top + frame.height / 2))).to.be.lessThan(2);
+    });
     cy.get('[data-testid="tool-create-account"]').should("contain", "2 ZIP HD");
     cy.get('[data-testid="tool-example"]').should("have.attr", "href").and("include", "/api/example-zip");
 

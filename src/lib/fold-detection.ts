@@ -5,15 +5,16 @@ export type FoldCheckStatus = "checking" | "clear" | "warning" | "error";
 
 /** Keep enough neighbouring content for OCR while giving the fold extra safety room. */
 export function foldScanRegion(width: number, height: number, orientation: Orientation): Rect {
-  return orientation === "portrait"
+  // Portrait folds across the middle height, landscape down the middle width (see hingeBand).
+  return orientation === "landscape"
     ? { left: width * 0.25, top: 0, width: width * 0.5, height }
     : { left: 0, top: height * 0.25, width, height: height * 0.5 };
 }
 
 export function foldSafetyBand(width: number, height: number, orientation: Orientation): Rect {
   const band = hingeBand({ width, height, orientation });
-  const margin = (orientation === "portrait" ? width : height) * 0.02;
-  return orientation === "portrait"
+  const margin = (orientation === "landscape" ? width : height) * 0.02;
+  return orientation === "landscape"
     ? { left: band.x - margin, top: 0, width: band.width + margin * 2, height }
     : { left: 0, top: band.y - margin, width, height: band.height + margin * 2 };
 }
