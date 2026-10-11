@@ -11,6 +11,7 @@ import {
   harborReviewPayload,
   isDemoReview,
 } from "./harbor";
+import { foldSafetyBand } from "../fold-detection";
 
 describe("harbor demo review", () => {
   it("exposes the Connect ZIP tree used on the landing", () => {
@@ -44,6 +45,24 @@ describe("harbor demo review", () => {
     expect(innerMeta.width).toBe(2007);
     expect(innerMeta.height).toBe(2853);
     expect(await harborReviewJpeg(9, "outer")).toBeNull();
+  });
+
+  it("keeps every inner text and card out of the horizontal portrait fold", () => {
+    const band = foldSafetyBand(2007, 2853, "portrait");
+    for (const slide of [...harborSlides("en"), ...harborSlides("fr")]) {
+      const svg = harborInnerSvg(2007, 2853, slide);
+      const texts = [...svg.matchAll(/<text[^>]* y="([\d.]+)" font-size="(\d+)"/g)];
+      expect(texts.length).toBeGreaterThan(8);
+      for (const [, y, size] of texts) {
+        const baseline = Number(y);
+        const top = baseline - Number(size);
+        expect(baseline < band.top || top > band.top + band.height).toBe(true);
+      }
+      for (const [, y, h] of svg.matchAll(/<rect x="[\d.]+" y="([\d.]+)" width="[\d.]+" height="([\d.]+)" rx/g)) {
+        const top = Number(y);
+        expect(top + Number(h) < band.top || top > band.top + band.height).toBe(true);
+      }
+    }
   });
 
   it("writes the demo in French for the French tool", () => {

@@ -132,7 +132,10 @@ export const DUO_INNER_MM = { width: 164.6, height: 117.8 } as const;
 
 export function duoChassisAspect(slot: "outer" | "inner", orientation: Orientation): string {
   if (slot === "inner") {
-    return `${DUO_INNER_MM.width}/${DUO_INNER_MM.height}`;
+    // Natural open pose is landscape; a portrait screenshot shows the device turned a quarter turn.
+    return orientation === "landscape"
+      ? `${DUO_INNER_MM.width}/${DUO_INNER_MM.height}`
+      : `${DUO_INNER_MM.height}/${DUO_INNER_MM.width}`;
   }
   if (orientation === "landscape") {
     return `${DUO_OUTER_MM.height}/${DUO_OUTER_MM.width}`;
@@ -238,12 +241,16 @@ export type TextOverlayLayout = {
   maxWidth: number;
 };
 
-/** Keeps generated copy clear of the simulated bezel and, on the open portrait display, the fold. */
+/**
+ * Keeps generated copy clear of the simulated bezel and the fold. Titles sit at the top or bottom, so the
+ * horizontal fold of the open portrait display never crosses them; the open landscape display folds down
+ * the middle column, so copy there is kept in the left half.
+ */
 export function textOverlayLayout(
   spec: Pick<SizeSpec, "slot" | "orientation" | "width" | "height">,
   position: TitlePosition,
 ): TextOverlayLayout {
-  const avoidsVerticalHinge = spec.slot === "duo-inner" && spec.orientation === "portrait";
+  const avoidsVerticalHinge = spec.slot === "duo-inner" && spec.orientation === "landscape";
   return {
     x: Math.round(spec.width * (avoidsVerticalHinge ? 0.25 : 0.5)),
     yTitle: Math.round(spec.height * (position === "top" ? 0.08 : 0.88)),
@@ -254,13 +261,20 @@ export function textOverlayLayout(
   };
 }
 
+/**
+ * The fold of the open iPhone Duo. Apple's specs (apple.com/iphone-duo/specs) give 164.6 x 117.8 mm unfolded and
+ * 84.1 x 117.8 mm folded: the natural open pose is landscape and the fold halves the long side.
+ * - landscape slot (long side horizontal, natural pose): vertical band centred horizontally;
+ * - portrait slot (device turned a quarter turn, long side vertical): horizontal band centred vertically.
+ * The band thickness is a ratio of the long side, the dimension the fold cuts.
+ */
 export function hingeBand(spec: Pick<SizeSpec, "width" | "height" | "orientation">): {
   x: number;
   y: number;
   width: number;
   height: number;
 } {
-  if (spec.orientation === "portrait") {
+  if (spec.orientation === "landscape") {
     const width = Math.max(1, Math.round(spec.width * INNER_DIVISION_RATIO));
     return { x: Math.round((spec.width - width) / 2), y: 0, width, height: spec.height };
   }

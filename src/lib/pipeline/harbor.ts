@@ -5,6 +5,9 @@ import { JPEG_QUALITY, SIZE_SPECS, type Locale } from "../specs";
 
 export const DEMO_REVIEW_ID = "harbor";
 
+/** Bumped when the generated Harbor images change, so cached demo media is not reused (see tool/demo.tsx). */
+const HARBOR_MEDIA_VERSION = 2;
+
 export const EXAMPLE_ZIP_TREE = [
   "exampleapp/duo-outer-portrait/01.png",
   "exampleapp/duo-inner-portrait/01.png",
@@ -97,29 +100,38 @@ export function harborOuterSvg(width: number, height: number, slide: HarborSlide
   </svg>`;
 }
 
+/**
+ * Open-screen capture for the portrait inner slot (2007 × 2853). The open iPhone Duo folds across its long side
+ * (Apple: 164.6 × 117.8 mm open, 84.1 × 117.8 mm closed), so in portrait the fold is a horizontal band across the
+ * middle height. The layout is two panes, top and bottom, and keeps the middle band (see hingeBand) empty.
+ */
 export function harborInnerSvg(width: number, height: number, slide: HarborSlide, labels: HarborLabels = HARBOR_LABELS.en) {
-  const pane = width / 2;
-  const titleSize = Math.round(pane * 0.13);
-  const subSize = Math.round(pane * 0.031);
-  const pad = Math.round(pane * 0.1);
-  const yKicker = Math.round(height * 0.105);
-  const yPlace = Math.round(height * 0.205);
-  const yMetric = Math.round(height * 0.252);
-  const crease = Math.max(10, Math.round(width * 0.008));
+  const pane = height / 2;
+  const titleSize = Math.round(width * 0.075);
+  const subSize = Math.round(width * 0.02);
+  const pad = Math.round(width * 0.07);
+  const column = width / 2;
+  const crease = Math.max(10, Math.round(height * 0.006));
+  const yKicker = Math.round(pane * 0.16);
+  const yPlace = Math.round(pane * 0.3);
+  const yMetric = Math.round(pane * 0.37);
+  const barBase = pane * 0.4;
+  const barSpan = width - pad - (column + pad * 0.5);
   const bars = [0.28, 0.47, 0.64, 0.52, 0.36, 0.24].map((scale, index) => {
-    const x = pad + index * ((pane - pad * 2) / 6);
-    const barHeight = height * 0.14 * scale;
-    return `<rect x="${x}" y="${height * 0.46 - barHeight}" width="${pane * 0.045}" height="${barHeight}" rx="${pane * 0.0225}" fill="#eff8f8" opacity=".75"/>`;
+    const x = column + pad * 0.5 + index * (barSpan / 6);
+    const barHeight = pane * 0.36 * scale;
+    return `<rect x="${x}" y="${barBase - barHeight}" width="${width * 0.03}" height="${barHeight}" rx="${width * 0.015}" fill="#eff8f8" opacity=".75"/>`;
   }).join("");
+  const tide = (ratio: number) => pane * ratio;
   const spotRows = [
     [labels.westReef, labels.clean],
     [slide.sidePlace, slide.sideMetric],
     [labels.cove, labels.glassy],
   ].map(([name, metric], index) => {
-    const y = height * (0.27 + index * 0.17);
-    return `<rect x="${pane + pad}" y="${y}" width="${pane - pad * 2}" height="${height * 0.115}" rx="${pane * 0.05}" fill="#163f50" opacity=".48"/>
-      <text class="t" x="${pane + pad * 1.5}" y="${y + height * 0.068}" font-size="${subSize}">${name}</text>
-      <text class="t" x="${width - pad * 1.5}" y="${y + height * 0.068}" font-size="${Math.round(subSize * 0.85)}" text-anchor="end">${metric}</text>`;
+    const y = pane + pane * (0.24 + index * 0.24);
+    return `<rect x="${pad}" y="${y}" width="${width - pad * 2}" height="${pane * 0.19}" rx="${width * 0.025}" fill="#163f50" opacity=".48"/>
+      <text class="t" x="${pad * 1.5}" y="${y + pane * 0.11}" font-size="${subSize}">${name}</text>
+      <text class="t" x="${width - pad * 1.5}" y="${y + pane * 0.11}" font-size="${Math.round(subSize * 0.85)}" text-anchor="end">${metric}</text>`;
   }).join("");
   return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -135,18 +147,18 @@ export function harborInnerSvg(width: number, height: number, slide: HarborSlide
       </linearGradient>
       ${fontFace()}
     </defs>
-    <rect width="${pane}" height="${height}" fill="url(#gl)"/>
-    <rect x="${pane}" width="${pane}" height="${height}" fill="url(#gr)"/>
-    <rect x="${pane - crease / 2}" y="0" width="${crease}" height="${height}" fill="#1d3641" opacity=".38"/>
+    <rect width="${width}" height="${pane}" fill="url(#gl)"/>
+    <rect y="${pane}" width="${width}" height="${pane}" fill="url(#gr)"/>
+    <rect x="0" y="${pane - crease / 2}" width="${width}" height="${crease}" fill="#1d3641" opacity=".38"/>
     <text class="t" x="${pad}" y="${yKicker}" font-size="${subSize}" opacity=".86">${slide.kicker.toUpperCase()}</text>
     <text class="t" x="${pad}" y="${yPlace}" font-size="${titleSize}">${slide.place}</text>
     <text class="t" x="${pad}" y="${yMetric}" font-size="${subSize}" opacity=".86">${slide.metric}</text>
     ${bars}
-    <path d="M${pad} ${height * 0.6} C${pane * 0.25} ${height * 0.6}, ${pane * 0.3} ${height * 0.52}, ${pane * 0.4} ${height * 0.56} S${pane * 0.58} ${height * 0.64}, ${pane * 0.65} ${height * 0.59} S${pane * 0.83} ${height * 0.53}, ${pane - pad} ${height * 0.57}" fill="none" stroke="#eff8f8" stroke-width="${Math.max(4, width * 0.003)}" stroke-linecap="round" opacity=".82"/>
-    <rect x="${pad}" y="${height * 0.78}" width="${pane - pad * 2}" height="${height * 0.13}" rx="${pane * 0.05}" fill="#163f50" opacity=".56"/>
-    <text class="t" x="${pad * 1.5}" y="${height * 0.825}" font-size="${Math.round(subSize * 0.83)}">${labels.incoming}</text>
-    <text class="t" x="${pad * 1.5}" y="${height * 0.875}" font-size="${Math.round(subSize * 1.55)}">${labels.high}</text>
-    <text class="t" x="${pane + pad}" y="${yKicker}" font-size="${subSize}" opacity=".86">${slide.sideKicker.toUpperCase()}</text>
+    <path d="M${pad} ${tide(0.56)} C${width * 0.25} ${tide(0.56)}, ${width * 0.3} ${tide(0.48)}, ${width * 0.4} ${tide(0.52)} S${width * 0.58} ${tide(0.6)}, ${width * 0.65} ${tide(0.55)} S${width * 0.83} ${tide(0.49)}, ${width - pad} ${tide(0.53)}" fill="none" stroke="#eff8f8" stroke-width="${Math.max(4, width * 0.003)}" stroke-linecap="round" opacity=".82"/>
+    <rect x="${pad}" y="${pane * 0.66}" width="${width - pad * 2}" height="${pane * 0.18}" rx="${width * 0.025}" fill="#163f50" opacity=".56"/>
+    <text class="t" x="${pad * 1.5}" y="${pane * 0.73}" font-size="${Math.round(subSize * 0.83)}">${labels.incoming}</text>
+    <text class="t" x="${pad * 1.5}" y="${pane * 0.8}" font-size="${Math.round(subSize * 1.55)}">${labels.high}</text>
+    <text class="t" x="${pad}" y="${pane + yKicker}" font-size="${subSize}" opacity=".86">${slide.sideKicker.toUpperCase()}</text>
     ${spotRows}
   </svg>`;
 }
@@ -198,8 +210,8 @@ export function harborReviewPayload() {
     slides: HARBOR_SLIDES.map((_, index) => ({
       index,
       clone: "ok",
-      outer: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=outer`,
-      inner: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=inner`,
+      outer: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=outer&v=${HARBOR_MEDIA_VERSION}`,
+      inner: `/api/reviews/${DEMO_REVIEW_ID}/media?slide=${index}&side=inner&v=${HARBOR_MEDIA_VERSION}`,
     })),
   };
 }

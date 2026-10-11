@@ -3,6 +3,9 @@
 import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 
+/** Bumped when the generated Harbor images change, so cached demo media (max-age 1 h) is not reused. Keep in sync with harbor.ts. */
+const HARBOR_MEDIA_VERSION = 2;
+
 export const HARBOR_PAIRS = 3;
 export type DemoState = "idle" | "loading" | "error";
 
@@ -13,7 +16,7 @@ export type DemoState = "idle" | "loading" | "error";
 export async function fetchHarborFiles(locale: Locale): Promise<{ outer: File[]; inner: File[] }> {
   const side = (kind: "outer" | "inner") => Promise.all(
     Array.from({ length: HARBOR_PAIRS }, async (_, index) => {
-      const response = await fetch(`/api/reviews/harbor/media?slide=${index}&side=${kind}&locale=${locale}`);
+      const response = await fetch(`/api/reviews/harbor/media?slide=${index}&side=${kind}&locale=${locale}&v=${HARBOR_MEDIA_VERSION}`);
       if (!response.ok) throw new Error("DEMO_UNAVAILABLE");
       const blob = await response.blob();
       return new File([blob], `harbor-${String(index + 1).padStart(2, "0")}-${kind === "outer" ? "ferme" : "ouvert"}.jpg`, { type: "image/jpeg" });

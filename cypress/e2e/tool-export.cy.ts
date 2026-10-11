@@ -90,6 +90,11 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    // Landscape open screen is the natural pose: the fold is a vertical band across the middle width.
+    cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
+      const band = $band[0]!.getBoundingClientRect();
+      expect(band.height).to.be.greaterThan(band.width);
+    });
     cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@export");
@@ -113,7 +118,7 @@ describe("tool export", () => {
     cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "2007/2853");
     cy.get('[data-testid="tool-device-view"]').click();
     cy.get('[data-testid="preview-outer-canvas"]').should("have.attr", "data-aspect", "84.1/117.8");
-    cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "164.6/117.8");
+    cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "117.8/164.6");
     cy.get('[data-testid="preview-outer-crop-controls"]').should("contain", "164,6");
     cy.get('[data-testid="tool-pixel-view"]').click();
     cy.get('[data-testid="preview-outer-canvas"]').should("have.attr", "data-aspect", "1398/2034");

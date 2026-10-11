@@ -148,19 +148,17 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   {t("review_pixel_view")}
                 </button>
               </div>
-              {viewMode === "device" ? (
-                <button
-                  type="button"
-                  className="ds-toggle"
-                  aria-pressed={hinge}
-                  onClick={() => setHinge((value) => !value)}
-                >
-                  <span className="text-sm">{t("tool_hinge_toggle")}</span>
-                  <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
-                    <span className="ds-toggle-thumb t-toggle-thumb" />
-                  </span>
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="ds-toggle"
+                aria-pressed={hinge}
+                onClick={() => setHinge((value) => !value)}
+              >
+                <span className="text-sm">{t("tool_hinge_toggle")}</span>
+                <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
+                  <span className="ds-toggle-thumb t-toggle-thumb" />
+                </span>
+              </button>
             </div>
             <div className="mt-10 space-y-12">
               {data.slides.map((slide) => {
@@ -188,7 +186,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                     </div>
                     <p className="studio-review-label studio-review-label-inner">{t("home_open_screen")}</p>
                     <div
-                      className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${viewMode === "device" && hinge ? "is-hinge" : "hinge-off"}`}
+                      className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${hinge ? "is-hinge" : "hinge-off"}`}
                       data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}

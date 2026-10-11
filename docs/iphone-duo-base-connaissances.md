@@ -20,6 +20,15 @@ v1 exporte une **étagère séparée** (un fichier par dalle), pas de fenêtre b
 | iPhone 6,9″ | 6,9″ | 1290×2796 | 2796×1290 |
 | iPhone 6,9″ | 6,9″ | 1260×2736 | 2736×1260 |
 
+## Pli (écran interne)
+
+Source : https://www.apple.com/iphone-duo/specs/ (vérifié le 11 oct. 2026). Déplié : 164,6 mm de large × 117,8 mm de haut (pose naturelle **paysage**) ; plié : 84,1 × 117,8 mm. Le pli coupe donc le **grand côté** de la dalle interne en deux.
+
+- Interne **portrait** 2007×2853 (appareil tourné d’un quart de tour) : bande de pli **horizontale**, au milieu de la hauteur.
+- Interne **paysage** 2853×2007 (pose naturelle) : bande de pli **verticale**, au milieu de la largeur.
+
+Référence code : `hingeBand()` dans `src/lib/specs.ts` (détection OCR, overlay `.division`, option « brûler l’overlay »).
+
 Une orientation par set. PNG-24 défaut, JPEG q90 option. RGB, pas d’alpha, pixels exacts (contrôles bloquants).
 
 ## Fit / fond / titre

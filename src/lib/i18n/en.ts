@@ -345,7 +345,7 @@ export const en: Messages = {
   tool_crop_vertical: "Vertical",
   tool_crop_metrics: "Crop {crop}% · upscale {scale}×",
   tool_crop_drag_hint: "This frame is the exported PNG. Drag or use the sliders; the chassis is not in the ZIP.",
-  tool_crop_device_hint: "Real Duo chassis: open inner is 164.6×117.8 mm, same height as closed. The chassis is not in the ZIP.",
+  tool_crop_device_hint: "Real Duo chassis: open it is 164.6×117.8 mm and the fold halves the long side. A portrait open screen is the device turned a quarter turn, so the fold is horizontal. The chassis is not in the ZIP.",
   tool_crop_contain_hint: "The complete visual is kept in the exported PNG; the background fills the target. The chassis is not in the ZIP.",
   tool_quality_gate_title: "{n} crops need review",
   tool_quality_gate_title_one: "{n} crop needs review",
