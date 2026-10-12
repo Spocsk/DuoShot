@@ -4,6 +4,7 @@ Documents tenus à jour. Le déploiement et l’exploitation du VPS sont décrit
 
 | Document | Contenu |
 | --- | --- |
+| [`etat-projet-2026-10-12.md`](etat-projet-2026-10-12.md) | Synthèse au 12 octobre 2026 : ce qui est livré et ce qui reste à faire, notamment sur le plan de trafic organique. |
 | [`analytics.md`](analytics.md) | Politique analytics : DataFast seul outil, retrait de Mixpanel et effacement des données historiques. |
 | [`datafast.md`](datafast.md) | Configuration DataFast : consentement, relais `/api/datafast/events`, événements et validation. |
 | [`stripe-billing-setup.md`](stripe-billing-setup.md) | Facturation Stripe : tarifs, webhooks, conditions d’ouverture de Checkout, Pass 30 jours. |
