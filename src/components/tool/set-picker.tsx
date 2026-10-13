@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { SetMeta } from "@/lib/sets-store";
 import { useI18n } from "@/components/i18n-provider";
+import { Overlay } from "@/components/overlay";
 
 /** Open/close state, outside-click dismissal and keyboard navigation of the app (set) listbox. */
 export function useSetsMenu() {
@@ -106,8 +107,12 @@ export function SetPicker({
   removeSet: (id: string) => Promise<void>;
 }) {
   const { t, tf } = useI18n();
+  const [deleting, setDeleting] = useState<SetMeta | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
   const { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey } = menu;
   return (
+    <>
       <div className="ds-set-bar">
       <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
         <p className="ds-label" id="tool-sets-label">
@@ -131,7 +136,7 @@ export function SetPicker({
             aria-haspopup="listbox"
             aria-expanded={setsOpen}
             aria-controls="tool-sets-menu"
-            aria-labelledby="tool-sets-label"
+            aria-labelledby="tool-sets-label tool-sets-value"
             aria-describedby="tool-sets-description"
             onClick={(event) => {
               if (setsRef.current?.open) {
@@ -141,7 +146,7 @@ export function SetPicker({
             }}
             onKeyDown={onSetsTriggerKey}
           >
-            <span className="ds-listbox-value">{active?.name?.trim() ? active.name : "Composition"}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
+            <span id="tool-sets-value" className="ds-listbox-value">{active?.name?.trim() ? active.name : t("tool_default_set_label")}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
             <span className="ds-listbox-caret" aria-hidden="true" />
           </summary>
           <ul
@@ -182,13 +187,29 @@ export function SetPicker({
             type="button"
             className="ds-text-btn"
             data-testid="tool-set-delete"
-            aria-label={tf("tool_set_delete", { name: active?.name?.trim() || "Composition" })}
-            onClick={() => active && void removeSet(active.id)}
+            aria-label={tf("tool_set_delete", { name: active?.name?.trim() || t("tool_default_set_label") })}
+            onClick={() => { if (active) { setDeleteError(false); setDeleting(active); } }}
           >
             {t("tool_set_delete_short")}
           </button>
         ) : null}
       </div>
     </div>
+    {deleting ? <Overlay closeDisabled={deleteBusy} onClose={() => setDeleting(null)} labelledBy="tool-delete-title" closeLabel={t("tool_delete_cancel")}>
+      <h2 id="tool-delete-title" className="font-display text-2xl">{tf("tool_set_delete", { name: deleting.name })}</h2>
+      <p className="mt-3 text-sm">{t("tool_delete_description")}</p>
+      {deleteError ? <p className="ds-warn" role="alert">{t("tool_delete_error")}</p> : null}
+      <div className="mt-5 flex flex-wrap gap-3">
+        <button type="button" className="ds-cta-ghost" disabled={deleteBusy} onClick={() => setDeleting(null)}>{t("tool_delete_cancel")}</button>
+        <button type="button" className="ds-cta" data-testid="tool-set-delete-confirm" disabled={deleteBusy} aria-busy={deleteBusy} onClick={async () => {
+          setDeleteBusy(true);
+          setDeleteError(false);
+          try { await removeSet(deleting.id); setDeleting(null); }
+          catch { setDeleteError(true); }
+          finally { setDeleteBusy(false); }
+        }}>{t("tool_set_delete_short")}</button>
+      </div>
+    </Overlay> : null}
+    </>
   );
 }

@@ -18,17 +18,17 @@ function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpe
       <thead className="ds-spec-head">
         <tr>
           <th scope="col" className="py-3 pr-3 font-medium">{t("specs_display")}</th>
-          <th scope="col" className="px-2 py-3 font-medium">Orientation</th>
-          <th scope="col" className="py-3 pl-2 font-medium">Pixels</th>
+          <th scope="col" className="px-2 py-3 font-medium">{t("specs_orientation")}</th>
+          <th scope="col" className="py-3 pl-2 font-medium">{t("specs_pixels")}</th>
         </tr>
       </thead>
       <tbody>
         {specs.map((spec) => <tr key={spec.id} className="border-t border-[var(--line)]">
           <th scope="row" className="py-3 pr-3 font-normal">
-            {spec.slot === "duo-outer" ? t("specs_outer_display") : spec.slot === "duo-inner" ? t("specs_inner_display") : "iPhone"}
+            {spec.slot === "duo-outer" ? t("specs_outer_display") : spec.slot === "duo-inner" ? t("specs_inner_display") : t("specs_iphone")}
             <span className="block text-[var(--muted)]">{specRowDetail(spec, locale)}</span>
           </th>
-          <td className="px-2 py-3">{spec.orientation === "portrait" ? "Portrait" : t("tool_orient_landscape")}</td>
+          <td className="px-2 py-3">{spec.orientation === "portrait" ? t("specs_portrait") : t("specs_landscape")}</td>
           <td className="py-3 pl-2 font-mono">{screenshotDimensions(spec)}</td>
         </tr>)}
       </tbody>

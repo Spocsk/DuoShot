@@ -45,7 +45,7 @@ export function PricingCta({
         router.push(dest);
         return;
       }
-      await startCheckout(kind, toolPath(locale));
+      await startCheckout(kind, toolPath(locale), t);
     } catch {
       setError(
         t("pricing_checkout_temporarily_unavailable_please"),

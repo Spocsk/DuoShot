@@ -64,7 +64,7 @@ export function AdjustPanel({
           data-testid="tool-device-view"
           onClick={() => setPreviewMode("device")}
         >
-          {t("review_device_view")}
+          {t("tool_device_view")}
         </button>
         <button
           type="button"
@@ -73,7 +73,7 @@ export function AdjustPanel({
           data-testid="tool-pixel-view"
           onClick={() => setPreviewMode("pixels")}
         >
-          {t("review_pixel_view")}
+          {t("tool_pixel_view")}
         </button>
       </div>
     </div>

@@ -8,7 +8,7 @@ export function SetTitle({ name, onRename }: { name: string; onRename: (name: st
   const { t } = useI18n();
   const [draft, setDraft] = useState<string | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const shown = name.trim() || "Composition";
+  const shown = name.trim() || t("tool_default_set_label");
   function finish(save: boolean) {
     if (draft === null) return;
     const next = draft.trim().slice(0, 80);
@@ -19,6 +19,7 @@ export function SetTitle({ name, onRename }: { name: string; onRename: (name: st
   if (draft !== null) {
     return (
       <div className="tool-set-title is-editing">
+        <h1 className="sr-only">{shown}</h1>
         <label className="sr-only" htmlFor="tool-set-name">{t("tool_set_rename_label")}</label>
         <input
           id="tool-set-name"

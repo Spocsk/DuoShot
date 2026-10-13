@@ -6,6 +6,7 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
 import { useI18n } from "@/components/i18n-provider";
+import { authErrorKey } from "@/lib/auth-error";
 
 export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boolean }) {
   const { t } = useI18n();
@@ -39,10 +40,8 @@ export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boo
         if (sendError) throw sendError;
       }
       setDone(true);
-    } catch {
-      setError(reset
-        ? t("auth_could_not_change_password")
-        : t("auth_sending_currently_unavailable_please"));
+    } catch (error) {
+      setError(t(authErrorKey(error, reset ? "auth_could_not_change_password" : "auth_sending_currently_unavailable_please")));
     } finally { setBusy(false); }
   }
 
@@ -58,7 +57,7 @@ export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boo
           <label className="ds-label" htmlFor="confirm-password">{t("auth_confirm_password")}</label>
           <input className="ds-input" id="confirm-password" type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} />
         </> : <>
-          <label className="ds-label" htmlFor="recovery-email">Email</label>
+          <label className="ds-label" htmlFor="recovery-email">{t("auth_email")}</label>
           <input className="ds-input" id="recovery-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
         </>}
         <button className="ds-cta" disabled={busy} type="submit">{reset ? t("auth_save_password") : t("auth_send_recovery_link")}</button>

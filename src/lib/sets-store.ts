@@ -38,18 +38,19 @@ export function newSetId() {
   return crypto.randomUUID();
 }
 
-/** "Composition 01", "Composition 02"…: the first number no existing set uses. */
-export function nextSetName(existing: Pick<SetMeta, "name">[] = []): string {
-  const used = new Set(existing.map((set) => /^Composition (\d+)$/.exec(set.name.trim())?.[1]).filter(Boolean).map(Number));
+/** Use the localized template without changing names the user has already saved. */
+export function nextSetName(existing: Pick<SetMeta, "name">[], template: string): string {
+  const used = new Set(existing.map((set) => set.name.trim()));
+  const name = (n: number) => template.replace("{n}", String(n).padStart(2, "0"));
   let n = 1;
-  while (used.has(n)) n += 1;
-  return `Composition ${String(n).padStart(2, "0")}`;
+  while (used.has(name(n))) n += 1;
+  return name(n);
 }
 
-export function defaultSet(existing: Pick<SetMeta, "name">[] = []): SetMeta {
+export function defaultSet(existing: Pick<SetMeta, "name">[], template: string): SetMeta {
   return {
     id: newSetId(),
-    name: nextSetName(existing),
+    name: nextSetName(existing, template),
     appName: "",
     clientName: "",
     orientation: "portrait",
@@ -176,15 +177,32 @@ export async function loadSetFiles(setId: string, side: "outer" | "inner", scope
 }
 
 export async function deleteSetFiles(setId: string, scope: DraftScope = "guest") {
-  const db = await openDb();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).delete(scopedKey(`${setId}:outer`, scope));
-    tx.objectStore(STORE).delete(scopedKey(`${setId}:inner`, scope));
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
+  // Validation can queue a save after deletion is requested. Drain it before taking
+  // exclusive locks, so a validating edit can finish its own awaited file writes.
+  // Failed edits must not prevent the user from deleting the draft.
+  while (draftChanges.get(scope)?.size) await Promise.allSettled(draftChanges.get(scope)!);
+  const keys = ["outer", "inner"].map((side) => scopedKey(`${setId}:${side}`, scope));
+  await Promise.allSettled(keys.map((key) => fileWrites.get(key)));
+  // Use the same lock order as migration. Pending saves from other tabs finish
+  // before the transaction, instead of recreating the deleted files afterwards.
+  await withDraftLock(scope, "changes", "exclusive", () => withDraftLock(scope, "files", "exclusive", async () => {
+    const db = await openDb();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(STORE, "readwrite");
+        for (const key of keys) tx.objectStore(STORE).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = tx.onabort = () => reject(tx.error);
+      });
+      // A failed prior save may have left a migration marker. It is no longer
+      // relevant once both sides have been successfully deleted.
+      try {
+        for (const key of keys) window.localStorage.removeItem(`${WRITE_KEY}:${key}`);
+      } catch { /* The files are already deleted; marker cleanup must not report a failed deletion. */ }
+    } finally {
+      db.close();
+    }
+  }));
 }
 
 // Every operation captures its owner. An auth change cannot redirect an in-flight write.

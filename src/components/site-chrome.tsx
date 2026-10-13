@@ -11,9 +11,10 @@ import { AnalyticsSettingsButton } from "@/components/analytics-settings-button"
 type Props = {
   locale: Locale;
   path: string;
+  variant?: "full" | "reduced";
 };
 
-export function SiteHeader({ locale, path }: Props) {
+export function SiteHeader({ locale, path, variant = "full" }: Props) {
   const { t } = getTranslator(locale);
   const otherHref = locale === "fr" ? localizedPath("en", path) : localizedPath("fr", path);
   const prefix = localePrefix(locale);
@@ -44,16 +45,16 @@ export function SiteHeader({ locale, path }: Props) {
           <span>DuoShot</span>
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-x-2">
-          <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
+          {variant === "full" ? <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
             {links.map((link) => (
               <Link key={link.testId} href={link.href} data-testid={link.testId} className="ds-nav-link" aria-current={current === link.href ? "page" : undefined}>
                 {link.label}
               </Link>
             ))}
-            <HeaderAuth locale={locale} />
-          </nav>
+            <HeaderAuth locale={locale} secondarySignup={path === "/"} />
+          </nav> : null}
           <LocaleSwitch locale={locale} href={otherHref} />
-          <SiteNav locale={locale} prefix={prefix} current={current} />
+          {variant === "full" ? <SiteNav locale={locale} prefix={prefix} current={current} /> : null}
         </div>
       </div>
     </header>
@@ -83,16 +84,10 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           href="https://fazier.com/launches/duoshot.site"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="DuoShot on Fazier"
-          className="inline-flex items-center"
+          data-testid="footer-fazier"
+          className="ds-link inline-flex min-h-6 items-center gap-2 rounded-md border border-[var(--line)] px-3 py-2"
         >
-          <Image
-            src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched&theme=light"
-            width={120}
-            height={51}
-            unoptimized
-            alt="Launched on Fazier"
-          />
+          {t("footer_fazier")} <span aria-hidden="true">↗</span>
         </a>
       </div>
     </footer>

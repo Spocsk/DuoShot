@@ -18,6 +18,8 @@ describe("marketing", () => {
     cy.contains("h1", "Captures iPhone Duo.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="cta-demo"]').should("have.attr", "href", "/tool?demo=harbor");
+    cy.get('[data-testid="nav-signup"]').should("have.class", "ds-cta-ghost").and("not.have.class", "ds-cta");
+    cy.get('[data-testid="cta-demo-proof"]').should("have.attr", "href", "/tool?demo=harbor").and("contain", "Voir l’exemple");
     cy.get('[data-testid="cta-example"]').should("have.attr", "href").and("include", "/api/example-zip");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-outer-portrait/01.png");
     cy.get('[data-testid="zip-tree"]').should("contain", "exampleapp/duo-inner-portrait/01.png");
@@ -33,6 +35,8 @@ describe("marketing", () => {
     cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
     cy.get('[data-testid="billing-monthly"]').should("not.exist");
     cy.get('[data-testid="billing-yearly"]').should("not.exist");
+    cy.get('[data-testid="cta-tool-closing"]').scrollIntoView().should("be.visible").and("have.attr", "href", "/tool");
+    cy.get('[data-testid="footer-fazier"]').should("contain", "DuoShot sur Fazier").find("img").should("not.exist");
   });
 
   it("keeps the Harbor devices equally tall", () => {
@@ -95,6 +99,8 @@ describe("marketing", () => {
     cy.visitEn("/en");
     cy.contains("h1", "iPhone Duo screenshots.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
+    cy.get('[data-testid="nav-signup"]').should("have.class", "ds-cta-ghost");
+    cy.get('[data-testid="cta-demo-proof"]').should("contain", "See the example");
     cy.contains("Harbor · fictional app").should("be.visible");
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/en/r/harbor");
     cy.get(".studio-review-preview").should("contain", "Closed screen").and("contain", "Approve");
@@ -103,6 +109,8 @@ describe("marketing", () => {
     cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
     cy.get('[data-testid="billing-monthly"]').should("not.exist");
     cy.get('[data-testid="billing-yearly"]').should("not.exist");
+    cy.get('[data-testid="cta-tool-closing"]').should("have.attr", "href", "/en/tool");
+    cy.get('[data-testid="footer-fazier"]').should("contain", "DuoShot on Fazier").find("img").should("not.exist");
   });
 
   it("serves a dedicated pricing page", () => {
@@ -110,18 +118,27 @@ describe("marketing", () => {
     cy.contains("h1", "Essai gratuit, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="nav-pricing"]').should("have.attr", "aria-current", "page");
     cy.contains("Paiement sécurisé par Stripe").should("be.visible");
-    cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/signup");
+    cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.contains("3 sièges").should("be.visible");
     cy.visitEn("/en/pricing");
     cy.contains("h1", "Free trial, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/en/r/harbor");
+    cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/en/tool");
   });
 
   for (const locale of ["fr", "en"] as const) {
     it(`switches annual and monthly billing on the ${locale} pricing page`, () => {
       if (locale === "fr") cy.visitFr("/pricing");
       else cy.visitEn("/en/pricing");
+      cy.get("h1").should("have.length", 1);
+      cy.get(".studio-plan-title").each(($title) => {
+        expect($title.find("h2")).to.have.length(1);
+        expect($title.find("h3")).to.have.length(0);
+      });
+      cy.get(".studio-plan-team h2").should("have.length", 1);
+      cy.get('[data-testid="pricing-faq"]').should("have.length", 1).find(".t-acc").should("have.length", 12);
+      cy.get(".studio-pricing-faq").should("not.exist");
       cy.get('[data-testid="billing-monthly"]').should("have.attr", "aria-pressed", "true");
       cy.get('[data-testid="billing-yearly"]').click().should("have.attr", "aria-pressed", "true");
       cy.contains(locale === "fr" ? "120 € / an" : "€120 / year").should("be.visible");
@@ -139,10 +156,14 @@ describe("marketing", () => {
     cy.contains("h1", "Tailles des captures iPhone Duo").should("be.visible");
     cy.visitFr("/pourquoi-pas-ia");
     cy.contains("h1", "Pourquoi pas votre IA").should("be.visible");
+    cy.contains("IA et DuoShot : les points à vérifier").should("be.visible");
+    cy.contains("Listing exemple").should("not.exist");
     cy.visitFr("/why-not-ai");
     cy.contains("h1", "Pourquoi pas votre IA").should("be.visible");
     cy.visitFr("/rejet");
     cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
+    cy.get('[data-testid="rejection-cta-tool"]').should("have.class", "ds-cta").and("have.attr", "href", "/tool");
+    cy.get("article").eq(2).find("p").first().should("have.text", "contenu");
     cy.visitFr("/rejection");
     cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
     cy.visitFr("/privacy");
@@ -276,8 +297,10 @@ describe("screenshot dimensions and search intent", () => {
         }
       });
       visit(locale === "fr" ? "/rejet" : "/en/rejection");
+      cy.get('[data-testid="rejection-cta-tool"]').should("have.attr", "href", `${prefix}/tool`).and("have.class", "ds-cta");
       cy.get("article").eq(0).should("contain", "image dimensions are not valid");
       cy.get("article").eq(1).should("contain", "alpha");
+      cy.get("article").eq(2).find("p").first().should("have.text", locale === "fr" ? "contenu" : "content");
     });
   }
 });

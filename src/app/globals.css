@@ -70,7 +70,7 @@ code {
 }
 
 :focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 2px;
 }
 
@@ -149,9 +149,8 @@ a {
 }
 
 .ds-cta:focus-visible {
-  outline: 2px solid var(--background);
-  outline-offset: -3px;
-  box-shadow: 0 0 0 2px var(--foreground);
+  outline: 2px solid var(--studio-sea);
+  outline-offset: 2px;
 }
 
 .ds-cta-ghost {
@@ -181,7 +180,7 @@ a {
 }
 
 .ds-cta-ghost:focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 2px;
 }
 
@@ -196,7 +195,7 @@ a {
 }
 
 .ds-input:focus {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 1px;
 }
 
@@ -251,7 +250,7 @@ a {
 }
 
 .ds-listbox-trigger:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 1px;
 }
 
@@ -304,7 +303,7 @@ a {
   border-radius: 0.6rem;
   padding: 0.32rem 0.72rem;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   line-height: 1.2;
@@ -330,7 +329,7 @@ button.ds-pill {
   display: block;
   margin-bottom: 0.45rem;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -369,7 +368,7 @@ button.ds-pill {
 }
 
 .ds-seg button:focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 2px;
 }
 
@@ -469,7 +468,7 @@ button.ds-pill {
 .zip-tree {
   margin-top: 0.45rem;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   line-height: 1.7;
   color: var(--foreground);
@@ -480,6 +479,10 @@ button.ds-pill {
 }
 
 .ds-link {
+  display: inline-block;
+  min-width: 24px;
+  min-height: 24px;
+  line-height: max(1.5em, 24px);
   color: var(--foreground);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -620,7 +623,7 @@ button.ds-pill {
 
 .ds-spec-head {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -756,7 +759,7 @@ button.ds-pill {
   margin-top: 0.7rem;
   text-align: center;
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
@@ -1174,7 +1177,7 @@ button.ds-pill {
   align-items: center;
   gap: 0.65rem;
   font-family: var(--font-mono), monospace;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1553,7 +1556,7 @@ img.preview-glass {
   border-radius: 0.6rem;
   padding: 0.4rem 0.8rem;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   transition:
     border-color var(--duration-quick) var(--ease-smooth-out),
     color var(--duration-quick) var(--ease-smooth-out),
@@ -1578,7 +1581,7 @@ img.preview-glass {
   min-height: var(--target);
   padding: 0;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-decoration: underline;
   text-underline-offset: 0.22em;
 }
@@ -1589,7 +1592,7 @@ img.preview-glass {
 
 .crop-reset:focus-visible {
   color: var(--foreground);
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -1604,7 +1607,7 @@ img.preview-glass {
   gap: 0.35rem;
   min-width: 0;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
 }
 
 .crop-axis-controls input[type="range"] {
@@ -1627,7 +1630,7 @@ img.preview-glass {
 
 .crop-metrics,
 .crop-hint {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
@@ -1663,7 +1666,7 @@ img.preview-glass {
 .quality-gate-copy {
   margin-top: 0.18rem;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
@@ -2016,7 +2019,7 @@ img.preview-glass {
   width: 100%;
   padding: 0.4rem 1.9rem 0.4rem 0.55rem;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -2067,7 +2070,7 @@ img.preview-glass {
   white-space: nowrap;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
 }
 
 .drop-names {

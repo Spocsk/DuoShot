@@ -20,7 +20,7 @@ export function WhyNotAiPage({ locale }: { locale: Locale }) {
           <p>{t("why_p2")}</p>
           <p>{t("why_p3")}</p>
         </div>
-        <p className="ds-label mt-8">{t("example_listing")}</p>
+        <p className="ds-label mt-8">{t("why_comparison_label")}</p>
         <div className="mt-12 space-y-10">
           {COLS.map((key) => (
             <section key={key} className="border-t border-[var(--line)] pt-6">
