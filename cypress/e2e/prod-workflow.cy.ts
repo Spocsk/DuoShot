@@ -48,6 +48,8 @@ describe("prod workflow", () => {
       expect(band.width).to.be.greaterThan(band.height);
       expect(Math.abs(band.top + band.height / 2 - (frame.top + frame.height / 2))).to.be.lessThan(2);
     });
+    // The account offer lives in the Check and Export panels.
+    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-create-account"]').should("contain", "2 exports HD");
     cy.get('[data-testid="tool-example"]').should("have.attr", "href").and("include", "/api/example-zip");
 
