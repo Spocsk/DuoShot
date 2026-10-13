@@ -82,26 +82,31 @@ describe("POST /api/stripe/checkout", () => {
     expect(getStripe).not.toHaveBeenCalled();
   });
 
-  it("uses the stable Indie price and linked customer", async () => {
+  it.each([
+    ["indie_monthly", "price_indie"],
+    ["studio_monthly", "price_studio"],
+  ])("uses the stable monthly price and linked customer with promotion codes for %s", async (kind, price) => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
     const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     vi.mocked(getStripe).mockReturnValue({
       subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
       checkout: { sessions: { create } },
     } as never);
-    const { status, body } = await readJson(await POST(request("indie_monthly")));
+    const { status, body } = await readJson(await POST(request(kind)));
     expect(status).toBe(200);
     expect(body.url).toBe("https://checkout.stripe.test/session");
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
-      customer: "cus_1", line_items: [{ price: "price_indie", quantity: 1 }],
+      customer: "cus_1", line_items: [{ price, quantity: 1 }],
+      allow_promotion_codes: true,
       billing_address_collection: "required",
     }), expect.any(Object));
+    expect(create.mock.calls[0][0]).not.toHaveProperty("discounts");
   });
 
   it.each([
     ["indie_yearly", "price_indie_yearly"],
     ["studio_yearly", "price_studio_yearly"],
-  ])("uses the stable annual price for %s", async (kind, price) => {
+  ])("uses the stable annual price with promotion codes for %s", async (kind, price) => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
     const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     vi.mocked(getStripe).mockReturnValue({
@@ -111,8 +116,10 @@ describe("POST /api/stripe/checkout", () => {
     expect((await POST(request(kind))).status).toBe(200);
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
       line_items: [{ price, quantity: 1 }],
+      allow_promotion_codes: true,
       metadata: expect.objectContaining({ kind }),
     }), expect.any(Object));
+    expect(create.mock.calls[0][0]).not.toHaveProperty("discounts");
   });
 
   it("persists a new Stripe customer through the server-only client", async () => {
@@ -160,7 +167,7 @@ describe("POST /api/stripe/checkout", () => {
       expect(create).not.toHaveBeenCalled();
     });
 
-    it("opens a one-time payment Checkout without subscription data", async () => {
+    it("opens a one-time payment Checkout with promotion codes and without subscription data", async () => {
       vi.mocked(createServerSupabase).mockResolvedValue(workspace());
       vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
       const create = vi.fn().mockResolvedValue({ id: "cs_pass", url: "https://checkout.stripe.test/pass" });
@@ -171,6 +178,7 @@ describe("POST /api/stripe/checkout", () => {
       const params = create.mock.calls[0][0];
       expect(params).toEqual(expect.objectContaining({
         mode: "payment",
+        allow_promotion_codes: true,
         customer: "cus_1",
         client_reference_id: "ws-1",
         line_items: [{ price: "price_pass30", quantity: 1 }],
@@ -178,6 +186,7 @@ describe("POST /api/stripe/checkout", () => {
         payment_intent_data: { metadata: { kind: "pass30", workspace_id: "ws-1" } },
       }));
       expect(params).not.toHaveProperty("subscription_data");
+      expect(params).not.toHaveProperty("discounts");
     });
 
     it("keeps subscriptions in subscription mode when the pass is configured", async () => {

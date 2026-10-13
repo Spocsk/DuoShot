@@ -113,6 +113,7 @@ async function checkout(request: Request) {
     customer: customerId,
     client_reference_id: membership.workspace_id,
     line_items: [{ price: selectedPrice, quantity: 1 }],
+    allow_promotion_codes: true,
     billing_address_collection: "required",
     customer_update: { address: "auto", name: "auto" },
     tax_id_collection: { enabled: true },
