@@ -119,6 +119,23 @@ describe("locale", () => {
     }
   });
 
+  it.each([
+    ["/docs/[...slug]", ["/docs/a", "/docs/a/b"], ["/docs", "/doc/a"]],
+    ["/docs/[[...slug]]", ["/docs", "/docs/a", "/docs/a/b"], ["/doc", "/doc/a"]],
+    ["/teams/[id]/docs/[...slug]", ["/teams/one/docs/a/b"], ["/teams/one/docs", "/teams/one/other/a"]],
+    ["/invite/[token]", ["/invite/abc"], ["/invite", "/invite/abc/extra"]],
+  ])("matches Next's dynamic segments in %s", (route, valid, invalid) => {
+    vi.stubEnv("DUOSHOT_LOCALIZED_PAGE_ROUTES", JSON.stringify([route]));
+    for (const pathname of valid) {
+      expect(localeRedirectTarget({ pathname, search: "?x=1", cookie: "en", acceptLanguage: null })).toBe(`/en${pathname}?x=1`);
+      expect(localeRedirectTarget({ pathname: `/en${pathname}`, search: "?x=1", cookie: "fr", acceptLanguage: null })).toBe(`${pathname}?x=1`);
+    }
+    for (const pathname of invalid) {
+      expect(localeRedirectTarget({ pathname, search: "", cookie: "en", acceptLanguage: null })).toBeNull();
+      expect(localeRedirectTarget({ pathname: `/en${pathname}`, search: "", cookie: "fr", acceptLanguage: null })).toBeNull();
+    }
+  });
+
   it("leaves static resources alone", () => {
     for (const path of ["/sitemap.xml", "/robots.txt", "/font.woff2", "/_next/anything", "/api", "/auth", "/opengraph-image-35za9p", "/en/opengraph-image", "/en/specs/opengraph-image", "/specs/opengraph-image-vneuru", "/en/rejection/twitter-image", "/fr/opengraph-image/card", "/en/pricing/opengraph-image/card"]) {
       expect(shouldSkipLocaleRewrite(path)).toBe(true);

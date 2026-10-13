@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        has: [{ type: "host", value: "www.duoshot.site" }],
+        has: [{ type: "host", value: "www\\.duoshot\\.site" }],
         destination: "https://duoshot.site/:path*",
         statusCode: 301,
       },
