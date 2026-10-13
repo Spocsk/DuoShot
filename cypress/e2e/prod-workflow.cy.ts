@@ -44,7 +44,7 @@ describe("prod workflow", () => {
       expect(band.width).to.be.greaterThan(band.height);
       expect(Math.abs(band.top + band.height / 2 - (frame.top + frame.height / 2))).to.be.lessThan(2);
     });
-    cy.get('[data-testid="tool-create-account"]').should("contain", "2 ZIP HD");
+    cy.get('[data-testid="tool-create-account"]').should("contain", "2 exports HD");
     cy.get('[data-testid="tool-example"]').should("have.attr", "href").and("include", "/api/example-zip");
 
     cy.loginAs("free");
@@ -61,7 +61,7 @@ describe("prod workflow", () => {
     cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href", "https://storage.example/app.zip");
 
     cy.visitFr("/pricing");
-    cy.contains("h1", "Essai, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Essai gratuit, Indie, Studio.").should("be.visible");
     cy.contains("3 sièges").should("be.visible");
     cy.contains("Same set").should("not.exist");
     cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");

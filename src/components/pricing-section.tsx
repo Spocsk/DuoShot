@@ -54,6 +54,10 @@ function eur(value: number, locale: Locale) {
   return locale === "fr" ? `${formatted} €` : `€${formatted}`;
 }
 
+function monthsFree(plan: PlanRecord) {
+  return 12 - (num(plan, "yearlyEur") ?? 0) / (num(plan, "monthlyEur") ?? 1);
+}
+
 /** Subscription kinds that belong to a plan: `${id}_monthly` and `${id}_yearly`. */
 function kindsFor(id: PlanId): CheckoutKind[] {
   return (Object.keys(CHECKOUT_CATALOG) as CheckoutKind[]).filter((kind) => kind.startsWith(`${id}_`));
@@ -73,7 +77,7 @@ function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
     return {
       price,
       note: tf("pricing_pass_price", { price }).replace(price, "").trim(),
-      cta: { kind: pass.kind, label: tf("pricing_pass_cta", { price: eur(pass.amountCents / 100, locale).replace("\u00a0", " ") }) },
+      cta: { kind: pass.kind, label: tf("pricing_pass_cta", { days: pass.days, price: eur(pass.amountCents / 100, locale).replace("\u00a0", " ") }) },
     };
   }
   const plan = planRecords[id]!;
@@ -82,7 +86,7 @@ function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
     return {
       price: t("pricing_trial_price"),
       note: " ",
-      cta: { href: `${localePrefix(locale)}/signup`, label: t("pricing_trial_cta"), testId: "pricing-cta-trial" },
+      cta: { href: `${localePrefix(locale)}/signup`, label: tf("pricing_trial_cta", { exports: PLANS.free.freeExports }), testId: "pricing-cta-trial" },
     };
   }
   const monthly = num(plan, "monthlyEur");
@@ -93,7 +97,7 @@ function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
     const kind = kindsFor(id).find((item) => item.endsWith(showYear ? "_yearly" : "_monthly"));
     const per = showYear ? t("pricing_per_year") : t("pricing_per_month");
     const note = showYear
-      ? `≈ ${eur(Math.round((annual! / 12) * 100) / 100, locale)} ${t("pricing_per_month")} · ${t("pricing_2_months_free")}`
+      ? `≈ ${eur(Math.round((annual! / 12) * 100) / 100, locale)} ${t("pricing_per_month")} · ${tf("pricing_months_free", { months: monthsFree(plan) })}`
       : " ";
     return {
       price: `${eur(value, locale)} ${per}`,
@@ -105,16 +109,18 @@ function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
 }
 
 function planTitle(id: PlanId, i18n: Translator) {
-  const { t } = i18n;
+  const { t, tf } = i18n;
   if (id === "free") return t("pricing_trial_title");
-  if (isPass(id)) return t("pricing_pass_title");
+  if (isPass(id)) return tf("pricing_pass_title", { days: ONE_TIME_CATALOG[id].days });
   return text(i18n, `pricing_${id}_title`, id.charAt(0).toUpperCase() + id.slice(1));
 }
 
 function planBody(id: PlanId, i18n: Translator) {
-  const { t } = i18n;
-  if (id === "free") return t("pricing_trial_body");
-  if (isPass(id)) return t("pricing_pass_body");
+  const { tf } = i18n;
+  if (id === "free") return tf("pricing_trial_body", { exports: PLANS.free.freeExports });
+  if (isPass(id)) return tf("pricing_pass_body", { days: ONE_TIME_CATALOG[id].days });
+  if (id === "indie") return tf("pricing_indie_body", { dailyCap: PLANS.indie.dailyHdSets });
+  if (id === "studio") return tf("pricing_studio_body", { seats: PLANS.studio.seats });
   return text(i18n, `pricing_${id}_body`, "");
 }
 
@@ -127,8 +133,8 @@ function comparisonRows(i18n: Translator, ids: PlanId[]) {
   const quota = (plan: PlanRecord) => {
     const free = num(plan, "freeExports");
     const daily = num(plan, "dailyHdSets");
-    if (free !== null) return `${free} ${t("pricing_hd_zips")}`;
-    if (daily !== null) return `${daily} / ${t("pricing_day")}`;
+    if (free !== null) return `${free} ${t("pricing_exports")}`;
+    if (daily !== null) return `${daily} ${t("pricing_exports")} / ${t("pricing_day")}`;
     return "—";
   };
   const fullFormats = (plan: PlanRecord) => (plan.duoOnly === false ? yes : no);
@@ -170,7 +176,7 @@ export function PricingSection({
   passAvailable?: boolean;
 }) {
   const i18n = useI18n();
-  const { t } = i18n;
+  const { t, tf } = i18n;
   const [yearly, setYearly] = useState(false);
   const ids = orderedPlans(passAvailable);
   const cards = ids.filter((id) => !isTeam(id));
@@ -185,17 +191,17 @@ export function PricingSection({
         <div>
           <Title>{t("pricing_title")}</Title>
           <p className="studio-pricing-lead">{t("pricing_lead")}</p>
-          <p className="studio-pricing-free">{t("pricing_free_body")}</p>
+          <p className="studio-pricing-free">{tf("pricing_free_body", { exports: PLANS.free.freeExports })}</p>
         </div>
-        <div className="studio-billing-switch" role="group" aria-label={t("pricing_billing_period")}>
+        {!compact ? <div className="studio-billing-switch" role="group" aria-label={t("pricing_billing_period")}>
           <button type="button" aria-pressed={!yearly} onClick={() => setYearly(false)} data-testid="billing-monthly">
             {t("pricing_monthly")}
           </button>
           <button type="button" aria-pressed={yearly} onClick={() => setYearly(true)} data-testid="billing-yearly">
             {t("pricing_yearly")}
-            <span className="studio-billing-saving">{t("pricing_2_months_free")}</span>
+            <span className="studio-billing-saving">{tf("pricing_months_free", { months: monthsFree(PLANS.indie) })}</span>
           </button>
-        </div>
+        </div> : null}
       </div>
 
       <div className="studio-plan-grid" style={{ "--plan-count": cards.length } as CSSProperties}>
@@ -211,7 +217,7 @@ export function PricingSection({
               <p className="studio-plan-price">{offer.price}</p>
               <p className="studio-plan-note">{offer.note}</p>
               <p className="studio-plan-body">{planBody(id, i18n)}</p>
-              <div className="studio-plan-cta"><OfferCta locale={locale} offer={offer} featured={featured} available={checkoutAvailable} /></div>
+              <div className="studio-plan-cta"><OfferCta locale={locale} offer={offer} featured={featured} available={isPass(id) ? passAvailable : checkoutAvailable} /></div>
             </article>
           );
         })}
@@ -225,8 +231,7 @@ export function PricingSection({
               <p className="studio-eyebrow">{t("pricing_team_kicker")}</p>
               <h3>{planTitle(id, i18n)}</h3>
               <p className="studio-plan-body">{planBody(id, i18n)}</p>
-              <p className="studio-plan-seats">{t("pricing_seats_soon")}</p>
-              <p className="studio-plan-local" data-testid={`pricing-note-${id}`}>{t("pricing_local_projects")}</p>
+              <p className="studio-plan-seats">{tf("pricing_studio_sharing", { seats: PLANS.studio.seats })}</p>
             </div>
             <div className="studio-plan-team-offer">
               <p className="studio-plan-price">{offer.price}</p>

@@ -7,7 +7,7 @@ import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
-import type { CheckoutKind } from "@/lib/plans";
+import { PLANS, formatEurFromCents, type CheckoutKind } from "@/lib/plans";
 import type { PlanId } from "@/lib/specs";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { AscConnectionPanel } from "@/components/asc/asc-connection-panel";
@@ -171,7 +171,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
                 data-testid="account-upgrade-indie"
                 className="ds-cta"
               >
-                {t("pricing_indie_cta")}
+                {tf("pricing_indie_cta", { price: formatEurFromCents(PLANS.indie.monthlyEur * 100, locale) })}
               </button>
               <button
                 type="button"
@@ -180,7 +180,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
                 data-testid="account-upgrade-studio"
                 className="ds-cta-ghost"
               >
-                {t("pricing_studio_cta")}
+                {tf("pricing_studio_cta", { price: formatEurFromCents(PLANS.studio.monthlyEur * 100, locale) })}
               </button>
             </div>
           ) : null}
@@ -237,7 +237,7 @@ type WorkspaceMember = {
 };
 
 function StudioWorkspace({ locale }: { locale: Locale }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
@@ -285,7 +285,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
     } else {
       setStudioMessage(
         payload.error === "SEAT_LIMIT"
-          ? t("account_all_three_seats_already")
+          ? tf("account_all_three_seats_already", { seats: PLANS.studio.seats })
           : t("account_could_not_send_invitation"),
       );
     }
@@ -312,7 +312,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
       <p className="ds-label">Studio</p>
       <h2 className="font-display mt-2 text-3xl">{t("account_team_reviews")}</h2>
       <p className="mt-3 text-sm text-[var(--muted)]">
-        {t("account_three_seats_included_review")}
+        {tf("account_three_seats_included_review", { seats: PLANS.studio.seats })}
       </p>
       <div className="mt-6 flex gap-3">
         <label className="min-w-0 flex-1">

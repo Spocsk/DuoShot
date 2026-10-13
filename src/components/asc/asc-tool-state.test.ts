@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTranslator } from "@/lib/i18n";
+import { createTranslator, getClientMessages, getTranslator } from "@/lib/i18n";
 import {
   ascAppUrl, ascErrorKey, ascFileErrorKey, ascFilePlan, ascFileStateKey, ascGate, autoPick, type ExportImage,
 } from "./asc-tool-state";
@@ -60,6 +60,17 @@ describe("ascFilePlan", () => {
 });
 
 describe("error and state messages", () => {
+  it.each(["fr", "en"] as const)("qualifies the paid connector offer in the %s client messages", (locale) => {
+    const { t } = createTranslator(locale, getClientMessages(locale, "app"));
+    const hint = t("asct_locked_hint");
+    expect(hint).toContain("App Store Connect");
+    expect(hint).toContain(locale === "fr" ? "expérimental" : "experimental");
+    expect(hint).toContain(locale === "fr" ? "Indie et Studio" : "Indie and Studio");
+    expect(hint).toContain(locale === "fr" ? "Duo et iPhone 6,9″" : "Duo and iPhone 6.9″");
+    expect(hint).toContain(locale === "fr" ? "n’ont pas encore été vérifiés de bout en bout" : "have not yet been verified end to end");
+    expect(hint).toContain(locale === "fr" ? "ZIP pour un dépôt manuel" : "ZIP for manual upload");
+  });
+
   it("translates stable codes and falls back to a generic message", () => {
     expect(fr.t(ascErrorKey("ASC_SET_FULL"))).toContain("10 au maximum");
     expect(fr.t(ascErrorKey("ASC_UNAUTHORIZED"))).toContain("Reconnectez");

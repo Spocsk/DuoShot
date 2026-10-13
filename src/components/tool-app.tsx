@@ -32,7 +32,7 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, isPurchaseKind, startCheckout } from "@/lib/checkout";
 import { trackProduct } from "@/lib/analytics-client";
-import type { PurchaseKind } from "@/lib/plans";
+import { FREE_EXPORTS, type PurchaseKind } from "@/lib/plans";
 import {
   defaultSet,
   nextSetName,
@@ -350,16 +350,16 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     duoSelection, cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
     orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
   });
+  const isDemo = Boolean(active?.demo);
   const preparationChecks = [
     selectedDuoCount > 0,
     selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX,
     hasExportable && !cloneAlert,
     hasExportable && severeQualityCount === 0,
-    appUsageConfirmed,
+    isDemo || appUsageConfirmed,
     Boolean(zipUrl && jobs.exportImages.length),
   ];
   const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
-  const isDemo = Boolean(active?.demo);
   const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   /** Opens the panel holding a fix and moves focus to the control that resolves it. */
   function jumpTo(panel: ToolPanel, selector: string) {
@@ -371,12 +371,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }, 60);
   }
   const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
-  const checklist: CheckItem[] = [
+  const checklist = ([
     { id: "pairs", done: hasExportable, label: t("tool_check_pairs"), fix: () => jumpTo("captures", '[data-testid="duo-slot-choice"] select') },
     { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t("tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
     { id: "similarity", done: !cloneAlert || assumeClone, label: t("tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
     { id: "confirm", done: appUsageConfirmed, label: t("tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
-  ];
+  ] satisfies CheckItem[]).filter((item) => !isDemo || item.id !== "confirm");
   const readyToPrepare = checklist.every((item) => item.done) && selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX;
   const importDone = hasExportable;
   const stepsDone: Record<ToolPanel, boolean> = {
@@ -677,15 +677,15 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       onClick: (event) => { event.preventDefault(); void jobs.onDownload(); },
     };
   } else if (isDemo) {
-    // Harbor is fictional: its files come from the example ZIP, so no export trial is spent on it.
-    primary = { label: t("tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
+    // This fixed example ZIP is independent of workspace edits and consumes no export.
+    primary = { label: t("tool_action_demo_zip"), testId: "tool-demo-zip", onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
   } else {
     primary = {
       label: jobs.busyExport ? t("tool_preparing") : t("tool_action_prepare"), testId: "tool-download",
       disabled: jobs.busyExport || !readyToPrepare, onClick: () => void jobs.onExport(),
     };
   }
-  const showMissing = (toolPanel === "review" || toolPanel === "export") && !zipUrl && !readyToPrepare;
+  const showMissing = (toolPanel === "review" || toolPanel === "export") && !isDemo && !zipUrl && !readyToPrepare;
 
   // Editing the boot placeholder during a migration could overwrite the account's saved sets.
   if (!draftsLoaded) return <div className="mx-auto max-w-6xl px-5 py-10">
@@ -853,7 +853,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
               <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
-                {t("tool_create_account")}
+                {tf("tool_create_account", { exports: FREE_EXPORTS })}
               </button>
             ) : null}
             {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf("tool_score_line", { score: preparationScore })}</p> : null}

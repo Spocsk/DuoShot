@@ -4,6 +4,7 @@ import { submitRender, resumeRender } from "@/lib/render-client";
 import { assertBatchSize } from "@/lib/pipeline/limits";
 import { normalizeCropTransform, type CropTransform, type FitMode, type Locale, type Orientation, type RenderOptions } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
+import { FREE_EXPORTS } from "@/lib/plans";
 import type { MessageKey } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { trackProduct } from "@/lib/analytics-client";
@@ -218,7 +219,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         });
         if (payload.error === "TRIAL_EXHAUSTED") {
           setPaywall("trial");
-          flashStatus(t("error_trial"), "err");
+          flashStatus(tf("error_trial", { exports: FREE_EXPORTS }), "err");
           return;
         }
         if (payload.error === "IPHONE_69_GATED") {

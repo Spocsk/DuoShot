@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { AppleAvailability } from "./apple-availability";
@@ -208,11 +207,9 @@ function SequenceSection({ locale }: { locale: Locale }) {
 
 /* ------------------------------------------------------------------ */
 
-export async function HomePage({ locale }: { locale: Locale }) {
+export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale: Locale; checkoutAvailable: boolean; passAvailable: boolean }) {
   const { t } = getTranslator(locale);
   const prefix = localePrefix(locale);
-  // Offers depend on runtime Stripe configuration, including the optional pass.
-  await connection();
 
   return (
     <div className="flex min-h-full flex-col">
@@ -296,7 +293,7 @@ export async function HomePage({ locale }: { locale: Locale }) {
             </div>
           </section>
 
-          <PricingSection locale={locale} compact />
+          <PricingSection locale={locale} compact checkoutAvailable={checkoutAvailable} passAvailable={passAvailable} />
 
           <section className="studio-faq" data-reveal>
             <h2>{t("faq_title")}</h2>

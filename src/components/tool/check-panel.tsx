@@ -178,11 +178,13 @@ export function ReadinessReport({
           </li>
         ))}
       </ul>
-      <p className="ds-label mt-5">{t("tool_human_confirmation")}</p>
-      <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
-        <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
-        <span>{demo ? t("tool_demo_confirm") : t("tool_i_checked_that_every")}</span>
-      </label>
+      {!demo ? <>
+        <p className="ds-label mt-5">{t("tool_human_confirmation")}</p>
+        <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
+          <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
+          <span>{t("tool_i_checked_that_every")}</span>
+        </label>
+      </> : null}
       {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{t("tool_warnings_still_need_review")}</p> : null}
     </section>
   );

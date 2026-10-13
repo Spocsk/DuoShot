@@ -3,7 +3,7 @@
 import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { Overlay } from "@/components/overlay";
-import { ONE_TIME_CATALOG, formatEurFromCents, type PurchaseKind } from "@/lib/plans";
+import { FREE_EXPORTS, ONE_TIME_CATALOG, PASS30, PLANS, PRO_DAILY_CAP, formatEurFromCents, type PurchaseKind } from "@/lib/plans";
 
 export function PaywallModal({
   locale,
@@ -29,12 +29,14 @@ export function PaywallModal({
   const yearly = preferredKind?.endsWith("_yearly") ?? false;
   const pass = preferredKind === "pass30";
   const passPrice = formatEurFromCents(ONE_TIME_CATALOG.pass30.amountCents, locale);
+  const indiePrice = formatEurFromCents((yearly ? PLANS.indie.yearlyEur : PLANS.indie.monthlyEur) * 100, locale);
+  const studioPrice = formatEurFromCents((yearly ? PLANS.studio.yearlyEur : PLANS.studio.monthlyEur) * 100, locale);
   return (
     <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={t("asct_close")}>
       <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
-        {pass ? t("pricing_pass_title") : reason === "69" ? t("paywall_69") : t("paywall_title")}
+        {pass ? tf("pricing_pass_title", { days: PASS30.days }) : reason === "69" ? t("paywall_69") : tf("paywall_title", { exports: FREE_EXPORTS })}
       </h2>
-      <p className="mt-3 text-[var(--muted)]">{pass ? t("pricing_pass_body") : t("paywall_lead")}</p>
+      <p className="mt-3 text-[var(--muted)]">{pass ? tf("pricing_pass_body", { days: PASS30.days }) : tf("paywall_lead", { dailyCap: PRO_DAILY_CAP })}</p>
       {!available && (!pass || !passAvailable) ? <p role="status" className="mt-3 text-sm">{t("account_payments_not_open_yet")}</p> : null}
       {pass ? (
         <button
@@ -44,7 +46,7 @@ export function PaywallModal({
           disabled={busy || !passAvailable}
           onClick={() => onCheckout("pass30")}
         >
-          {tf("pricing_pass_cta", { price: passPrice })}
+          {tf("pricing_pass_cta", { days: PASS30.days, price: passPrice })}
         </button>
       ) : null}
       <button
@@ -54,7 +56,7 @@ export function PaywallModal({
         disabled={busy || !available}
         onClick={() => onCheckout(yearly ? "indie_yearly" : "indie_monthly")}
       >
-        {yearly ? t("paywall_indie_120_year") : t("paywall_cta_indie")}
+        {tf(yearly ? "paywall_indie_year" : "paywall_cta_indie", { price: indiePrice })}
       </button>
       {pass ? null : (
         <button
@@ -64,7 +66,7 @@ export function PaywallModal({
           disabled={busy || !available}
           onClick={() => onCheckout(yearly ? "studio_yearly" : "studio_monthly")}
         >
-          {yearly ? t("paywall_studio_490_year") : t("paywall_cta_studio")}
+          {tf(yearly ? "paywall_studio_year" : "paywall_cta_studio", { price: studioPrice })}
         </button>
       )}
       <button

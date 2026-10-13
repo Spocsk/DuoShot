@@ -40,8 +40,8 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
     en: { eyebrow: "Checks", title: "Screenshots rejected? Dimensions and alpha.", alt: "DuoShot preparation report: dimensions checked, alpha channel flattened, opaque PNG." },
   },
   pricing: {
-    fr: { eyebrow: "Tarifs", title: "Essai, Indie, Studio.", lead: "Commencez sans carte. Deux exports HD offerts.", alt: `Tarifs DuoShot : essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },
-    en: { eyebrow: "Pricing", title: "Trial, Indie, Studio.", lead: "Start without a card. Two HD exports included.", alt: `DuoShot pricing: free trial, Indie €${PLANS.indie.monthlyEur} per month, Studio €${PLANS.studio.monthlyEur} per month.` },
+    fr: { eyebrow: "Tarifs", title: "Essai gratuit, Indie, Studio.", lead: `Commencez sans carte. ${PLANS.free.freeExports} exports HD offerts.`, alt: `Tarifs DuoShot : Essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },
+    en: { eyebrow: "Pricing", title: "Free trial, Indie, Studio.", lead: `Start without a card. ${PLANS.free.freeExports} HD exports included.`, alt: `DuoShot pricing: Free trial, Indie €${PLANS.indie.monthlyEur} per month, Studio €${PLANS.studio.monthlyEur} per month.` },
   },
   "why-not-ai": {
     fr: { eyebrow: "Pourquoi DuoShot", title: "Votre IA redimensionne. Connect veut plus.", alt: "Comparaison : une IA redimensionne, DuoShot aplatit l’alpha, masque la charnière, évalue le risque 2.3.3 et prépare le ZIP." },
@@ -231,8 +231,8 @@ function PricingArt({ locale }: { locale: Locale }) {
   const per = fr ? "/ mois" : "/ month";
   const price = (eur: number) => (fr ? `${eur} €` : `€${eur}`);
   const plans = [
-    { name: fr ? "Essai" : "Trial", price: price(0), note: fr ? "2 ZIP HD, sans carte" : "2 HD ZIPs, no card", period: "" },
-    { name: "Indie", price: price(PLANS.indie.monthlyEur), note: fr ? `${PLANS.indie.dailyHdSets} sets HD par jour` : `${PLANS.indie.dailyHdSets} HD sets a day`, period: per, featured: true },
+    { name: fr ? "Essai gratuit" : "Free trial", price: price(0), note: fr ? `${PLANS.free.freeExports} exports HD, sans carte` : `${PLANS.free.freeExports} HD exports, no card`, period: "" },
+    { name: "Indie", price: price(PLANS.indie.monthlyEur), note: fr ? `${PLANS.indie.dailyHdSets} exports HD par jour` : `${PLANS.indie.dailyHdSets} HD exports a day`, period: per, featured: true },
     { name: "Studio", price: price(PLANS.studio.monthlyEur), note: fr ? `${PLANS.studio.seats} sièges, validation client` : `${PLANS.studio.seats} seats, client review`, period: per },
   ];
   return (

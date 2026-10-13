@@ -41,7 +41,7 @@ describe("tool export", () => {
     });
     cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
-    cy.get('[data-testid="paywall"]').should("contain", "2 sets gratuits");
+    cy.get('[data-testid="paywall"]').should("contain", "2 exports gratuits");
   });
 
   it("blocks clone risk then allows export after assume", () => {

@@ -1,4 +1,6 @@
+import { connection } from "next/server";
 import { HomePage } from "@/components/home-page";
+import { checkoutDisplayAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import { pageMetadata } from "@/lib/seo";
 import { SITE_PITCH_EN, SITE_PITCH_FR } from "@/lib/site";
 import { pageLocale, type LocaleParams } from "./params";
@@ -14,5 +16,8 @@ export async function generateMetadata({ params }: LocaleParams) {
 }
 
 export default async function Page({ params }: LocaleParams) {
-  return <HomePage locale={await pageLocale(params)} />;
+  const locale = await pageLocale(params);
+  // Read runtime billing configuration so the first HTML has the current offers.
+  await connection();
+  return <HomePage locale={locale} checkoutAvailable={checkoutDisplayAvailable()} passAvailable={passCheckoutAvailable()} />;
 }
