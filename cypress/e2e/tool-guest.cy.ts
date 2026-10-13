@@ -24,6 +24,29 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-download"]').should("be.disabled");
   });
 
+  for (const method of ["picker", "drop"] as const) {
+    it(`preserves captures imported through the canvas ${method}`, () => {
+      cy.visitFr("/tool");
+      cy.get('[data-testid="tool-sets"][data-ready="true"]');
+      for (const side of ["outer", "inner"] as const) {
+        if (method === "picker") {
+          cy.get(`[data-testid="preview-${side}"] input[type="file"]`)
+            .selectFile(`cypress/fixtures/${side}.png`, { force: true });
+        } else {
+          cy.get(`[data-testid="preview-${side}-canvas"]`)
+            .selectFile(`cypress/fixtures/${side}.png`, { action: "drag-drop" });
+        }
+        cy.get(`[data-testid="preview-${side}"] img`).should("exist");
+      }
+      cy.get('[data-testid="tool-tab-captures"]').click();
+      cy.get('[data-testid="drop-outer"]').should("have.attr", "data-count", "1");
+      cy.get('[data-testid="drop-inner"]').should("have.attr", "data-count", "1");
+      cy.reload();
+      cy.get('[data-testid="preview-outer"] img').should("exist");
+      cy.get('[data-testid="preview-inner"] img').should("exist");
+    });
+  }
+
   it("warns on clone only when the same-set toggle is on", () => {
     cy.visitFr("/tool");
     cy.dropScreens();

@@ -397,11 +397,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }, 60);
   }
   function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
-    return trackDraftChange(owner, () => importSideFiles(side, list));
+    // File inputs are cleared by the caller and drag data expires after the event.
+    const selected = takeFiles(list);
+    return trackDraftChange(owner, () => importSideFiles(side, selected));
   }
 
-  async function importSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
-    const selected = takeFiles(list);
+  async function importSideFiles(side: "outer" | "inner", selected: File[]) {
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
       if (!isAllowedImage(file) || file.size > MAX_SOURCE_BYTES) return null;
       try { const metadata = await inspectFile(file); if (metadata.width * metadata.height > MAX_SOURCE_PIXELS) return null; const bitmap = await createImageBitmap(file); const allowed = bitmap.width * bitmap.height <= MAX_SOURCE_PIXELS; bitmap.close(); return allowed ? file : null; } catch { return null; }

@@ -105,11 +105,17 @@ type StoredFile = { name: string; type: string; buffer: ArrayBuffer };
 const fileWrites = new Map<string, Promise<void>>();
 const draftChanges = new Map<DraftScope, Set<Promise<unknown>>>();
 
+async function withDraftLock<T>(scope: DraftScope, kind: "changes" | "files", mode: LockMode, action: () => Promise<T>): Promise<T> {
+  return typeof navigator !== "undefined" && navigator.locks
+    ? navigator.locks.request(`duoshot:${kind}:${scope}`, { mode }, action)
+    : Promise.resolve().then(action);
+}
+
 /** Include async validation that runs before a file write is ready to be registered. */
 export function trackDraftChange<T>(scope: DraftScope, change: () => Promise<T>): Promise<T> {
   const changes = draftChanges.get(scope) ?? new Set<Promise<unknown>>();
   draftChanges.set(scope, changes);
-  const pending = Promise.resolve().then(change).finally(() => { changes.delete(pending); });
+  const pending = withDraftLock(scope, "changes", "shared", change).finally(() => { changes.delete(pending); });
   changes.add(pending);
   return pending;
 }
@@ -117,7 +123,10 @@ export function trackDraftChange<T>(scope: DraftScope, change: () => Promise<T>)
 export function saveSetFiles(setId: string, side: "outer" | "inner", files: File[], scope: DraftScope = "guest") {
   const key = scopedKey(`${setId}:${side}`, scope);
   // Register before reading the files: a login can happen while arrayBuffer is still pending.
-  const write = (fileWrites.get(key) ?? Promise.resolve()).catch(() => {}).then(() => writeSetFiles(key, files));
+  const previous = fileWrites.get(key) ?? Promise.resolve();
+  // Request the lock before serialization or waiting for another save. Other tabs' migrations
+  // must wait for this write too, even when it was started without awaiting persistence.
+  const write = withDraftLock(scope, "files", "shared", () => previous.catch(() => {}).then(() => writeSetFiles(key, files)));
   fileWrites.set(key, write);
   return write;
 }
@@ -192,20 +201,23 @@ export function importLocalDrafts(source: ImportSource, owner: string): Promise<
   const key = `${source}:${owner}`;
   const running = draftImports.get(key);
   if (running) return running;
-  const run = () => importDrafts(source, owner);
-  const pending = (importQueues.get(source) ?? Promise.resolve()).catch(() => {}).then(async () =>
-    // Serialize across tabs as well as concurrent React effects when Web Locks is available.
-    typeof navigator !== "undefined" && navigator.locks
-      ? navigator.locks.request(`duoshot:import:${source}`, run)
-      : run(),
-  ).finally(() => { draftImports.delete(key); });
+  const pending = (importQueues.get(source) ?? Promise.resolve()).catch(() => {}).then(async () => {
+    // Drain this tab before locking, including failures that must keep originals recoverable.
+    // Awaiting newly queued edits inside an exclusive lock would deadlock their shared locks.
+    while (draftChanges.get(source)?.size) await Promise.all(draftChanges.get(source)!);
+    await Promise.all(loadSetMetas(source).flatMap((set) => ["outer", "inner"].map((side) => fileWrites.get(scopedKey(`${set.id}:${side}`, source)))));
+    // Lock validation first, then persistence. A validating edit can await file writes without
+    // deadlocking, and its fire-and-forget saves are queued before we acquire the files lock.
+    return withDraftLock(source, "changes", "exclusive", () =>
+      withDraftLock(source, "files", "exclusive", () => importDrafts(source, owner)),
+    );
+  }).finally(() => { draftImports.delete(key); });
   draftImports.set(key, pending);
   importQueues.set(source, pending);
   return pending;
 }
 
 async function importDrafts(source: ImportSource, owner: string): Promise<number> {
-  while (draftChanges.get(source)?.size) await Promise.all(draftChanges.get(source)!);
   const claimKey = scopedKey(IMPORT_KEY, source);
   const claims = JSON.parse(window.localStorage.getItem(claimKey) ?? "{}") as ImportClaims;
   const originals = loadSetMetas(source).filter((set) => !claims[set.id] || claims[set.id].owner === owner);
@@ -214,7 +226,6 @@ async function importDrafts(source: ImportSource, owner: string): Promise<number
   // reloading or switching accounts) cannot duplicate or claim another account's drafts.
   for (const original of originals) claims[original.id] ??= { owner, id: newSetId() };
   window.localStorage.setItem(claimKey, JSON.stringify(claims));
-  await Promise.all(originals.flatMap((set) => ["outer", "inner"].map((side) => fileWrites.get(scopedKey(`${set.id}:${side}`, source)))));
   const existing = loadSetMetas(owner);
   const imported: SetMeta[] = [];
   for (const original of originals) {
