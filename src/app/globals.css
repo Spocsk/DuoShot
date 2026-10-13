@@ -267,11 +267,6 @@ a {
   transform: scaleY(1);
 }
 
-.ds-cta:hover {
-  background: var(--studio-cta-hover);
-  opacity: 1;
-}
-
 .ds-cta:active {
   transform: scale(0.98);
 }
@@ -279,6 +274,11 @@ a {
 .ds-cta:disabled {
   opacity: 0.45;
   transform: none;
+}
+
+.ds-cta:hover {
+  background: var(--studio-cta-hover);
+  opacity: 1;
 }
 
 .ds-cta:focus-visible {
@@ -303,10 +303,6 @@ a {
   color: var(--foreground);
 }
 
-.ds-cta-ghost:hover {
-  background: var(--studio-canvas-2);
-}
-
 .ds-cta-ghost:active {
   transform: scale(0.98);
 }
@@ -314,6 +310,10 @@ a {
 .ds-cta-ghost:disabled {
   opacity: 0.45;
   transform: none;
+}
+
+.ds-cta-ghost:hover {
+  background: var(--studio-canvas-2);
 }
 
 .ds-cta-ghost:focus-visible {
@@ -673,11 +673,11 @@ button.ds-pill {
   text-decoration: none;
 }
 .studio-inline-link { color: var(--studio-link); font-weight: 600; text-decoration: none; }
-.ds-text-btn:hover, .ds-link:hover, .studio-inline-link:hover { text-decoration: underline; text-underline-offset: 0.25em; }
 
 .ds-text-btn:disabled {
   opacity: 0.45;
 }
+.ds-text-btn:hover, .ds-link:hover, .studio-inline-link:hover { text-decoration: underline; text-underline-offset: 0.25em; }
 
 .ds-nav-link {
   display: inline-flex;
