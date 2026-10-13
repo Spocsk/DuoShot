@@ -212,7 +212,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
   const prefix = localePrefix(locale);
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="studio-home flex min-h-full flex-col">
       <JsonLd locale={locale} path="/" software faq={FAQ[locale]} />
       <SiteHeader locale={locale} path="/" />
       <LandingMotion>

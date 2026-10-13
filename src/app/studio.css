@@ -606,6 +606,74 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
   .studio-review-preview-heading { padding-top: 1rem; }
   .studio-review-preview-pair { margin-top: 1rem; }
 }
+/* Mobile home: keep every proof and offer in compact, swipeable rows. */
+@media (width < 768px) {
+  /* Size the mockups from their aspect ratios, rather than their sample UI's
+     intrinsic height. Keep the claim, actions and both dimensions together. */
+  .studio-hero { padding-top: 1rem; row-gap: 0.75rem; }
+  .studio-hero h1 { font-size: clamp(1.9rem, 8.5vw, 2.6rem); }
+  .studio-hero-lead { margin-top: 0.6rem; font-size: 0.9rem; line-height: 1.4; }
+  .studio-hero-actions { margin-top: 0.75rem; }
+  .studio-hero .duo-chassis, .studio-hero .duo-book { contain: size paint; }
+  .studio-hero-dimensions { margin-top: 0.75rem; }
+  .studio-hero-dimensions dt, .studio-hero-dimensions dd, .studio-hero-dimensions small { font-size: 0.75rem; }
+  .studio-hero-meta { margin-top: 0; padding-block: 0.75rem; }
+  .studio-availability [data-testid="apple-availability"] { font-size: 0.75rem; line-height: 1.4; }
+  .studio-proof, .studio-review-invite, .studio-pricing.is-compact, .studio-faq { padding-block: 1.5rem; }
+  .studio-proof h2, .studio-review-invite h2 { max-width: none; font-size: clamp(1.75rem, 7.8vw, 2.6rem); }
+  .studio-proof-board { display: flex; align-items: stretch; gap: 0.75rem; margin-top: 1rem; padding-bottom: 0.75rem; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+  .studio-proof-before, .studio-proof-after { flex: 0 0 84%; padding: 0.85rem; scroll-snap-align: start; }
+  .studio-proof-arrow { display: none; }
+  .studio-raw-pair { max-width: 11rem; margin-top: 0.75rem; }
+  .studio-final-pair { max-width: 10rem; margin-top: 0.75rem; }
+  .studio-raw-shot, .studio-final > div { contain: size paint; }
+  .studio-raw.is-inner .shelf-book, .studio-final.is-inner .shelf-book { height: 100%; }
+  .studio-files { margin-top: 0.75rem; }
+  .studio-proof-actions { gap: 0.5rem 1rem; margin-top: 0.75rem; }
+  html:not(.duo-motion) .studio-sequence .studio-sequence-steps { display: flex; gap: 0.75rem; max-width: none; margin-inline: -1.25rem; padding: 1rem 1.25rem; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 1.25rem; overscroll-behavior-x: contain; }
+  html:not(.duo-motion) .studio-sequence .studio-sequence-step { flex: 0 0 90%; min-width: 0; padding: 0.75rem; border-radius: 1.1rem; background: var(--studio-canvas); scroll-snap-align: start; }
+  .studio-sequence-step h2 { max-width: none; font-size: 1.35rem; line-height: 1.15; }
+  .studio-sequence-step > p { font-size: 0.875rem; line-height: 1.4; }
+  .studio-sequence-step .studio-panel { gap: 0.5rem; padding: 0.65rem; box-shadow: none; }
+  .studio-sequence-step .studio-panel-top { flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+  .studio-sequence-step .studio-import-pair { gap: 0.4rem; padding-block: 0.3rem; }
+  .studio-sequence-step .studio-import-thumb { height: 2.5rem; }
+  .studio-sequence-step .studio-inspect-frame { width: 5rem; }
+  .studio-sequence-step .studio-prevent-checks { gap: 0.5rem; }
+  .studio-sequence-step .studio-prevent-checks li { font-size: 0.75rem; line-height: 1.35; }
+  .studio-sequence-step .studio-panel-note, .studio-sequence-step .studio-prevent-outcome { line-height: 1.35; }
+  html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { margin-top: 0.75rem; }
+  .studio-review-invite { gap: 1rem; }
+  .studio-review-invite > div:first-child p { margin-top: 0.75rem; font-size: 0.9rem; line-height: 1.4; }
+  .studio-review-invite .studio-inline-link { min-height: 2rem; margin-top: 0.5rem; }
+  .studio-review-preview-top { flex-wrap: wrap; gap: 0.25rem 0.5rem; padding: 0.6rem 0.75rem; letter-spacing: 0; }
+  .studio-review-preview-heading { padding: 0.6rem 0.75rem 0; }
+  .studio-review-preview-pair { height: 6rem; margin: 0.6rem 0.75rem 0; padding-top: 0.5rem; }
+  .studio-review-preview-decision { gap: 0.4rem; margin: 0.6rem 0.75rem 0; padding-top: 0.6rem; }
+  .studio-review-invite .studio-review-preview > p { padding: 0.6rem 0.75rem 0.75rem; }
+  .studio-pricing.is-compact .studio-plan-grid { display: flex; gap: 0.75rem; margin-top: 1rem; padding-bottom: 0.75rem; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+  .studio-pricing.is-compact .studio-plan { flex: 0 0 88%; padding: 0.75rem; scroll-snap-align: start; }
+  .studio-pricing.is-compact .studio-plan.is-featured { padding: calc(0.75rem - 1px); }
+  .studio-pricing.is-compact .studio-plan-team { grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr); gap: 0.75rem; margin-top: 0.5rem; padding: 0.75rem; }
+  .studio-pricing.is-compact .studio-pricing-lead { margin-top: 0.6rem; font-size: 0.9rem; line-height: 1.4; }
+  .studio-pricing.is-compact .studio-plan-price { margin-top: 0.25rem; font-size: 1.65rem; }
+  .studio-pricing.is-compact .studio-plan-team h3 { font-size: 1.4rem; }
+  .studio-pricing.is-compact .studio-plan-seats { font-size: 0.8rem; line-height: 1.4; }
+  .studio-pricing.is-compact .studio-plan-team-offer .ds-cta-ghost { margin-top: 0.5rem; padding-inline: 0.5rem; font-size: 0.8rem; }
+  .studio-pricing.is-compact .studio-plan-team-offer .studio-inline-link { min-height: 1.5rem; font-size: 0.8rem; line-height: 1.4; }
+  .studio-pricing.is-compact .studio-plan-cta { padding-top: 0.5rem; }
+  .studio-pricing.is-compact .studio-reassurance { gap: 0.25rem 0.75rem; margin-top: 1rem; font-size: 0.8rem; }
+  .studio-faq h2 { margin-bottom: 1rem; }
+  .studio-faq > .mt-8 { margin-top: 1rem; }
+  .studio-faq .t-acc-head { min-height: 2.5rem; gap: 0.75rem; padding-block: 0.45rem; font-size: 0.875rem; line-height: 1.35; }
+  .studio-faq .t-acc-chevron { flex: none; }
+  .studio-faq [data-testid="trust-line"] { margin-top: 0.75rem; line-height: 1.4; }
+  /* The footer grid belongs only to the home; other routes retain their layout. */
+  .studio-home .ds-footer > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem 0.75rem; padding-block: 0.75rem; font-size: 0.75rem; line-height: 1.35; }
+  .studio-home .ds-footer > div > span { grid-column: 1 / -1; }
+  .studio-home .ds-footer a, .studio-home .ds-footer button { min-width: 24px; min-height: 24px; }
+  .studio-home .ds-footer [data-testid="footer-fazier"] { grid-column: 1 / -1; justify-self: start; padding-block: 0.25rem; }
+}
 @media (max-width: 389px) {
   .studio-prevent-checks { grid-template-columns: 1fr; }
 }
