@@ -65,7 +65,9 @@ describe("theme", () => {
     cy.visit("/en", { onBeforeLoad(win) { win.localStorage.setItem("duoshot_theme", "dark"); } });
     cy.get("html").should("have.attr", "data-theme", "dark").and("have.css", "color-scheme", "dark");
     cy.get("body > #duoshot-theme").should("exist").and(($script) => {
-      expect($script.index()).to.be.lessThan($script.parent().children(":not(script)").first().index());
+      const script = $script[0];
+      const header = script.ownerDocument.querySelector("header")!;
+      expect(script.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).to.not.equal(0);
     });
     // No hydrated click handler: proves the inline script applied the stored theme.
     cy.get('header [data-testid="theme-toggle"] summary').click();
