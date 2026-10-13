@@ -1,11 +1,21 @@
 import type { NextConfig } from "next";
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import { securityHeaders } from "./src/lib/security-headers";
 
 /** Browser navigations ask for HTML; image and RSC fetches do not. */
 const HTML_DOCUMENT = { type: "header", key: "accept", value: ".*text/html.*" } as const;
 
+// Compile the page tree into the proxy bundle; standalone servers do not have src/app.
+const localizedPageRoutes = readdirSync(path.join(__dirname, "src/app/[locale]"), { recursive: true })
+  .filter((file): file is string => typeof file === "string" && /(?:^|[/\\])page\.[jt]sx?$/.test(file))
+  .map((file) => `/${file.split(path.sep).slice(0, -1).filter((segment) => !/^\(.*\)$/.test(segment)).join("/")}`);
+
 const nextConfig: NextConfig = {
   output: "standalone",
+  env: {
+    DUOSHOT_LOCALIZED_PAGE_ROUTES: JSON.stringify(localizedPageRoutes),
+  },
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   serverExternalPackages: ["sharp"],
   outputFileTracingIncludes: {
@@ -24,6 +34,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www\\.duoshot\\.site" }],
+        destination: "https://duoshot.site/:path*",
+        statusCode: 301,
+      },
       {
         source: "/:path*",
         has: [{ type: "host", value: "duoshot.vercel.app" }],

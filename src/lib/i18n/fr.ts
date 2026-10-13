@@ -297,6 +297,7 @@ export const fr = {
   reject_video_title: "On ne fait pas la vidéo",
   reject_video_body: "Hors scope DuoShot. On ne fait pas la vidéo 15–30 s. Les pixels, oui. La preview App Store, non.",
   specs_apple_specifications: "Spécifications Apple",
+  apple_upload_news_source: "Annonce Apple du 5 octobre 2026",
   reject_app_store_screenshot_errors: "Erreurs de captures App Store : dimensions et alpha",
   reject_wrong_screenshot_dimensions_alpha: "Dimensions invalides ou canal alpha : vérifiez le format du fichier et l’emplacement visé dans App Store Connect avant le dépôt.",
   reject_dimensions_title: "Dimensions de capture invalides",

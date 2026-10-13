@@ -57,12 +57,37 @@ export function cookieLocale(value: string | undefined): Locale | null {
   return value === "en" || value === "fr" ? value : null;
 }
 
+function isLocalizedPage(pathname: string): boolean {
+  if (MARKETING_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en)) return true;
+  const unprefixed = pathname === "/en" ? "/" : pathname.replace(/^\/en\//, "/");
+  const segments = unprefixed === "/" ? [] : unprefixed.slice(1).split("/");
+  // Next replaces this value at build time with routes derived from app/[locale].
+  const routes: string[] = JSON.parse(process.env.DUOSHOT_LOCALIZED_PAGE_ROUTES ?? "[]");
+  return routes.some((route) => {
+    const parts = route === "/" ? [] : route.slice(1).split("/");
+    for (let index = 0; index < parts.length; index++) {
+      const part = parts[index];
+      // Next requires catch-all segments to be last; optional ones also match
+      // the parent URL, while regular catch-alls need at least one segment.
+      if (/^\[\[\.\.\.[^\]]+\]\]$/.test(part)) {
+        return index === parts.length - 1 && segments.slice(index).every(Boolean);
+      }
+      if (/^\[\.\.\.[^\]]+\]$/.test(part)) {
+        return index === parts.length - 1 && segments.length > index && segments.slice(index).every(Boolean);
+      }
+      if (/^\[[^\]]+\]$/.test(part) ? !segments[index] : part !== segments[index]) return false;
+    }
+    return parts.length === segments.length;
+  });
+}
+
 export function localeRedirectTarget(options: {
   pathname: string;
   search: string;
   cookie: string | undefined;
   acceptLanguage: string | null;
 }): string | null {
+  if (!isLocalizedPage(options.pathname)) return null;
   const current = localeFromPath(options.pathname);
   const preferred = cookieLocale(options.cookie) ?? parseAcceptLanguage(options.acceptLanguage);
   return preferred === current ? null : `${localizedPath(preferred, options.pathname)}${options.search}`;

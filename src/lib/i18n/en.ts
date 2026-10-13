@@ -294,6 +294,7 @@ export const en: Messages = {
   reject_video_title: "We don’t make the video",
   reject_video_body: "Out of DuoShot’s scope. We don’t make the 15–30s preview video. Pixels, yes. App Store preview, no.",
   specs_apple_specifications: "Apple specifications",
+  apple_upload_news_source: "Apple announcement from October 5, 2026",
   reject_app_store_screenshot_errors: "App Store screenshot errors: dimensions and alpha",
   reject_wrong_screenshot_dimensions_alpha: "Wrong screenshot dimensions or an alpha channel? Check the file format and intended App Store Connect slot before uploading.",
   reject_dimensions_title: "Wrong screenshot dimensions",
