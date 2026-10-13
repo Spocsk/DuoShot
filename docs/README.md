@@ -12,6 +12,7 @@ Documents tenus à jour. Le déploiement et l’exploitation du VPS sont décrit
 | [`commercial-learning.md`](commercial-learning.md) | Protocole d’apprentissage commercial et suivi GEO. |
 | [`iphone-duo-base-connaissances.md`](iphone-duo-base-connaissances.md) | Base de connaissances iPhone Duo : tailles d’export, cadrage, fond, titre et contenu du ZIP. |
 | [`raffinage-s01-screenshots-duo.md`](raffinage-s01-screenshots-duo.md) | Raffinage produit S01 des screenshots Duo : décisions, pages et contrôles bloquants. |
+| [`audit-design-ux-2026-10-13.md`](audit-design-ux-2026-10-13.md) | Audit design, UX et produit du 13 octobre 2026 : constats P0/P1/P2, mesures, captures dans `audit/2026-10-13/`. |
 
 ## Journal
 
