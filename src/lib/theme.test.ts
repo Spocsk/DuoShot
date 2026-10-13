@@ -24,9 +24,10 @@ describe("theme before hydration", () => {
     expect(setAttribute).toHaveBeenCalledExactlyOnceWith("data-theme", "system");
   });
 
-  it("runs in the root head with hydration mismatch suppression and existing CSP support", async () => {
+  it("runs first in the body before the motion flag with hydration mismatch suppression and existing CSP support", async () => {
     const layout = readFileSync("src/components/document-layout.tsx", "utf8");
-    expect(layout).toMatch(/<head>\s*<script id="duoshot-theme" dangerouslySetInnerHTML=\{\{ __html: THEME_SCRIPT \}\} \/>\s*<\/head>\s*<body/);
+    expect(layout).not.toMatch(/<head\b/);
+    expect(layout).toMatch(/<body\b[^>]*>\s*<script id="duoshot-theme" dangerouslySetInnerHTML=\{\{ __html: THEME_SCRIPT \}\} \/>\s*<script dangerouslySetInnerHTML=\{\{ __html: MOTION_FLAG \}\} \/>/);
     const html = layout.match(/<html\b[^>]*>/)![0];
     expect(html).not.toContain("data-theme=");
     expect(html).toContain("suppressHydrationWarning");

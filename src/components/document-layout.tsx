@@ -44,11 +44,8 @@ export function DocumentLayout({ children, locale }: { children: React.ReactNode
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      {/* eslint-disable-next-line @next/next/no-head-element -- App Router root head: theme must run before paint. */}
-      <head>
-        <script id="duoshot-theme" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-      </head>
       <body className="min-h-full flex flex-col">
+        <script id="duoshot-theme" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
         <I18nProvider locale={locale} messages={getClientMessages(locale, "site")}>
           {children}
