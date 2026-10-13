@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { DeviceCamera } from "@/components/device-camera";
 import { duoChassisAspect, type CropTransform, type Orientation, type SizeSpec } from "@/lib/specs";
@@ -116,7 +118,7 @@ export function PreviewCard({
           onPointerCancel={() => {
             dragRef.current = null;
           }}
-        >
+       >
           {src ? (
             <>
               <div className="t-skel-skeleton" aria-hidden="true">
@@ -132,7 +134,7 @@ export function PreviewCard({
             <div className="preview-empty-copy">
               <span className="preview-empty-label">{label}</span>
               <span className="preview-empty-size">{spec.width} × {spec.height}</span>
-              <button type="button" className="tool-empty-action" onClick={() => inputRef.current?.click()}>{t("tool_step_import")}</button>
+              <Button as="button" variant="empty" type="button"  onClick={() => inputRef.current?.click()}>{t("tool_step_import")}</Button>
               <span className="preview-empty-drop">{t("tool_drop_png_jpeg")}</span>
               <input ref={inputRef} type="file" accept="image/png,image/jpeg" multiple className="sr-only" aria-label={`${t("tool_step_import")} ${label}`} onChange={(event) => { onImportFiles(event.target.files); event.target.value = ""; }} />
             </div>

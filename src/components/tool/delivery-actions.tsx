@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { formatInches, zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
@@ -20,21 +22,21 @@ export function OtherActions({ hasExportable, jobs }: { hasExportable: boolean; 
     <details className="tool-other-actions" data-testid="tool-other-actions">
       <summary>{t("tool_other_actions")}</summary>
       <div className="tool-other-actions-body">
-        <button
+        <Button as="button" variant="secondary"
           type="button"
           disabled={busyReview || !hasExportable}
           data-testid="tool-review"
           onClick={() => void onReview()}
-          className="ds-cta-ghost w-full"
-        >
+          className="w-full"
+       >
           <SwapLabel text={busyReview ? t("tool_review_preparing") : t("tool_review_share")} />
-        </button>
+        </Button>
         <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-review-hint">
           {t("tool_review_hint")}
         </p>
-        <a href={EXAMPLE_ZIP_URL} data-testid="tool-example" className="ds-text-btn mt-3">
+        <Button as="a" variant="text" href={EXAMPLE_ZIP_URL} data-testid="tool-example" className="mt-3">
           {t("tool_example")}
-        </a>
+        </Button>
       </div>
     </details>
   );
@@ -58,20 +60,20 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
     ) : null}
     {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
     {reviewUrl ? (
-      <a href={reviewUrl} data-testid="review-url" className="ds-text-btn mt-2 break-all">
+      <Button as="a" variant="text" href={reviewUrl} data-testid="review-url" className="mt-2 break-all">
         {reviewUrl}
-      </a>
+      </Button>
     ) : null}
     {reviewUpgrade ? (
-      <button
+      <Button as="button" variant="secondary"
         type="button"
         data-testid="tool-review-upgrade"
         disabled={checkoutBusy || billing?.checkoutAvailable !== true}
         onClick={() => void onCheckout("studio_monthly")}
-        className="ds-cta-ghost mt-3 w-full"
-      >
+        className="mt-3 w-full"
+     >
         {tf("pricing_studio_cta", { price: formatEurFromCents(PLANS.studio.monthlyEur * 100, locale) })}
-      </button>
+      </Button>
     ) : null}
   </>;
 }

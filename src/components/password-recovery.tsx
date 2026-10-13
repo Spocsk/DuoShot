@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/client";
@@ -60,7 +62,7 @@ export function PasswordRecovery({ locale, reset }: { locale: Locale; reset: boo
           <label className="ds-label" htmlFor="recovery-email">{t("auth_email")}</label>
           <input className="ds-input" id="recovery-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
         </>}
-        <button className="ds-cta" disabled={busy} type="submit">{reset ? t("auth_save_password") : t("auth_send_recovery_link")}</button>
+        <Button as="button" variant="primary"  disabled={busy} type="submit">{reset ? t("auth_save_password") : t("auth_send_recovery_link")}</Button>
       </form>}
     {error ? <p className="ds-warn" role="alert">{error}</p> : null}
     <p className="mt-6 text-sm"><Link className="ds-link" href={`${prefix}/${reset && !done ? "forgot-password" : "login"}`}>{reset && !done ? t("auth_request_new_link") : t("auth_back_sign_in")}</Link></p>

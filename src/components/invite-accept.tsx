@@ -1,7 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { useState } from "react";
-import Link from "next/link";
 import type { Locale } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
 import { useI18n } from "@/components/i18n-provider";
@@ -54,16 +55,16 @@ export function InviteAccept({ token, locale }: { token: string; locale: Locale 
       {state === "done" ? (
         <>
           <p className="mt-5 text-[var(--muted)]" role="status" data-testid="invite-success">{t("invite_accepted")}</p>
-          <Link href={`${prefix}/account`} className="ds-cta mt-8 inline-flex">{t("invite_open_studio")}</Link>
+          <Button as="link" variant="primary" href={`${prefix}/account`} className="mt-8 inline-flex">{t("invite_open_studio")}</Button>
         </>
       ) : !malformed ? (
         <div className="mt-8 flex flex-wrap gap-3">
-          <button type="button" className="ds-cta" data-testid="invite-accept" disabled={state === "busy"} onClick={() => void accept()}>
+          <Button as="button" variant="primary" type="button"  data-testid="invite-accept" disabled={state === "busy"} onClick={() => void accept()}>
             {state === "busy" ? t("invite_accepting") : t("invite_accept")}
-          </button>
-          <Link href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/invite/${token}`)}`} className="ds-cta-ghost" data-testid="invite-login">
+          </Button>
+          <Button as="link" variant="secondary" href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/invite/${token}`)}`}  data-testid="invite-login">
             {t("invite_sign_in")}
-          </Link>
+          </Button>
         </div>
       ) : null}
       {visibleError ? <p className="ds-warn mt-5" role="alert" data-testid="invite-error">{t(visibleError)}</p> : null}

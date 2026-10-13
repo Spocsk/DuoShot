@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -52,9 +54,9 @@ export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscU
   if (gate === "locked") {
     return (
       <div className="tool-asc" data-testid="asc-tool-locked">
-        <button type="button" className="ds-cta-ghost w-full" disabled aria-describedby={`${ids}-locked`}>
+        <Button as="button" variant="secondary" type="button" className="w-full" disabled aria-describedby={`${ids}-locked`}>
           <LockIcon />{t("asct_send")}
-        </button>
+        </Button>
         <p id={`${ids}-locked`} className="tool-asc-note">
           {t("asct_locked_hint")}{" "}
           <Link href={`${prefix}/pricing`} className="ds-link" data-testid="asc-tool-pricing">{t("asct_locked_link")}</Link>
@@ -79,9 +81,9 @@ export function AscToolAction(props: Props & { upload: ReturnType<typeof useAscU
     : phase === "completed" ? t("asct_sent") : t("asct_send");
   return (
     <div className="tool-asc">
-      <button type="button" className="ds-cta-ghost w-full" data-testid="asc-tool-open" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+      <Button as="button" variant="secondary" type="button" className="w-full" data-testid="asc-tool-open" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {label}
-      </button>
+      </Button>
       {/* Portaled: the dock's backdrop-filter would otherwise contain the fixed overlay. */}
       {open ? createPortal(
         <Overlay onClose={() => setOpen(false)} labelledBy={`${ids}-title`} closeLabel={t("asct_close")}>
@@ -183,7 +185,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
       {view === "no69" ? <>
         <p className="mt-3 text-sm text-[var(--muted)]">{t("asct_no69_body")}</p>
         <SkippedFiles files={plan.skipped} />
-        <button type="button" className="ds-cta mt-5 w-full" data-testid="asc-enable-69" onClick={onEnable69}>{t("asct_enable69")}</button>
+        <Button as="button" variant="primary" type="button" className="mt-5 w-full" data-testid="asc-enable-69" onClick={onEnable69}>{t("asct_enable69")}</Button>
       </> : null}
 
       {view === "form" ? <>
@@ -224,10 +226,10 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
           </label>
         ) : <p className="mt-5 text-xs text-[var(--muted)]">{t("asct_keep_hint")}</p>}
 
-        <button type="button" className="ds-cta mt-5 w-full" data-testid="asc-confirm"
+        <Button as="button" variant="primary" type="button" className="mt-5 w-full" data-testid="asc-confirm"
           disabled={submitting || !appId || !versionId || !localizationId} onClick={() => void confirm()}>
           {tf("asct_confirm", { n: plan.send.length })}
-        </button>
+        </Button>
       </> : null}
 
       {view === "progress" ? <>
@@ -244,9 +246,9 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
         {state.result.replaced ? <p className="mt-1 text-sm">{tf("asct_success_replaced", { n: state.result.replaced })}</p> : null}
         {state.result.reordered === false ? <p className="ds-warn mt-3">{t("asct_success_order")}</p> : null}
         <ProgressList files={state.result.files ?? []} />
-        <a className="ds-cta mt-5 w-full" href={ascAppUrl(state.result.appId ?? appId)} target="_blank" rel="noopener noreferrer" data-testid="asc-open">
+        <Button as="a" variant="primary" className="mt-5 w-full" href={ascAppUrl(state.result.appId ?? appId)} target="_blank" rel="noopener noreferrer" data-testid="asc-open">
           {t("asct_open")}
-        </a>
+        </Button>
       </> : null}
 
       {plan.error ? <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(plan.error))}</p> : null}
@@ -254,7 +256,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
       {view === "error" && !plan.error && state.phase === "failed" ? <>
         <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(state.error))}</p>
         <ProgressList files={state.progress?.files ?? []} />
-        <button type="button" className="ds-cta-ghost mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t("asct_retry")}</button>
+        <Button as="button" variant="secondary" type="button" className="mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t("asct_retry")}</Button>
       </> : null}
     </div>
   );
@@ -271,7 +273,7 @@ function Picker({ id, label, lookup, empty, value, onChange, options, testId }: 
       {lookup.state === "error" ? (
         <p className="ds-warn" role="alert" data-testid={`${testId}-error`}>
           {t(ascErrorKey(lookup.error))}{" "}
-          <button type="button" className="ds-text-btn" onClick={lookup.retry}>{t("asct_retry")}</button>
+          <Button as="button" variant="text" type="button"  onClick={lookup.retry}>{t("asct_retry")}</Button>
         </p>
       ) : lookup.state === "ready" && !options.length ? (
         <p className="text-sm text-[var(--muted)]" data-testid={`${testId}-empty`}>{empty}</p>

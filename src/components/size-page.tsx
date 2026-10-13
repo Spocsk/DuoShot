@@ -1,3 +1,5 @@
+
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "./site-chrome";
 import { JsonLd } from "@/lib/json-ld";
@@ -40,7 +42,7 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
           <li><Link href={localizedPath(locale, `/${copy.related}`)} className="ds-link">{sizePageCopy(locale, copy.related).title}</Link></li>
         </ul>
       </section>
-      <Link href={toolPath(locale)} className="ds-cta mt-8">{t("specs_prepare_screenshots")}</Link>
+      <Button as="link" variant="primary" href={toolPath(locale)} className="mt-8">{t("specs_prepare_screenshots")}</Button>
     </main>
     <SiteFooter locale={locale} />
   </div>;

@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { SetMeta } from "@/lib/sets-store";
 import { useI18n } from "@/components/i18n-provider";
@@ -127,7 +129,7 @@ export function SetPicker({
               setSetsClosing(false);
             }
           }}
-        >
+       >
           <summary
             id="tool-sets-trigger"
             className="ds-listbox-trigger"
@@ -145,7 +147,7 @@ export function SetPicker({
               }
             }}
             onKeyDown={onSetsTriggerKey}
-          >
+         >
             <span id="tool-sets-value" className="ds-listbox-value">{active?.name?.trim() ? active.name : t("tool_default_set_label")}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
             <span className="ds-listbox-caret" aria-hidden="true" />
           </summary>
@@ -157,7 +159,7 @@ export function SetPicker({
             aria-labelledby="tool-sets-label"
             data-testid="tool-sets-menu"
             onKeyDown={onSetsMenuKey}
-          >
+         >
             {sets.map((item) => (
               <li key={item.id}>
                 <button
@@ -169,7 +171,7 @@ export function SetPicker({
                     closeSets();
                     void switchSet(item.id);
                   }}
-                >
+               >
                   {item.name}
                   {item.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
                 </button>
@@ -179,19 +181,18 @@ export function SetPicker({
         </details>
       </div>
       <div className="ds-set-actions">
-        <button type="button" className="ds-cta-ghost" data-testid="tool-set-new" onClick={addSet}>
+        <Button as="button" variant="secondary" size="set" type="button"  data-testid="tool-set-new" onClick={addSet}>
           {t("tool_set_new")}
-        </button>
+        </Button>
         {sets.length > 1 ? (
-          <button
+          <Button as="button" variant="text"
             type="button"
-            className="ds-text-btn"
             data-testid="tool-set-delete"
             aria-label={tf("tool_set_delete", { name: active?.name?.trim() || t("tool_default_set_label") })}
             onClick={() => { if (active) { setDeleteError(false); setDeleting(active); } }}
-          >
+         >
             {t("tool_set_delete_short")}
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>
@@ -200,14 +201,14 @@ export function SetPicker({
       <p className="mt-3 text-sm">{t("tool_delete_description")}</p>
       {deleteError ? <p className="ds-warn" role="alert">{t("tool_delete_error")}</p> : null}
       <div className="mt-5 flex flex-wrap gap-3">
-        <button type="button" className="ds-cta-ghost" disabled={deleteBusy} onClick={() => setDeleting(null)}>{t("tool_delete_cancel")}</button>
-        <button type="button" className="ds-cta" data-testid="tool-set-delete-confirm" disabled={deleteBusy} aria-busy={deleteBusy} onClick={async () => {
+        <Button as="button" variant="secondary" type="button"  disabled={deleteBusy} onClick={() => setDeleting(null)}>{t("tool_delete_cancel")}</Button>
+        <Button as="button" variant="primary" type="button"  data-testid="tool-set-delete-confirm" disabled={deleteBusy} aria-busy={deleteBusy} onClick={async () => {
           setDeleteBusy(true);
           setDeleteError(false);
           try { await removeSet(deleting.id); setDeleting(null); }
           catch { setDeleteError(true); }
           finally { setDeleteBusy(false); }
-        }}>{t("tool_set_delete_short")}</button>
+        }}>{t("tool_set_delete_short")}</Button>
       </div>
     </Overlay> : null}
     </>

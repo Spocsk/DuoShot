@@ -1,7 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
@@ -173,7 +174,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
         <div className="studio-account-heading">
           <h1 className="font-display text-4xl">{t("account_title")}</h1>
           <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
-          <button type="button" className="ds-text-btn mt-3" disabled={busy} onClick={() => void signOut()}>{t("account_sign_out")}</button>
+          <Button as="button" variant="text" type="button" className="mt-3" disabled={busy} onClick={() => void signOut()}>{t("account_sign_out")}</Button>
         </div>
         <section className="studio-account-plan" aria-label={t("account_plan")}>
           <p className="ds-label">{t("account_plan_label")}</p>
@@ -199,56 +200,53 @@ export function AccountApp({ locale }: { locale: Locale }) {
             </p>
           ) : null}
           {status?.hasBillingCustomer ? (
-            <button type="button" className="ds-cta-ghost mt-5" onClick={() => void manageBilling()} disabled={busy} data-testid="account-manage-billing">
+            <Button as="button" variant="secondary" type="button" className="mt-5" onClick={() => void manageBilling()} disabled={busy} data-testid="account-manage-billing">
               {t("account_manage_subscription_invoices")}
-            </button>
+            </Button>
           ) : null}
           {plan === "free" ? (
             <div className="mt-8 flex flex-wrap gap-3">
               {status?.checkoutAvailable !== true ? <p className="w-full text-sm text-[var(--muted)]">{t("account_payments_not_open_yet")}</p> : null}
-              <button
+              <Button as="button" variant="primary"
                 type="button"
                 onClick={() => void checkout("indie_monthly")}
                 disabled={busy || status?.checkoutAvailable !== true}
                 data-testid="account-upgrade-indie"
-                className="ds-cta"
-              >
+             >
                 {tf("pricing_indie_cta", { price: formatEurFromCents(PLANS.indie.monthlyEur * 100, locale) })}
-              </button>
-              <button
+              </Button>
+              <Button as="button" variant="secondary"
                 type="button"
                 onClick={() => void checkout("studio_monthly")}
                 disabled={busy || status?.checkoutAvailable !== true}
                 data-testid="account-upgrade-studio"
-                className="ds-cta-ghost"
-              >
+             >
                 {tf("pricing_studio_cta", { price: formatEurFromCents(PLANS.studio.monthlyEur * 100, locale) })}
-              </button>
+              </Button>
             </div>
           ) : null}
           {plan === "indie" || plan === "studio" ? (
-            <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex" data-testid="account-open-tool">
+            <Button as="link" variant="primary" href={`${prefix}/tool`} className="mt-8 inline-flex" data-testid="account-open-tool">
               {t("cta_tool")}
-            </Link>
+            </Button>
           ) : null}
         </section>
         {plan === "studio" ? <StudioWorkspace locale={locale} /> : null}
         <AscConnectionPanel locale={locale} />
         <div className="studio-account-settings mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
-          <button type="button" onClick={() => void exportJson()} disabled={exporting} aria-busy={exporting} data-testid="account-export" className="ds-cta-ghost">
+          <Button as="button" variant="secondary" type="button" onClick={() => void exportJson()} disabled={exporting} aria-busy={exporting} data-testid="account-export" >
             {exporting ? t("account_export_busy") : t("export_data")}
-          </button>
-          <button
+          </Button>
+          <Button as="button" variant="danger"
             type="button"
             onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
             data-testid="account-delete"
-            className="ds-danger"
-          >
+         >
             {t("delete_account")}
-          </button>
-          <Link href={`${prefix}/privacy`} className="ds-text-btn">
+          </Button>
+          <Button as="link" variant="text" href={`${prefix}/privacy`} >
             {t("footer_privacy")}
-          </Link>
+          </Button>
         </div>
         {message ? <p className="ds-warn" role="alert" data-testid="account-message">{message}</p> : null}
         {exporting ? <p role="status" className="mt-3 text-sm">{t("account_export_busy")}</p> : null}
@@ -257,8 +255,8 @@ export function AccountApp({ locale }: { locale: Locale }) {
             <h2 id="account-delete-title" className="font-display text-2xl">{t("account_delete_account_files")}</h2>
             <p className="mt-3 text-sm text-[var(--muted)]">{t("account_delete_description")}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button type="button" className="ds-cta-ghost" disabled={deleting} onClick={() => setDeleteOpen(false)}>{t("account_delete_cancel")}</button>
-              <button type="button" className="ds-danger" data-testid="account-delete-confirm" disabled={deleting} onClick={() => void erase()}>{deleting ? t("account_delete_busy") : t("account_delete_confirm")}</button>
+              <Button as="button" variant="secondary" type="button"  disabled={deleting} onClick={() => setDeleteOpen(false)}>{t("account_delete_cancel")}</Button>
+              <Button as="button" variant="danger" type="button"  data-testid="account-delete-confirm" disabled={deleting} onClick={() => void erase()}>{deleting ? t("account_delete_busy") : t("account_delete_confirm")}</Button>
             </div>
             {deleteError ? <p role="alert" className="ds-warn">{deleteError}</p> : null}
           </Overlay>
@@ -375,15 +373,15 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
             onChange={(event) => setInviteEmail(event.target.value)}
           />
         </label>
-        <button type="submit" className="ds-cta" disabled={studioBusy || !inviteEmail}>
+        <Button as="button" variant="primary" type="submit"  disabled={studioBusy || !inviteEmail}>
           {t("account_invite")}
-        </button>
+        </Button>
       </form> : null}
       {studioMessage ? <p role="status" className="mt-3 text-sm text-[var(--muted)]">{studioMessage}</p> : null}
       {studioError ? (
         <div className="mt-3">
           <p role="alert" className="ds-warn">{studioError}</p>
-          <button type="button" className="ds-text-btn" disabled={studioBusy || studioLoading} onClick={() => void refreshStudio()}>{t("account_studio_retry")}</button>
+          <Button as="button" variant="text" type="button"  disabled={studioBusy || studioLoading} onClick={() => void refreshStudio()}>{t("account_studio_retry")}</Button>
         </div>
       ) : null}
       {studioLoading ? <p role="status" className="mt-3 text-sm text-[var(--muted)]">{t("account_studio_loading")}</p> : null}
@@ -395,9 +393,9 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
               <span className="flex items-center gap-3 text-[var(--muted)]">
                 {roleLabel(member.role)}
                 {member.role !== "owner" ? (
-                  <button type="button" className="ds-text-btn" disabled={studioBusy} onClick={() => void revoke(`/api/workspace/members/${member.id}`)}>
+                  <Button as="button" variant="text" type="button"  disabled={studioBusy} onClick={() => void revoke(`/api/workspace/members/${member.id}`)}>
                     {t("account_remove")}
-                  </button>
+                  </Button>
                 ) : null}
               </span>
             </li>
@@ -416,9 +414,9 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
                     ? t("account_revoked")
                     : t("account_pending")}
                 {!invitation.accepted_at && !invitation.revoked_at ? (
-                  <button type="button" className="ds-text-btn" disabled={studioBusy} onClick={() => void revoke(`/api/workspace/invitations/${invitation.id}`)}>
+                  <Button as="button" variant="text" type="button"  disabled={studioBusy} onClick={() => void revoke(`/api/workspace/invitations/${invitation.id}`)}>
                     {t("account_revoke")}
-                  </button>
+                  </Button>
                 ) : null}
               </span>
             </li>
@@ -438,11 +436,11 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
                 </p>
               </div>
               <div className="flex gap-3">
-                <Link className="ds-text-btn" href={reviewPath(locale, review.public_id)}>{t("account_open")}</Link>
+                <Button as="link" variant="text"  href={reviewPath(locale, review.public_id)}>{t("account_open")}</Button>
                 {!['expired', 'revoked'].includes(review.status) ? (
-                  <button type="button" className="ds-text-btn" disabled={studioBusy} onClick={() => void revoke(`/api/reviews/${review.public_id}`)}>
+                  <Button as="button" variant="text" type="button"  disabled={studioBusy} onClick={() => void revoke(`/api/reviews/${review.public_id}`)}>
                     {t("account_revoke")}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             </li>

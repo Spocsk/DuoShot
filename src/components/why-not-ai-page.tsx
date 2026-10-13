@@ -1,4 +1,5 @@
-import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
@@ -30,9 +31,9 @@ export function WhyNotAiPage({ locale }: { locale: Locale }) {
             </section>
           ))}
         </div>
-        <Link href={`${prefix}/tool`} className="ds-cta mt-12 inline-flex">
+        <Button as="link" variant="primary" href={`${prefix}/tool`} className="mt-12 inline-flex">
           {t("cta_tool")}
-        </Link>
+        </Button>
       </main>
       <SiteFooter locale={locale} />
     </div>
