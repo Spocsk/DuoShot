@@ -1,4 +1,4 @@
-import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE } from "@/lib/asc/config";
+import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, isAscDuoImage } from "@/lib/asc/config";
 import type { DeviceSlot, Orientation } from "@/lib/specs";
 import type { MessageKey } from "@/lib/i18n/types";
 
@@ -31,9 +31,12 @@ function fileName(image: ExportImage, orientation: Orientation): string {
 }
 
 /** Mirrors the ZIP upload plan: both Duo sizes share a combined cap of ten. */
-export function ascFilePlan(images: ExportImage[], orientation: Orientation): { send: AscPlannedFile[]; skipped: AscPlannedFile[] } {
+export function ascFilePlan(images: ExportImage[], orientation: Orientation): { send: AscPlannedFile[]; skipped: AscPlannedFile[]; error?: string } {
   const preferred = ASC_PREFERRED_69_SIZE[orientation];
   const duo = images.filter((image) => DUO_SLOTS.has(image.slot));
+  if (duo.some((image) => !isAscDuoImage(image.width, image.height, image.format))) {
+    return { send: [], skipped: [], error: "ASC_INVALID" };
+  }
   // The worker rejects old raw exports with more than ten; the UI must not offer them.
   const overfull = duo.length > ASC_MAX_SCREENSHOTS_PER_SET;
   const toPlanned = (image: ExportImage): AscPlannedFile => ({

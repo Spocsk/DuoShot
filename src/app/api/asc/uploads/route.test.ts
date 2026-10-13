@@ -39,6 +39,13 @@ beforeEach(() => { vi.stubEnv("ASC_CONNECTOR_ENABLED", "true"); vi.stubEnv("REND
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 describe("POST /api/asc/uploads", () => {
+  it.each([null, [], "invalid", 1, true])("rejects non-object JSON bodies (%j)", async (body) => {
+    session();
+    const rpc = admin();
+    expect(await readJson(await post(body))).toEqual({ status: 400, body: { error: "INVALID_REQUEST" } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("is hidden behind the flag and limited to paid workspaces", async () => {
     vi.stubEnv("ASC_CONNECTOR_ENABLED", "");
     expect((await post()).status).toBe(404);

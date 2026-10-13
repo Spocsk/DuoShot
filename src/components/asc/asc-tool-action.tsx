@@ -140,7 +140,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
   const localizations = useLookup<AscLocalization>(versionId || null, listLocalizations);
   const localizationId = chosenLocalization || autoPick(localizations.items);
 
-  const view = !plan.send.length ? "no69"
+  const view = plan.error ? "error" : !plan.send.length ? "no69"
     : state.phase === "idle" ? "form"
     : state.phase === "completed" ? "done"
     : state.phase === "failed" ? "error" : "progress";
@@ -249,7 +249,9 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
         </a>
       </> : null}
 
-      {view === "error" && state.phase === "failed" ? <>
+      {plan.error ? <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(plan.error))}</p> : null}
+
+      {view === "error" && !plan.error && state.phase === "failed" ? <>
         <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(state.error))}</p>
         <ProgressList files={state.progress?.files ?? []} />
         <button type="button" className="ds-cta-ghost mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t("asct_retry")}</button>

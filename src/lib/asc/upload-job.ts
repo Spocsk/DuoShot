@@ -1,9 +1,10 @@
 import JSZip from "jszip";
+import sharp from "sharp";
 import type { DbClient } from "@/lib/supabase/types";
 import type { DeviceSlot, Orientation } from "../specs";
 import { completeRender, type RenderJob } from "../render/jobs";
 import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
-import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor } from "./config";
+import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor, isAscDuoImage } from "./config";
 import { loadAscCredentials } from "./credentials";
 import { readWorkspaceBilling } from "../workspace-billing";
 import { isProPlan } from "../plans";
@@ -144,6 +145,19 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
     return fail(error instanceof Error && error.message === "DUO_SLOT_LIMIT" ? "DUO_SLOT_LIMIT" : "INVALID_DUO_SELECTION");
   }
   if (!planned.length) return fail("NOTHING_TO_UPLOAD");
+
+  // Validate actual image bytes before any API request, including for legacy ZIPs.
+  // A filename alone cannot establish that an image belongs in the Duo slot.
+  try {
+    for (const file of planned) {
+      if (file.displayType !== "APP_IPHONE_DUO") continue;
+      const bytes = await zip.file(file.path)!.async("nodebuffer");
+      const metadata = await sharp(bytes).metadata();
+      if (!isAscDuoImage(metadata.width, metadata.height, metadata.format)) return fail("ASC_INVALID");
+    }
+  } catch {
+    return fail("ASC_INVALID");
+  }
 
   let credentials;
   try { credentials = await loadAscCredentials(admin, job.workspace_id); } catch (error) {

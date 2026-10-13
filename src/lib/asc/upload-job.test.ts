@@ -1,6 +1,7 @@
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import JSZip from "jszip";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import sharp from "sharp";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryBuilder } from "@/test/supabase-mock";
 import { fakeApple } from "@/test/asc-apple-mock";
 import type { RenderJob } from "../render/jobs";
@@ -28,11 +29,11 @@ const files = {
   "harbor/iphone-69-portrait/1320x2868/01.png": randomBytes(5000),
 };
 
-async function admin({ createdAt = new Date().toISOString(), connected = true, role = "owner", plan = "indie", workspaceId = "ws-1", duoOrder = undefined as string[] | undefined, manifest = undefined as unknown, rawDuoCount = 1 } = {}) {
+async function admin({ createdAt = new Date().toISOString(), connected = true, role = "owner", plan = "indie", workspaceId = "ws-1", duoOrder = undefined as string[] | undefined, manifest = undefined as unknown, rawDuoCount = 1, zipFiles = files } = {}) {
   const zip = new JSZip();
-  for (const [path, content] of Object.entries(files)) zip.file(path, content);
+  for (const [path, content] of Object.entries(zipFiles)) zip.file(path, content);
   for (let index = 2; index <= rawDuoCount; index++) {
-    for (const side of ["outer", "inner"]) zip.file(`harbor/duo-${side}-portrait/${String(index).padStart(2, "0")}.png`, randomBytes(64));
+    for (const side of ["outer", "inner"]) zip.file(`harbor/duo-${side}-portrait/${String(index).padStart(2, "0")}.png`, files[`harbor/duo-${side}-portrait/01.png` as keyof typeof files]);
   }
   if (duoOrder) zip.file("harbor/duo-slot.json", JSON.stringify({ displayType: "APP_IPHONE_DUO", files: duoOrder }));
   if (manifest !== undefined) zip.file("harbor/duo-slot.json", JSON.stringify(manifest));
@@ -52,6 +53,15 @@ async function admin({ createdAt = new Date().toISOString(), connected = true, r
 }
 const instant = async () => {};
 const progressCalls = (rpc: ReturnType<typeof vi.fn>) => rpc.mock.calls.filter(([name]) => name === "report_render_progress").map(([, args]) => (args as { p_progress: { files: { state: string }[] } }).p_progress);
+
+beforeAll(async () => {
+  files["harbor/duo-outer-portrait/01.png"] = await screenshot(1398, 2034);
+  files["harbor/duo-inner-portrait/01.png"] = await screenshot(2007, 2853);
+});
+
+function screenshot(width: number, height: number, format: "png" | "jpeg" | "webp" = "png") {
+  return sharp({ create: { width, height, channels: 3, background: "red" } }).toFormat(format).toBuffer();
+}
 
 beforeEach(() => vi.stubEnv("ASC_ENCRYPTION_KEY", master.toString("base64")));
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
@@ -95,6 +105,34 @@ describe("App Store Connect upload planning", () => {
 });
 
 describe("asc_upload job", () => {
+  it.each([
+    ["outer", "portrait", 1398, 2034], ["outer", "landscape", 2034, 1398],
+    ["inner", "portrait", 2007, 2853], ["inner", "landscape", 2853, 2007],
+  ] as const)("accepts PNG and JPEG for %s %s (%i x %i)", async (side, orientation, width, height) => {
+    const zipFiles = Object.fromEntries(await Promise.all((["png", "jpeg"] as const).map(async (format, index) => [
+      `harbor/duo-${side}-${orientation}/0${index + 1}.${format === "jpeg" ? "jpg" : "png"}`, await screenshot(width, height, format),
+    ]))) as typeof files;
+    const apple = fakeApple();
+    const { client } = await admin({ zipFiles });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect(apple.sets).toEqual([{ id: expect.any(String), displayType: "APP_IPHONE_DUO" }]);
+    expect(apple.shots.size).toBe(2);
+    const creation = apple.calls.find((call) => call.method === "POST" && new URL(call.url).pathname === "/v1/appScreenshotSets");
+    expect(creation?.body).toMatchObject({ data: { relationships: { appStoreVersionLocalization: { data: { id: "loc-1" } } } } });
+  });
+
+  it.each(["phone-size", "wrong-size", "wrong-format", "corrupt"])("rejects %s Duo bytes before any API request", async (kind) => {
+    const invalid = kind === "corrupt" ? Buffer.from("not an image")
+      : kind === "wrong-format" ? await screenshot(2007, 2853, "webp")
+      : kind === "phone-size" ? await screenshot(1320, 2868) : await screenshot(2853, 2008);
+    const apple = fakeApple();
+    const { client } = await admin({ zipFiles: { ...files, "harbor/duo-inner-portrait/01.png": invalid } });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(true).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_INVALID" });
+    expect(apple.calls).toHaveLength(0);
+  });
+
   it.each([
     null,
     {},

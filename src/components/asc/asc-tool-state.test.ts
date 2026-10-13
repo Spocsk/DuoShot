@@ -26,6 +26,22 @@ describe("ascGate", () => {
 });
 
 describe("ascFilePlan", () => {
+  it("accepts both landscape sizes in selection order", () => {
+    const plan = ascFilePlan([image("duo-inner", 2, 2853, 2007), image("duo-outer", 1, 2034, 1398)], "landscape");
+    expect(plan.send.map((file) => file.name)).toEqual(["duo-inner-landscape/02.png", "duo-outer-landscape/01.png"]);
+    expect(plan.skipped).toEqual([]);
+  });
+  it.each([
+    image("duo-inner", 1, 1320, 2868),
+    image("duo-inner", 1, 2853, 2008),
+    { ...image("duo-inner", 1, 2007, 2853), format: "webp" },
+  ])("blocks the entire upload for invalid Duo metadata (%j)", (invalid) => {
+    const plan = ascFilePlan([image("duo-outer", 1, 1398, 2034), invalid, image("iphone-69", 1, 1320, 2868)], "portrait");
+    expect(plan.send).toEqual([]);
+    expect(plan.skipped).toEqual([]);
+    expect(plan.error).toBe("ASC_INVALID");
+  });
+
   it("sends a mixed Duo selection in its order, plus the preferred 6.9 size", () => {
     const plan = ascFilePlan([image("duo-inner", 2, 2007, 2853), image("duo-outer", 1, 1398, 2034), image("iphone-69", 1, 1290, 2796), image("iphone-69", 1, 1320, 2868)], "portrait");
     expect(plan.send.map((file) => file.name)).toEqual(["duo-inner-portrait/02.png", "duo-outer-portrait/01.png", "iphone-69-portrait/1320x2868/01.png"]);
