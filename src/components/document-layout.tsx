@@ -38,9 +38,9 @@ const MOTION_FLAG = `try{if(matchMedia(${JSON.stringify(LANDING_MOTION_QUERY)}).
 
 export function DocumentLayout({ children, locale }: { children: React.ReactNode; locale: "fr" | "en" }) {
   return (
+    // The pre-paint scripts own data-theme and add the motion class before hydration.
     <html
       lang={locale}
-      data-theme="system"
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

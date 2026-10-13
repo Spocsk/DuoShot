@@ -27,8 +27,9 @@ describe("theme before hydration", () => {
   it("runs in the root head with hydration mismatch suppression and existing CSP support", async () => {
     const layout = readFileSync("src/components/document-layout.tsx", "utf8");
     expect(layout).toMatch(/<head>\s*<script id="duoshot-theme" dangerouslySetInnerHTML=\{\{ __html: THEME_SCRIPT \}\} \/>\s*<\/head>\s*<body/);
-    expect(layout).toContain('data-theme="system"');
-    expect(layout).toContain("suppressHydrationWarning");
+    const html = layout.match(/<html\b[^>]*>/)![0];
+    expect(html).not.toContain("data-theme=");
+    expect(html).toContain("suppressHydrationWarning");
     const { contentSecurityPolicy } = await import("./security-headers");
     expect(contentSecurityPolicy({})).toMatch(/script-src[^;]*'unsafe-inline'/);
   });

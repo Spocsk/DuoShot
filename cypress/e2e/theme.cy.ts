@@ -7,11 +7,29 @@ function emulateTheme(value: "light" | "dark") {
 
 describe("theme", () => {
   beforeEach(() => {
+    const uncaughtException = cy.spy().as("uncaughtException");
+    cy.on("uncaught:exception", (error) => {
+      uncaughtException(error);
+    });
     cy.viewport(1280, 800);
     cy.clearAllLocalStorage();
     emulateTheme("light");
   });
-  afterEach(() => emulateTheme("light"));
+  afterEach(() => {
+    cy.get("@uncaughtException").should("not.have.been.called");
+    emulateTheme("light");
+  });
+
+  it("hydrates a stored dark preference in both locale layouts without uncaught exceptions", () => {
+    for (const locale of ["fr", "en"]) {
+      cy.visit(`/${locale}`, { onBeforeLoad(win) { win.localStorage.setItem("duoshot_theme", "dark"); } });
+      cy.get("html").should("have.attr", "data-theme", "dark").and("have.css", "color-scheme", "dark");
+      cy.get('header [data-testid="theme-toggle"] summary').click();
+      cy.get('header [data-testid="theme-dark"]').should("have.attr", "aria-pressed", "true");
+      cy.get('header [data-testid="theme-system"]').should("have.attr", "aria-pressed", "false");
+      cy.get("@uncaughtException").should("not.have.been.called");
+    }
+  });
 
   it("toggles, persists across reload and restores light", () => {
     cy.visitFr("/");

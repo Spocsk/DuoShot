@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import { getTheme, setTheme, subscribeTheme, type Theme } from "@/lib/theme";
 
+// SSR and initial hydration must agree; the stored preference is read afterwards.
 const getServerTheme = (): Theme => "system";
 
 export function ThemeToggle({ variant = "header" }: { variant?: "header" | "menu" }) {
