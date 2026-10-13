@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { HeaderAuth } from "@/components/header-auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { pricingPath, rejectionPath } from "@/lib/site";
 
 type Props = {
@@ -88,6 +89,7 @@ export function SiteNav({ locale, prefix, current }: Props) {
           <HeaderAuth locale={locale} variant="menu" />
         </div>
       </nav>
+      <ThemeToggle variant="menu" />
     </div>
   );
 

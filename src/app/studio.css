@@ -192,9 +192,9 @@ html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { display: b
 .studio-prevent-outcome { padding-top: 0.7rem; border-top: 1px solid var(--studio-line); color: var(--studio-sea); font-size: 0.87rem; font-weight: 600; }
 
 /* Client review (Studio). */
-.studio-review-invite { display: grid; grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.85fr); align-items: center; gap: clamp(2.5rem, 7vw, 8rem); padding: clamp(4rem, 8vw, 7rem) max(clamp(1.25rem, 3.5vw, 3.5rem), calc((100% - 84rem) / 2)); background: var(--studio-deep); color: var(--studio-canvas); }
+.studio-review-invite { display: grid; grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.85fr); align-items: center; gap: clamp(2.5rem, 7vw, 8rem); padding: clamp(4rem, 8vw, 7rem) max(clamp(1.25rem, 3.5vw, 3.5rem), calc((100% - 84rem) / 2)); background: var(--studio-deep); color: var(--studio-on-deep-canvas); }
 .studio-review-invite > div:first-child p { max-width: 31rem; margin-top: 1.25rem; color: var(--studio-deep-muted); font-size: 1.04rem; line-height: 1.6; }
-.studio-review-invite .studio-inline-link { margin-top: 1rem; color: var(--studio-surface); }
+.studio-review-invite .studio-inline-link { margin-top: 1rem; color: var(--studio-on-deep-surface); }
 
 /* FAQ */
 .studio-faq { max-width: 78rem; margin: auto; padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 3.5vw, 3.5rem); }
@@ -205,8 +205,8 @@ html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { display: b
 /* Harbor is a fictitious but coherent application, not a decoration. */
 
 .studio-review-steps { display: grid; gap: 0.6rem; max-width: 31rem; margin-top: 1.5rem; }
-.studio-review-steps li { display: flex; align-items: center; gap: 0.75rem; color: var(--studio-surface); font-size: 0.98rem; line-height: 1.4; }
-.studio-review-steps b { display: inline-grid; flex: none; place-items: center; width: 1.6rem; height: 1.6rem; border: 1px solid rgb(255 255 255 / 0.32); border-radius: 50%; font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.75rem; font-weight: 500; }
+.studio-review-steps li { display: flex; align-items: center; gap: 0.75rem; color: var(--studio-on-deep-surface); font-size: 0.98rem; line-height: 1.4; }
+.studio-review-steps b { display: inline-grid; flex: none; place-items: center; width: 1.6rem; height: 1.6rem; border: 1px solid var(--studio-deep-line); border-radius: 50%; font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.75rem; font-weight: 500; }
 .studio-review-invite .studio-review-steps + .studio-inline-link { margin-top: 1.5rem; }
 /* A client's view of a review link: browser bar, the pair as exported, the decision. */
 .studio-review-preview { width: 100%; max-width: 32rem; justify-self: end; overflow: hidden; border: 1px solid var(--studio-line); border-radius: 1.1rem; background: var(--studio-surface); color: var(--studio-ink); box-shadow: 0 2rem 4rem rgb(5 20 28 / 0.19); }
@@ -628,7 +628,7 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 /* --- Tool (stream B): step bar, primary dock, demo, empty slots --- */
 .tool-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.2rem; padding: 0.25rem; border: 1px solid var(--studio-legacy-dce5e7); border-radius: 0.8rem; background: var(--studio-legacy-eaf0f1); counter-reset: step; }
 .tool-step { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; min-height: 3.3rem; padding: 0.35rem 0.2rem; border-radius: 0.6rem; color: var(--studio-legacy-4d646c); font-size: 0.75rem; font-weight: 650; transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease; }
-.tool-step:hover { color: var(--foreground); background: rgb(255 255 255 / 0.55); }
+.tool-step:hover { color: var(--foreground); background: var(--studio-step-hover); }
 .tool-step.is-on { background: var(--studio-surface); color: var(--foreground); box-shadow: 0 2px 8px rgb(29 69 78 / 0.09); }
 .tool-step:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 1px; }
 .tool-step-mark { display: inline-grid; place-items: center; width: 1.35rem; height: 1.35rem; border: 1px solid var(--studio-legacy-a9bcc1); border-radius: 50%; background: var(--studio-surface); color: var(--studio-legacy-4d646c); font-family: var(--font-mono), ui-monospace, monospace; font-size: 0.75rem; font-weight: 700; }
@@ -639,7 +639,7 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 .tool-primary-dock .ds-cta { justify-content: center; text-align: center; }
 .tool-primary-dock .ds-cta:disabled { cursor: not-allowed; }
 .tool-dock-missing { color: var(--warn); font-size: 0.78rem; line-height: 1.45; }
-.tool-dock-missing button, .tool-review-actions li button { min-height: 24px; color: var(--studio-legacy-6f3f22); font-weight: 620; text-align: left; text-decoration: underline; text-decoration-color: rgb(136 80 47 / 0.4); text-underline-offset: 0.2em; }
+.tool-dock-missing button, .tool-review-actions li button { min-height: 24px; color: var(--studio-legacy-6f3f22); font-weight: 620; text-align: left; text-decoration: underline; text-decoration-color: var(--studio-warning-underline); text-underline-offset: 0.2em; }
 .tool-dock-missing button:hover, .tool-review-actions li button:hover { text-decoration-color: currentColor; }
 .tool-dock-missing button:focus-visible, .tool-review-actions li button:focus-visible { outline: 2px solid var(--studio-sea); outline-offset: 2px; border-radius: 0.2rem; }
 .tool-dock-secondary { justify-self: center; font-size: 0.8rem; }
@@ -690,3 +690,31 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 @media (max-width: 639px) {
   .tool-command-set .ds-listbox-trigger .tool-demo-badge { display: none; }
 }
+
+:root[data-theme="dark"] {
+  --color-studio-canvas: var(--background);
+  --color-studio-ink: var(--foreground);
+  --color-studio-mist: var(--studio-mist);
+  --color-studio-sea: var(--studio-sea);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-studio-canvas: var(--background);
+    --color-studio-ink: var(--foreground);
+    --color-studio-mist: var(--studio-mist);
+    --color-studio-sea: var(--studio-sea);
+  }
+}
+
+/* Native details disclosure keeps the header compact; buttons also work in the mobile menu. */
+.ds-theme-menu { position: relative; flex: none; font-size: 0.8rem; }
+.ds-theme-menu summary { display: flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0.4rem 0.5rem; border-radius: 0.5rem; color: var(--studio-muted); font-weight: 550; list-style: none; cursor: pointer; }
+.ds-theme-menu summary::-webkit-details-marker { display: none; }
+.ds-theme-menu summary:hover { color: var(--studio-ink); background: var(--studio-mist); }
+.ds-theme-choices { display: flex; gap: 0.25rem; padding: 0.3rem; border: 1px solid var(--studio-line-strong); border-radius: 0.7rem; background: var(--studio-surface); }
+.ds-theme-menu .ds-theme-choices { position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 70; width: max-content; }
+.ds-theme-choices button { min-height: 2.5rem; min-width: 2.5rem; padding: 0.4rem 0.65rem; border-radius: 0.45rem; color: var(--studio-muted); font-size: 0.8rem; font-weight: 550; cursor: pointer; }
+.ds-theme-choices button:hover { background: var(--studio-mist); color: var(--studio-ink); }
+.ds-theme-choices button[aria-pressed="true"] { background: var(--studio-sea-soft); color: var(--studio-sea); box-shadow: inset 0 0 0 1px var(--studio-sea); }
+.ds-theme-mobile { display: grid; gap: 0.65rem; margin-top: 1.5rem; color: var(--studio-muted); font-size: 0.9rem; }
+.ds-theme-mobile .ds-theme-choices { width: fit-content; }

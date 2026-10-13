@@ -4,6 +4,7 @@ import { AnalyticsProvider } from "@/components/analytics-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getClientMessages } from "@/lib/i18n";
 import { LANDING_MOTION_QUERY } from "@/lib/motion";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "@/app/transitions-root.css";
 import "@/app/transitions-dev.css";
 import "@/app/globals.css";
@@ -39,9 +40,14 @@ export function DocumentLayout({ children, locale }: { children: React.ReactNode
   return (
     <html
       lang={locale}
+      data-theme="system"
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      {/* eslint-disable-next-line @next/next/no-head-element -- App Router root head: theme must run before paint. */}
+      <head>
+        <script id="duoshot-theme" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
         <I18nProvider locale={locale} messages={getClientMessages(locale, "site")}>
