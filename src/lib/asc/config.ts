@@ -25,20 +25,12 @@ export const ASC_EDITABLE_VERSION_STATES = [
   "INVALID_BINARY",
 ] as const;
 
-/**
- * DuoShot output → App Store Connect `screenshotDisplayType`.
- *
- * Checked 2026-10-04 against Apple's ScreenshotDisplayType reference: the enum
- * has no iPhone Duo / foldable value, so both Duo slots stay `null` and are
- * skipped (and reported as such). Flip them here once Apple ships a value.
- *
- * The API has no `APP_IPHONE_69`: App Store Connect's 6.9" slot is the
- * `APP_IPHONE_67` set, which accepts 1320×2868, 1290×2796 and 1260×2736.
- * To be confirmed by the first end-to-end upload.
+/** Both Duo screen sizes share APP_IPHONE_DUO. Runtime evidence is documented
+ * in docs/app-store-connect.md; uploads have not yet been tested by DuoShot.
  */
 export const ASC_DISPLAY_TYPES: Record<DeviceSlot, string | null> = {
-  "duo-outer": null,
-  "duo-inner": null,
+  "duo-outer": "APP_IPHONE_DUO",
+  "duo-inner": "APP_IPHONE_DUO",
   "iphone-69": "APP_IPHONE_67",
 };
 

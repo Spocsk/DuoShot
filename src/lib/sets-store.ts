@@ -1,6 +1,9 @@
 import type { CropTransforms, FitMode, Orientation, RenderOptions } from "./specs";
 
+import type { DuoSelection } from "./duo-selection";
+
 export type SetMeta = {
+  duoSelection?: DuoSelection;
   id: string;
   /** Server app row this set syncs its name, client and orientation to. */
   appId?: string;

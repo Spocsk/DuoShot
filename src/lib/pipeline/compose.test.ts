@@ -37,6 +37,21 @@ async function samplePng(buffer: Buffer, x: number, y: number): Promise<number[]
 }
 
 describe("compose", () => {
+  it.each(["outer", "inner"] as const)("exports %s only without requiring the other side", async (mode) => {
+    const input = await sourcePng();
+    const { images } = await composeZipImages({ outerBuffers: mode === "outer" ? [input] : [], innerBuffers: mode === "inner" ? [input] : [], options: DEFAULT_RENDER_OPTIONS, include69: false, plan: "free", duoSelection: { mode } });
+    expect(images.map((image) => image.spec.slot)).toEqual([`duo-${mode}`]);
+  });
+  it("exports only mixed picks, preserving source indices and ZIP upload order", async () => {
+    const input = await sourcePng();
+    const { images } = await composeZipImages({ outerBuffers: [input, input], innerBuffers: [input, input], options: { ...DEFAULT_RENDER_OPTIONS, format: "jpeg" }, include69: false, plan: "free", duoSelection: { mode: "mix", picks: [{ side: "inner", index: 1 }, { side: "outer", index: 0 }] } });
+    expect(images.map((image) => [image.spec.slot, image.index])).toEqual([["duo-inner", 1], ["duo-outer", 0]]);
+    const zip = await JSZip.loadAsync(await buildZip({ appName: "Selection", orientation: "portrait", branded: false, include69: false, format: "jpeg", images }));
+    expect(Object.keys(zip.files).filter((name) => name.endsWith(".jpg"))).toEqual(["selection/duo-inner-portrait/02.jpg", "selection/duo-outer-portrait/01.jpg"]);
+    expect(JSON.parse(await zip.file("selection/duo-slot.json")!.async("string"))).toEqual({ displayType: "APP_IPHONE_DUO", maxPerLocale: 10, files: ["selection/duo-inner-portrait/02.jpg", "selection/duo-outer-portrait/01.jpg"] });
+    expect(await zip.file("selection/README.txt")!.async("string")).toContain("Selected Duo slot content only");
+  });
+
   it("fills the device canvas by default", () => {
     expect(DEFAULT_RENDER_OPTIONS.fit).toBe("cover");
   });
@@ -73,7 +88,7 @@ describe("compose", () => {
     expect(meta.height).toBe(1398);
   });
 
-  it("keeps ten closed/open pairs in order in a real ZIP", async () => {
+  it("keeps ten closed/open pairs only as explicitly labeled raw sets", async () => {
     const input = await sourcePng();
     const { images } = await composeZipImages({
       outerBuffers: Array(10).fill(input),
@@ -85,7 +100,7 @@ describe("compose", () => {
     expect(images).toHaveLength(20);
     const zip = await JSZip.loadAsync(await buildZip({
       appName: "Ten Pairs", orientation: "portrait", branded: false,
-      include69: false, format: "jpeg", images,
+      include69: false, format: "jpeg", images, rawDuoSets: true,
     }));
     expect(zip.file("ten-pairs/duo-outer-portrait/10.jpg")).toBeTruthy();
     expect(zip.file("ten-pairs/duo-inner-portrait/10.jpg")).toBeTruthy();

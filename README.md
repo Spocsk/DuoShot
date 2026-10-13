@@ -40,7 +40,7 @@ La production tourne uniquement sur le VPS DuoShot : Docker Compose derrière Tr
 
 ## Connecteur App Store Connect
 
-Backend et connexion d’une clé d’API d’équipe App Store Connect livrés derrière le flag `ASC_CONNECTOR_ENABLED` (désactivé par défaut ; `ASC_ENCRYPTION_KEY` côté serveur). Le bouton d’envoi dans l’outil viendra dans une PR séparée ; aucun envoi réel n’a été validé de bout en bout, et Apple n’expose pas encore de type d’affichage iPhone Duo (seul le 6,9″ est envoyable). Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
+Le connecteur est protégé par `ASC_CONNECTOR_ENABLED` (désactivé par défaut ; `ASC_ENCRYPTION_KEY` côté serveur). Les captures externe et interne ciblent le même emplacement `APP_IPHONE_DUO`, 10 maximum par langue. Les deux tailles sont acceptées ; aucun envoi réel n’a encore été testé par DuoShot. Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
 
 ## Auth
 
@@ -86,3 +86,11 @@ Voir la page publique `/specs` (date de version + disclaimer guideline 2.3.3) et
 ## Documentation
 
 Index des documents à jour : [`docs/README.md`](docs/README.md). Les comptes rendus datés (audits, recettes, bascule de production, configuration Stripe live) sont dans [`docs/journal/`](docs/journal/).
+
+## Contenu de l’emplacement Duo
+
+Choisissez externe uniquement (par défaut), interne uniquement ou un mix avec sélection individuelle. Le ZIP normal contient uniquement les captures choisies, au plus 10 par langue, avec `duo-slot.json` pour l’ordre de dépôt. Les dossiers externe/interne identifient les dimensions, pas deux emplacements ASC. Un dépassement renvoie HTTP 400 `DUO_SLOT_LIMIT` avant toute réservation de quota ; aucune capture n’est supprimée silencieusement. Une sélection vide renvoie `DUO_SELECTION_EMPTY`.
+
+Le ZIP d’exemple conserve les séries brutes externe + interne, explicitement étiquetées : choisissez au plus 10 captures pour l’emplacement Duo unique. Le connecteur refuse aussi les anciens ZIP de plus de 10 captures Duo, et vérifie les captures existantes dans le même emplacement avant toute écriture.
+
+Source du contrat : [ASC CLI — iPhone Duo](https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md). Les tailles 1398×2034 et 2007×2853 (et leurs dimensions en paysage) sont acceptées dans `APP_IPHONE_DUO` ; dépôt pas encore testé par nous.

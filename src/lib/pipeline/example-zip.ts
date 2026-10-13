@@ -35,6 +35,7 @@ async function renderExampleZip(): Promise<Buffer> {
   }
   return buildZip({
     appName: "ExampleApp",
+    rawDuoSets: true,
     clientSlug: null,
     orientation: "portrait",
     branded: true,

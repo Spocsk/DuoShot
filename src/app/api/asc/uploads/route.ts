@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   if (!exported.data?.storage_path || Date.now() - Date.parse(exported.data.created_at) > EXPORT_MAX_AGE_MS) {
     return json({ error: "EXPORT_EXPIRED" }, 410);
   }
-  // iPhone Duo has no App Store Connect display type yet; only mapped slots are sent.
+  // Both Duo screen sizes target the same APP_IPHONE_DUO localization slot.
   const { targets, skipped } = ascTargetsForExport(Boolean(exported.data.include_69));
   if (!targets.length) return json({ error: "NOTHING_TO_UPLOAD", skipped }, 409);
 

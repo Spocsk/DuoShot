@@ -16,7 +16,7 @@ export type AscUploadPayload = {
   appId: string;
   versionId: string;
   localizationId: string;
-  /** Delete the screenshots already in each target set before uploading. */
+  /** Replace existing screenshots only after the new screenshots finish uploading. */
   replaceExisting: boolean;
   /** Display mapping snapshotted at enqueue time from ASC_DISPLAY_TYPES. */
   targets: AscTarget[];
@@ -70,7 +70,7 @@ export type PlannedFile = { slot: DeviceSlot; index: number; displayType: string
  * Picks the ZIP entries for each target, in slide order. Paths look like
  * `[client/]app/<slot>-<orientation>/[WxH/]NN.png`; 6.9" keeps only the largest size.
  */
-export function planAscFiles(paths: string[], targets: AscTarget[]): PlannedFile[] {
+export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: string[]): PlannedFile[] {
   const planned: PlannedFile[] = [];
   for (const target of targets) {
     const files: PlannedFile[] = [];
@@ -87,7 +87,16 @@ export function planAscFiles(paths: string[], targets: AscTarget[]): PlannedFile
       files.push({ slot: target.slot, index, displayType: target.displayType, path, fileName: `duoshot-${parts[folder]}-${match[1]}.${match[2]}` });
     }
     files.sort((a, b) => a.index - b.index);
-    planned.push(...files.slice(0, ASC_MAX_SCREENSHOTS_PER_SET));
+    planned.push(...(target.slot === "iphone-69" ? files.slice(0, ASC_MAX_SCREENSHOTS_PER_SET) : files));
+  }
+  const duo = planned.filter((file) => file.displayType === "APP_IPHONE_DUO");
+  if (duo.length > ASC_MAX_SCREENSHOTS_PER_SET) throw new Error("DUO_SLOT_LIMIT");
+  if (duoOrder) {
+    if (duoOrder.length !== duo.length || new Set(duoOrder).size !== duo.length || duoOrder.some((path) => !duo.some((file) => file.path === path))) throw new Error("INVALID_DUO_SELECTION");
+    planned.sort((a, b) => {
+      const position = (file: PlannedFile) => file.displayType === "APP_IPHONE_DUO" ? duoOrder.indexOf(file.path) : duo.length + file.index;
+      return position(a) - position(b);
+    });
   }
   return planned;
 }
@@ -122,7 +131,18 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
   const { data: blob, error: downloadError } = await admin.storage.from("exports").download(exported.storage_path);
   if (downloadError || !blob) return fail("EXPORT_EXPIRED");
   const zip = await JSZip.loadAsync(await blob.arrayBuffer());
-  const planned = planAscFiles(Object.keys(zip.files).filter((path) => !zip.files[path]!.dir), payload.targets);
+  let planned: PlannedFile[];
+  try {
+    const manifestFile = Object.keys(zip.files).find((path) => path.endsWith("/duo-slot.json"));
+    const manifest = manifestFile ? JSON.parse(await zip.file(manifestFile)!.async("string")) : undefined;
+    if (manifestFile && (!manifest || manifest.displayType !== "APP_IPHONE_DUO" || !Array.isArray(manifest.files) || manifest.files.some((path: unknown) => typeof path !== "string"))) {
+      throw new Error("INVALID_DUO_SELECTION");
+    }
+    // Legacy exports have no manifest. Reject overfull raw pairs; never trim them.
+    planned = planAscFiles(Object.keys(zip.files).filter((path) => !zip.files[path]!.dir), payload.targets, manifest?.files);
+  } catch (error) {
+    return fail(error instanceof Error && error.message === "DUO_SLOT_LIMIT" ? "DUO_SLOT_LIMIT" : "INVALID_DUO_SELECTION");
+  }
   if (!planned.length) return fail("NOTHING_TO_UPLOAD");
 
   let credentials;
@@ -150,19 +170,20 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
     await report();
     // Capacity first, read-only: Apple holds at most ten screenshots per set and the
     // previous ones are only removed after the new ones are live, so both must fit.
-    const sets = new Map<DeviceSlot, { id: string | null; displayType: string; previous: string[]; uploaded: string[] }>();
+    const sets = new Map<string, { id: string | null; displayType: string; previous: string[]; uploaded: string[] }>();
     for (const target of payload.targets) {
-      const incoming = planned.filter((file) => file.slot === target.slot).length;
+      if (sets.has(target.displayType)) continue;
+      const incoming = planned.filter((file) => file.displayType === target.displayType).length;
       if (!incoming) continue;
       const id = await client.findScreenshotSet(payload.localizationId, target.displayType);
       const previous = id ? await client.listScreenshotIds(id) : [];
       if (previous.length + incoming > ASC_MAX_SCREENSHOTS_PER_SET) throw new AscError("ASC_CONFLICT", 409, "SET_FULL");
-      sets.set(target.slot, { id, displayType: target.displayType, previous, uploaded: [] });
+      sets.set(target.displayType, { id, displayType: target.displayType, previous, uploaded: [] });
     }
     for (const set of sets.values()) set.id ??= await client.ensureScreenshotSet(payload.localizationId, set.displayType);
 
     for (const [position, file] of planned.entries()) {
-      const set = sets.get(file.slot)!;
+      const set = sets.get(file.displayType)!;
       progress.files[position]!.state = "uploading";
       await report();
       const bytes = new Uint8Array(await zip.file(file.path)!.async("uint8array"));

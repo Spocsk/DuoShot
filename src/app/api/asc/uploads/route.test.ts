@@ -61,11 +61,13 @@ describe("POST /api/asc/uploads", () => {
     expect(await readJson(await post())).toEqual({ status: 410, body: { error: "EXPORT_EXPIRED" } });
   });
 
-  it("explains that Duo-only exports have nothing App Store Connect can receive yet", async () => {
+  it("queues Duo-only exports for the shared slot", async () => {
     session();
     const rpc = admin({ include69: false });
-    expect(await readJson(await post())).toEqual({ status: 409, body: { error: "NOTHING_TO_UPLOAD", skipped: ["duo-outer", "duo-inner"] } });
-    expect(rpc).not.toHaveBeenCalled();
+    expect(await readJson(await post())).toEqual({ status: 202, body: { jobId: "job-1", statusUrl: "/api/render-jobs/job-1", skipped: [] } });
+    expect(rpc).toHaveBeenCalledWith("enqueue_render", expect.objectContaining({ p_payload: expect.objectContaining({ targets: [
+      { slot: "duo-outer", displayType: "APP_IPHONE_DUO" }, { slot: "duo-inner", displayType: "APP_IPHONE_DUO" },
+    ] }) }));
   });
 
   it("queues an asc_upload job followed through the render status route", async () => {
@@ -73,11 +75,11 @@ describe("POST /api/asc/uploads", () => {
     const rpc = admin();
     const { status, body } = await readJson(await post({ ...BODY, replaceExisting: true, targets: [{ slot: "duo-outer", displayType: "X" }] }));
     expect(status).toBe(202);
-    expect(body).toEqual({ jobId: "job-1", statusUrl: "/api/render-jobs/job-1", skipped: ["duo-outer", "duo-inner"] });
+    expect(body).toEqual({ jobId: "job-1", statusUrl: "/api/render-jobs/job-1", skipped: [] });
     expect(rpc).toHaveBeenCalledWith("enqueue_render", {
       p_user: "user-1", p_workspace: "ws-1", p_kind: "asc_upload", p_key: KEY,
       // Client-supplied targets are ignored: the mapping comes from the server config.
-      p_payload: { ...BODY, replaceExisting: true, targets: [{ slot: "iphone-69", displayType: "APP_IPHONE_67" }] },
+      p_payload: { ...BODY, replaceExisting: true, targets: [{ slot: "duo-outer", displayType: "APP_IPHONE_DUO" }, { slot: "duo-inner", displayType: "APP_IPHONE_DUO" }, { slot: "iphone-69", displayType: "APP_IPHONE_67" }] },
     });
   });
 

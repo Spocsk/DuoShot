@@ -214,7 +214,8 @@ describe("screenshot dimensions and search intent", () => {
       cy.get('[data-testid="hero-dimensions"]').should("be.visible")
         .and("contain", "1398 × 2034").and("contain", "2007 × 2853").and("contain", "portrait");
       cy.get('[data-testid="apple-availability"]').should("be.visible")
-        .and("contain", locale === "fr" ? "avril 2027" : "April 2027");
+        .and("contain", "APP_IPHONE_DUO").and("contain", "10")
+        .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested");
       cy.get('[data-testid="cta-tool"]').should("be.visible").and("have.attr", "href", `${prefix}/tool`);
       cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
       cy.location("pathname").should("eq", `${prefix}/specs`);

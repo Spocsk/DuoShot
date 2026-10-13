@@ -39,6 +39,15 @@ beforeEach(() => {
 });
 
 describe("enqueueRender", () => {
+  it("rejects eleven mixed screenshots before reserving quota", async () => {
+    const outerPaths = Array.from({ length: 6 }, (_, i) => `${USER_ID}/outer${i}.png`);
+    const innerPaths = Array.from({ length: 5 }, (_, i) => `${USER_ID}/inner${i}.png`);
+    const picks = [...outerPaths.map((_, index) => ({ side: "outer", index })), ...innerPaths.map((_, index) => ({ side: "inner", index }))];
+    const response = await enqueueRender(request({ outerPaths, innerPaths, duoSelection: { mode: "mix", picks } }), userClient(), USER_ID, "export");
+    expect(await readJson(response)).toEqual({ status: 400, body: { error: "DUO_SLOT_LIMIT" } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it.each([null, "", "not-a-uuid", `${KEY}x`])("requires a UUID idempotency key (%j)", async (key) => {
     const { status, body } = await readJson(await enqueueRender(request(PAIR, key), userClient(), USER_ID, "export"));
     expect(status).toBe(400);

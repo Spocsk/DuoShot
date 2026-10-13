@@ -1,6 +1,9 @@
 import { MAX_IMAGES, isTextColor, type CropTransforms, type Locale, type RenderOptions } from "../specs";
 
+import { duoPicks, type DuoSelection } from "../duo-selection";
+
 export type RenderBody = {
+  duoSelection?: DuoSelection;
   paths?: string[];
   outerPaths?: string[];
   innerPaths?: string[];
@@ -72,6 +75,12 @@ export function parseRenderBody(value: unknown, userId: string): RenderBody {
         }
       }
     }
+  }
+  if (value.duoSelection !== undefined) {
+    if (!record(value.duoSelection)) throw new Error("INVALID_DUO_SELECTION");
+    const outer = (value.outerPaths ?? value.paths ?? []) as string[];
+    const inner = value.sameSet ? outer : (value.innerPaths ?? value.paths ?? []) as string[];
+    duoPicks(value.duoSelection as DuoSelection, outer.length, inner.length);
   }
   return value as RenderBody;
 }

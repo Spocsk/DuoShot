@@ -52,6 +52,8 @@ import { SetPicker, useSetsMenu } from "@/components/tool/set-picker";
 import { CapturesPanel } from "@/components/tool/captures-panel";
 import { AdjustPanel, AdvancedSettings } from "@/components/tool/adjust-panel";
 import { CheckList, ReadinessReport, ReviewAlerts, type CheckItem } from "@/components/tool/check-panel";
+import { duoPicks, DUO_SLOT_MAX } from "@/lib/duo-selection";
+import { DuoSlotChoice } from "@/components/tool/duo-slot-choice";
 import { EXAMPLE_ZIP_URL, ExportPanel, OtherActions, ReviewOutcome } from "@/components/tool/delivery-actions";
 import { DemoStart, fetchHarborFiles, type DemoState } from "@/components/tool/demo";
 import { useAppSync } from "@/components/tool/use-app-sync";
@@ -156,13 +158,18 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const sameSet = active?.sameSet ?? false;
   const effectiveInner = sameSet ? outerFiles : innerFiles;
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
+  const savedSelection = active?.duoSelection ?? { mode: "outer" as const };
+  const duoSelection = savedSelection.mode === "mix" ? { ...savedSelection,
+    picks: (savedSelection.picks ?? []).filter((pick) => pick.index < (pick.side === "outer" ? outerFiles.length : effectiveInner.length)),
+  } : savedSelection;
+  const selectedDuoCount = duoPicks(duoSelection, outerFiles.length, effectiveInner.length).length;
   const cloneForced = sameSet;
-  const hasExportable = outerFiles.length > 0 && (sameSet || innerFiles.length > 0);
+  const hasExportable = selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX;
   useEffect(() => {
-    if (!active || completedSetsRef.current.has(active.id) || !hasExportable) return;
+    if (!active || completedSetsRef.current.has(active.id) || !hasExportable || !outerFiles.length || !effectiveInner.length) return;
     completedSetsRef.current.add(active.id);
     setToolPanel("adjust");
-  }, [active, hasExportable]);
+  }, [active, hasExportable, outerFiles.length, effectiveInner.length]);
   const outerSlide = outerFiles[slideIndex];
   const innerSlide = effectiveInner[slideIndex];
   const orientation: Orientation = active?.orientation ?? "portrait";
@@ -312,7 +319,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     return [...outer, ...inner];
   }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, globalFit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
   const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
-  const cloneAlert = cloneForced || clones.some((item) => item.label === "risk");
+  const selectedPicks = duoPicks(duoSelection, outerFiles.length, effectiveInner.length);
+  const cloneAlert = clones.some((item) => item.label === "risk" && selectedPicks.some((pick) => pick.side === "outer" && pick.index === item.index) && selectedPicks.some((pick) => pick.side === "inner" && pick.index === item.index));
 
   function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
     setStatus(message);
@@ -323,12 +331,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
     setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
     zipUrl, setZipUrl, patchActive, outerFiles, innerFiles, effectiveInner, sameSet,
-    cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
+    duoSelection, cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
     orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
   });
   const preparationChecks = [
-    hasExportable,
-    hasExportable && !unpaired,
+    selectedDuoCount > 0,
+    selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX,
     hasExportable && !cloneAlert,
     hasExportable && severeQualityCount === 0,
     appUsageConfirmed,
@@ -348,13 +356,13 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
   const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
   const checklist: CheckItem[] = [
-    { id: "pairs", done: hasExportable && !unpaired, label: t("tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
+    { id: "pairs", done: hasExportable, label: t("tool_check_pairs"), fix: () => jumpTo("captures", '[data-testid="duo-slot-choice"] select') },
     { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t("tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
     { id: "similarity", done: !cloneAlert || assumeClone, label: t("tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
     { id: "confirm", done: appUsageConfirmed, label: t("tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
   ];
-  const readyToPrepare = checklist.every((item) => item.done);
-  const importDone = hasExportable && !unpaired;
+  const readyToPrepare = checklist.every((item) => item.done) && selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX;
+  const importDone = hasExportable;
   const stepsDone: Record<ToolPanel, boolean> = {
     captures: importDone,
     adjust: importDone && (adjustSeen || toolPanel === "review" || toolPanel === "export" || Boolean(zipUrl)),
@@ -365,13 +373,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (panel === "adjust") setAdjustSeen(true);
     setToolPanel(panel);
   }
-  /** From the App Store Connect dialog: Adjust, advanced settings open, focus on the 6.9″ toggle. */
+  /** Return from the upload dialog to the Duo selection control. */
   function showSetting69() {
     goToPanel("adjust");
     window.setTimeout(() => {
-      const details = document.querySelector<HTMLDetailsElement>("details.tool-advanced");
-      if (details) details.open = true;
-      document.querySelector<HTMLElement>('[data-testid="toggle-69"]')?.focus();
+      document.querySelector<HTMLElement>('[data-testid="duo-slot-choice"] select')?.focus();
     }, 60);
   }
   async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
@@ -422,7 +428,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           ? currentTransforms.inner.filter((_, transformIndex) => transformIndex !== index)
           : currentTransforms.inner,
       };
-      const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms: nextTransforms } : item);
+      const duoSelection = active.duoSelection?.mode === "mix" ? {
+        ...active.duoSelection,
+        picks: (active.duoSelection.picks ?? []).filter((pick) => !((pick.side === side || (sameSet && side === "outer")) && pick.index === index))
+          .map((pick) => (pick.side === side || (sameSet && side === "outer")) && pick.index > index ? { ...pick, index: pick.index - 1 } : pick),
+      } : active.duoSelection;
+      const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms: nextTransforms, duoSelection } : item);
       setSets(nextSets);
       saveSetMetas(nextSets);
     }
@@ -609,6 +620,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   if (toolPanel === "captures" || (toolPanel === "adjust" && !importDone)) {
     primary = importDone
       ? { label: t("tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
+      : hasAny && (duoSelection.mode === "mix" || selectedDuoCount > DUO_SLOT_MAX)
+      ? { label: t("tool_duo_content"), testId: "tool-primary", onClick: () => jumpTo("captures", '[data-testid="duo-slot-choice"] select') }
       : { label: t(!hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
   } else if (toolPanel === "adjust") {
     primary = { label: t("tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
@@ -716,6 +729,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{t("tool_some_items_need_attention")}</span><button type="button" onClick={() => goToPanel("review")}>{t("tool_view_report")}</button></div> : null}
         </section>
         <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={t("tool_workspace_controls")}>
+          <DuoSlotChoice value={duoSelection} outerFiles={outerFiles} innerFiles={effectiveInner}
+            onChange={(duoSelection) => {
+              patchActive({ duoSelection });
+              setQualityAcknowledged(false);
+              setAppUsageConfirmed(false);
+              setAssumeClone(false);
+              setZipUrl(null);
+            }} />
           <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} />
           <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
             {toolPanel === "captures" ? <CapturesPanel active={active} outerSpec={outerSpec} innerSpec={innerSpec} outerFiles={outerFiles} innerFiles={innerFiles}
@@ -746,12 +767,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
                 effectiveInner={effectiveInner} foldChecks={foldChecks} clones={clones} appUsageConfirmed={appUsageConfirmed}
                 setAppUsageConfirmed={setAppUsageConfirmed} cloneAlert={cloneAlert} severeQualityCount={severeQualityCount} foldWarningCount={foldWarningCount}
               />
-              <OtherActions hasExportable={hasExportable} jobs={jobs} />
+              <OtherActions hasExportable={outerFiles.length > 0 && outerFiles.length === effectiveInner.length} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
             {toolPanel === "export" ? <>
               <ExportPanel locale={locale} prefix={prefix} zipUrl={zipUrl} session={session} orientation={orientation} demo={isDemo} jobs={jobs} />
-              <OtherActions hasExportable={hasExportable} jobs={jobs} />
+              <OtherActions hasExportable={outerFiles.length > 0 && outerFiles.length === effectiveInner.length} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
           </div>

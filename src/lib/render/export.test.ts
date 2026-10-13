@@ -65,6 +65,24 @@ beforeEach(() => {
 });
 
 describe("executeExport for a queued job", () => {
+  it("does not report or block clone pairs outside the Duo selection", async () => {
+    const client = workerClient({ id: "ws-1", plan: "indie", free_exports_used: 0 });
+    vi.mocked(createAdminSupabase).mockReturnValue(client as never);
+    const response = await executeExport(render({ ...PAYLOAD, sameSet: true, assumeCloneRisk: false, duoSelection: { mode: "inner" } }), client, USER, JOB);
+    expect(response.status).toBe(200);
+    expect(buildZip).toHaveBeenCalledWith(expect.objectContaining({ cloneScores: [] }));
+    expect(composeZipImages).toHaveBeenCalledWith(expect.objectContaining({ duoSelection: { mode: "inner" } }));
+  });
+
+  it("rejects an overfull mix in worker execution before accessing admin storage", async () => {
+    const paths = Array.from({ length: 6 }, (_, i) => `user-1/shot${i}.png`);
+    const picks = paths.flatMap((_, index) => [{ side: "outer", index }, { side: "inner", index }]);
+    const response = await executeExport(render({ outerPaths: paths, sameSet: true, duoSelection: { mode: "mix", picks } }), workerClient({}), USER, JOB);
+    expect(await readJson(response)).toEqual({ status: 400, body: { error: "DUO_SLOT_LIMIT" } });
+    expect(createAdminSupabase).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("refuses a job whose workspace is no longer the user's active one", async () => {
     const client = workerClient({ id: "ws-1", plan: "free", free_exports_used: 0 });
     vi.mocked(createAdminSupabase).mockReturnValue(client as never);
