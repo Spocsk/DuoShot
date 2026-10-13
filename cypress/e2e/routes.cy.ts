@@ -11,6 +11,8 @@ const PAGES: Page[] = [
   { fr: "/", en: "/en", indexed: true },
   { fr: "/pricing", en: "/en/pricing", indexed: true },
   { fr: "/specs", en: "/en/specs", indexed: true },
+  { fr: "/1398x2034", en: "/en/1398x2034", indexed: true },
+  { fr: "/2007x2853", en: "/en/2007x2853", indexed: true },
   { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", indexed: true },
   { fr: "/rejet", en: "/en/rejection", indexed: true },
   { fr: "/privacy", en: "/en/privacy", indexed: true },

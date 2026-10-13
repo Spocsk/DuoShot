@@ -86,6 +86,8 @@ export function buildReadme(options: {
     "Emplacement Duo unique (APP_IPHONE_DUO) : 10 captures maximum par langue, externe et interne confondus. Les deux tailles sont acceptées ; dépôt pas encore testé par DuoShot.",
     "Exports exceeding 10 selected Duo screenshots are rejected with DUO_SLOT_LIMIT (HTTP 400); nothing is silently trimmed.",
     "Source: https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md",
+    "Apple status checked 2026-10-13: App Store Connect accepts iPhone Duo optimized apps since 2026-10-05; Duo screenshots are required for every submission from April 2027 for apps built with the iOS 27.1 SDK or later.",
+    "Source: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications",
     "Visual checks are advisory; this report does not predict App Store approval.",
     "Sources and ZIP expire after 24 hours. Server cleanup runs every 15 minutes; failed cleanup is retried. Local drafts stay on your device.",
   );

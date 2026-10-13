@@ -6,6 +6,7 @@ loadEnvConfig(process.cwd());
 export default defineConfig({
   expose: {
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "https://supabase.example.invalid",
+    passPriceConfigured: Boolean(process.env.STRIPE_PRICE_PASS30?.trim()),
   },
   e2e: {
     baseUrl: "http://localhost:3000",

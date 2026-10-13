@@ -215,7 +215,9 @@ describe("screenshot dimensions and search intent", () => {
         .and("contain", "1398 × 2034").and("contain", "2007 × 2853").and("contain", "portrait");
       cy.get('[data-testid="apple-availability"]').should("be.visible")
         .and("contain", "APP_IPHONE_DUO").and("contain", "10")
-        .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested");
+        .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested")
+        .and("contain", locale === "fr" ? "avril 2027" : "April 2027")
+        .and("contain", locale === "fr" ? "SDK iOS 27.1 ou ultérieur" : "for apps built with the iOS 27.1 SDK or later");
       cy.get('[data-testid="cta-tool"]').should("be.visible").and("have.attr", "href", `${prefix}/tool`);
       cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
       cy.location("pathname").should("eq", `${prefix}/specs`);

@@ -15,7 +15,7 @@ describe("zip", () => {
     expect(readme).toContain("Raw outer + inner sets: pick up to 10");
     expect(readme).toContain("APP_IPHONE_DUO");
     expect(readme).toContain("Not yet tested by DuoShot");
-    expect(readme).not.toContain("April 2027");
+    expect(readme).toContain("April 2027 for apps built with the iOS 27.1 SDK or later");
   });
 
   it("builds Connect paths with optional client prefix", () => {
@@ -65,6 +65,7 @@ describe("zip", () => {
     expect(readme).toContain("01: RISK 2.3.3");
     expect(readme).toContain("source had transparency");
     expect(readme).toContain("Préparé avec DuoShot");
+    expect(readme).toContain("April 2027 for apps built with the iOS 27.1 SDK or later");
   });
 
   it("lists exact Connect pixels per folder", () => {

@@ -31,7 +31,7 @@ describe("GET /llms.txt", () => {
     expect(body).not.toContain('6.9" 6.9"');
   });
 
-  it("limits ASC claims to the single slot contract and untested uploads", async () => {
+  it("preserves the single slot contract and untested uploads alongside the qualified deadline", async () => {
     const body = await GET().text();
     expect(body).toContain("one iPhone Duo slot (APP_IPHONE_DUO)");
     expect(body).toContain("10 screenshots per locale across outer and inner screens");
@@ -39,7 +39,7 @@ describe("GET /llms.txt", () => {
     expect(body).toContain("Uploads have not yet been tested by DuoShot");
     expect(body).toContain(DUO_SLOT_SOURCE);
     expect(body).toContain("DUO_SLOT_LIMIT");
-    expect(body).not.toMatch(/April 2027|iOS 27|optimized apps|Upload files manually/);
+    expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
   });
 
   it("hides the pass without its Stripe price", async () => {
