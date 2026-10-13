@@ -57,12 +57,27 @@ export function cookieLocale(value: string | undefined): Locale | null {
   return value === "en" || value === "fr" ? value : null;
 }
 
+function isLocalizedPage(pathname: string): boolean {
+  if (MARKETING_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en)) return true;
+  const unprefixed = pathname === "/en" ? "/" : pathname.replace(/^\/en\//, "/");
+  const segments = unprefixed.split("/");
+  // Next replaces this value at build time with routes derived from app/[locale].
+  const routes: string[] = JSON.parse(process.env.DUOSHOT_LOCALIZED_PAGE_ROUTES ?? "[]");
+  return routes.some((route) => {
+    const parts = route.split("/");
+    return parts.length === segments.length && parts.every((part, index) =>
+      /^\[[^\]]+\]$/.test(part) ? Boolean(segments[index]) : part === segments[index],
+    );
+  });
+}
+
 export function localeRedirectTarget(options: {
   pathname: string;
   search: string;
   cookie: string | undefined;
   acceptLanguage: string | null;
 }): string | null {
+  if (!isLocalizedPage(options.pathname)) return null;
   const current = localeFromPath(options.pathname);
   const preferred = cookieLocale(options.cookie) ?? parseAcceptLanguage(options.acceptLanguage);
   return preferred === current ? null : `${localizedPath(preferred, options.pathname)}${options.search}`;

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import nextConfig from "../../next.config";
 import {
   cookieLocale,
   isCrawler,
@@ -7,6 +8,11 @@ import {
   parseAcceptLanguage,
   shouldSkipLocaleRewrite,
 } from "./locale";
+
+beforeEach(() => {
+  vi.stubEnv("DUOSHOT_LOCALIZED_PAGE_ROUTES", nextConfig.env!.DUOSHOT_LOCALIZED_PAGE_ROUTES!);
+});
+afterEach(() => vi.unstubAllEnvs());
 
 describe("locale", () => {
   it("reads the path locale", () => {
@@ -88,6 +94,29 @@ describe("locale", () => {
     expect(localeRedirectTarget({ pathname: "/tool", search: "?set=123", cookie: undefined, acceptLanguage: "fr-FR" })).toBeNull();
     expect(localeRedirectTarget({ pathname: "/tool", search: "", cookie: "invalid", acceptLanguage: "de" })).toBe("/en/tool");
     expect(localeRedirectTarget({ pathname: "/en/why-not-ai", search: "", cookie: undefined, acceptLanguage: "fr" })).toBe("/pourquoi-pas-ia");
+  });
+
+  it("recognizes every localized page from the app directory", () => {
+    const routes: string[] = JSON.parse(nextConfig.env!.DUOSHOT_LOCALIZED_PAGE_ROUTES!);
+    expect(routes).toContain("/tool");
+    expect(routes).toContain("/account");
+    expect(routes).toContain("/invite/[token]");
+    for (const route of routes) {
+      const pathname = route.replace(/\[[^\]]+\]/g, "example");
+      expect(localeRedirectTarget({ pathname, search: "?x=1", cookie: undefined, acceptLanguage: null })).not.toBeNull();
+    }
+  });
+
+  it("leaves unknown pages to Next's 404 handler in both locales", () => {
+    for (const path of ["/xyz-nope", "/tool/xyz-nope", "/account/xyz-nope", "/login/xyz-nope", "/invite", "/invite/token/xyz-nope"]) {
+      for (const pathname of [path, `/en${path}`]) {
+        for (const cookie of [undefined, "en", "fr"]) {
+          for (const acceptLanguage of [null, "en", "fr"]) {
+            expect(localeRedirectTarget({ pathname, search: "?x=1", cookie, acceptLanguage })).toBeNull();
+          }
+        }
+      }
+    }
   });
 
   it("leaves static resources alone", () => {
