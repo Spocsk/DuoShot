@@ -67,7 +67,20 @@ describe("theme", () => {
       expect(htmlTag).to.not.equal(null);
       expect(htmlTag![0]).to.not.match(/\bdata-theme\b/i);
     });
-    cy.visit("/en", { onBeforeLoad(win) { win.localStorage.setItem("duoshot_theme", "dark"); } });
+    cy.visit("/en", {
+      onBeforeLoad(win: Cypress.AUTWindow & { __themeAtHeader?: string | null }) {
+        win.localStorage.setItem("duoshot_theme", "dark");
+        const observer = new win.MutationObserver(() => {
+          if (win.document.querySelector("header")) {
+            win.__themeAtHeader = win.document.documentElement.getAttribute("data-theme");
+            observer.disconnect();
+          }
+        });
+        observer.observe(win.document, { childList: true, subtree: true });
+      },
+    });
+    // The parser inserts the header before hydration can apply the theme.
+    cy.window().its("__themeAtHeader").should("eq", "dark");
     cy.get("html").should("have.attr", "data-theme", "dark").and("have.css", "color-scheme", "dark");
     cy.get("body > #duoshot-theme").should("exist").and(($script) => {
       const script = $script[0];
