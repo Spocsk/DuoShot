@@ -49,6 +49,17 @@ function button(markup: string, testId: string) {
 describe.each(["fr", "en"] as const)("%s paywall checkout availability", (locale) => {
   const closedMessage = getTranslator(locale).t("billing_error_unavailable");
 
+  it("shows a checkout failure inside the dialog next to retryable actions", () => {
+    const error = getTranslator(locale).t("billing_error_owner");
+    const markup = renderPaywall({ locale, available: true, error });
+    const dialog = markup.slice(markup.indexOf('role="dialog"'));
+    expect(dialog.match(/<p\b[^>]*role="alert"[^>]*>(.*?)<\/p>/)?.[1]).toBe(error);
+    expect(dialog.indexOf('role="alert"')).toBeLessThan(dialog.indexOf('data-testid="paywall-cta-indie"'));
+    expect(button(dialog, "paywall-cta-indie")).not.toContain("disabled");
+    expect(button(dialog, "paywall-cta-studio")).not.toContain("disabled");
+    expect(renderPaywall({ locale, available: true })).not.toContain('role="alert"');
+  });
+
   it.each(["trial", "69"] as const)("offers checkout for the %s paywall when payments are open", (reason) => {
     const markup = renderPaywall({ locale, reason, available: true });
     expect(markup).not.toContain(closedMessage);

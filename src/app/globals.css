@@ -70,7 +70,7 @@ code {
 }
 
 :focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 2px;
 }
 
@@ -149,9 +149,8 @@ a {
 }
 
 .ds-cta:focus-visible {
-  outline: 2px solid var(--background);
-  outline-offset: -3px;
-  box-shadow: 0 0 0 2px var(--foreground);
+  outline: 2px solid var(--studio-sea);
+  outline-offset: 2px;
 }
 
 .ds-cta-ghost {
@@ -181,7 +180,7 @@ a {
 }
 
 .ds-cta-ghost:focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 2px;
 }
 
@@ -196,7 +195,7 @@ a {
 }
 
 .ds-input:focus {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 1px;
 }
 
@@ -251,7 +250,7 @@ a {
 }
 
 .ds-listbox-trigger:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 1px;
 }
 
@@ -369,7 +368,7 @@ button.ds-pill {
 }
 
 .ds-seg button:focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 2px;
 }
 
@@ -1593,7 +1592,7 @@ img.preview-glass {
 
 .crop-reset:focus-visible {
   color: var(--foreground);
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--studio-sea);
   outline-offset: 3px;
   border-radius: 2px;
 }

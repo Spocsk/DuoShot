@@ -400,6 +400,8 @@ export const CLIENT_KEYS = {
     "tool_open",
     "tool_fold_text_open_view",
     "tool_composition_view",
+    "tool_device_view",
+    "tool_pixel_view",
     "tool_advanced_settings",
     "tool_canvas_view",
     "tool_screenshot_pairs",

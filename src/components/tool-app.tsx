@@ -145,6 +145,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
   const upgradeReason = searchParams.get("reason") === "69" ? "69" : "trial";
   const requestedPlan = searchParams.get("plan") ?? undefined;
@@ -501,6 +502,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   function openUpgrade(reason: "trial" | "69", kind?: PurchaseKind) {
+    setCheckoutError(null);
     if (owner === "guest") {
       // Keep the intent through the owner remount and external auth redirects.
       const url = new URL(window.location.href);
@@ -523,16 +525,19 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
 
   async function onCheckout(kind: PurchaseKind) {
+    setCheckoutError(null);
     if (owner === "guest") {
       openUpgrade(paywall ?? upgradeReason, kind);
       return;
     }
-    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("billing_error_unavailable"), "info"); return; }
+    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { setCheckoutError(t("billing_error_unavailable")); flashStatus(t("billing_error_unavailable"), "info"); return; }
     setCheckoutBusy(true);
     try {
       await startCheckout(kind, checkoutReturnPath(locale), t);
     } catch (error) {
-      flashStatus(error instanceof Error ? error.message : t("error_export"), "err");
+      const message = error instanceof Error ? error.message : t("error_export");
+      setCheckoutError(message);
+      flashStatus(message, "err");
       setCheckoutBusy(false);
     }
   }
@@ -547,12 +552,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setSlideIndex(0);
     setToolPanel("captures");
     setMobileView("outer");
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
+    resetPreparation();
     setOuterFiles(await loadSetFiles(id, "outer"));
     setInnerFiles(await loadSetFiles(id, "inner"));
-    setZipUrl(null);
   }
 
   function addSet() {
@@ -882,8 +884,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           locale={locale}
           reason={paywall ?? upgradeReason}
           busy={checkoutBusy}
+          error={checkoutError}
           preferredKind={upgradeRequested ? preferredUpgradeKind : undefined}
           onClose={() => {
+            setCheckoutError(null);
             setPaywall(null);
             dismissUpgrade();
           }}

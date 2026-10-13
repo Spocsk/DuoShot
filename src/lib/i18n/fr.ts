@@ -593,6 +593,8 @@ export const fr = {
   tool_open: "Ouvert",
   tool_fold_text_open_view: "Texte au pli · vue ouverte",
   tool_composition_view: "Affichage de la composition",
+  tool_device_view: "Aperçu appareil",
+  tool_pixel_view: "Pixels exportés",
   tool_advanced_settings: "Réglages avancés",
   tool_canvas_view: "Vue du canvas",
   tool_import_first_pair_try: "Importez votre première capture, ou essayez l’exemple Harbor.",

@@ -590,6 +590,8 @@ export const en: Messages = {
   tool_open: "Open",
   tool_fold_text_open_view: "Fold text · open view",
   tool_composition_view: "Composition view",
+  tool_device_view: "Device preview",
+  tool_pixel_view: "Export pixels",
   tool_advanced_settings: "Advanced settings",
   tool_canvas_view: "Canvas view",
   tool_import_first_pair_try: "Import your first screenshot, or try the Harbor example.",
