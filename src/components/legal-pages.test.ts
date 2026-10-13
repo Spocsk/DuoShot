@@ -7,6 +7,9 @@ import { CookiesContent, MentionsContent, PrivacyContent, TermsContent, Subproce
 
 describe.each(["fr", "en"] as const)("%s legal pages", (locale) => {
   const prefix = localePrefix(locale);
+  const vatExemption = locale === "fr"
+    ? "TVA non applicable, art. 293 B du CGI"
+    : "VAT not applicable (French VAT franchise, art. 293 B of the French tax code)";
   it("renders the registered publisher details without registration placeholders", () => {
     const html = renderToStaticMarkup(createElement(MentionsContent, { locale }));
     expect(html).toContain("COUTO DE OLIVEIRA Dylan");
@@ -17,8 +20,9 @@ describe.each(["fr", "en"] as const)("%s legal pages", (locale) => {
     expect(html).toContain("RNE");
     expect(html).toContain("RCS");
     expect(html).toContain("62.01Z");
-    expect(html).toContain("FR32909361362");
-    expect(html).toContain("293 B");
+    expect(html).not.toContain("FR32909361362");
+    expect(html).not.toMatch(/intra[ -]?(?:eu|community)|intracommunautaire/i);
+    expect(html).toContain(vatExemption);
     expect(html).toContain(`href="${prefix}/account"`);
     expect(html).not.toMatch(/en attend(?:ant|te)|pending|will be completed|seront complétés/i);
 
@@ -39,8 +43,10 @@ describe.each(["fr", "en"] as const)("%s legal pages", (locale) => {
     const terms = renderToStaticMarkup(createElement(TermsContent, { locale }));
     expect(terms).toContain(`href="${prefix}/privacy"`);
     expect(terms).toContain(locale === "fr" ? "12 €/mois" : "€12/month");
-    expect(terms).toContain(locale === "fr" ? "TVA non applicable, art. 293 B du CGI" : "VAT not applicable");
+    expect(terms).toContain(vatExemption);
     for (const content of [cookies, privacy, terms, renderToStaticMarkup(createElement(SubprocessorsContent, { locale }))]) {
+      expect(content).not.toContain("FR32909361362");
+      expect(content).not.toMatch(/intra[ -]?(?:eu|community)|intracommunautaire/i);
       expect(content).not.toMatch(/\{\w+\}|legal_[a-z_]+|&lt;(?:account|privacy|subprocessors|code)&gt;/);
     }
   });

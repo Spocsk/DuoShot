@@ -21,6 +21,17 @@ describe("i18n", () => {
     }
   });
 
+  it.each(["fr", "en"] as const)("keeps the VAT exemption without an intra-EU VAT number in %s", (locale) => {
+    const messages = locale === "fr" ? frMessages : enMessages;
+    for (const value of Object.values(messages)) {
+      expect(value).not.toContain("FR32909361362");
+      expect(value).not.toMatch(/intra[ -]?(?:eu|community)|intracommunautaire/i);
+    }
+    for (const key of ["legal_notice_publisher_details", "legal_terms_plans", "pricing_note"] as const) {
+      expect(messages[key]).toContain(locale === "fr" ? "TVA non applicable, art. 293 B du CGI" : "VAT not applicable (French VAT franchise, art. 293 B");
+    }
+  });
+
   it("interpolates placeholders", () => {
     expect(fr.tf("account_remaining", { n: 2 })).toBe("2 exports gratuits restants");
     expect(en.tf("account_remaining", { n: 1 })).toBe("1 free export left");
