@@ -606,6 +606,31 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
   .studio-review-preview-heading { padding-top: 1rem; }
   .studio-review-preview-pair { margin-top: 1rem; }
 }
+/* Mobile home: keep every proof and offer in compact, swipeable rows. */
+@media (width < 768px) {
+  .studio-proof, .studio-review-invite, .studio-pricing.is-compact, .studio-faq { padding-block: 1.5rem; }
+  .studio-proof-board { display: flex; align-items: stretch; gap: 0.75rem; margin-top: 1rem; padding-bottom: 0.75rem; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+  .studio-proof-before, .studio-proof-after { flex: 0 0 84%; padding: 0.85rem; scroll-snap-align: start; }
+  .studio-proof-arrow { display: none; }
+  .studio-raw-pair { max-width: 11rem; margin-top: 0.75rem; }
+  .studio-final-pair { max-width: 10rem; margin-top: 0.75rem; }
+  .studio-files { margin-top: 0.75rem; }
+  .studio-proof-actions { gap: 0.5rem 1rem; margin-top: 0.75rem; }
+  html:not(.duo-motion) .studio-sequence .studio-sequence-steps { display: flex; gap: 0.75rem; max-width: none; margin-inline: -1.25rem; padding: 1.25rem; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: 1.25rem; overscroll-behavior-x: contain; }
+  html:not(.duo-motion) .studio-sequence .studio-sequence-step { flex: 0 0 84%; min-width: 0; padding: 1rem; border-radius: 1.1rem; background: var(--studio-canvas); scroll-snap-align: start; }
+  html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { margin-top: 0.75rem; }
+  .studio-review-invite { gap: 1rem; }
+  .studio-review-invite > div:first-child p { margin-top: 0.75rem; }
+  .studio-pricing.is-compact .studio-plan-grid { display: flex; gap: 0.75rem; margin-top: 1rem; padding-bottom: 0.75rem; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+  .studio-pricing.is-compact .studio-plan { flex: 0 0 88%; padding: 1rem; scroll-snap-align: start; }
+  .studio-pricing.is-compact .studio-plan.is-featured { padding: calc(1rem - 1px); }
+  .studio-pricing.is-compact .studio-plan-team { gap: 0.75rem; margin-top: 0.5rem; padding: 1rem; }
+  .studio-pricing.is-compact .studio-plan-cta { padding-top: 0.75rem; }
+  .studio-pricing.is-compact .studio-reassurance { margin-top: 1rem; }
+  .studio-faq h2 { margin-bottom: 1rem; }
+  .studio-faq > .mt-8 { margin-top: 1rem; }
+  .studio-faq .t-acc-head { padding-block: 0.6rem; }
+}
 @media (max-width: 389px) {
   .studio-prevent-checks { grid-template-columns: 1fr; }
 }
