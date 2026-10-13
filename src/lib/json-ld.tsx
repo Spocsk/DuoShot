@@ -1,4 +1,5 @@
-import { CHECKOUT_CATALOG, PASS30, pass30PriceId } from "./plans";
+import { CHECKOUT_CATALOG, FREE_EXPORTS, PASS30, pass30PriceId } from "./plans";
+import { getTranslator } from "./i18n";
 import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, absoluteUrl, localizedPath, pricingPath } from "./site";
 import type { Locale } from "./specs";
 import type { FaqItem } from "./screenshot-copy";
@@ -29,7 +30,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article }: Pa
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
         offers: [
-          { "@type": "Offer", name: "2 trial ZIP exports", price: "0", priceCurrency: "EUR" },
+          { "@type": "Offer", name: `${getTranslator(locale).t("pricing_trial_title")} · ${FREE_EXPORTS} exports`, price: "0", priceCurrency: "EUR" },
           ...Object.entries(CHECKOUT_CATALOG).map(([kind, offer]) => ({
             "@type": "Offer", name: offer.name, url: absoluteUrl(pricingPath(locale)),
             price: String(offer.amountCents / 100), priceCurrency: "EUR",

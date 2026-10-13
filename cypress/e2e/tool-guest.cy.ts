@@ -311,13 +311,20 @@ describe("tool guest", () => {
     cy.get('.tool-pair-select').should("have.length", 3);
     cy.get('[data-testid="tool-tab-adjust"]').should("have.attr", "aria-selected", "true");
     cy.get('[data-testid="tool-tab-review"]').click();
-    cy.get('[data-testid="tool-demo-zip"]').should("be.disabled");
-    cy.acknowledgeQuality();
+    cy.get('[data-testid="confirm-app-usage"]').should("not.exist");
+    cy.get('[data-testid="tool-checklist"]').should("not.contain", "Confirmer le contenu de l’app");
     cy.get('[data-testid="tool-demo-zip"]').should("not.be.disabled");
+    cy.get('[data-testid="tool-tab-export"]').click();
+    cy.get('[data-testid="tool-demo-zip"]').should("not.be.disabled");
+    cy.get('[data-testid="tool-export-connect-hint"]').should("contain", "App Store Connect").find("a").should("have.attr", "href", "/specs");
     cy.get('[data-testid="tool-demo-replace"]').click();
     cy.get('[data-testid="tool-demo-banner"]').should("not.exist");
     cy.get('[data-testid="preview-outer"] img').should("not.exist");
     cy.get('[data-testid="tool-sets"]').should("contain", "Composition");
+    cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
+    cy.get('[data-testid="tool-tab-review"]').click();
+    cy.get('[data-testid="confirm-app-usage"]').should("not.be.checked");
+    cy.get('[data-testid="tool-download"]').should("be.disabled");
   });
 
   it("opens the Harbor example from /tool?demo=harbor once", () => {

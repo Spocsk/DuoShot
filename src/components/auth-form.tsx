@@ -6,6 +6,7 @@ import { useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
+import { FREE_EXPORTS } from "@/lib/plans";
 import { useI18n } from "@/components/i18n-provider";
 import { localePrefix } from "@/lib/site";
 import { clearAnalyticsAuthIntent, markAnalyticsAuthIntent, trackProduct } from "@/lib/analytics-client";
@@ -29,7 +30,7 @@ export function AuthForm({
   onSuccess?: () => void;
   initialError?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const router = useRouter();
   const prefix = localePrefix(locale);
   const afterAuth = nextPath ?? `${prefix}/tool`;
@@ -164,7 +165,7 @@ export function AuthForm({
   return (
     <div className={variant === "page" ? "studio-auth-card mx-auto w-full max-w-md" : "studio-auth-card"}>
       <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
-        {title ?? (variant === "modal" && mode === "signup" ? t("auth_modal_title") : t(mode === "signup" ? "signup_title" : "login_title"))}
+        {title ?? (variant === "modal" && mode === "signup" ? tf("auth_modal_title", { exports: FREE_EXPORTS }) : t(mode === "signup" ? "signup_title" : "login_title"))}
       </h1>
       {variant === "modal" && mode === "signup" ? (
         <p className="mt-2 text-sm text-[var(--muted)]">{t("auth_modal_lead")}</p>

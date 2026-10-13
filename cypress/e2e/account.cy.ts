@@ -13,7 +13,7 @@ describe("account", () => {
     }).as("dsar");
     cy.intercept("POST", "**/api/account/delete", { ok: true }).as("erase");
     cy.visitFr("/account");
-    cy.get('[data-testid="account-plan"]').should("contain", "Essai");
+    cy.get('[data-testid="account-plan"]').should("contain", "Essai gratuit");
     cy.get('[data-testid="account-email"]').should("contain", "e2e@duoshot.test");
     cy.get('[data-testid="account-export"]').click();
     cy.wait("@dsar");

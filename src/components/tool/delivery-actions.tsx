@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
-import type { PurchaseKind } from "@/lib/plans";
+import { formatEurFromCents, FREE_EXPORTS, PLANS, type PurchaseKind } from "@/lib/plans";
 import { SwapLabel } from "@/components/tool/controls";
 import type { BillingStatus, SessionState } from "@/components/tool/use-billing";
 import type { useRenderJobs } from "@/components/tool/use-render-jobs";
@@ -41,14 +41,14 @@ export function OtherActions({ hasExportable, jobs }: { hasExportable: boolean; 
 }
 
 /** Review-link outcome (Studio): the URL, its client status and the upgrade offer. */
-export function ReviewOutcome({ billing, checkoutBusy, onCheckout, jobs }: {
+export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs }: {
   locale: Locale;
   billing: BillingStatus | null;
   checkoutBusy: boolean;
   onCheckout: (kind: PurchaseKind) => Promise<void>;
   jobs: Jobs;
 }) {
-  const { t, tf } = useI18n();
+  const { tf } = useI18n();
   const { reviewUrl, reviewStatus, reviewSetStatus, reviewUpgrade } = jobs;
   return <>
     {reviewSetStatus ? (
@@ -70,7 +70,7 @@ export function ReviewOutcome({ billing, checkoutBusy, onCheckout, jobs }: {
         onClick={() => void onCheckout("studio_monthly")}
         className="ds-cta-ghost mt-3 w-full"
       >
-        {t("pricing_studio_cta")}
+        {tf("pricing_studio_cta", { price: formatEurFromCents(PLANS.studio.monthlyEur * 100, locale) })}
       </button>
     ) : null}
   </>;
@@ -86,7 +86,7 @@ export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }
   demo: boolean;
   jobs: Jobs;
 }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const { exportImages } = jobs;
   return <>
     <div className="tool-panel-heading"><h2>{t("tool_export_title")}</h2><p>{zipUrl ? t("tool_export_lead") : demo ? t("tool_demo_export_hint") : t("tool_export_empty")}</p></div>
@@ -105,9 +105,13 @@ export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }
         <p className="mt-3 text-sm text-[var(--muted)]">{t("tool_unzip_archive_get_both")}</p>
       </div>
     ) : null}
+    <p className="mt-3 text-sm text-[var(--muted)]" data-testid="tool-export-connect-hint">
+      {t("tool_export_connect_hint")}{" "}
+      <Link href={`${prefix}/specs`} className="ds-link">{t("tool_export_connect_specs")}</Link>
+    </p>
     {session === "out" && !demo ? (
       <p className="mt-3 text-xs text-[var(--muted)]">
-        {t("tool_need_account")}{" "}
+        {tf("tool_need_account", { exports: FREE_EXPORTS })}{" "}
         <Link href={`${prefix}/signup`} className="ds-link">
           {t("nav_signup")}
         </Link>

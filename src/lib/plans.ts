@@ -73,25 +73,25 @@ export const CHECKOUT_CATALOG: Record<
 > = {
   indie_monthly: {
     name: "DuoShot Indie",
-    amountCents: 1200,
+    amountCents: PLANS.indie.monthlyEur * 100,
     mode: "subscription",
     plan: "indie",
   },
   studio_monthly: {
     name: "DuoShot Studio",
-    amountCents: 4900,
+    amountCents: PLANS.studio.monthlyEur * 100,
     mode: "subscription",
     plan: "studio",
   },
   indie_yearly: {
     name: "DuoShot Indie · yearly",
-    amountCents: 12000,
+    amountCents: PLANS.indie.yearlyEur * 100,
     mode: "subscription",
     plan: "indie",
   },
   studio_yearly: {
     name: "DuoShot Studio · yearly",
-    amountCents: 49000,
+    amountCents: PLANS.studio.yearlyEur * 100,
     mode: "subscription",
     plan: "studio",
   },

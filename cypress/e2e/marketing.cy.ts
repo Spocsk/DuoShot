@@ -31,9 +31,11 @@ describe("marketing", () => {
     cy.get('[data-testid="pricing"]').scrollIntoView().should("be.visible");
     cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
     cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
+    cy.get('[data-testid="billing-monthly"]').should("not.exist");
+    cy.get('[data-testid="billing-yearly"]').should("not.exist");
   });
 
-  it("keeps the Harbor devices equally tall and reveals annual billing", () => {
+  it("keeps the Harbor devices equally tall", () => {
     cy.viewport(1397, 920);
     cy.visitFr("/");
     cy.get(".studio-hero-object .duo-chassis").then(($closed) => {
@@ -42,15 +44,6 @@ describe("marketing", () => {
       });
     });
     cy.get('[data-testid="locale-switch"]').should("contain", "🇬🇧");
-    cy.get('[data-testid="billing-yearly"]').click();
-    cy.contains("120 € / an").should("be.visible");
-    cy.contains("490 € / an").should("be.visible");
-    cy.get('[data-testid="pricing-cta-indie_yearly"]').should("be.visible");
-    cy.get('[data-testid="pricing-cta-indie_yearly"]').should("contain", "120 €/an");
-    cy.get('[data-testid="pricing-cta-studio_yearly"]').should("be.visible");
-    cy.get('[data-testid="pricing-cta-studio_yearly"]').should("contain", "490 €/an");
-    cy.get('[data-testid="billing-monthly"]').click();
-    cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
   });
 
   for (const [locale, path] of [["fr", "/"], ["en", "/en"]] as const) {
@@ -106,22 +99,40 @@ describe("marketing", () => {
     cy.get('[data-testid="cta-review-demo"]').should("have.attr", "href", "/en/r/harbor");
     cy.get(".studio-review-preview").should("contain", "Closed screen").and("contain", "Approve");
     cy.get('[data-testid="locale-switch"]').should("contain", "🇫🇷");
-    cy.get('[data-testid="billing-yearly"]').click();
-    cy.contains("€120 / year").should("be.visible");
+    cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
+    cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
+    cy.get('[data-testid="billing-monthly"]').should("not.exist");
+    cy.get('[data-testid="billing-yearly"]').should("not.exist");
   });
 
   it("serves a dedicated pricing page", () => {
     cy.visitFr("/pricing");
-    cy.contains("h1", "Essai, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Essai gratuit, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="nav-pricing"]').should("have.attr", "aria-current", "page");
     cy.contains("Paiement sécurisé par Stripe").should("be.visible");
     cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/signup");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.contains("3 sièges").should("be.visible");
     cy.visitEn("/en/pricing");
-    cy.contains("h1", "Trial, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Free trial, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/en/r/harbor");
   });
+
+  for (const locale of ["fr", "en"] as const) {
+    it(`switches annual and monthly billing on the ${locale} pricing page`, () => {
+      if (locale === "fr") cy.visitFr("/pricing");
+      else cy.visitEn("/en/pricing");
+      cy.get('[data-testid="billing-monthly"]').should("have.attr", "aria-pressed", "true");
+      cy.get('[data-testid="billing-yearly"]').click().should("have.attr", "aria-pressed", "true");
+      cy.contains(locale === "fr" ? "120 € / an" : "€120 / year").should("be.visible");
+      cy.contains(locale === "fr" ? "490 € / an" : "€490 / year").should("be.visible");
+      cy.get('[data-testid="pricing-cta-indie_yearly"]').should("be.visible").and("contain", locale === "fr" ? "120 €/an" : "€120/year");
+      cy.get('[data-testid="pricing-cta-studio_yearly"]').should("be.visible").and("contain", locale === "fr" ? "490 €/an" : "€490/year");
+      cy.get('[data-testid="billing-monthly"]').click().should("have.attr", "aria-pressed", "true");
+      cy.get('[data-testid="pricing-cta-indie_monthly"]').should("be.visible");
+      cy.get('[data-testid="pricing-cta-studio_monthly"]').should("be.visible");
+    });
+  }
 
   it("serves content and legal pages", () => {
     cy.visitFr("/specs");

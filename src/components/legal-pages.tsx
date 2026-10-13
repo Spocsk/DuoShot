@@ -5,6 +5,7 @@ import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
 import { getTranslator } from "@/lib/i18n";
+import { FREE_EXPORTS, PASS30, PLANS, STUDIO_SEATS } from "@/lib/plans";
 
 export function LegalPage({
   locale,
@@ -241,10 +242,10 @@ export function TermsContent({ locale }: { locale: Locale }) {
             (automation, quota circumvention, unlawful content).
           </p>
         </Block>
-        <Block title="Trial and plans">
+        <Block title="Free trial and plans">
           <p>
-            Trial: 2 HD ZIPs (selected Duo screenshots), no card, Duo sizes only. Indie: €12/month or €120/year billed annually, up to 100 ZIP exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €49/month or €490/year billed annually, everything in Indie plus
-            three seats and client reviews retained for seven days. 30-day pass: €19 one-time payment, Indie features for 30 days, no renewal. VAT not applicable (French VAT franchise, art. 293 B of the French tax code): the price shown is the price paid.
+            Free trial: {FREE_EXPORTS} HD exports (selected Duo screenshots), no card, Duo sizes only. Indie: €{PLANS.indie.monthlyEur}/month or €{PLANS.indie.yearlyEur}/year billed annually, up to {PLANS.indie.dailyHdSets} exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €{PLANS.studio.monthlyEur}/month or €{PLANS.studio.yearlyEur}/year billed annually, everything in Indie plus{" "}
+            {STUDIO_SEATS} seats and client reviews retained for seven days. {PASS30.days}-day pass: €{PASS30.priceEur} one-time payment, Indie features for {PASS30.days} days, no renewal. VAT not applicable (French VAT franchise, art. 293 B of the French tax code): the price shown is the price paid.
             Billing via Stripe, cancel from Stripe.
           </p>
         </Block>
@@ -308,10 +309,10 @@ export function TermsContent({ locale }: { locale: Locale }) {
           pouvons suspendre les abus (automatisation, contournement de quota, contenus illicites).
         </p>
       </Block>
-      <Block title="Essai et offres">
+      <Block title="Essai gratuit et offres">
         <p>
-          Essai : 2 ZIP HD (captures Duo sélectionnées), sans carte, tailles Duo seulement. Indie : 12 €/mois ou 120 €/an facturés annuellement, 100 exports ZIP par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois ou 490 €/an facturés annuellement, tout Indie plus trois
-          sièges et des reviews client conservées sept jours. Pass 30 jours : 19 € en paiement unique, fonctions Indie pendant 30 jours, sans renouvellement. TVA non applicable, art. 293 B du CGI : le prix affiché est le prix payé. Paiement via Stripe, résiliation
+          Essai gratuit : {FREE_EXPORTS} exports HD (captures Duo sélectionnées), sans carte, tailles Duo seulement. Indie : {PLANS.indie.monthlyEur} €/mois ou {PLANS.indie.yearlyEur} €/an facturés annuellement, {PLANS.indie.dailyHdSets} exports par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : {PLANS.studio.monthlyEur} €/mois ou {PLANS.studio.yearlyEur} €/an facturés annuellement, tout Indie plus {STUDIO_SEATS}
+          {" "}sièges et des reviews client conservées sept jours. Pass {PASS30.days} jours : {PASS30.priceEur} € en paiement unique, fonctions Indie pendant {PASS30.days} jours, sans renouvellement. TVA non applicable, art. 293 B du CGI : le prix affiché est le prix payé. Paiement via Stripe, résiliation
           depuis Stripe.
         </p>
       </Block>

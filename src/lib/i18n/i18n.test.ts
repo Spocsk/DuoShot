@@ -22,9 +22,9 @@ describe("i18n", () => {
   });
 
   it("interpolates placeholders", () => {
-    expect(fr.tf("account_remaining", { n: 2 })).toBe("2 ZIP offerts restants");
-    expect(en.tf("account_remaining", { n: 1 })).toBe("1 free ZIP left");
-    expect(fr.tf("account_remaining", { n: 1 })).toBe("1 ZIP offert restant");
+    expect(fr.tf("account_remaining", { n: 2 })).toBe("2 exports gratuits restants");
+    expect(en.tf("account_remaining", { n: 1 })).toBe("1 free export left");
+    expect(fr.tf("account_remaining", { n: 1 })).toBe("1 export gratuit restant");
     expect(en.tf("tool_quality_gate_title", { n: 1 })).toBe("1 crop needs review");
     expect(fr.tf("tool_quality_gate_title", { n: 3 })).toBe("3 cadrages à vérifier");
     expect(fr.t("tool_action_download")).toBe("Télécharger le ZIP");
@@ -38,6 +38,6 @@ describe("i18n", () => {
   it("picks the singular variant with Intl.PluralRules", () => {
     // French treats 0 as singular, English does not.
     expect(fr.tf("account_remaining", { n: 0 })).toBe(fr.tf("account_remaining", { n: 1 }).replace("1", "0"));
-    expect(en.tf("account_remaining", { n: 0 })).toBe("0 free ZIPs left");
+    expect(en.tf("account_remaining", { n: 0 })).toBe("0 free exports left");
   });
 });

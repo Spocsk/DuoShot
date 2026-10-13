@@ -1,4 +1,11 @@
 import type { Locale } from "../specs";
+import { PLANS } from "../plans";
+import { REVIEW_TTL_DAYS } from "../reviews";
+import { createTranslator } from "./core";
+import { fr } from "./fr";
+import { en } from "./en";
+
+const freeMonths = 12 - PLANS.indie.yearlyEur / PLANS.indie.monthlyEur;
 
 /** FAQ entries for the landing and pricing pages and their JSON-LD. Server components only. */
 export const FAQ: Record<Locale, { q: string; a: string }[]> = {
@@ -25,7 +32,7 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
     {
       q: "Comment ça se paie ?",
-      a: "Accès libre : aperçu, contrôles et ZIP exemple. Essai : 2 ZIP HD après inscription, sans carte. Indie : 12 €/mois ou 120 €/an. Studio : 49 €/mois ou 490 €/an avec 3 sièges et une revue client pendant 7 jours. L’année offre deux mois par rapport au paiement mensuel.",
+      a: `Accès libre : aperçu, contrôles et ZIP exemple. Essai gratuit : ${PLANS.free.freeExports} exports après inscription, sans carte. Indie : ${PLANS.indie.monthlyEur} €/mois ou ${PLANS.indie.yearlyEur} €/an. Studio : ${PLANS.studio.monthlyEur} €/mois ou ${PLANS.studio.yearlyEur} €/an avec ${PLANS.studio.seats} sièges et une revue client pendant ${REVIEW_TTL_DAYS} jours. L’année offre ${freeMonths} mois par rapport au paiement mensuel.`,
     },
     {
       q: "PNG ou JPEG ?",
@@ -40,8 +47,8 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
       a: "Oui, le temps du traitement : sources et ZIP expirent après 24 h, les médias de revue après 7 jours ou révocation. La purge serveur est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les brouillons locaux restent sur votre appareil.",
     },
     {
-      q: "Les projets Studio sont-ils partagés entre membres ?",
-      a: "Pas encore. Les projets sont enregistrés sur cet appareil et ne sont pas encore synchronisés entre membres. Les membres Studio partagent l’abonnement, le quota quotidien et les liens de validation client ; pour transmettre un set, exportez le ZIP ou envoyez un lien de validation.",
+      q: "Que partagent les membres Studio ?",
+      a: createTranslator("fr", fr).tf("pricing_local_projects", { seats: PLANS.studio.seats }),
     },
   ],
   en: [
@@ -67,7 +74,7 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
     },
     {
       q: "How does payment work?",
-      a: "Open access includes preview, checks, and an example ZIP. Trial includes 2 HD ZIPs after signup, no card. Indie is €12/month or €120/year. Studio is €49/month or €490/year with 3 seats and a 7-day client review. Annual billing includes two months free compared with monthly billing.",
+      a: `Open access includes preview, checks, and an example ZIP. Free trial includes ${PLANS.free.freeExports} exports after signup, no card. Indie is €${PLANS.indie.monthlyEur}/month or €${PLANS.indie.yearlyEur}/year. Studio is €${PLANS.studio.monthlyEur}/month or €${PLANS.studio.yearlyEur}/year with ${PLANS.studio.seats} seats and a ${REVIEW_TTL_DAYS}-day client review. Annual billing includes ${freeMonths} months free compared with monthly billing.`,
     },
     {
       q: "PNG or JPEG?",
@@ -82,8 +89,8 @@ export const FAQ: Record<Locale, { q: string; a: string }[]> = {
       a: "Only for processing: sources and ZIPs expire after 24 hours; review media after 7 days or revocation. Server cleanup is scheduled every 15 minutes, with retries on failure. Local drafts remain on your device.",
     },
     {
-      q: "Are Studio projects shared between members?",
-      a: "Not yet. Projects are saved on this device and are not yet synced between members. Studio members share the subscription, the daily quota and client review links; to hand over a set, export the ZIP or send a review link.",
+      q: "What do Studio members share?",
+      a: createTranslator("en", en).tf("pricing_local_projects", { seats: PLANS.studio.seats }),
     },
   ],
 };

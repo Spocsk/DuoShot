@@ -3,6 +3,15 @@ import { describe, expect, it } from "vitest";
 import { CHECKOUT_CATALOG, FREE_EXPORTS, ONE_TIME_CATALOG, PASS30, isOneTimeKind, PLANS, STUDIO_SEATS, dailyLimitFor, formatEurFromCents, isProPlan, remainingFreeExports } from "./plans";
 
 describe("plans", () => {
+  it("keeps the published subscription prices and checkout catalog aligned", () => {
+    expect([PLANS.indie.monthlyEur, PLANS.indie.yearlyEur, PLANS.studio.monthlyEur, PLANS.studio.yearlyEur])
+      .toEqual([12, 120, 49, 490]);
+    expect(CHECKOUT_CATALOG.indie_monthly.amountCents).toBe(PLANS.indie.monthlyEur * 100);
+    expect(CHECKOUT_CATALOG.indie_yearly.amountCents).toBe(PLANS.indie.yearlyEur * 100);
+    expect(CHECKOUT_CATALOG.studio_monthly.amountCents).toBe(PLANS.studio.monthlyEur * 100);
+    expect(CHECKOUT_CATALOG.studio_yearly.amountCents).toBe(PLANS.studio.yearlyEur * 100);
+  });
+
   it("gives two lifetime free exports", () => {
     expect(FREE_EXPORTS).toBe(2);
     expect(remainingFreeExports(0, "free")).toBe(2);
