@@ -4,6 +4,8 @@ import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { INNER_PORTRAIT, OUTER_PORTRAIT } from "@/lib/screenshot-copy";
 import { localePrefix } from "@/lib/site";
+import { JsonLd } from "@/lib/json-ld";
+import { FaqList } from "./faq-list";
 
 const CARDS = [
   { code: "dimensions / dimensions", title: "reject_dimensions_title", body: "reject_dimensions_body", cta: "specs" },
@@ -16,8 +18,14 @@ const CARDS = [
 export function RejectionPage({ locale }: { locale: Locale }) {
   const { t, tf } = getTranslator(locale);
   const prefix = localePrefix(locale);
+  const faq = [
+    { q: t("reject_faq_dimensions"), a: tf("reject_dimensions_body", { outerPortrait: OUTER_PORTRAIT, innerPortrait: INNER_PORTRAIT }) },
+    { q: t("reject_faq_alpha"), a: t("reject_alpha_body") },
+    { q: t("reject_faq_slot"), a: t("specs_single_slot") },
+  ];
   return (
     <div className="flex min-h-full flex-col">
+      <JsonLd locale={locale} path="/rejet" faq={faq} />
       <SiteHeader locale={locale} path={locale === "en" ? "/en/rejection" : "/rejet"} />
       <main id="main" className="mx-auto w-full max-w-3xl px-5 py-12">
         <h1 className="font-display text-5xl">{t("reject_app_store_screenshot_errors")}</h1>
@@ -43,6 +51,10 @@ export function RejectionPage({ locale }: { locale: Locale }) {
             </article>
           ))}
         </div>
+        <section className="mt-12">
+          <h2 className="font-display text-3xl">{t("reject_faq_title")}</h2>
+          <FaqList items={faq} />
+        </section>
       </main>
       <SiteFooter locale={locale} />
     </div>

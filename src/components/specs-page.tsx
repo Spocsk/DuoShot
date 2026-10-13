@@ -2,11 +2,12 @@ import Link from "next/link";
 import { AppleAvailability } from "./apple-availability";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { appStoreDisclaimer233, formatInches, SIZE_SPECS, SPECS_VERSION_DATE, specRowDetail, type Locale, type SizeSpec } from "@/lib/specs";
+import { appStoreDisclaimer233, formatInches, SIZE_SPECS, specRowDetail, type Locale, type SizeSpec } from "@/lib/specs";
 import { FaqList } from "@/components/faq-list";
 import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { INNER_PORTRAIT, OUTER_PORTRAIT, screenshotDimensions, SPECS_FAQ } from "@/lib/screenshot-copy";
-import { toolPath } from "@/lib/site";
+import { localizedPath, toolPath } from "@/lib/site";
+import { SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "@/lib/screenshot-pages";
 import { getTranslator } from "@/lib/i18n";
 
 function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpec[]; caption: string }) {
@@ -43,19 +44,26 @@ export function SpecsPage({ locale }: { locale: Locale }) {
   const size69 = formatInches(SIZE_SPECS.find((spec) => spec.slot === "iphone-69")!.inches, locale);
   return (
     <div className="flex min-h-full flex-col">
-      <JsonLd locale={locale} faq={faq} />
+      <JsonLd locale={locale} path="/specs" faq={faq} article={{ ...SPECS_PAGE_COPY[locale], dateModified: SCREENSHOT_VERIFIED_ON }} />
       <SiteHeader locale={locale} path="/specs" />
       <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
-        <p className="ds-label">{t("specs_dimensions_version")} · {SPECS_VERSION_DATE}</p>
+        <p className="ds-label">{tf("specs_verified_on", { date: SCREENSHOT_VERIFIED_ON })}</p>
         <h1 className="font-display mt-3 text-4xl sm:text-5xl">{t("specs_iphone_duo_screenshot_sizes")}</h1>
         <p className="mt-4 max-w-3xl text-lg">
           {tf("specs_app_store_connect_prepare", { outerPortrait: OUTER_PORTRAIT, outerSize, innerPortrait: INNER_PORTRAIT, innerSize })}
         </p>
+        <p className="mt-4 text-lg">{t("specs_single_slot")}</p>
         <AppleAvailability locale={locale} />
         <section className="mt-10" aria-labelledby="duo-sizes">
           <h2 id="duo-sizes" className="font-display text-3xl">{t("specs_screenshot_dimensions_outer_inner")}</h2>
           <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot !== "iphone-69")} caption={t("specs_iphone_duo_portrait_landscape")} />
           <p className="mt-4 text-sm text-[var(--muted)]">{t("specs_png_jpeg_without_alpha")}{" "}<a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{t("specs_read_connect_specifications")}</a></p>
+        </section>
+        <section className="mt-10" aria-labelledby="size-guides">
+          <h2 id="size-guides" className="font-display text-3xl">{t("size_related_heading")}</h2>
+          <ul className="mt-4 space-y-3">
+            {SCREENSHOT_SIZES.map((size) => <li key={size}><Link className="ds-link" href={localizedPath(locale, `/${size}`)}>{sizePageCopy(locale, size).title}</Link></li>)}
+          </ul>
         </section>
         <section className="mt-12" aria-labelledby="panel-vs-connect">
           <h2 id="panel-vs-connect" className="font-display text-3xl">{t("specs_panel_resolution_vs_app")}</h2>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GET } from "@/app/llms.txt/route";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppleAvailability } from "@/components/apple-availability";
@@ -6,6 +7,11 @@ import { APPLE_UPLOAD_NEWS_SOURCE, DUO_SLOT_SOURCE, APPLE_UPLOAD_STATE, APPLE_UP
 import { getTranslator } from "./i18n";
 
 describe("Apple upload status", () => {
+  it("qualifies the deadline in the crawler reference", async () => {
+    const body = await GET().text();
+    expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
+    expect(body).toContain("single iPhone Duo slot, with up to 10 screenshots per locale");
+  });
   it("defaults to the configured open state and check date", () => {
     expect(appleUploadStatus("fr")).toBe(appleUploadStatus("fr", APPLE_UPLOAD_STATE));
     expect(APPLE_UPLOAD_STATUS_CHECKED_AT).toBe("2026-10-13");
@@ -21,11 +27,11 @@ describe("Apple upload status", () => {
   it("preserves main's dated opening announcement and submission deadline", () => {
     const fr = appleUploadStatus("fr", "open");
     expect(fr).toContain("Vérifié le 13 octobre 2026 : le dépôt des captures d’écran iPhone Duo est ouvert dans App Store Connect depuis le 5 octobre 2026.");
-    expect(fr).toContain("Ces captures seront exigées pour toute soumission à partir d’avril 2027.");
+    expect(fr).toContain("Ces captures seront exigées pour toute soumission à partir d’avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur.");
     expect(fr).not.toContain("plus tard");
     const en = appleUploadStatus("en", "open");
     expect(en).toContain("Checked October 13, 2026: iPhone Duo screenshot uploads have been open in App Store Connect since October 5, 2026.");
-    expect(en).toContain("Duo screenshots become required for every submission from April 2027.");
+    expect(en).toContain("Duo screenshots become required for every submission from April 2027 for apps built with the iOS 27.1 SDK or later.");
     expect(en).not.toContain("later this year");
   });
 

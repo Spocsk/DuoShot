@@ -3,6 +3,7 @@ import { getTranslator } from "@/lib/i18n";
 import { FAQ } from "@/lib/i18n";
 import { checkoutDisplayAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import type { Locale } from "@/lib/specs";
+import { pricingFaq } from "@/lib/pricing-faq";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { PricingSection } from "@/components/pricing-section";
@@ -10,7 +11,8 @@ import { TrustLine } from "@/components/trust-line";
 import { FaqList } from "@/components/faq-list";
 
 export async function PricingPage({ locale }: { locale: Locale }) {
-  const { t } = getTranslator(locale);
+  const i18n = getTranslator(locale);
+  const { t } = i18n;
   // Checkout availability comes from runtime env (absent at image build time), so
   // render per request: the first HTML then shows the real buttons, not a disabled flash.
   await connection();
@@ -19,7 +21,7 @@ export async function PricingPage({ locale }: { locale: Locale }) {
   const faq = FAQ[locale];
   return (
     <div className="flex min-h-full flex-col">
-      <JsonLd locale={locale} />
+      <JsonLd locale={locale} path="/pricing" software faq={[...pricingFaq(i18n), ...faq]} />
       <SiteHeader locale={locale} path="/pricing" />
       <main id="main">
         <PricingSection locale={locale} heading="h1" checkoutAvailable={available} passAvailable={passAvailable} />

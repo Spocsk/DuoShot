@@ -6,7 +6,7 @@ import { useI18n } from "@/components/i18n-provider";
 import type { Translator } from "@/lib/i18n/types";
 import { CHECKOUT_CATALOG, ONE_TIME_CATALOG, PLANS, type CheckoutKind, type OneTimeKind, type PurchaseKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
-import { appleUploadStatus } from "@/lib/apple-screenshot-status";
+import { pricingFaq } from "@/lib/pricing-faq";
 import { localePrefix, pricingPath, reviewPath } from "@/lib/site";
 import { PricingCta } from "@/components/pricing-cta";
 import { FaqList } from "@/components/faq-list";
@@ -177,10 +177,7 @@ export function PricingSection({
   const teams = ids.filter(isTeam);
   const Title = heading;
   // Local projects are covered by the Studio question in the general FAQ below the section.
-  const faq = [
-    { q: t("pricing_faq_refund_q"), a: t("pricing_faq_refund_a") },
-    { q: t("pricing_faq_apple_q"), a: appleUploadStatus(locale) },
-  ];
+  const faq = pricingFaq(i18n);
 
   return (
     <section id="pricing" data-testid="pricing" className={`studio-pricing scroll-mt-24${compact ? " is-compact" : ""}`} data-reveal>

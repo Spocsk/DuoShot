@@ -42,7 +42,9 @@ export function localizedPath(locale: Locale, path: string): string {
 }
 
 export function absoluteUrl(pathname: string): string {
-  return `${getSiteUrl()}${pathname}`;
+  // Next's metadata resolver serializes the site root without a trailing slash.
+  // Use that exact form in the sitemap and JSON-LD as well.
+  return `${getSiteUrl()}${pathname === "/" ? "" : pathname}`;
 }
 
 export function localePrefix(locale: Locale): string {
@@ -65,6 +67,8 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/", en: "/en", priority: 1 },
   { fr: "/pricing", en: "/en/pricing", priority: 0.8 },
   { fr: "/specs", en: "/en/specs", priority: 1 },
+  { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
+  { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
   { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", priority: 0.7 },
   { fr: "/rejet", en: "/en/rejection", priority: 0.7 },
   { fr: "/privacy", en: "/en/privacy", priority: 0.4 },
