@@ -1,4 +1,11 @@
 describe("account", () => {
+  beforeEach(() => {
+    // The analytics banner is also a dialog and can cover page controls.
+    cy.on("window:before:load", (win) => {
+      win.localStorage.setItem("duoshot_analytics_choice_v2", "rejected");
+    });
+  });
+
   it("redirects guests to login", () => {
     cy.visitFr("/account");
     cy.location("pathname").should("eq", "/login");
@@ -25,7 +32,7 @@ describe("account", () => {
     cy.get('[data-testid="account-export"]').click();
     cy.wait("@dsar");
     cy.get('[data-testid="account-delete"]').click();
-    cy.get('[role="dialog"]').should("have.attr", "aria-modal", "true");
+    cy.get('[role="dialog"][aria-labelledby="account-delete-title"]').should("be.visible").and("have.attr", "aria-modal", "true");
     cy.get("h1").should("have.length", 1);
     cy.get('[data-testid="account-delete-confirm"]').click();
     cy.wait("@erase");
@@ -36,13 +43,13 @@ describe("account", () => {
     cy.intercept("POST", "**/api/account/delete", { forceNetworkError: true }).as("erase");
     cy.visitFr("/account");
     cy.get('[data-testid="account-delete"]').click();
-    cy.contains('[role="dialog"] button', "Conserver mon compte").click();
-    cy.get('[role="dialog"]').should("not.exist");
+    cy.contains('[role="dialog"][aria-labelledby="account-delete-title"] button', "Conserver mon compte").click();
+    cy.get('[role="dialog"][aria-labelledby="account-delete-title"]').should("not.exist");
     cy.get("@erase.all").should("have.length", 0);
     cy.get('[data-testid="account-delete"]').click();
     cy.get('[data-testid="account-delete-confirm"]').click();
     cy.wait("@erase");
-    cy.get('[role="dialog"] [role="alert"]').should("contain", "Suppression incomplète");
+    cy.get('[role="dialog"][aria-labelledby="account-delete-title"] [role="alert"]').should("be.visible").and("contain", "Suppression incomplète");
     cy.get('[data-testid="account-delete-confirm"]').should("not.be.disabled");
   });
 

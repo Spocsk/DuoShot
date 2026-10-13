@@ -1,4 +1,11 @@
 describe("tool guest", () => {
+  beforeEach(() => {
+    // Keep the analytics dialog from covering the sticky action/status dock.
+    cy.on("window:before:load", (win) => {
+      win.localStorage.setItem("duoshot_analytics_choice_v2", "rejected");
+    });
+  });
+
   it("shows an honest empty state before any drop", () => {
     cy.visitFr("/tool");
     cy.get('[data-testid="preview-outer"]').should("contain", "1398 × 2034").and("contain", "Importer");
@@ -113,10 +120,17 @@ describe("tool guest", () => {
     it(`shows import errors on every step in ${locale}`, () => {
       if (locale === "fr") cy.visitFr("/tool");
       else cy.visitEn("/en/tool");
+      cy.get('[data-testid="tool-sets"][data-ready="true"]');
+      const message = locale === "fr" ? "Certains fichiers ont été ignorés" : "Some files were skipped";
       cy.get('[data-testid="drop-outer-input"]').selectFile({ contents: Cypress.Buffer.from("invalid image"), fileName: "invalid.png", mimeType: "image/png" }, { force: true });
+      // Image decoding is asynchronous; wait for the import failure first.
+      cy.get('[data-testid="tool-status"]').should("have.attr", "data-kind", "err").and("contain", message);
       for (const panel of ["captures", "adjust", "review", "export"]) {
         cy.get(`[data-testid="tool-tab-${panel}"]`).click();
-        cy.get('[data-testid="tool-status"]').should("be.visible").and("have.attr", "role", "alert");
+        cy.get(`[data-testid="tool-tab-${panel}"]`).should("have.attr", "aria-selected", "true");
+        // Keep the alert below the sticky site header when scrolling to it.
+        cy.get('[data-testid="tool-status"]').scrollIntoView({ offset: { top: -100, left: 0 } });
+        cy.get('[data-testid="tool-status"]').should("be.visible").and("have.attr", "role", "alert").and("contain", message);
       }
     });
   }
@@ -127,13 +141,14 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-set-new"]').click();
     cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
     cy.get('[data-testid="tool-set-delete"]').click();
-    cy.get('[role="dialog"]').should("contain", "Composition 02").and("have.attr", "aria-modal", "true");
-    cy.contains('[role="dialog"] button', "Annuler").click();
+    cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("be.visible").and("contain", "Composition 02").and("have.attr", "aria-modal", "true");
+    cy.contains('[role="dialog"][aria-labelledby="tool-delete-title"] button', "Annuler").click();
+    cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("not.exist");
     cy.get('[data-testid="tool-sets"]').should("contain", "Composition 02");
     cy.get('[data-testid="preview-outer"] img').should("exist");
     cy.get('[data-testid="tool-set-delete"]').click();
     cy.get('[data-testid="tool-set-delete-confirm"]').click();
-    cy.get('[role="dialog"]').should("not.exist");
+    cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("not.exist");
     cy.get('[data-testid="tool-sets"]').should("contain", "Composition 01");
     cy.reload();
     cy.get('[data-testid="tool-sets"][data-ready="true"]').click();
