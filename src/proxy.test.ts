@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import nextConfig from "../next.config";
 import { proxy } from "./proxy";
 import { LOCALE_COOKIE } from "./lib/locale";
+import { updateSession } from "./lib/supabase/proxy";
+import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE, readAttribution } from "./lib/attribution";
 
 vi.mock("@/lib/supabase/proxy", () => ({ updateSession: vi.fn(async () => NextResponse.next()) }));
 
@@ -52,5 +54,69 @@ describe("proxy internal-route gate", () => {
     expect((await call({ host: "duoshot.site", "x-real-ip": "203.0.113.9", "x-forwarded-for": "203.0.113.9" })).status).toBe(404);
     expect((await call({ host: "127.0.0.1:3000", "x-real-ip": "203.0.113.9" })).status).toBe(404);
     expect((await call({ host: "duoshot.site" }, "/api/internal")).status).toBe(404);
+  });
+});
+
+describe("proxy first-touch attribution", () => {
+  it.each(["/", "/tool"])("captures attribution on landing %s, including locale redirects", async (path) => {
+    vi.stubEnv("NODE_ENV", "production");
+    const response = await proxy(new NextRequest(`https://duoshot.site${path}?utm_source=GOOGLE&utm_content=Hero!`, {
+      headers: { referer: "https://news.example/private?email=a@example.com" },
+    }));
+    const stored = response.cookies.get(ATTRIBUTION_COOKIE)!;
+    expect(stored).toMatchObject({ maxAge: ATTRIBUTION_MAX_AGE, path: "/", sameSite: "lax", secure: true, httpOnly: true });
+    expect(stored).not.toHaveProperty("domain");
+    expect(JSON.parse(stored.value)).toEqual({ utm_source: "google", utm_content: "hero", referrer: "news.example" });
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    if (path === "/tool") {
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("https://duoshot.site/en/tool?utm_source=GOOGLE&utm_content=Hero!");
+      expect(response.headers.get("vary")).toBe("Accept-Language, Cookie");
+    }
+    // Exercise the actual Set-Cookie encoding used by the browser on checkout.
+    expect(readAttribution(response.headers.get("set-cookie")!.split(";")[0], "duoshot.site"))
+      .toEqual(JSON.parse(stored.value));
+  });
+
+  it.each(["", "broken", "%E0%A4%A", encodeURIComponent(JSON.stringify({ utm_source: "first" }))])("never replaces or extends an existing cookie (%s)", async (value) => {
+    const response = await proxy(new NextRequest("https://duoshot.site/?utm_source=second", {
+      headers: { cookie: `ds_attr=${value}`, referer: "https://second.example/" },
+    }));
+    expect(response.cookies.has(ATTRIBUTION_COOKIE)).toBe(false);
+  });
+
+  it.each([undefined, "https://duoshot.site/en/tool", "invalid"])("does not create an empty attribution cookie (referrer %s)", async (referer) => {
+    const response = await proxy(new NextRequest("https://duoshot.site/?utm_source=!!!", {
+      headers: referer ? { referer } : {},
+    }));
+    expect(response.cookies.has(ATTRIBUTION_COOKIE)).toBe(false);
+  });
+
+  it("captures a referrer-only visit without requiring Secure in development", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const response = await proxy(new NextRequest("http://localhost/", { headers: { referer: "https://news.example/article" } }));
+    expect(response.cookies.get(ATTRIBUTION_COOKIE)).toMatchObject({ value: JSON.stringify({ referrer: "news.example" }), secure: false });
+  });
+
+  it("preserves refreshed auth cookies and response headers", async () => {
+    const refreshed = NextResponse.next();
+    refreshed.cookies.set("auth-token", "refreshed", { httpOnly: true });
+    refreshed.headers.set("x-auth-test", "preserved");
+    vi.mocked(updateSession).mockResolvedValueOnce(refreshed);
+    const response = await proxy(new NextRequest("https://duoshot.site/en/tool?utm_campaign=Launch"));
+    expect(response).toBe(refreshed);
+    expect(response.cookies.get("auth-token")?.value).toBe("refreshed");
+    expect(response.headers.get("x-auth-test")).toBe("preserved");
+    expect(JSON.parse(response.cookies.get(ATTRIBUTION_COOKIE)!.value)).toEqual({ utm_campaign: "launch" });
+  });
+
+  it.each([
+    ["/api/health", "GET", {}], ["/auth/callback", "GET", {}], ["/_next/static/script.js", "GET", {}],
+    ["/asset.css", "GET", {}], ["/", "POST", {}], ["/", "HEAD", {}],
+    ["/", "GET", { "next-router-prefetch": "1" }], ["/", "GET", { purpose: "prefetch" }],
+    ["/", "GET", { "user-agent": "Googlebot" }],
+  ])("does not attribute non-landings %s %s %j", async (path, method, headers) => {
+    const response = await proxy(new NextRequest(`https://duoshot.site${path}?utm_source=google`, { method, headers: headers as Record<string, string> }));
+    expect(response.cookies.has(ATTRIBUTION_COOKIE)).toBe(false);
   });
 });
