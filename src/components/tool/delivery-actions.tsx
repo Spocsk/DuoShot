@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
+import { formatInches, zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import { formatEurFromCents, FREE_EXPORTS, PLANS, type PurchaseKind } from "@/lib/plans";
 import { SwapLabel } from "@/components/tool/controls";
@@ -48,12 +48,12 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
   onCheckout: (kind: PurchaseKind) => Promise<void>;
   jobs: Jobs;
 }) {
-  const { tf } = useI18n();
+  const { t, tf } = useI18n();
   const { reviewUrl, reviewStatus, reviewSetStatus, reviewUpgrade } = jobs;
   return <>
     {reviewSetStatus ? (
       <p className="mt-2 text-sm" data-testid="tool-review-set-status">
-        {tf("tool_review_status", { status: reviewSetStatus })}
+        {tf("tool_review_status", { status: t(reviewSetStatus === "pending" ? "tool_review_status_pending" : reviewSetStatus === "approved" ? "tool_review_status_approved" : reviewSetStatus === "changes_requested" ? "tool_review_status_changes_requested" : "tool_review_status_unknown") })}
       </p>
     ) : null}
     {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
@@ -77,7 +77,7 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
 }
 
 /** Export step: the delivered file list once the ZIP exists, otherwise what is still missing. */
-export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }: {
+export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo, jobs }: {
   locale: Locale;
   prefix: string;
   zipUrl: string | null;
@@ -98,7 +98,7 @@ export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }
           {exportImages.map((image) => (
             <li key={`${image.slot}-${image.index}-${image.width}x${image.height}`} className="studio-delivered-file">
               <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
-              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : "6.9"} · {image.width} × {image.height}</span>
+              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : formatInches(6.9, locale)} · {image.width} × {image.height}</span>
             </li>
           ))}
         </ul>
@@ -111,10 +111,7 @@ export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }
     </p>
     {session === "out" && !demo ? (
       <p className="mt-3 text-xs text-[var(--muted)]">
-        {tf("tool_need_account", { exports: FREE_EXPORTS })}{" "}
-        <Link href={`${prefix}/signup`} className="ds-link">
-          {t("nav_signup")}
-        </Link>
+        {tf("tool_need_account", { exports: FREE_EXPORTS })}
       </p>
     ) : null}
   </>;

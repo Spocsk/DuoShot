@@ -4,9 +4,9 @@ import type { SetMeta } from "./sets-store";
 
 describe("set names", () => {
   it("numbers new sets Composition 01, 02…", () => {
-    expect(nextSetName()).toBe("Composition 01");
-    expect(nextSetName([{ name: "Composition 01" }, { name: "Harbor (exemple)" }])).toBe("Composition 02");
-    expect(defaultSet([{ name: "Composition 01" }, { name: "Composition 03" }]).name).toBe("Composition 02");
+    expect(nextSetName([], "Composition {n}")).toBe("Composition 01");
+    expect(nextSetName([{ name: "Composition 01" }, { name: "Harbor (exemple)" }], "Composition {n}")).toBe("Composition 02");
+    expect(defaultSet([{ name: "Composition 01" }, { name: "Composition 03" }], "Composition {n}").name).toBe("Composition 02");
   });
 });
 
@@ -33,7 +33,10 @@ function fileDatabase() {
                   if (key === failWrite) tx.error = new Error("IndexedDB write failed");
                   writes.push(() => values.set(key, structuredClone(value)));
                 },
-                delete(key: string) { writes.push(() => values.delete(key)); },
+                delete(key: string) {
+                  if (key === failWrite) tx.error = new Error("IndexedDB delete failed");
+                  writes.push(() => values.delete(key));
+                },
                 get(key: string) {
                   const read = { result: structuredClone(values.get(key)), onsuccess: null as (() => void) | null };
                   queueMicrotask(() => read.onsuccess?.());
@@ -84,6 +87,74 @@ describe("local draft migration", () => {
   });
 
   afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("waits for pending serialization before deleting both sides without touching other drafts", async () => {
+    await store.saveSetFiles("draft", "outer", [image("original.png")]);
+    await store.saveSetFiles("draft", "inner", [image("open.png")]);
+    await store.saveSetFiles("other", "outer", [image("keep.png")]);
+    let finishRead!: (buffer: ArrayBuffer) => void;
+    const delayed = image("latest.png");
+    vi.spyOn(delayed, "arrayBuffer").mockImplementation(() => new Promise((resolve) => { finishRead = resolve; }));
+    const write = store.saveSetFiles("draft", "outer", [delayed]);
+    const deleted = vi.fn();
+    const removal = store.deleteSetFiles("draft").then(deleted);
+    await vi.waitFor(() => expect(finishRead).toBeTypeOf("function"));
+    expect(deleted).not.toHaveBeenCalled();
+    finishRead(new ArrayBuffer(4));
+    await Promise.all([write, removal]);
+    expect(await store.loadSetFiles("draft", "outer")).toEqual([]);
+    expect(await store.loadSetFiles("draft", "inner")).toEqual([]);
+    expect((await store.loadSetFiles("other", "outer"))[0].name).toBe("keep.png");
+  });
+
+  it.each([false, true])("waits for validation to queue its file write before deletion (Web Locks: %s)", async (webLocks) => {
+    if (webLocks) {
+      const queues = new Map<string, Promise<unknown>>();
+      vi.stubGlobal("navigator", { locks: { request(name: string, _options: unknown, action: () => Promise<unknown>) {
+        const pending = (queues.get(name) ?? Promise.resolve()).catch(() => {}).then(action);
+        queues.set(name, pending);
+        return pending;
+      } } });
+    }
+    let finishValidation!: () => void;
+    const validation = new Promise<void>((resolve) => { finishValidation = resolve; });
+    const changed = store.trackDraftChange("guest", async () => {
+      await validation;
+      await store.saveSetFiles("draft", "outer", [image("validated.png")]);
+      void store.saveSetFiles("draft", "inner", [image("open.png")]);
+    });
+    const deleted = vi.fn();
+    const removal = store.deleteSetFiles("draft").then(deleted);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(deleted).not.toHaveBeenCalled();
+    finishValidation();
+    await Promise.all([changed, removal]);
+    expect(await store.loadSetFiles("draft", "outer")).toEqual([]);
+    expect(await store.loadSetFiles("draft", "inner")).toEqual([]);
+  });
+
+  it.each(["error", "abort"])("preserves both sides after a deletion transaction %s and supports retry", async (failure) => {
+    await store.saveSetFiles("draft", "outer", [image("closed.png")]);
+    await store.saveSetFiles("draft", "inner", [image("open.png")]);
+    db.failNextWritesTo("draft:inner:guest", failure === "abort");
+    await expect(store.deleteSetFiles("draft")).rejects.toThrow("IndexedDB delete failed");
+    expect((await store.loadSetFiles("draft", "outer"))[0].name).toBe("closed.png");
+    expect((await store.loadSetFiles("draft", "inner"))[0].name).toBe("open.png");
+    db.failNextWritesTo(null);
+    await store.deleteSetFiles("draft");
+    expect(await store.loadSetFiles("draft", "outer")).toEqual([]);
+    expect(await store.loadSetFiles("draft", "inner")).toEqual([]);
+  });
+
+  it("allows deleting a draft after a failed save and removes its pending marker", async () => {
+    db.failNextWritesTo("draft:outer:guest");
+    await expect(store.saveSetFiles("draft", "outer", [image("closed.png")])).rejects.toThrow("IndexedDB write failed");
+    expect(storage.getItem("duoshot.sets.write:draft:outer:guest")).toBe("pending");
+    db.failNextWritesTo(null);
+    await store.deleteSetFiles("draft");
+    expect(await store.loadSetFiles("draft", "outer")).toEqual([]);
+    expect(storage.getItem("duoshot.sets.write:draft:outer:guest")).toBeNull();
+  });
 
   it("preserves every draft, file, setting and active selection alongside existing account drafts", async () => {
     const first = { ...guestSet("first"), appName: "App", orientation: "landscape" as const, include69: true, renderOptions: { fit: "contain" as const }, appId: "old-app", lastReviewId: "old-review" };

@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { checkoutReturnPath, startCheckout } from "@/lib/checkout";
+import { billingErrorKey, checkoutReturnPath, startCheckout } from "@/lib/checkout";
 import { PLANS, formatEurFromCents, type CheckoutKind } from "@/lib/plans";
 import type { PlanId } from "@/lib/specs";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { AscConnectionPanel } from "@/components/asc/asc-connection-panel";
+import { Overlay } from "@/components/overlay";
 
 type Status = {
   plan?: PlanId;
@@ -32,16 +33,24 @@ export function AccountApp({ locale }: { locale: Locale }) {
   const [statusError, setStatusError] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createBrowserSupabase();
-    void supabase.auth.getUser().then(({ data }) => {
+    void supabase.auth.getUser().then(({ data, error }) => {
+      if (error && error.name !== "AuthSessionMissingError") {
+        setMessage(t("account_session_error"));
+        return;
+      }
       if (!data.user) {
-        router.replace(`${prefix}/login`);
+        router.replace(`${prefix}/login?next=${encodeURIComponent(`${prefix}/account`)}`);
         return;
       }
       setEmail(data.user.email ?? data.user.id);
-    });
+    }).catch(() => setMessage(t("account_session_error")));
     void fetch("/api/billing/status")
       .then((res) => {
         if (!res.ok) throw new Error("BILLING_UNAVAILABLE");
@@ -49,21 +58,23 @@ export function AccountApp({ locale }: { locale: Locale }) {
       })
       .then((payload: Status) => setStatus(payload))
       .catch(() => setStatusError(true));
-  }, [prefix, router]);
+  }, [prefix, router, t]);
 
   async function checkout(kind: CheckoutKind) {
     if (!status?.checkoutAvailable) { setMessage(t("account_payments_not_open_yet")); return; }
     setBusy(true);
+    setMessage(null);
     try {
-      await startCheckout(kind, checkoutReturnPath(locale));
+      await startCheckout(kind, checkoutReturnPath(locale), t);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Checkout indisponible");
+      setMessage(error instanceof Error ? error.message : t("billing_error_unavailable"));
       setBusy(false);
     }
   }
 
   async function manageBilling() {
     setBusy(true);
+    setMessage(null);
     try {
       const response = await fetch("/api/stripe/portal", {
         method: "POST",
@@ -71,36 +82,64 @@ export function AccountApp({ locale }: { locale: Locale }) {
         body: JSON.stringify({ locale }),
       });
       const payload = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !payload.url) throw new Error(payload.error || "BILLING_UNAVAILABLE");
+      if (!response.ok || !payload.url) {
+        setMessage(t(billingErrorKey(payload.error)));
+        return;
+      }
       window.location.assign(payload.url);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "BILLING_UNAVAILABLE");
+    } catch {
+      setMessage(t("billing_error_unavailable"));
+    } finally {
       setBusy(false);
     }
   }
 
   async function exportJson() {
-    const response = await fetch("/api/account/export");
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "duoshot-data.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    setExporting(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/account/export");
+      if (!response.ok) throw new Error("EXPORT_FAILED");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "duoshot-data.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMessage(t("account_export_error"));
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function erase() {
-    if (!confirm(t("account_delete_account_files"))) {
-      return;
-    }
-    const response = await fetch("/api/account/delete", { method: "POST" });
-    if (response.ok) {
-      const supabase = createBrowserSupabase();
-      await supabase.auth.signOut();
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const response = await fetch("/api/account/delete", { method: "POST" });
+      if (!response.ok) throw new Error("DELETE_FAILED");
+      await createBrowserSupabase().auth.signOut({ scope: "local" });
       router.replace(prefix || "/");
-    } else {
-      setMessage(t("account_deletion_incomplete"));
+    } catch {
+      setDeleteError(t("account_deletion_incomplete"));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function signOut() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await createBrowserSupabase().auth.signOut();
+      if (error) throw error;
+      router.replace(`${prefix}/login?next=${encodeURIComponent(`${prefix}/account`)}`);
+    } catch {
+      setMessage(t("account_sign_out_error"));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -122,7 +161,9 @@ export function AccountApp({ locale }: { locale: Locale }) {
         unpaid: t("account_unpaid"),
         canceled: t("account_canceled"),
         incomplete: t("account_incomplete"),
-      } as Record<string, string>)[status.subscriptionStatus] ?? status.subscriptionStatus
+        incomplete_expired: t("account_incomplete_expired"),
+        paused: t("account_paused"),
+      } as Record<string, string>)[status.subscriptionStatus] ?? t("account_status_unknown")
     : null;
 
   return (
@@ -131,7 +172,7 @@ export function AccountApp({ locale }: { locale: Locale }) {
         <div className="studio-account-heading">
           <h1 className="font-display text-4xl">{t("account_title")}</h1>
           <p className="mt-3 text-[var(--muted)]" data-testid="account-email">{email}</p>
-          <button className="ds-text-btn mt-3" onClick={() => void createBrowserSupabase().auth.signOut().then(({ error }) => { if (error) setMessage(error.message); else router.replace(`${prefix}/login`); })}>{t("account_sign_out")}</button>
+          <button type="button" className="ds-text-btn mt-3" disabled={busy} onClick={() => void signOut()}>{t("account_sign_out")}</button>
         </div>
         <section className="studio-account-plan" aria-label={t("account_plan")}>
           <p className="ds-label">{t("account_plan_label")}</p>
@@ -184,8 +225,8 @@ export function AccountApp({ locale }: { locale: Locale }) {
               </button>
             </div>
           ) : null}
-          {plan === "studio" ? (
-            <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex">
+          {plan === "indie" || plan === "studio" ? (
+            <Link href={`${prefix}/tool`} className="ds-cta mt-8 inline-flex" data-testid="account-open-tool">
               {t("cta_tool")}
             </Link>
           ) : null}
@@ -193,12 +234,12 @@ export function AccountApp({ locale }: { locale: Locale }) {
         {plan === "studio" ? <StudioWorkspace locale={locale} /> : null}
         <AscConnectionPanel locale={locale} />
         <div className="studio-account-settings mt-10 flex flex-wrap gap-3 border-t border-[var(--line)] pt-8">
-          <button type="button" onClick={() => void exportJson()} data-testid="account-export" className="ds-cta-ghost">
-            {t("export_data")}
+          <button type="button" onClick={() => void exportJson()} disabled={exporting} aria-busy={exporting} data-testid="account-export" className="ds-cta-ghost">
+            {exporting ? t("account_export_busy") : t("export_data")}
           </button>
           <button
             type="button"
-            onClick={() => void erase()}
+            onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
             data-testid="account-delete"
             className="ds-danger"
           >
@@ -209,6 +250,18 @@ export function AccountApp({ locale }: { locale: Locale }) {
           </Link>
         </div>
         {message ? <p className="ds-warn" role="alert" data-testid="account-message">{message}</p> : null}
+        {exporting ? <p role="status" className="mt-3 text-sm">{t("account_export_busy")}</p> : null}
+        {deleteOpen ? (
+          <Overlay labelledBy="account-delete-title" closeLabel={t("account_delete_close")} closeDisabled={deleting} onClose={() => setDeleteOpen(false)}>
+            <h2 id="account-delete-title" className="font-display text-2xl">{t("account_delete_account_files")}</h2>
+            <p className="mt-3 text-sm text-[var(--muted)]">{t("account_delete_description")}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button type="button" className="ds-cta-ghost" disabled={deleting} onClick={() => setDeleteOpen(false)}>{t("account_delete_cancel")}</button>
+              <button type="button" className="ds-danger" data-testid="account-delete-confirm" disabled={deleting} onClick={() => void erase()}>{deleting ? t("account_delete_busy") : t("account_delete_confirm")}</button>
+            </div>
+            {deleteError ? <p role="alert" className="ds-warn">{deleteError}</p> : null}
+          </Overlay>
+        ) : null}
       </div>
     </main>
   );
@@ -243,69 +296,89 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [studioMessage, setStudioMessage] = useState<string | null>(null);
+  const [studioError, setStudioError] = useState<string | null>(null);
   const [studioBusy, setStudioBusy] = useState(false);
+  const [studioLoading, setStudioLoading] = useState(true);
 
-  async function refreshStudio() {
-    const [reviewsResponse, invitationsResponse, membersResponse] = await Promise.all([
-      fetch("/api/reviews"),
-      fetch("/api/workspace/invitations"),
-      fetch("/api/workspace/members"),
-    ]);
-    if (reviewsResponse.ok) {
-      const payload = (await reviewsResponse.json()) as { reviews?: ReviewSummary[] };
-      setReviews(payload.reviews ?? []);
+  const refreshStudio = useCallback(async () => {
+    setStudioLoading(true);
+    setStudioError(null);
+    try {
+      const responses = await Promise.all([
+        fetch("/api/reviews"),
+        fetch("/api/workspace/invitations"),
+        fetch("/api/workspace/members"),
+      ]);
+      if (responses.some((response) => !response.ok)) throw new Error("STUDIO_LOAD_FAILED");
+      const [reviewPayload, invitationPayload, memberPayload] = await Promise.all(responses.map((response) => response.json())) as [
+        { reviews?: ReviewSummary[] },
+        { invitations?: Invitation[] },
+        { members?: WorkspaceMember[] },
+      ];
+      setReviews(reviewPayload.reviews ?? []);
+      setInvitations(invitationPayload.invitations ?? []);
+      setMembers(memberPayload.members ?? []);
+    } catch {
+      setStudioError(t("account_studio_load_error"));
+    } finally {
+      setStudioLoading(false);
     }
-    if (invitationsResponse.ok) {
-      const payload = (await invitationsResponse.json()) as { invitations?: Invitation[] };
-      setInvitations(payload.invitations ?? []);
-    }
-    if (membersResponse.ok) {
-      const payload = (await membersResponse.json()) as { members?: WorkspaceMember[] };
-      setMembers(payload.members ?? []);
-    }
-  }
+  }, [t]);
 
   useEffect(() => {
     queueMicrotask(() => void refreshStudio());
-  }, []);
+  }, [refreshStudio]);
 
   async function invite() {
     setStudioBusy(true);
     setStudioMessage(null);
-    const response = await fetch("/api/workspace/invitations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, locale }),
-    });
-    const payload = (await response.json()) as { error?: string; emailSent?: boolean; acceptPath?: string };
-    if (response.ok) {
+    setStudioError(null);
+    try {
+      const response = await fetch("/api/workspace/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail, locale }),
+      });
+      const payload = (await response.json()) as { error?: string; emailSent?: boolean; acceptPath?: string };
+      if (!response.ok) {
+        setStudioError(payload.error === "SEAT_LIMIT"
+          ? tf("account_all_three_seats_already", { seats: PLANS.studio.seats })
+          : t("account_could_not_send_invitation"));
+        return;
+      }
       setInviteEmail("");
       setStudioMessage(payload.emailSent ? t("account_invitation_sent") : `${t("account_invitation_created_email_not")}${window.location.origin}${payload.acceptPath ?? ""}`);
       await refreshStudio();
-    } else {
-      setStudioMessage(
-        payload.error === "SEAT_LIMIT"
-          ? tf("account_all_three_seats_already", { seats: PLANS.studio.seats })
-          : t("account_could_not_send_invitation"),
-      );
+    } catch {
+      setStudioError(t("account_could_not_send_invitation"));
+    } finally {
+      setStudioBusy(false);
     }
-    setStudioBusy(false);
   }
 
-  async function revokeReview(id: string) {
-    const response = await fetch(`/api/reviews/${id}`, { method: "DELETE" });
-    if (response.ok) await refreshStudio();
+  async function revoke(path: string) {
+    setStudioBusy(true);
+    setStudioMessage(null);
+    setStudioError(null);
+    try {
+      const response = await fetch(path, { method: "DELETE" });
+      if (!response.ok) throw new Error("STUDIO_ACTION_FAILED");
+      await refreshStudio();
+    } catch {
+      setStudioError(t("account_studio_action_error"));
+    } finally {
+      setStudioBusy(false);
+    }
   }
 
-  async function revokeInvitation(id: string) {
-    const response = await fetch(`/api/workspace/invitations/${id}`, { method: "DELETE" });
-    if (response.ok) await refreshStudio();
-  }
-
-  async function revokeMember(id: string) {
-    const response = await fetch(`/api/workspace/members/${id}`, { method: "DELETE" });
-    if (response.ok) await refreshStudio();
-  }
+  const roleLabel = (role: WorkspaceMember["role"]) => t(role === "owner" ? "account_role_owner" : "account_role_member");
+  const reviewLabels: Record<string, string> = {
+    pending: t("account_review_pending"),
+    approved: t("account_review_approved"),
+    changes_requested: t("account_review_changes_requested"),
+    expired: t("account_review_expired"),
+    revoked: t("account_review_revoked"),
+  };
 
   return (
     <section className="mt-12 border-t border-[var(--line)] pt-10" data-testid="studio-workspace">
@@ -314,31 +387,39 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
       <p className="mt-3 text-sm text-[var(--muted)]">
         {tf("account_three_seats_included_review", { seats: PLANS.studio.seats })}
       </p>
-      <div className="mt-6 flex gap-3">
+      <form className="mt-6 flex items-end gap-3" onSubmit={(event) => { event.preventDefault(); void invite(); }}>
         <label className="min-w-0 flex-1">
-          <span className="sr-only">{t("account_member_email")}</span>
+          <span className="ds-label mb-2 block">{t("account_member_email")}</span>
           <input
             className="ds-input w-full"
             type="email"
+            required
             value={inviteEmail}
-            placeholder={t("account_teammate_studio_com")}
+            placeholder={t("account_invite_email_placeholder")}
             onChange={(event) => setInviteEmail(event.target.value)}
           />
         </label>
-        <button type="button" className="ds-cta" disabled={studioBusy || !inviteEmail} onClick={() => void invite()}>
+        <button type="submit" className="ds-cta" disabled={studioBusy || !inviteEmail}>
           {t("account_invite")}
         </button>
-      </div>
-      {studioMessage ? <p className="mt-3 text-sm text-[var(--muted)]">{studioMessage}</p> : null}
+      </form>
+      {studioMessage ? <p role="status" className="mt-3 text-sm text-[var(--muted)]">{studioMessage}</p> : null}
+      {studioError ? (
+        <div className="mt-3">
+          <p role="alert" className="ds-warn">{studioError}</p>
+          <button type="button" className="ds-text-btn" disabled={studioBusy || studioLoading} onClick={() => void refreshStudio()}>{t("account_studio_retry")}</button>
+        </div>
+      ) : null}
+      {studioLoading ? <p role="status" className="mt-3 text-sm text-[var(--muted)]">{t("account_studio_loading")}</p> : null}
       {members.length ? (
         <ul className="mt-5 divide-y divide-[var(--line)] text-sm" data-testid="studio-members">
           {members.map((member) => (
             <li key={member.id} className="flex items-center justify-between gap-4 py-3">
-              <span>{member.email ?? member.role}</span>
+              <span>{member.email ?? roleLabel(member.role)}</span>
               <span className="flex items-center gap-3 text-[var(--muted)]">
-                {member.role}
+                {roleLabel(member.role)}
                 {member.role !== "owner" ? (
-                  <button type="button" className="ds-text-btn" onClick={() => void revokeMember(member.id)}>
+                  <button type="button" className="ds-text-btn" disabled={studioBusy} onClick={() => void revoke(`/api/workspace/members/${member.id}`)}>
                     {t("account_remove")}
                   </button>
                 ) : null}
@@ -354,12 +435,12 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
               <span>{invitation.email}</span>
               <span className="flex items-center gap-3 text-[var(--muted)]">
                 {invitation.accepted_at
-                  ? t("asct_file_complete")
+                  ? t("account_invitation_accepted")
                   : invitation.revoked_at
                     ? t("account_revoked")
                     : t("account_pending")}
                 {!invitation.accepted_at && !invitation.revoked_at ? (
-                  <button type="button" className="ds-text-btn" onClick={() => void revokeInvitation(invitation.id)}>
+                  <button type="button" className="ds-text-btn" disabled={studioBusy} onClick={() => void revoke(`/api/workspace/invitations/${invitation.id}`)}>
                     {t("account_revoke")}
                   </button>
                 ) : null}
@@ -376,14 +457,14 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
               <div>
                 <p>{review.set_name}</p>
                 <p className="text-xs text-[var(--muted)]">
-                  {review.client_name ? `${review.client_name} · ` : ""}{review.status}
+                  {review.client_name ? `${review.client_name} · ` : ""}{reviewLabels[review.status] ?? t("account_status_unknown")}
                   {review.expiresAt ? ` · ${t("account_expires")} ${new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(review.expiresAt))}` : ""}
                 </p>
               </div>
               <div className="flex gap-3">
                 <Link className="ds-text-btn" href={reviewPath(locale, review.public_id)}>{t("account_open")}</Link>
                 {!['expired', 'revoked'].includes(review.status) ? (
-                  <button type="button" className="ds-text-btn" onClick={() => void revokeReview(review.public_id)}>
+                  <button type="button" className="ds-text-btn" disabled={studioBusy} onClick={() => void revoke(`/api/reviews/${review.public_id}`)}>
                     {t("account_revoke")}
                   </button>
                 ) : null}
@@ -391,7 +472,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
             </li>
           ))}
         </ul>
-      ) : <p className="mt-3 text-sm text-[var(--muted)]">{t("account_no_reviews_yet")}</p>}
+      ) : !studioLoading && !studioError ? <p className="mt-3 text-sm text-[var(--muted)]">{t("account_no_reviews_yet")}</p> : null}
     </section>
   );
 }

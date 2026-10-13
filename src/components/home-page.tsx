@@ -47,7 +47,7 @@ function DeliveredFiles({ locale }: { locale: Locale }) {
   return <div className="studio-files">
     <div className="studio-files-head">
       <span>{t("home_file")}</span>
-      <span>Pixels</span>
+      <span>{t("home_pixels")}</span>
       <span>{t("home_file_weight")}</span>
     </div>
     <ol className="studio-files-list" data-testid="zip-tree">
@@ -96,8 +96,8 @@ function ProofSection({ locale }: { locale: Locale }) {
       {/* A file download from an API route, not a page: the rule reads app/[locale] as matching every path. */}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t("cta_example")}</a>
-      <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
-        {t("home_open_example_in_tool")} <span aria-hidden="true">↗</span>
+      <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo-proof" className="studio-inline-link">
+        {t("home_see_example")} <span aria-hidden="true">↗</span>
       </Link>
       <small>{t("home_before_example_files_after")} {t("home_delivery_hint")}</small>
     </div>
@@ -136,10 +136,10 @@ function InspectVisual({ locale }: { locale: Locale }) {
       <span className="studio-hinge-band" />
     </div>
     <div className="studio-inspect-readout">
-      <span><i className="studio-check" />Dimensions</span>
-      <span><i className="studio-check" />{"Opaque, sRGB"}</span>
+      <span><i className="studio-check" />{t("home_dimensions")}</span>
+      <span><i className="studio-check" />{t("home_opaque_srgb")}</span>
       <span><i className="studio-review-dot" />{t("home_text_near_fold")}</span>
-      <span className="studio-sequence-score"><small>Score</small><strong>83 / 100</strong></span>
+      <span className="studio-sequence-score"><small>{t("home_score")}</small><strong>83 / 100</strong></span>
     </div>
   </div>;
 }
@@ -152,7 +152,7 @@ function ReportVisual({ locale }: { locale: Locale }) {
     { label: t("home_confirmations"), value: "0 / 2", fill: 0, tone: "human" },
   ];
   return <div className="studio-sequence-report studio-panel">
-    <div className="studio-panel-top"><span>{t("home_preparation_report")}</span><strong>Harbor · set 01</strong></div>
+    <div className="studio-panel-top"><span>{t("home_preparation_report")}</span><strong>{t("home_harbor_set")}</strong></div>
     <ul className="studio-report-rows">
       {rows.map((row) => <li key={row.label} className={`is-${row.tone}`}>
         <span>{row.label}</span><strong>{row.value}</strong>
@@ -241,11 +241,11 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
               <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
                 <div className="is-outer">
                   <dt>{t("home_closed_screen")} · {formatInches(OUTER.inches, locale)}</dt>
-                  <dd>{screenshotDimensions(OUTER)}<small> px · portrait</small></dd>
+                  <dd>{screenshotDimensions(OUTER)}<small> {t("home_pixels_portrait")}</small></dd>
                 </div>
                 <div className="is-inner">
                   <dt>{t("home_open_screen")} · {formatInches(INNER.inches, locale)}</dt>
-                  <dd>{screenshotDimensions(INNER)}<small> px · portrait</small></dd>
+                  <dd>{screenshotDimensions(INNER)}<small> {t("home_pixels_portrait")}</small></dd>
                 </div>
               </dl>
               <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link studio-hero-specs">
@@ -299,6 +299,11 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
             <h2>{t("faq_title")}</h2>
             <FaqList items={FAQ[locale]} />
             <TrustLine locale={locale} />
+            <div className="mt-8">
+              <Link href={`${prefix}/tool`} data-testid="cta-tool-closing" className="ds-cta">
+                {t("cta_tool")}
+              </Link>
+            </div>
           </section>
         </main>
       </LandingMotion>

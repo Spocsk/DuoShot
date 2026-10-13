@@ -6,10 +6,8 @@ import { useI18n } from "@/components/i18n-provider";
 import type { Translator } from "@/lib/i18n/types";
 import { CHECKOUT_CATALOG, ONE_TIME_CATALOG, PLANS, type CheckoutKind, type OneTimeKind, type PurchaseKind } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
-import { pricingFaq } from "@/lib/pricing-faq";
 import { localePrefix, pricingPath, reviewPath } from "@/lib/site";
 import { PricingCta } from "@/components/pricing-cta";
-import { FaqList } from "@/components/faq-list";
 
 /**
  * Plans are read from PLANS and one-time offers from ONE_TIME_CATALOG, so a new offer appears
@@ -86,7 +84,7 @@ function offerFor(id: PlanId, i18n: Translator, yearly: boolean): Offer {
     return {
       price: t("pricing_trial_price"),
       note: " ",
-      cta: { href: `${localePrefix(locale)}/signup`, label: tf("pricing_trial_cta", { exports: PLANS.free.freeExports }), testId: "pricing-cta-trial" },
+      cta: { href: `${localePrefix(locale)}/tool`, label: tf("pricing_trial_cta", { exports: PLANS.free.freeExports }), testId: "pricing-cta-trial" },
     };
   }
   const monthly = num(plan, "monthlyEur");
@@ -182,8 +180,7 @@ export function PricingSection({
   const cards = ids.filter((id) => !isTeam(id));
   const teams = ids.filter(isTeam);
   const Title = heading;
-  // Local projects are covered by the Studio question in the general FAQ below the section.
-  const faq = pricingFaq(i18n);
+  const CardTitle = heading === "h1" ? "h2" : "h3";
 
   return (
     <section id="pricing" data-testid="pricing" className={`studio-pricing scroll-mt-24${compact ? " is-compact" : ""}`} data-reveal>
@@ -211,7 +208,7 @@ export function PricingSection({
           return (
             <article key={id} className={`studio-plan${featured ? " is-featured" : ""}`} data-plan={id} data-testid={isPass(id) ? `pricing-${id}` : undefined}>
               <div className="studio-plan-title">
-                <h3>{planTitle(id, i18n)}</h3>
+                <CardTitle>{planTitle(id, i18n)}</CardTitle>
                 {featured ? <span className="studio-plan-badge">{t("pricing_featured")}</span> : null}
               </div>
               <p className="studio-plan-price">{offer.price}</p>
@@ -229,7 +226,7 @@ export function PricingSection({
           <article key={id} className="studio-plan-team" data-plan={id}>
             <div className="studio-plan-team-copy">
               <p className="studio-eyebrow">{t("pricing_team_kicker")}</p>
-              <h3>{planTitle(id, i18n)}</h3>
+              <CardTitle>{planTitle(id, i18n)}</CardTitle>
               <p className="studio-plan-body">{planBody(id, i18n)}</p>
               <p className="studio-plan-seats">{tf("pricing_studio_sharing", { seats: PLANS.studio.seats })}</p>
             </div>
@@ -279,10 +276,6 @@ export function PricingSection({
                 </tbody>
               </table>
             </div>
-          </div>
-          <div className="studio-pricing-faq">
-            <h2>{t("pricing_faq_title")}</h2>
-            <FaqList items={faq} />
           </div>
         </>
       )}

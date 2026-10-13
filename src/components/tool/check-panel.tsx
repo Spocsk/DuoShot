@@ -134,8 +134,8 @@ export function ReadinessReport({
   const { t, tf } = useI18n();
   return (
     <section className="ds-readiness mb-6" aria-label={t("tool_readiness_report")} data-testid="readiness-report">
-      <h2 className="font-display text-2xl">{t("tool_set_report")}</h2>
-      <p className="ds-label mt-4">{t("home_technical_checks")}</p>
+      <h3 className="font-display text-2xl">{t("tool_set_report")}</h3>
+      <p className="ds-label mt-4">{t("tool_technical_checks")}</p>
       <ul className="mt-2 space-y-2 text-sm">
         {[
           [preparationChecks[0], t("tool_closed_open_screenshots_present")],
@@ -181,8 +181,8 @@ export function ReadinessReport({
       {!demo ? <>
         <p className="ds-label mt-5">{t("tool_human_confirmation")}</p>
         <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
-          <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
-          <span>{t("tool_i_checked_that_every")}</span>
+          <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1 size-6 shrink-0" data-testid="confirm-app-usage" />
+          <span>{t("tool_app_usage_consent")}</span>
         </label>
       </> : null}
       {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{t("tool_warnings_still_need_review")}</p> : null}

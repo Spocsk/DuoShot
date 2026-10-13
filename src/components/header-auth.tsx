@@ -10,9 +10,11 @@ import { localePrefix } from "@/lib/site";
 export function HeaderAuth({
   locale,
   variant = "bar",
+  secondarySignup = false,
 }: {
   locale: Locale;
   variant?: "bar" | "menu";
+  secondarySignup?: boolean;
 }) {
   const { t } = useI18n();
   const prefix = localePrefix(locale);
@@ -63,7 +65,7 @@ export function HeaderAuth({
       <Link href={`${prefix}/login`} data-testid="nav-login" className="ds-nav-link">
         {t("nav_login")}
       </Link>
-      <Link href={`${prefix}/signup`} data-testid="nav-signup" className="ds-cta">
+      <Link href={`${prefix}/signup`} data-testid="nav-signup" className={secondarySignup ? "ds-cta-ghost" : "ds-cta"}>
         {t("nav_signup")}
       </Link>
     </>

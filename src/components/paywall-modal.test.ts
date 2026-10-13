@@ -47,7 +47,7 @@ function button(markup: string, testId: string) {
 }
 
 describe.each(["fr", "en"] as const)("%s paywall checkout availability", (locale) => {
-  const closedMessage = getTranslator(locale).t("account_payments_not_open_yet");
+  const closedMessage = getTranslator(locale).t("billing_error_unavailable");
 
   it.each(["trial", "69"] as const)("offers checkout for the %s paywall when payments are open", (reason) => {
     const markup = renderPaywall({ locale, reason, available: true });

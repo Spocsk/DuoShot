@@ -160,7 +160,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
         setShowAuth(true);
-        flashStatus(t("error_auth"), "err");
+        flashStatus(t("error_auth"), "info");
         return;
       }
       if (include69 && billing && billing.canUse69 === false) {

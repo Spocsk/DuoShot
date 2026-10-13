@@ -50,7 +50,7 @@ describe("review", () => {
     cy.get('[data-testid="tool-review"]').click({ scrollBehavior: "center" });
     cy.wait("@createReview");
     cy.get('[data-testid="review-url"]').should("contain", "/r/revtest12ab");
-    cy.get('[data-testid="tool-review-set-status"]').should("contain", "pending");
+    cy.get('[data-testid="tool-review-set-status"]').should("contain", "En attente");
 
     cy.intercept("GET", "**/api/reviews/revtest12ab", {
       set_name: "Harbor",
@@ -78,11 +78,15 @@ describe("review", () => {
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
     cy.get(".studio-review-label-outer").should("contain", "Écran fermé");
     cy.get(".studio-review-label-inner").should("contain", "Écran ouvert");
-    cy.get('[data-testid="review-device-view"]').should("have.attr", "aria-pressed", "true");
-    cy.get('[data-testid="review-pixel-view"]').click();
+    cy.get('[data-testid="review-pixel-view"]').should("have.attr", "aria-pressed", "true");
     cy.get(".review-pair").should("have.class", "is-pixels");
     cy.get(".review-pair .preview-outer").should("have.attr", "data-aspect", "1398/2034");
     cy.get(".review-pair .preview-inner").should("have.attr", "data-aspect", "2007/2853");
+    cy.get('[data-testid="review-hinge"]').should("have.attr", "aria-pressed", "false");
+    cy.get('[data-testid="review-device-view"]').click();
+    cy.get(".review-pair").should("not.have.class", "is-pixels");
+    cy.get('[data-testid="review-preview-hint"]').should("contain", "ne modifient pas les fichiers exportés");
+    cy.get('[data-testid="review-hinge"]').click().should("have.attr", "aria-pressed", "true");
     cy.get('[data-testid="review-comment"]').type("ok");
     cy.get('[data-testid="review-approve"]').click();
     cy.wait("@decide");
@@ -142,9 +146,17 @@ describe("review", () => {
     cy.visitFr("/r/harbor");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
     cy.get('[data-testid="review-demo"]').should("be.visible").and("contain", "application fictive");
+    cy.get("h1").should("have.length", 1);
+    cy.get("header").within(() => {
+      cy.get('[data-testid="locale-switch"]').should("be.visible");
+      cy.get('a[href="/signup"]').should("not.exist");
+      cy.get("nav").should("not.exist");
+    });
     cy.visitEn("/en/r/harbor");
     cy.get('[data-testid="review-title"]').should("contain", "Harbor");
     cy.get('[data-testid="review-demo"]').should("contain", "fictional app");
+    cy.get('[data-testid="review-status"]').should("contain", "Portrait").and("contain", "Pending");
+    cy.get("header a[href='/en/signup']").should("not.exist");
     cy.get('[data-testid="review-approve"]').should("not.exist");
   });
 
@@ -153,5 +165,9 @@ describe("review", () => {
     cy.visitFr("/r/missingid");
     cy.wait("@missing");
     cy.get('[data-testid="review-missing"]').should("be.visible");
+    cy.get("h1").should("have.length", 1).and("contain", "Lien de validation introuvable");
+    cy.visitEn("/en/r/missingid");
+    cy.wait("@missing");
+    cy.get("h1").should("have.length", 1).and("contain", "Review link not found");
   });
 });

@@ -26,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         id={id}
         locale={locale}
         demo={isDemoReview(id)}
-        header={<SiteHeader locale={locale} path={reviewPath(locale, id)} />}
+        header={<SiteHeader locale={locale} path={reviewPath(locale, id)} variant="reduced" />}
         footer={<SiteFooter locale={locale} />}
       />
     </MessagesScope>

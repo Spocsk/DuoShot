@@ -75,7 +75,7 @@ const subscribeNever = () => () => {};
 
 const BOOT_SET: SetMeta = {
   id: "boot",
-  name: "Composition 01",
+  name: "",
   appName: "",
   clientName: "",
   orientation: "portrait",
@@ -97,7 +97,7 @@ export function ToolApp({ locale }: Props) {
   }, []);
   return (
     <main id="main" className="flex-1">
-      <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
+      <Suspense fallback={<p className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]" role="status">{t("tool_loading_workspace")}</p>}>
         {owner ? <ToolAppInner key={owner} locale={locale} owner={owner} /> : <p role="status">{t("tool_loading_workspace")}</p>}
       </Suspense>
     </main>
@@ -114,6 +114,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const { loadSetMetas, saveSetMetas, loadActiveId, saveActiveId, loadSetFiles, saveSetFiles, deleteSetFiles } = useMemo(() => createSetStore(owner, () => setStorageError(true)), [owner]);
   const prefix = localePrefix(locale);
   const searchParams = useSearchParams();
+  const defaultNameTemplate = t("tool_default_set_name");
   const [sets, setSets] = useState<SetMeta[]>([BOOT_SET]);
   const [activeId, setActiveId] = useState<string>(BOOT_SET.id);
   const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
@@ -230,7 +231,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       if (cancelled) return;
       const existing = loadSetMetas();
       if (existing.length === 0) {
-        const first = defaultSet();
+        const first = defaultSet([], defaultNameTemplate);
         try {
           saveSetMetas([first]);
           saveActiveId(first.id);
@@ -259,7 +260,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     return () => {
       cancelled = true;
     };
-  }, [owner, loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
+  }, [owner, loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas, defaultNameTemplate]);
 
   const loadDemoRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => { loadDemoRef.current = loadDemo; });
@@ -337,6 +338,13 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
   const selectedPicks = duoPicks(duoSelection, outerFiles.length, effectiveInner.length);
   const cloneAlert = clones.some((item) => item.label === "risk" && selectedPicks.some((pick) => pick.side === "outer" && pick.index === item.index) && selectedPicks.some((pick) => pick.side === "inner" && pick.index === item.index));
+
+  function resetPreparation() {
+    setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
+    setAssumeClone(false);
+    setZipUrl(null);
+  }
 
   function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
     setStatus(message);
@@ -417,7 +425,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       const other = side === "outer" ? "inner" : "outer";
       (other === "outer" ? setOuterFiles : setInnerFiles)([]);
       void saveSetFiles(active.id, other, []).catch(() => {});
-      patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id)), appName: "", transforms: { outer: [], inner: [] } });
+      patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id), defaultNameTemplate), appName: "", transforms: { outer: [], inner: [] } });
     }
     if (next.length > current.length) {
       void trackProduct("captures_added", { side, count: next.length - current.length });
@@ -427,10 +435,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setInnerFiles(next);
       if (outerFiles.length === 0) { setMobileView("inner"); setAdjustSide("inner"); }
     }
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
@@ -458,19 +463,13 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setSets(nextSets);
       saveSetMetas(nextSets);
     }
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
     patchActive({ renderOptions: { ...options, ...patch } });
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
   }
 
   function updateGlobalFit(fit: FitMode) {
@@ -483,10 +482,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     const nextSets = sets.map((item) => item.id === active.id ? { ...item, fitMode: fit, transforms } : item);
     setSets(nextSets);
     saveSetMetas(nextSets);
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
   }
 
   function updateCropTransform(side: "outer" | "inner", index: number, patch: Partial<CropTransform>) {
@@ -501,10 +497,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms } : item);
     setSets(nextSets);
     saveSetMetas(nextSets);
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
   }
 
   function openUpgrade(reason: "trial" | "69", kind?: PurchaseKind) {
@@ -534,10 +527,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       openUpgrade(paywall ?? upgradeReason, kind);
       return;
     }
-    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("account_payments_not_open_yet"), "info"); return; }
+    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("billing_error_unavailable"), "info"); return; }
     setCheckoutBusy(true);
     try {
-      await startCheckout(kind, checkoutReturnPath(locale));
+      await startCheckout(kind, checkoutReturnPath(locale), t);
     } catch (error) {
       flashStatus(error instanceof Error ? error.message : t("error_export"), "err");
       setCheckoutBusy(false);
@@ -564,7 +557,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
 
   function addSet() {
     setsMenu.closeSets();
-    const next = defaultSet(sets);
+    const next = defaultSet(sets, defaultNameTemplate);
     const list = [...sets, next];
     setSets(list);
     saveSetMetas(list);
@@ -573,12 +566,21 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
 
   async function removeSet(id: string) {
     const list = sets.filter((item) => item.id !== id);
-    const fallback = list[0] ?? defaultSet();
+    const fallback = list[0] ?? defaultSet([], defaultNameTemplate);
     const nextList = list.length ? list : [fallback];
-    setSets(nextList);
-    saveSetMetas(nextList);
+    const nextId = nextList[0]!.id;
+    const [outer, inner] = await Promise.all([loadSetFiles(nextId, "outer"), loadSetFiles(nextId, "inner")]);
     await deleteSetFiles(id);
-    await switchSet(nextList[0]!.id);
+    saveSetMetas(nextList);
+    saveActiveId(nextId);
+    setSets(nextList);
+    setActiveId(nextId);
+    setOuterFiles(outer);
+    setInnerFiles(inner);
+    setSlideIndex(0);
+    setToolPanel("captures");
+    setMobileView("outer");
+    resetPreparation();
   }
 
   function loadDemo() {
@@ -589,10 +591,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (demoState === "loading") return;
     setDemoState("loading");
     try {
-      const files = await fetchHarborFiles(locale);
+      const files = await fetchHarborFiles(locale, { outer: t("tool_demo_file_closed"), inner: t("tool_demo_file_open") });
       const existing = sets.find((item) => item.demo);
       const reusable = active && !active.demo && outerFiles.length === 0 && innerFiles.length === 0 ? active : null;
-      const base = existing ?? reusable ?? defaultSet(sets);
+      const base = existing ?? reusable ?? defaultSet(sets, defaultNameTemplate);
       const demoSet: SetMeta = {
         ...base,
         name: t("tool_demo_set_name"),
@@ -621,10 +623,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setSlideIndex(0);
       setMobileView("outer");
       setAdjustSide("outer");
-      setQualityAcknowledged(false);
-      setAppUsageConfirmed(false);
-      setAssumeClone(false);
-      setZipUrl(null);
+      resetPreparation();
       setStatus(null);
       setToolPanel("adjust");
       setDemoState("idle");
@@ -639,12 +638,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setInnerFiles([]);
     void saveSetFiles(active.id, "outer", []).catch(() => {});
     void saveSetFiles(active.id, "inner", []).catch(() => {});
-    patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id)), appName: "", transforms: { outer: [], inner: [] } });
+    patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id), defaultNameTemplate), appName: "", transforms: { outer: [], inner: [] } });
     completedSetsRef.current.delete(active.id);
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
     setToolPanel("captures");
     requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="drop-outer-input"]')?.focus());
   }
@@ -721,10 +717,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           ]}
           onChange={(value) => {
             patchActive({ orientation: value as Orientation });
-            setQualityAcknowledged(false);
-            setAppUsageConfirmed(false);
-            setAssumeClone(false);
-            setZipUrl(null);
+            resetPreparation();
           }}
         />
 </div>
@@ -732,7 +725,6 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           {session === "loading" ? <span className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">{t("tool_loading")}</span> : !signedIn ? <button type="button" className="ds-pill ds-pill-ink" data-testid="tool-quota" onClick={() => setShowAuth(true)}>{t("tool_guest")}</button> : <span className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">{remainingLabel}</span>}
         </div>
       </header>
-      {urlStatus && toolPanel !== "review" && toolPanel !== "export" ? <div className="tool-return-status"><StatusLine text={urlStatus} kind="info" testId="tool-status" /></div> : null}
       <div className="tool-workspace">
         <section className="studio-tool-main min-w-0" aria-label={t("tool_screenshot_preview")}>
           <div className="tool-canvas-heading" id="tool-inspect">
@@ -788,10 +780,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           <DuoSlotChoice value={duoSelection} outerFiles={outerFiles} innerFiles={effectiveInner}
             onChange={(duoSelection) => {
               patchActive({ duoSelection });
-              setQualityAcknowledged(false);
-              setAppUsageConfirmed(false);
-              setAssumeClone(false);
-              setZipUrl(null);
+              resetPreparation();
             }} />
           <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} />
           <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
@@ -837,7 +826,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               <span>{t("tool_action_missing")}</span>{" "}
               {checklist.filter((item) => !item.done).map((item, index) => <span key={item.id}>{index ? <span aria-hidden="true"> · </span> : null}<button type="button" onClick={item.fix}>{item.label}</button></span>)}
             </p> : null}
-            {(toolPanel === "review" || toolPanel === "export") && (status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
+            {(status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
             {primary.href ? (
               <a href={primary.href} download={primary.download} data-testid={primary.testId} className="ds-cta w-full" onClick={primary.onClick}>{primary.label}</a>
             ) : (
@@ -867,13 +856,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             dismissUpgrade();
           }}
           labelledBy="auth-modal-title"
-          closeLabel={t("asct_close")}
+          closeLabel={t("tool_auth_close")}
         >
           <AuthForm
             locale={locale}
             mode={authMode}
             variant="modal"
-            title={upgradeRequested ? t("auth_account_required_title") : undefined}
+            title={upgradeRequested ? t("auth_upgrade_title") : undefined}
+            lead={upgradeRequested ? t("auth_upgrade_lead") : undefined}
             nextPath={upgradeRequested ? `${prefix}/tool?upgrade=1&reason=${upgradeReason}${preferredUpgradeKind ? `&plan=${preferredUpgradeKind}` : ""}` : `${prefix}/tool`}
             onSuccess={() => {
               setShowAuth(false);

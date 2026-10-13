@@ -32,12 +32,12 @@ export function PaywallModal({
   const indiePrice = formatEurFromCents((yearly ? PLANS.indie.yearlyEur : PLANS.indie.monthlyEur) * 100, locale);
   const studioPrice = formatEurFromCents((yearly ? PLANS.studio.yearlyEur : PLANS.studio.monthlyEur) * 100, locale);
   return (
-    <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={t("asct_close")}>
+    <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={t("paywall_close")}>
       <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
         {pass ? tf("pricing_pass_title", { days: PASS30.days }) : reason === "69" ? t("paywall_69") : tf("paywall_title", { exports: FREE_EXPORTS })}
       </h2>
       <p className="mt-3 text-[var(--muted)]">{pass ? tf("pricing_pass_body", { days: PASS30.days }) : tf("paywall_lead", { dailyCap: PRO_DAILY_CAP })}</p>
-      {!available && (!pass || !passAvailable) ? <p role="status" className="mt-3 text-sm">{t("account_payments_not_open_yet")}</p> : null}
+      {!available && (!pass || !passAvailable) ? <p role="status" className="mt-3 text-sm">{t("billing_error_unavailable")}</p> : null}
       {pass ? (
         <button
           type="button"
