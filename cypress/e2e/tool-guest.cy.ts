@@ -214,7 +214,7 @@ describe("tool guest", () => {
     cy.contains("summary", "Advanced settings").click();
     cy.get('[data-testid="toggle-69"]').click();
     cy.get('[data-testid="auth-form"]').should("be.visible");
-    cy.get('#auth-modal-title').should("contain", "An account is needed to continue");
+    cy.get('#auth-modal-title').should("contain", "Create an account to continue to payment");
     cy.get('[data-testid="paywall"]').should("not.exist");
     cy.contains("Payments are not open yet").should("not.exist");
   });

@@ -82,7 +82,7 @@ describe("account", () => {
       else cy.visitEn("/en/account");
       cy.wait(["@reviews", "@invitations", "@members"]);
       cy.get('[data-testid="studio-workspace"]').within(() => {
-        cy.contains("li", "Harbor launch").should("contain", locale === "fr" ? "En attente" : "Pending")
+        cy.contains("li", "Harbor launch").should("contain", locale === "fr" ? "En attente" : "Awaiting review")
           .find("a").should("be.visible").and("have.attr", "href", `${locale === "fr" ? "" : "/en"}/r/member-review`);
         cy.get('[role="alert"]').should("not.exist");
         cy.get('form, input[type="email"]').should("not.exist");
