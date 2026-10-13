@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useI18n } from "@/components/i18n-provider";
 import type { Translator } from "@/lib/i18n/types";
@@ -150,11 +151,11 @@ function comparisonRows(i18n: Translator, ids: PlanId[]) {
 
 function OfferCta({ locale, offer, featured, available }: { locale: Locale; offer: Offer; featured: boolean; available?: boolean }) {
   if (!offer.cta) return null;
-  const className = featured ? "ds-cta" : "ds-cta-ghost";
+  const variant = featured ? "primary" : "secondary";
   if ("kind" in offer.cta) {
-    return <PricingCta locale={locale} kind={offer.cta.kind} label={offer.cta.label} className={className} initialAvailable={available} />;
+    return <PricingCta locale={locale} kind={offer.cta.kind} label={offer.cta.label} variant={variant} initialAvailable={available} />;
   }
-  return <Link href={offer.cta.href} data-testid={offer.cta.testId} className={className}>{offer.cta.label}</Link>;
+  return <Button as="link" variant={variant} href={offer.cta.href} data-testid={offer.cta.testId}>{offer.cta.label}</Button>;
 }
 
 export function PricingSection({

@@ -1,3 +1,5 @@
+
+import { Button } from "@/components/ui/button";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { AppleAvailability } from "./apple-availability";
@@ -95,7 +97,7 @@ function ProofSection({ locale }: { locale: Locale }) {
     <div className="studio-proof-actions">
       {/* A file download from an API route, not a page: the rule reads app/[locale] as matching every path. */}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-      <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t("cta_example")}</a>
+      <Button as="a" variant="secondary" href="/api/example-zip?v=2" data-testid="cta-example" >{t("cta_example")}</Button>
       <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo-proof" className="studio-inline-link">
         {t("home_see_example")} <span aria-hidden="true">↗</span>
       </Link>
@@ -228,12 +230,12 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
                 {t("home_import_closed_open_captures")}
               </p>
               <div className="studio-hero-actions">
-                <Link href={`${prefix}/tool`} data-testid="cta-tool" className="ds-cta">
+                <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool" >
                   {t("cta_tool")}
-                </Link>
-                <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo" className="ds-cta-ghost">
+                </Button>
+                <Button as="link" variant="secondary" href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo" >
                   {t("home_see_example")}
-                </Link>
+                </Button>
               </div>
             </div>
             <div className="studio-hero-object">
@@ -300,9 +302,9 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
             <FaqList items={FAQ[locale]} />
             <TrustLine locale={locale} />
             <div className="mt-8">
-              <Link href={`${prefix}/tool`} data-testid="cta-tool-closing" className="ds-cta">
+              <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool-closing" >
                 {t("cta_tool")}
-              </Link>
+              </Button>
             </div>
           </section>
         </main>

@@ -1,3 +1,5 @@
+
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { getTranslator } from "@/lib/i18n";
@@ -30,7 +32,7 @@ export function RejectionPage({ locale }: { locale: Locale }) {
       <main id="main" className="mx-auto w-full max-w-3xl px-5 py-12">
         <h1 className="font-display text-5xl">{t("reject_app_store_screenshot_errors")}</h1>
         <p className="mt-4 text-lg text-[var(--muted)]">{t("reject_wrong_screenshot_dimensions_alpha")}</p>
-        <Link href={`${prefix}/tool`} className="ds-cta mt-6" data-testid="rejection-cta-tool">{t("cta_tool")}</Link>
+        <Button as="link" variant="primary" href={`${prefix}/tool`} className="mt-6" data-testid="rejection-cta-tool">{t("cta_tool")}</Button>
         <div className="mt-12">
           {CARDS.map((card) => (
             <article key={card.code} className="border-t border-[var(--line)] py-8">

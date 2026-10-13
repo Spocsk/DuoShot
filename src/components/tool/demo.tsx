@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 
@@ -31,16 +33,15 @@ export function DemoStart({ state, onLoad }: { state: DemoState; onLoad: () => v
   const { t } = useI18n();
   return (
     <div className="tool-demo-start" data-testid="tool-demo-start">
-      <button
+      <Button as="button" variant="text"
         type="button"
-        className="ds-text-btn"
         data-testid="tool-demo"
         disabled={state === "loading"}
         aria-busy={state === "loading"}
         onClick={onLoad}
-      >
+     >
         {state === "loading" ? <span className="t-shimmer" data-text={t("tool_demo_loading")}>{t("tool_demo_loading")}</span> : t("tool_demo_cta")}
-      </button>
+      </Button>
       {state === "error" ? <p className="ds-warn text-sm" role="alert">{t("tool_demo_error")}</p> : null}
     </div>
   );

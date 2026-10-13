@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, type ButtonVariant } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PurchaseKind } from "@/lib/plans";
@@ -13,12 +14,14 @@ export function PricingCta({
   locale,
   kind,
   label,
-  className = "ds-cta",
+  variant = "primary",
+  className,
   initialAvailable,
 }: {
   locale: Locale;
   kind: PurchaseKind;
   label: string;
+  variant?: ButtonVariant;
   className?: string;
   /** Server-rendered checkout availability; when omitted the button asks the API after mount. */
   initialAvailable?: boolean;
@@ -57,9 +60,9 @@ export function PricingCta({
 
   return (
     <>
-      <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
+      <Button as="button" variant={variant} type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
         {!available ? t("pricing_payments_unavailable") : busy ? t("pricing_opening") : label}
-      </button>
+      </Button>
       {error ? (
         <p className="ds-warn mt-2 text-sm" role="alert" data-testid={`pricing-error-${kind}`}>{error}</p>
       ) : null}

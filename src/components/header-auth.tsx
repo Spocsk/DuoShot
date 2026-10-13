@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/components/i18n-provider";
@@ -36,14 +38,10 @@ export function HeaderAuth({
   }
 
   if (signedIn) {
-    return (
-      <Link
-        href={`${prefix}/account`}
-        data-testid={variant === "menu" ? "nav-account-menu" : "nav-account"}
-        className={variant === "menu" ? "ds-menu-link" : "ds-cta-ghost"}
-      >
-        {t("nav_account")}
-      </Link>
+    return variant === "menu" ? (
+      <Link href={`${prefix}/account`} data-testid="nav-account-menu" className="ds-menu-link">{t("nav_account")}</Link>
+    ) : (
+      <Button as="link" variant="secondary" href={`${prefix}/account`} data-testid="nav-account">{t("nav_account")}</Button>
     );
   }
 
@@ -65,9 +63,9 @@ export function HeaderAuth({
       <Link href={`${prefix}/login`} data-testid="nav-login" className="ds-nav-link">
         {t("nav_login")}
       </Link>
-      <Link href={`${prefix}/signup`} data-testid="nav-signup" className={secondarySignup ? "ds-cta-ghost" : "ds-cta"}>
+      <Button as="link" variant={secondarySignup ? "secondary" : "primary"} href={`${prefix}/signup`} data-testid="nav-signup">
         {t("nav_signup")}
-      </Link>
+      </Button>
     </>
   );
 }

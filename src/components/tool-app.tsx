@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
 
 import {
@@ -690,7 +692,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     <p role="status">{t("tool_loading_workspace")}</p>
     {storageError ? <>
       <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p>
-      <button type="button" className="ds-text-btn" onClick={() => window.location.reload()}>{t("tool_import_anonymous_older_drafts")}</button>
+      <Button as="button" variant="text" type="button"  onClick={() => window.location.reload()}>{t("tool_import_anonymous_older_drafts")}</Button>
     </> : null}
   </div>;
 
@@ -704,9 +706,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{t("tool_drafts_on_device_no")}</p>
             {draftsRecovered ? <p role="status" data-testid="tool-drafts-recovered" className="text-sm">{t("tool_drafts_recovered")}</p> : null}
             {storageError ? <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p> : null}
-            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{t("tool_import_anonymous_older_drafts")}</button> : null}
-            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{t("tool_retry_status")}</button> : null}
-            {activationTimedOut ? <button className="ds-text-btn" onClick={() => retryActivation()}>{t("tool_check_activation_again")}</button> : null}
+            {draftSource ? <Button as="button" variant="text"  onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{t("tool_import_anonymous_older_drafts")}</Button> : null}
+            {billingError ? <Button as="button" variant="text"  onClick={() => void refreshBilling()}>{t("tool_retry_status")}</Button> : null}
+            {activationTimedOut ? <Button as="button" variant="text"  onClick={() => retryActivation()}>{t("tool_check_activation_again")}</Button> : null}
           </div>
         </div>
         <div className="tool-command-orientation">
@@ -736,14 +738,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
             <span className="tool-demo-badge">{t("tool_demo_badge")}</span>
             <p>{t("tool_demo_banner")}</p>
-            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t("tool_demo_replace")}</button>
+            <Button as="button" variant="text" type="button"  data-testid="tool-demo-replace" onClick={replaceDemo}>{t("tool_demo_replace")}</Button>
           </div> : null}
           {!hasAny && draftsLoaded ? <DemoStart state={demoState} onLoad={() => void loadDemo()} /> : null}
           <ToolCanvas mobileView={mobileView} slideIndex={slideIndex} onMobileView={setMobileView}>
         <div
           className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}${previewMode === "pixels" ? " is-pixels" : ""}`}
           style={previewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
-        >
+       >
           <PreviewCard
             testId="preview-outer"
             label={t("tool_preview_outer")}
@@ -830,11 +832,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             </p> : null}
             {(status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
             {primary.href ? (
-              <a href={primary.href} download={primary.download} data-testid={primary.testId} className="ds-cta w-full" onClick={primary.onClick}>{primary.label}</a>
+              <Button as="a" variant="primary" href={primary.href} download={primary.download} data-testid={primary.testId} className="w-full" onClick={primary.onClick}>{primary.label}</Button>
             ) : (
-              <button type="button" className="ds-cta w-full" data-testid={primary.testId} disabled={primary.disabled} onClick={primary.onClick}>
+              <Button as="button" variant="primary" type="button" className="w-full" data-testid={primary.testId} disabled={primary.disabled} onClick={primary.onClick}>
                 <SwapLabel text={primary.label} />
-              </button>
+              </Button>
             )}
             {toolPanel === "export" && zipUrl && jobs.downloadId && signedIn && !isDemo ? (
               <AscToolAction
@@ -843,9 +845,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               />
             ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
-              <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
+              <Button as="button" variant="text" type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="tool-dock-secondary">
                 {tf("tool_create_account", { exports: FREE_EXPORTS })}
-              </button>
+              </Button>
             ) : null}
             {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf("tool_score_line", { score: preparationScore })}</p> : null}
           </div>
@@ -859,7 +861,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           }}
           labelledBy="auth-modal-title"
           closeLabel={t("tool_auth_close")}
-        >
+       >
           <AuthForm
             locale={locale}
             mode={authMode}
@@ -872,9 +874,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               void refreshBilling();
             }}
           />
-          <button type="button" className="ds-text-btn mt-4" onClick={() => setAuthMode((mode) => mode === "signup" ? "login" : "signup")}>
+          <Button as="button" variant="text" type="button" className="mt-4" onClick={() => setAuthMode((mode) => mode === "signup" ? "login" : "signup")}>
             {authMode === "signup" ? t("tool_already_have_account_sign") : t("signup_title")}
-          </button>
+          </Button>
         </Overlay>
       ) : null}
       {signedIn && billing && (paywall || upgradeRequested) ? (

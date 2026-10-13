@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -200,10 +202,10 @@ export function AuthForm({
           </span>
         </label>
       ) : null}
-      <button type="button" onClick={onGoogle} data-testid="auth-google" className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>
+      <Button as="button" variant="secondary" type="button" onClick={onGoogle} data-testid="auth-google" className="mt-6 w-full gap-2.5" disabled={busy}>
         <GoogleMark />
         {t("auth_google")}
-      </button>
+      </Button>
       <form onSubmit={onPassword} className="mt-6 grid gap-3">
         <div>
           <label className="ds-label" htmlFor="auth-email">
@@ -234,13 +236,13 @@ export function AuthForm({
             className="ds-input w-full"
           />
         </div>
-        <button type="submit" disabled={busy} data-testid="auth-submit" className="ds-cta">
+        <Button as="button" variant="primary" type="submit" disabled={busy} data-testid="auth-submit" >
           {mode === "signup" ? t("nav_signup") : t("nav_login")}
-        </button>
-        <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="ds-text-btn">
+        </Button>
+        <Button as="button" variant="text" type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" >
           {t("auth_magic")}
-        </button>
-        {mode === "login" ? <Link href={`${prefix}/forgot-password`} className="ds-text-btn">{t("auth_forgot_password")}</Link> : null}
+        </Button>
+        {mode === "login" ? <Button as="link" variant="text" href={`${prefix}/forgot-password`} >{t("auth_forgot_password")}</Button> : null}
       </form>
       {message ? (
         <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message" role={messageOk ? "status" : "alert"}>

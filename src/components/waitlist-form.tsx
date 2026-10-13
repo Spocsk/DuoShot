@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, type ButtonVariant } from "@/components/ui/button";
+
 import { useId, useState, type FormEvent } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/specs";
@@ -16,7 +18,8 @@ export function WaitlistForm({
   locale,
   topic = "apple_duo_open",
   className = "",
-  buttonClassName = "ds-cta-ghost",
+  variant = "secondary",
+  buttonClassName,
   hint,
   compact = false,
 }: {
@@ -24,6 +27,8 @@ export function WaitlistForm({
   topic?: WaitlistTopic;
   className?: string;
   /** Ghost by default so it never competes with the page's primary call to action. */
+  variant?: ButtonVariant;
+  /** Layout classes only; use variant for the action appearance. */
   buttonClassName?: string;
   /** Replaces the default one-line explanation; pass "" to hide it. */
   hint?: string;
@@ -99,9 +104,9 @@ export function WaitlistForm({
           <label htmlFor={`${id}-company`}>Company</label>
           <input id={`${id}-company`} name="company" tabIndex={-1} autoComplete="off" value={company} onChange={(event) => setCompany(event.target.value)} />
         </div>
-        <button type="submit" className={buttonClassName} disabled={status.kind === "sending"} data-testid={`waitlist-submit-${topic}`}>
+        <Button as="button" variant={variant} type="submit" className={buttonClassName} disabled={status.kind === "sending"} data-testid={`waitlist-submit-${topic}`}>
           {status.kind === "sending" ? t("waitlist_sending") : t("waitlist_submit")}
-        </button>
+        </Button>
       </div>
       {error ? (
         <p id={`${id}-error`} className="ds-warn mt-2 text-sm" role="alert">{error}</p>

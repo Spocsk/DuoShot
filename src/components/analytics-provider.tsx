@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useI18n } from "@/components/i18n-provider";
@@ -138,8 +140,8 @@ export function AnalyticsProvider() {
             {choiceError ? <p className="mt-1 text-xs text-[var(--warn)] sm:text-sm" role="alert">{t("consent_preference_not_saved_please")}</p> : null}
           </div>
           <div className="flex shrink-0 gap-2">
-            <button type="button" className="ds-cta flex-1 sm:flex-none" onClick={() => void choose("accepted")}>{t("account_accept")}</button>
-            <button type="button" className="ds-cta-ghost flex-1 sm:flex-none" onClick={() => void choose("rejected")}>{t("consent_decline")}</button>
+            <Button as="button" variant="primary" type="button" className="flex-1 sm:flex-none" onClick={() => void choose("accepted")}>{t("account_accept")}</Button>
+            <Button as="button" variant="secondary" type="button" className="flex-1 sm:flex-none" onClick={() => void choose("rejected")}>{t("consent_decline")}</Button>
           </div>
         </div>
       ) : null}

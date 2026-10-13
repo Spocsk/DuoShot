@@ -1,3 +1,5 @@
+
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AppleAvailability } from "./apple-availability";
 import { JsonLd } from "@/lib/json-ld";
@@ -81,7 +83,7 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           <FaqList items={faq} />
         </section>
         <p className="mt-8 max-w-3xl text-sm text-[var(--muted)]">{appStoreDisclaimer233(locale)} {t("specs_duoshot_does_not_guarantee")}</p>
-        <Link className="ds-cta mt-8" data-testid="specs-cta-tool" href={toolPath(locale)}>{t("specs_prepare_screenshots")}</Link>
+        <Button as="link" variant="primary" className="mt-8" data-testid="specs-cta-tool" href={toolPath(locale)}>{t("specs_prepare_screenshots")}</Button>
       </main>
       <SiteFooter locale={locale} />
     </div>

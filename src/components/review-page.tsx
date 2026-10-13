@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { DeviceCamera } from "@/components/device-camera";
 import { DsToggle } from "@/components/tool/controls";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
@@ -139,7 +141,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   aria-pressed={viewMode === "device"}
                   data-testid="review-device-view"
                   onClick={() => setViewMode("device")}
-                >
+               >
                   {t("review_device_view")}
                 </button>
                 <button
@@ -148,7 +150,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   aria-pressed={viewMode === "pixels"}
                   data-testid="review-pixel-view"
                   onClick={() => setViewMode("pixels")}
-                >
+               >
                   {t("review_pixel_view")}
                 </button>
               </div>
@@ -173,12 +175,12 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   <div
                     className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}
                     style={viewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
-                  >
+                 >
                     <p className="studio-review-label studio-review-label-outer">{t("review_closed_screen")}</p>
                     <div
                       className={`preview-glass preview-outer t-resize${viewMode === "device" ? " device-bezel" : ""}`}
                       data-aspect={viewMode === "pixels" ? `${outerSpec.width}/${outerSpec.height}` : undefined}
-                    >
+                   >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.outer} alt={tf("review_alt_numbered_outer", { n: slide.index + 1, total: data.slides.length })} />
                       {viewMode === "device" ? <DeviceCamera /> : null}
@@ -187,7 +189,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                     <div
                       className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${hinge ? "is-hinge" : "hinge-off"}`}
                       data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
-                    >
+                   >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.inner} alt={tf("review_alt_numbered_inner", { n: slide.index + 1, total: data.slides.length })} />
                       <span className="division" aria-hidden="true" />
@@ -212,12 +214,12 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
               />
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" className="ds-cta" data-testid="review-approve" disabled={busy} onClick={() => void decide("approve")}>
+              <Button as="button" variant="primary" type="button"  data-testid="review-approve" disabled={busy} onClick={() => void decide("approve")}>
                 {t("review_approve")}
-              </button>
-              <button type="button" className="ds-cta-ghost" data-testid="review-redo" disabled={busy} onClick={() => void decide("redo")}>
+              </Button>
+              <Button as="button" variant="secondary" type="button"  data-testid="review-redo" disabled={busy} onClick={() => void decide("redo")}>
                 {t("review_needs_work")}
-              </button>
+              </Button>
             </div>
             {decisionFeedback ? <p className={decisionFeedback.error ? "ds-warn mt-3" : "mt-3 text-sm text-[var(--studio-sea)]"} role={decisionFeedback.error ? "alert" : "status"} data-testid="review-decision-feedback">{decisionFeedback.text}</p> : null}
             {data.comment ? <p className="mt-4 text-sm text-[var(--muted)]">{data.comment}</p> : null}
