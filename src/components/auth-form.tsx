@@ -16,6 +16,7 @@ export function AuthForm({
   locale,
   mode,
   variant = "page",
+  title,
   nextPath,
   onSuccess,
   initialError = false,
@@ -23,6 +24,7 @@ export function AuthForm({
   locale: Locale;
   mode: Mode;
   variant?: "page" | "modal";
+  title?: string;
   nextPath?: string;
   onSuccess?: () => void;
   initialError?: boolean;
@@ -162,14 +164,14 @@ export function AuthForm({
   return (
     <div className={variant === "page" ? "studio-auth-card mx-auto w-full max-w-md" : "studio-auth-card"}>
       <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
-        {variant === "modal" && mode === "signup" ? t("auth_modal_title") : t(mode === "signup" ? "signup_title" : "login_title")}
+        {title ?? (variant === "modal" && mode === "signup" ? t("auth_modal_title") : t(mode === "signup" ? "signup_title" : "login_title"))}
       </h1>
       {variant === "modal" && mode === "signup" ? (
         <p className="mt-2 text-sm text-[var(--muted)]">{t("auth_modal_lead")}</p>
       ) : null}
       <button type="button" onClick={onGoogle} data-testid="auth-google" className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>
         <GoogleMark />
-        {t("google")}
+        {t("auth_google")}
       </button>
       {mode === "signup" ? (
         <p className="mt-3 text-center text-xs leading-relaxed text-[var(--muted)]">
@@ -203,7 +205,7 @@ export function AuthForm({
       <form onSubmit={onPassword} className="mt-6 grid gap-3">
         <div>
           <label className="ds-label" htmlFor="auth-email">
-            {t("email")}
+            {t("auth_email")}
           </label>
           <input
             id="auth-email"
@@ -217,7 +219,7 @@ export function AuthForm({
         </div>
         <div>
           <label className="ds-label" htmlFor="auth-password">
-            {t("password")}
+            {t("auth_password")}
           </label>
           <input
             id="auth-password"
@@ -277,7 +279,7 @@ export function AuthForm({
           {mode === "signup" ? t("nav_signup") : t("nav_login")}
         </button>
         <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="ds-text-btn">
-          {t("magic")}
+          {t("auth_magic")}
         </button>
         {mode === "login" ? <Link href={`${prefix}/forgot-password`} className="ds-text-btn">{t("auth_forgot_password")}</Link> : null}
       </form>

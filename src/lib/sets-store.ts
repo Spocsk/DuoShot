@@ -26,6 +26,7 @@ export type SetMeta = {
 
 const META_KEY = "duoshot.sets.v1";
 const ACTIVE_KEY = "duoshot.sets.active";
+const IMPORT_KEY = "duoshot.sets.import";
 const DB_NAME = "duoshot-sets";
 const STORE = "files";
 type DraftScope = string;
@@ -101,8 +102,27 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 type StoredFile = { name: string; type: string; buffer: ArrayBuffer };
+const fileWrites = new Map<string, Promise<void>>();
+const draftChanges = new Map<DraftScope, Set<Promise<unknown>>>();
 
-export async function saveSetFiles(setId: string, side: "outer" | "inner", files: File[], scope: DraftScope = "guest") {
+/** Include async validation that runs before a file write is ready to be registered. */
+export function trackDraftChange<T>(scope: DraftScope, change: () => Promise<T>): Promise<T> {
+  const changes = draftChanges.get(scope) ?? new Set<Promise<unknown>>();
+  draftChanges.set(scope, changes);
+  const pending = Promise.resolve().then(change).finally(() => { changes.delete(pending); });
+  changes.add(pending);
+  return pending;
+}
+
+export function saveSetFiles(setId: string, side: "outer" | "inner", files: File[], scope: DraftScope = "guest") {
+  const key = scopedKey(`${setId}:${side}`, scope);
+  // Register before reading the files: a login can happen while arrayBuffer is still pending.
+  const write = (fileWrites.get(key) ?? Promise.resolve()).catch(() => {}).then(() => writeSetFiles(key, files));
+  fileWrites.set(key, write);
+  return write;
+}
+
+async function writeSetFiles(key: string, files: File[]) {
   const stored: StoredFile[] = await Promise.all(
     files.map(async (file) => ({
       name: file.name,
@@ -111,13 +131,16 @@ export async function saveSetFiles(setId: string, side: "outer" | "inner", files
     })),
   );
   const db = await openDb();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(stored, scopedKey(`${setId}:${side}`, scope));
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(stored, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
 }
 
 export async function loadSetFiles(setId: string, side: "outer" | "inner", scope: DraftScope = "guest"): Promise<File[]> {
@@ -159,19 +182,61 @@ export function createSetStore(scope: DraftScope, onError?: () => void) {
   };
 }
 
-export async function importLocalDrafts(source: "guest" | "legacy", owner: string): Promise<void> {
-  if (source === owner) return;
-  const originals = loadSetMetas(source);
+type ImportSource = "guest" | "legacy";
+type ImportClaims = Record<string, { owner: string; id: string }>;
+const draftImports = new Map<string, Promise<number>>();
+const importQueues = new Map<ImportSource, Promise<unknown>>();
+
+export function importLocalDrafts(source: ImportSource, owner: string): Promise<number> {
+  if (source === owner) return Promise.resolve(0);
+  const key = `${source}:${owner}`;
+  const running = draftImports.get(key);
+  if (running) return running;
+  const run = () => importDrafts(source, owner);
+  const pending = (importQueues.get(source) ?? Promise.resolve()).catch(() => {}).then(async () =>
+    // Serialize across tabs as well as concurrent React effects when Web Locks is available.
+    typeof navigator !== "undefined" && navigator.locks
+      ? navigator.locks.request(`duoshot:import:${source}`, run)
+      : run(),
+  ).finally(() => { draftImports.delete(key); });
+  draftImports.set(key, pending);
+  importQueues.set(source, pending);
+  return pending;
+}
+
+async function importDrafts(source: ImportSource, owner: string): Promise<number> {
+  while (draftChanges.get(source)?.size) await Promise.all(draftChanges.get(source)!);
+  const claimKey = scopedKey(IMPORT_KEY, source);
+  const claims = JSON.parse(window.localStorage.getItem(claimKey) ?? "{}") as ImportClaims;
+  const originals = loadSetMetas(source).filter((set) => !claims[set.id] || claims[set.id].owner === owner);
+  if (!originals.length) return 0;
+  // Persist stable destination IDs and ownership before copying anything. A retry (even after
+  // reloading or switching accounts) cannot duplicate or claim another account's drafts.
+  for (const original of originals) claims[original.id] ??= { owner, id: newSetId() };
+  window.localStorage.setItem(claimKey, JSON.stringify(claims));
+  await Promise.all(originals.flatMap((set) => ["outer", "inner"].map((side) => fileWrites.get(scopedKey(`${set.id}:${side}`, source)))));
+  const existing = loadSetMetas(owner);
   const imported: SetMeta[] = [];
   for (const original of originals) {
-    const copy = { ...original, id: newSetId(), lastReviewId: null, lastReviewStatus: null };
+    const id = claims[original.id].id;
+    if (existing.some((set) => set.id === id)) continue;
+    const copy = { ...original, id, appId: undefined, lastReviewId: null, lastReviewStatus: null };
     for (const side of ["outer", "inner"] as const) {
       await saveSetFiles(copy.id, side, await loadSetFiles(original.id, side, source), owner);
     }
     imported.push(copy);
   }
-  // Publish only after every file is stored. Originals stay recoverable on any failure.
+  // Publish only after every file is stored. Originals stay recoverable on any failure,
+  // including localStorage quota errors after publication but before source cleanup.
   saveSetMetas([...loadSetMetas(owner), ...imported], owner);
-  if (imported[0]) saveActiveId(imported[0].id, owner);
-  saveSetMetas([], source);
+  const active = originals.find((set) => set.id === loadActiveId(source)) ?? originals[0];
+  saveActiveId(claims[active.id].id, owner);
+  const transferred = new Set(originals.map((set) => set.id));
+  saveSetMetas(loadSetMetas(source).filter((set) => !transferred.has(set.id)), source);
+  // Stale claims are harmless once their source metadata is gone.
+  try {
+    for (const id of transferred) delete claims[id];
+    window.localStorage.setItem(claimKey, JSON.stringify(claims));
+  } catch { /* Source cleanup already succeeded. */ }
+  return originals.length;
 }
