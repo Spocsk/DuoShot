@@ -64,7 +64,9 @@ describe("theme", () => {
     cy.intercept("GET", "**/_next/static/**/*.js*", { statusCode: 200, body: "", headers: { "content-type": "application/javascript" } });
     cy.visit("/en", { onBeforeLoad(win) { win.localStorage.setItem("duoshot_theme", "dark"); } });
     cy.get("html").should("have.attr", "data-theme", "dark").and("have.css", "color-scheme", "dark");
-    cy.get("body > #duoshot-theme:first-child").should("exist");
+    cy.get("body > #duoshot-theme").should("exist").and(($script) => {
+      expect($script.index()).to.be.lessThan($script.parent().children(":not(script)").first().index());
+    });
     // No hydrated click handler: proves the inline script applied the stored theme.
     cy.get('header [data-testid="theme-toggle"] summary').click();
     cy.get('header [data-testid="theme-light"]').click();
