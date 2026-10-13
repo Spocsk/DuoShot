@@ -1,4 +1,18 @@
 describe("auth", () => {
+  for (const locale of ["fr", "en"] as const) {
+    for (const route of ["/login", "/signup", "/tool?upgrade=1"]) {
+      it(`renders translated auth labels in ${locale} on ${route}`, () => {
+        if (locale === "fr") cy.visitFr(route);
+        else cy.visitEn(`/en${route}`);
+        cy.get('[data-testid="auth-form"]').should("be.visible");
+        cy.get('[data-testid="auth-google"]').should("have.text", locale === "fr" ? "Continuer avec Google" : "Continue with Google");
+        cy.get('label[for="auth-email"]').should("have.text", locale === "fr" ? "E-mail" : "Email");
+        cy.get('label[for="auth-password"]').should("have.text", locale === "fr" ? "Mot de passe" : "Password");
+        cy.get('[data-testid="auth-magic"]').should("have.text", locale === "fr" ? "Lien magique" : "Magic link");
+      });
+    }
+  }
+
   it("requires accepting the policies on signup", () => {
     cy.visitFr("/signup");
     cy.get('[data-testid="auth-form"]').should("be.visible");

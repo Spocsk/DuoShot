@@ -35,7 +35,7 @@ export function PaywallModal({
         {pass ? t("pricing_pass_title") : reason === "69" ? t("paywall_69") : t("paywall_title")}
       </h2>
       <p className="mt-3 text-[var(--muted)]">{pass ? t("pricing_pass_body") : t("paywall_lead")}</p>
-      {(pass ? !passAvailable : !available) ? <p role="status" className="mt-3 text-sm">{t("account_payments_not_open_yet")}</p> : null}
+      {!available && (!pass || !passAvailable) ? <p role="status" className="mt-3 text-sm">{t("account_payments_not_open_yet")}</p> : null}
       {pass ? (
         <button
           type="button"

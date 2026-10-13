@@ -24,6 +24,29 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-download"]').should("be.disabled");
   });
 
+  for (const method of ["picker", "drop"] as const) {
+    it(`preserves captures imported through the canvas ${method}`, () => {
+      cy.visitFr("/tool");
+      cy.get('[data-testid="tool-sets"][data-ready="true"]');
+      for (const side of ["outer", "inner"] as const) {
+        if (method === "picker") {
+          cy.get(`[data-testid="preview-${side}"] input[type="file"]`)
+            .selectFile(`cypress/fixtures/${side}.png`, { force: true });
+        } else {
+          cy.get(`[data-testid="preview-${side}-canvas"]`)
+            .selectFile(`cypress/fixtures/${side}.png`, { action: "drag-drop" });
+        }
+        cy.get(`[data-testid="preview-${side}"] img`).should("exist");
+      }
+      cy.get('[data-testid="tool-tab-captures"]').click();
+      cy.get('[data-testid="drop-outer"]').should("have.attr", "data-count", "1");
+      cy.get('[data-testid="drop-inner"]').should("have.attr", "data-count", "1");
+      cy.reload();
+      cy.get('[data-testid="preview-outer"] img').should("exist");
+      cy.get('[data-testid="preview-inner"] img').should("exist");
+    });
+  }
+
   it("warns on clone only when the same-set toggle is on", () => {
     cy.visitFr("/tool");
     cy.dropScreens();
@@ -75,18 +98,96 @@ describe("tool guest", () => {
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
 
-  it("opens the 6.9 paywall for guests", () => {
+  it("asks guests for an account before the 6.9 paywall", () => {
+    cy.visitFr("/tool");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]');
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.contains("summary", "Réglages avancés").click();
+    cy.get("details.tool-advanced").should("have.attr", "open");
+    cy.get('[data-testid="toggle-69"]').should("have.attr", "aria-pressed", "false").click({ scrollBehavior: "center" });
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('#auth-modal-title').should("contain", "Un compte est nécessaire pour continuer");
+    cy.get('[data-testid="auth-submit"]').should("not.be.disabled");
+    cy.get('[data-testid="paywall"]').should("not.exist");
+    cy.contains("Les paiements ne sont pas encore ouverts").should("not.exist");
+    cy.location("search").should("include", "upgrade=1").and("include", "reason=69");
+    cy.get('[data-testid="dialog"] [aria-label="Fermer"]').click();
+    cy.get('[data-testid="auth-form"]').should("not.exist");
+    cy.get('[data-testid="paywall"]').should("not.exist");
+    cy.get('[data-testid="toggle-69"]').should("have.attr", "aria-pressed", "true").click({ scrollBehavior: "center" });
+    cy.get('[data-testid="toggle-69"]').should("have.attr", "aria-pressed", "false").click({ scrollBehavior: "center" });
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+  });
+
+  for (const [width, height] of [[1000, 500], [390, 600]]) {
+    it(`keeps guest signup reachable and dismissible at ${width} × ${height}`, () => {
+      cy.viewport(width, height);
+      cy.visitFr("/tool?upgrade=1&reason=69");
+      cy.get('[data-testid="dialog"]').should("be.visible").and(($dialog) => {
+        const bounds = $dialog[0].getBoundingClientRect();
+        expect(bounds.top, "dialog top stays in the viewport").to.be.at.least(0);
+        expect(bounds.bottom, "dialog bottom stays in the viewport").to.be.at.most(height);
+      });
+      // Reach the last action, then scroll back to the close button without forcing clicks.
+      cy.contains('[data-testid="dialog"] button', "Déjà un compte ? Se connecter").scrollIntoView().should("be.visible");
+      cy.get('[data-testid="dialog"]').should(($dialog) => {
+        expect($dialog[0].scrollTop, "long signup form scrolls inside the dialog").to.be.greaterThan(0);
+      });
+      cy.get('[data-testid="dialog"] [aria-label="Fermer"]').scrollIntoView().should("be.visible").click();
+      cy.get('[data-testid="dialog"]').should("not.exist");
+      cy.get('[data-testid="paywall"]').should("not.exist");
+    });
+  }
+
+  it("explains the account requirement for 6.9 sizes in English", () => {
+    cy.visitEn("/en/tool");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]');
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.contains("summary", "Advanced settings").click();
+    cy.get('[data-testid="toggle-69"]').click();
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('#auth-modal-title').should("contain", "An account is needed to continue");
+    cy.get('[data-testid="paywall"]').should("not.exist");
+    cy.contains("Payments are not open yet").should("not.exist");
+  });
+
+  it("continues from guest 6.9 signup to an active paywall after login", () => {
     cy.visitFr("/tool");
     cy.get('[data-testid="tool-sets"][data-ready="true"]');
     cy.get('[data-testid="tool-tab-adjust"]').click();
     cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-69"]').click();
-    cy.get('[data-testid="paywall"]').should("contain", "6,9");
+    cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('[data-testid="paywall"]').should("not.exist");
+
+    cy.loginAs("free");
+    cy.contains("button", "Déjà un compte ? Se connecter").click();
+    cy.get('[data-testid="auth-email"]').type("e2e@duoshot.test");
+    cy.get('[data-testid="auth-password"]').type("test-password");
+    cy.get('[data-testid="auth-submit"]').click();
+    cy.wait("@authToken");
+
+    cy.get('[data-testid="auth-form"]').should("not.exist");
+    cy.get('[data-testid="paywall"]').should("be.visible").and("contain", "6,9");
+    cy.get('[data-testid="paywall-cta-indie"]').should("not.be.disabled");
+    cy.contains("Les paiements ne sont pas encore ouverts").should("not.exist");
+    cy.location("search").should("include", "upgrade=1").and("include", "reason=69");
+  });
+
+  it("keeps subscription checkout available when the selected pass is unavailable", () => {
+    cy.loginAs("free");
+    cy.intercept("GET", "**/api/billing/availability", { checkoutAvailable: true, passAvailable: false });
+    cy.visitFr("/tool?upgrade=1&plan=pass30");
+    cy.get('[data-testid="paywall"]').should("contain", "Pass 30 jours");
+    cy.get('[data-testid="paywall-cta-pass30"]').should("be.disabled");
+    cy.get('[data-testid="paywall-cta-indie"]').should("not.be.disabled");
+    cy.contains("Les paiements ne sont pas encore ouverts").should("not.exist");
   });
 
   it("opens the auth modal from ?upgrade=1", () => {
     cy.visitFr("/tool?upgrade=1");
     cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('#auth-modal-title').should("contain", "Un compte est nécessaire pour continuer");
   });
 
   it("shows one pair strip for 3+3 drops and switches preview", () => {

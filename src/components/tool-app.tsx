@@ -38,6 +38,7 @@ import {
   nextSetName,
   createSetStore,
   importLocalDrafts,
+  trackDraftChange,
   loadSetMetas as readDraftMetas,
   type SetMeta,
 } from "@/lib/sets-store";
@@ -108,7 +109,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const { t, tf } = i18n;
   const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
-  const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
+  const [draftsRecovered, setDraftsRecovered] = useState(false);
+  const [draftSource, setDraftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
   const { loadSetMetas, saveSetMetas, loadActiveId, saveActiveId, loadSetFiles, saveSetFiles, deleteSetFiles } = useMemo(() => createSetStore(owner, () => setStorageError(true)), [owner]);
   const prefix = localePrefix(locale);
   const searchParams = useSearchParams();
@@ -143,6 +145,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
+  const upgradeReason = searchParams.get("reason") === "69" ? "69" : "trial";
   const requestedPlan = searchParams.get("plan") ?? undefined;
   const preferredUpgradeKind = isPurchaseKind(requestedPlan) ? requestedPlan : undefined;
   // The one-time pass has its own Stripe price; ask whether it is configured before offering it.
@@ -212,6 +215,19 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      // Also runs after OAuth/email redirects, when the guest instance is no longer mounted.
+      if (owner !== "guest") {
+        try {
+          const recovered = await importLocalDrafts("guest", owner);
+          if (!cancelled) {
+            if (recovered > 0) setDraftsRecovered(true);
+            setDraftSource(readDraftMetas("legacy").length ? "legacy" : null);
+          }
+        } catch {
+          if (!cancelled) setStorageError(true);
+        }
+      }
+      if (cancelled) return;
       const existing = loadSetMetas();
       if (existing.length === 0) {
         const first = defaultSet();
@@ -239,11 +255,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setOuterFiles((prev) => (prev.length > 0 ? prev : outer));
       setInnerFiles((prev) => (prev.length > 0 ? prev : inner));
       setDraftsLoaded(true);
-    })();
+    })().catch(() => { if (!cancelled) setStorageError(true); });
     return () => {
       cancelled = true;
     };
-  }, [loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
+  }, [owner, loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
 
   const loadDemoRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => { loadDemoRef.current = loadDemo; });
@@ -380,8 +396,13 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       document.querySelector<HTMLElement>('[data-testid="duo-slot-choice"] select')?.focus();
     }, 60);
   }
-  async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+  function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+    // File inputs are cleared by the caller and drag data expires after the event.
     const selected = takeFiles(list);
+    return trackDraftChange(owner, () => importSideFiles(side, selected));
+  }
+
+  async function importSideFiles(side: "outer" | "inner", selected: File[]) {
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
       if (!isAllowedImage(file) || file.size > MAX_SOURCE_BYTES) return null;
       try { const metadata = await inspectFile(file); if (metadata.width * metadata.height > MAX_SOURCE_PIXELS) return null; const bitmap = await createImageBitmap(file); const allowed = bitmap.width * bitmap.height <= MAX_SOURCE_PIXELS; bitmap.close(); return allowed ? file : null; } catch { return null; }
@@ -486,13 +507,34 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setZipUrl(null);
   }
 
+  function openUpgrade(reason: "trial" | "69", kind?: PurchaseKind) {
+    if (owner === "guest") {
+      // Keep the intent through the owner remount and external auth redirects.
+      const url = new URL(window.location.href);
+      url.searchParams.set("upgrade", "1");
+      url.searchParams.set("reason", reason);
+      if (kind) url.searchParams.set("plan", kind);
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      setUpgradeDismissed(false);
+      setAuthMode("signup");
+    } else {
+      setPaywall(reason);
+    }
+  }
+
+  function dismissUpgrade() {
+    setUpgradeDismissed(true);
+    const url = new URL(window.location.href);
+    for (const key of ["upgrade", "plan", "reason"]) url.searchParams.delete(key);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
   async function onCheckout(kind: PurchaseKind) {
-    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("account_payments_not_open_yet"), "info"); return; }
-    if (!signedIn) {
-      setPaywall(null);
-      setShowAuth(true);
+    if (owner === "guest") {
+      openUpgrade(paywall ?? upgradeReason, kind);
       return;
     }
+    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("account_payments_not_open_yet"), "info"); return; }
     setCheckoutBusy(true);
     try {
       await startCheckout(kind, checkoutReturnPath(locale));
@@ -539,7 +581,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     await switchSet(nextList[0]!.id);
   }
 
-  async function loadDemo() {
+  function loadDemo() {
+    return trackDraftChange(owner, importDemo);
+  }
+
+  async function importDemo() {
     if (demoState === "loading") return;
     setDemoState("loading");
     try {
@@ -641,14 +687,24 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }
   const showMissing = (toolPanel === "review" || toolPanel === "export") && !zipUrl && !readyToPrepare;
 
+  // Editing the boot placeholder during a migration could overwrite the account's saved sets.
+  if (!draftsLoaded) return <div className="mx-auto max-w-6xl px-5 py-10">
+    <p role="status">{t("tool_loading_workspace")}</p>
+    {storageError ? <>
+      <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p>
+      <button type="button" className="ds-text-btn" onClick={() => window.location.reload()}>{t("tool_import_anonymous_older_drafts")}</button>
+    </> : null}
+  </div>;
+
   return (
     <div className="studio-tool-shell mx-auto max-w-[92rem] px-5 pb-24 pt-5" data-tool-panel={toolPanel}>
       <header className="tool-command-bar" id="tool-create">
         <div className="tool-command-brand"><span className="tool-command-dot" aria-hidden="true" /><span>{t("tool_workspace")}</span></div>
         <div className="tool-command-set">
-          <SetPicker hydrated={hydrated} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} />
+          <SetPicker hydrated={hydrated && draftsLoaded} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} />
           <div className="tool-command-notes">
             <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{t("tool_drafts_on_device_no")}</p>
+            {draftsRecovered ? <p role="status" data-testid="tool-drafts-recovered" className="text-sm">{t("tool_drafts_recovered")}</p> : null}
             {storageError ? <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p> : null}
             {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{t("tool_import_anonymous_older_drafts")}</button> : null}
             {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{t("tool_retry_status")}</button> : null}
@@ -752,7 +808,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               />
               <AdvancedSettings globalFit={globalFit} updateGlobalFit={updateGlobalFit} options={options} updateOptions={updateOptions}
                 showHinge={showHinge} setShowHinge={setShowHinge} include69={include69} patchActive={patchActive} setZipUrl={setZipUrl}
-                billing={billing} setPaywall={setPaywall} cloneLabel={cloneLabel} assumeClone={assumeClone} setAssumeClone={setAssumeClone}
+                billing={billing} setPaywall={openUpgrade} cloneLabel={cloneLabel} assumeClone={assumeClone} setAssumeClone={setAssumeClone}
               />
             </> : null}
             {toolPanel === "review" ? <>
@@ -804,11 +860,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           </div>
         </aside>
       </div>
-      {showAuth || (upgradeRequested && session === "out") ? (
+      {showAuth || (upgradeRequested && owner === "guest") ? (
         <Overlay
           onClose={() => {
             setShowAuth(false);
-            setUpgradeDismissed(true);
+            dismissUpgrade();
           }}
           labelledBy="auth-modal-title"
           closeLabel={t("asct_close")}
@@ -817,7 +873,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
             locale={locale}
             mode={authMode}
             variant="modal"
-            nextPath={upgradeRequested && preferredUpgradeKind ? `${prefix}/tool?upgrade=1&plan=${preferredUpgradeKind}` : `${prefix}/tool`}
+            title={upgradeRequested ? t("auth_account_required_title") : undefined}
+            nextPath={upgradeRequested ? `${prefix}/tool?upgrade=1&reason=${upgradeReason}${preferredUpgradeKind ? `&plan=${preferredUpgradeKind}` : ""}` : `${prefix}/tool`}
             onSuccess={() => {
               setShowAuth(false);
               void refreshBilling();
@@ -828,17 +885,17 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           </button>
         </Overlay>
       ) : null}
-      {paywall || (upgradeRequested && session === "in") ? (
+      {signedIn && billing && (paywall || upgradeRequested) ? (
         <PaywallModal
           available={billing?.checkoutAvailable === true}
           passAvailable={passAvailable}
           locale={locale}
-          reason={paywall ?? "trial"}
+          reason={paywall ?? upgradeReason}
           busy={checkoutBusy}
           preferredKind={upgradeRequested ? preferredUpgradeKind : undefined}
           onClose={() => {
             setPaywall(null);
-            setUpgradeDismissed(true);
+            dismissUpgrade();
           }}
           onCheckout={(kind) => void onCheckout(kind)}
         />

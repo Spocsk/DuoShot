@@ -107,7 +107,7 @@ export function AdvancedSettings({
   patchActive: (patch: Partial<SetMeta>) => void;
   setZipUrl: Dispatch<SetStateAction<string | null>>;
   billing: BillingStatus | null;
-  setPaywall: Dispatch<SetStateAction<"trial" | "69" | null>>;
+  setPaywall: (reason: "69") => void;
   cloneLabel: string | null;
   assumeClone: boolean;
   setAssumeClone: Dispatch<SetStateAction<boolean>>;
