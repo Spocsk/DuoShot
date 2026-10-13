@@ -99,7 +99,7 @@ function ProofSection({ locale }: { locale: Locale }) {
       <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
         {t("home_open_example_in_tool")} <span aria-hidden="true">↗</span>
       </Link>
-      <small>{t("home_before_example_files_after")}</small>
+      <small>{t("home_before_example_files_after")} {t("home_delivery_hint")}</small>
     </div>
   </section>;
 }

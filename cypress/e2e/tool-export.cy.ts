@@ -27,7 +27,7 @@ describe("tool export", () => {
     cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href", "https://storage.example/app.zip");
     cy.get('[data-testid="tool-export-delivery"]').should("contain", "1398 × 2034");
     cy.get('[data-testid="tool-export-delivery"]').should("contain", "duo-outer-portrait/01.png");
-    cy.get('[data-testid="tool-export-delivery"]').should("contain", "duo-inner-portrait/01.png");
+    cy.get('[data-testid="tool-export-delivery"]').should("not.contain", "duo-inner-portrait/01.png").and("contain", "APP_IPHONE_DUO");
   });
 
   it("opens the trial paywall when free exports are exhausted", () => {
@@ -52,6 +52,8 @@ describe("tool export", () => {
     cy.dropScreens();
     cy.get('[data-testid="same-set-details"] .t-acc-head').click();
     cy.get('[data-testid="toggle-same-set"]').click();
+    cy.get('[data-testid="duo-slot-choice"] select').select("mix");
+    cy.get('[data-testid="duo-slot-choice"] input[type="checkbox"]').check();
     cy.get('[data-testid="tool-tab-adjust"]').click();
     cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-assume-clone"]').click();

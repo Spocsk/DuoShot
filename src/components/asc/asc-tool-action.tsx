@@ -18,7 +18,7 @@ type Props = {
   exportId: string;
   images: ExportImage[];
   orientation: Orientation;
-  /** Leaves the dialog for Adjust with the 6.9″ toggle in view. */
+  /** Leaves the dialog and focuses the Duo selection control. */
   onEnable69: () => void;
 };
 
@@ -140,7 +140,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
   const localizations = useLookup<AscLocalization>(versionId || null, listLocalizations);
   const localizationId = chosenLocalization || autoPick(localizations.items);
 
-  const view = !plan.send.length ? "no69"
+  const view = plan.error ? "error" : !plan.send.length ? "no69"
     : state.phase === "idle" ? "form"
     : state.phase === "completed" ? "done"
     : state.phase === "failed" ? "error" : "progress";
@@ -170,7 +170,6 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
     }
   }
 
-  const size = plan.send[0] ? `${plan.send[0].width} × ${plan.send[0].height}` : "";
   const heading = view === "no69" ? t("asct_no69_title")
     : view === "progress" ? t("asct_progress_title")
     : view === "done" ? t("asct_success_title")
@@ -209,7 +208,7 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
 
         <section className="mt-5" aria-labelledby={`${ids}-files`} data-testid="asc-send-files">
           <h3 id={`${ids}-files`} className="ds-label">{t("asct_files_title")}</h3>
-          <p className="mt-1 text-sm">{tf("asct_files_count", { n: plan.send.length, size })}</p>
+          <p className="mt-1 text-sm">{tf("asct_files_count", { n: plan.send.length })}</p>
           <FileList files={plan.send} />
         </section>
         <SkippedFiles files={plan.skipped} />
@@ -250,7 +249,9 @@ function AscUploadDialog({ locale, exportId, images, orientation, onEnable69, ti
         </a>
       </> : null}
 
-      {view === "error" && state.phase === "failed" ? <>
+      {plan.error ? <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(plan.error))}</p> : null}
+
+      {view === "error" && !plan.error && state.phase === "failed" ? <>
         <p className="ds-warn mt-3" role="alert" data-testid="asc-error">{t(ascErrorKey(state.error))}</p>
         <ProgressList files={state.progress?.files ?? []} />
         <button type="button" className="ds-cta-ghost mt-5 w-full" data-testid="asc-retry" onClick={upload.reset}>{t("asct_retry")}</button>
@@ -314,7 +315,7 @@ function ProgressList({ files }: { files: AscFileProgress[] }) {
     <ol className="tool-asc-files mt-3" data-testid="asc-progress-files">
       {files.map((file) => (
         <li key={`${file.slot}-${file.index}`} data-state={file.state}>
-          <span>{t("asct_size_69")} · {String(file.index).padStart(2, "0")}</span>
+          <span>{file.slot === "duo-outer" ? t("tool_closed") : file.slot === "duo-inner" ? t("tool_open") : t("asct_size_69")} · {String(file.index).padStart(2, "0")}</span>
           <span className="tool-asc-file-state">
             {t(ascFileStateKey(file.state))}
             {file.state === "failed" && file.error ? ` · ${t(ascFileErrorKey(file.error))}` : ""}

@@ -1,3 +1,4 @@
+import { validateDuoSelection, type DuoSelection } from "@/lib/duo-selection";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { submitRender, resumeRender } from "@/lib/render-client";
 import { assertBatchSize } from "@/lib/pipeline/limits";
@@ -37,6 +38,7 @@ export type RenderJobsContext = {
   outerFiles: File[];
   innerFiles: File[];
   effectiveInner: File[];
+  duoSelection: DuoSelection;
   sameSet: boolean;
   cloneForced: boolean;
   include69: boolean;
@@ -152,6 +154,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     setZipUrl(null);
     setDownloadId(null);
     try {
+      validateDuoSelection(ctx.duoSelection, outerFiles.length, effectiveInner.length);
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
@@ -189,6 +192,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       const response = await submitRender(sessionData.user.id, "export", {
           outerPaths,
           innerPaths,
+          duoSelection: ctx.duoSelection,
           sameSet: cloneForced,
           appName: appNameOf(active),
           clientName: active?.clientName || "",

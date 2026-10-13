@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   if (text.length > 4096) return json({ error: "INPUT_TOO_LARGE" }, 413);
   let body: Partial<AscUploadPayload>;
   try { body = JSON.parse(text); } catch { return json({ error: "INVALID_REQUEST" }, 400); }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "INVALID_REQUEST" }, 400);
   // Replacing deletes the workspace's live screenshots: an owner decision.
   if (body.replaceExisting === true && role !== "owner") return json({ error: "OWNER_REQUIRED" }, 403);
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
   if (!exported.data?.storage_path || Date.now() - Date.parse(exported.data.created_at) > EXPORT_MAX_AGE_MS) {
     return json({ error: "EXPORT_EXPIRED" }, 410);
   }
-  // iPhone Duo has no App Store Connect display type yet; only mapped slots are sent.
+  // Both Duo screen sizes target the same APP_IPHONE_DUO localization slot.
   const { targets, skipped } = ascTargetsForExport(Boolean(exported.data.include_69));
   if (!targets.length) return json({ error: "NOTHING_TO_UPLOAD", skipped }, 409);
 

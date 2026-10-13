@@ -1,3 +1,4 @@
+import { validateDuoSelection, type DuoSelection } from "../duo-selection";
 import { mapLimit } from "../map-limit";
 import { renderScreenshot } from "./process";
 import { inspectSource } from "./source-inspect";
@@ -22,6 +23,7 @@ export function slotTargets(targets: SizeSpec[], slot: DeviceSlot) {
 }
 
 export async function composeZipImages(input: {
+  duoSelection?: DuoSelection;
   outerBuffers: Buffer[];
   innerBuffers: Buffer[];
   options: RenderOptions;
@@ -34,6 +36,7 @@ export async function composeZipImages(input: {
     include69: input.include69,
     plan: input.plan,
   });
+  const picks = input.duoSelection ? validateDuoSelection(input.duoSelection, input.outerBuffers.length, input.innerBuffers.length) : null;
   let flattenAlpha = false;
   const images: ZipImage[] = [];
   const compositionWarnings: string[] = [];
@@ -42,7 +45,8 @@ export async function composeZipImages(input: {
   async function renderSide(buffers: Buffer[], slot: DeviceSlot, transforms: CropTransform[] = []) {
     const specs = slotTargets(targets, slot);
     const jobs = buffers.flatMap((buffer, index) => specs.map((spec) => ({ buffer, index, spec })));
-    const rendered = await mapLimit(jobs, COMPOSE_CONCURRENCY, async (job) => {
+    const selectedJobs = picks && slot !== "iphone-69" ? jobs.filter((job) => picks.some((pick) => pick.side === (slot === "duo-outer" ? "outer" : "inner") && pick.index === job.index)) : jobs;
+    const rendered = await mapLimit(selectedJobs, COMPOSE_CONCURRENCY, async (job) => {
       const inspect = inspectSource(job.buffer);
       if (inspect.hasAlpha) flattenAlpha = true;
       const transform = normalizeCropTransform(transforms[job.index], input.options.fit);
@@ -71,6 +75,10 @@ export async function composeZipImages(input: {
     const phone = input.innerBuffers.length ? input.innerBuffers : input.outerBuffers;
     await renderSide(phone, "iphone-69", input.transforms?.inner?.length ? input.transforms.inner : input.transforms?.outer);
   }
+  if (picks) images.sort((a, b) => {
+    const position = (image: ZipImage) => image.spec.slot === "iphone-69" ? picks.length : picks.findIndex((pick) => pick.side === (image.spec.slot === "duo-outer" ? "outer" : "inner") && pick.index === image.index);
+    return position(a) - position(b);
+  });
   return { images, flattenAlpha, compositionWarnings };
 }
 

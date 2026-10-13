@@ -67,6 +67,16 @@ beforeEach(() => {
 });
 
 describe("POST /api/export", () => {
+  it("rejects eleven mixed screenshots before reading storage or reserving quota", async () => {
+    vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({ user: USER }) as never);
+    const outerPaths = Array.from({ length: 6 }, (_, i) => `user-1/outer${i}.png`);
+    const innerPaths = Array.from({ length: 5 }, (_, i) => `user-1/inner${i}.png`);
+    const picks = [...outerPaths.map((_, index) => ({ side: "outer", index })), ...innerPaths.map((_, index) => ({ side: "inner", index }))];
+    expect(await readJson(await POST(jsonRequest({ outerPaths, innerPaths, duoSelection: { mode: "mix", picks } })))).toEqual({ status: 400, body: { error: "DUO_SLOT_LIMIT" } });
+    expect(createAdminSupabase).not.toHaveBeenCalled();
+    expect(composeZipImages).not.toHaveBeenCalled();
+  });
+
   it("returns 401 without a session", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({ user: null }) as never);
     const { status, body } = await readJson(await POST(jsonRequest({})));

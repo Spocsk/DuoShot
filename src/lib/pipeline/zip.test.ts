@@ -1,11 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { SIZE_SPECS, type SizeSpec } from "../specs";
-import { buildReadme, zipEntryPath } from "./zip";
+import { buildReadme, buildZip, zipEntryPath } from "./zip";
 
 const outer = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;
 const sixtyNine = SIZE_SPECS.find((item) => item.id === "69a-p") as SizeSpec;
 
 describe("zip", () => {
+  it("rejects overfull normal ZIPs at the builder boundary", async () => {
+    const images = Array.from({ length: 11 }, (_, index) => ({ spec: outer, index, buffer: Buffer.alloc(1) }));
+    await expect(buildZip({ appName: "Cap", orientation: "portrait", branded: false, include69: false, format: "png", images })).rejects.toThrow("DUO_SLOT_LIMIT");
+  });
+  it("labels raw examples and documents the shared cap and untested status", () => {
+    const readme = buildReadme({ appName: "Raw", orientation: "portrait", branded: false, include69: false, rawDuoSets: true });
+    expect(readme).toContain("Raw outer + inner sets: pick up to 10");
+    expect(readme).toContain("APP_IPHONE_DUO");
+    expect(readme).toContain("Not yet tested by DuoShot");
+    expect(readme).not.toContain("April 2027");
+  });
+
   it("builds Connect paths with optional client prefix", () => {
     expect(
       zipEntryPath({
@@ -44,6 +56,7 @@ describe("zip", () => {
       branded: true,
       include69: true,
       unpaired: true,
+      rawDuoSets: true,
       flattenAlpha: true,
       cloneScores: [{ index: 0, distance: 0, label: "risk" }],
     });

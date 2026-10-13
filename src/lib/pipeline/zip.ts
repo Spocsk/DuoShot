@@ -1,3 +1,4 @@
+import { DUO_SLOT_MAX } from "../duo-selection";
 import { MAX_ZIP_BYTES } from "./limits";
 import JSZip from "jszip";
 import type { DeviceSlot, Orientation, RenderOptions, SizeSpec } from "../specs";
@@ -42,6 +43,7 @@ export function buildReadme(options: {
   branded: boolean;
   include69: boolean;
   locale?: "fr" | "en";
+  rawDuoSets?: boolean;
   cloneScores?: CloneResult[];
   unpaired?: boolean;
   flattenAlpha?: boolean;
@@ -49,7 +51,7 @@ export function buildReadme(options: {
   pixels?: string[];
   compositionWarnings?: string[];
 }): string {
-  const slots: DeviceSlot[] = ["duo-outer", "duo-inner"];
+  const slots: DeviceSlot[] = options.rawDuoSets ? ["duo-outer", "duo-inner"] : ["duo-outer"];
   if (options.include69) slots.push("iphone-69");
   const fallbackOrientation: Orientation =
     options.orientation === "landscape" ? "landscape" : "portrait";
@@ -73,12 +75,17 @@ export function buildReadme(options: {
     options.pixels?.length ? `- Output dimensions: ${options.pixels.join(", ")}` : "- Output dimensions: selected formats",
     `- Alpha: flattened${options.flattenAlpha ? " (source had transparency)" : ""}`,
     "- Color: sRGB RGB, no alpha",
-    options.unpaired ? "- Slides: outer/inner counts differ" : "- Slides: paired by index",
+    options.rawDuoSets ? (options.unpaired ? "- Slides: outer/inner counts differ" : "- Slides: paired by index") : "- Source indices: original indices retained; mixed selections do not require paired counts",
     "",
     "PNG (default) or JPEG q90. RGB, no alpha. Review these files before manual upload.",
-    "Unzip this archive to get separate closed and open image sets. Manual upload only.",
-    "Apple status checked 2026-10-11: App Store Connect accepts iPhone Duo optimized apps since 2026-10-05; Duo screenshots are required for every submission from April 2027.",
-    "Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/",
+    options.rawDuoSets
+      ? "Raw outer + inner sets: pick up to 10 screenshots in total for the single Duo slot. These are example assets."
+      : "Selected Duo slot content only; folder names identify screen dimensions, not separate App Store Connect slots. duo-slot.json lists upload order (selection order for a mix).",
+    "App Store Connect: single iPhone Duo slot (APP_IPHONE_DUO), maximum 10 screenshots per locale, shared by outer and inner sizes.",
+    "Both sizes are accepted: outer 1398x2034 and inner 2007x2853, or their landscape dimensions. Not yet tested by DuoShot.",
+    "Emplacement Duo unique (APP_IPHONE_DUO) : 10 captures maximum par langue, externe et interne confondus. Les deux tailles sont acceptées ; dépôt pas encore testé par DuoShot.",
+    "Exports exceeding 10 selected Duo screenshots are rejected with DUO_SLOT_LIMIT (HTTP 400); nothing is silently trimmed.",
+    "Source: https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md",
     "Visual checks are advisory; this report does not predict App Store approval.",
     "Sources and ZIP expire after 24 hours. Server cleanup runs every 15 minutes; failed cleanup is retried. Local drafts stay on your device.",
   );
@@ -106,11 +113,14 @@ export async function buildZip(options: {
   include69: boolean;
   format: RenderOptions["format"];
   images: ZipImage[];
+  rawDuoSets?: boolean;
   cloneScores?: CloneResult[];
   unpaired?: boolean;
   flattenAlpha?: boolean;
   compositionWarnings?: string[];
 }): Promise<Buffer> {
+  const duo = options.images.filter((image) => image.spec.slot !== "iphone-69");
+  if (!options.rawDuoSets && duo.length > DUO_SLOT_MAX) throw new Error("DUO_SLOT_LIMIT");
   const zip = new JSZip();
   const app = slugify(options.appName);
   const prefix = options.clientSlug ? `${slugify(options.clientSlug)}/` : "";
@@ -130,6 +140,7 @@ export async function buildZip(options: {
     `${prefix}${app}/README.txt`,
     buildReadme({
       appName: options.appName,
+      rawDuoSets: options.rawDuoSets,
       orientation: orientations.join(" + "),
       branded: options.branded,
       include69: options.include69,
@@ -141,6 +152,10 @@ export async function buildZip(options: {
       compositionWarnings: options.compositionWarnings,
     }),
   );
+  if (!options.rawDuoSets) zip.file(`${prefix}${app}/duo-slot.json`, JSON.stringify({
+    displayType: "APP_IPHONE_DUO", maxPerLocale: DUO_SLOT_MAX,
+    files: duo.map((image) => zipEntryPath({ ...options, spec: image.spec, index: image.index })),
+  }, null, 2));
   let imageBytes = 0;
   for (const image of options.images) {
     imageBytes += image.buffer.length;

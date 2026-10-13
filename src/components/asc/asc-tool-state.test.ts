@@ -26,29 +26,36 @@ describe("ascGate", () => {
 });
 
 describe("ascFilePlan", () => {
-  it("sends only the largest 6.9″ size, in slide order, and skips every Duo file", () => {
-    const plan = ascFilePlan([
-      image("duo-outer", 1, 1398, 2034), image("duo-inner", 1, 2007, 2853),
-      image("iphone-69", 2, 1320, 2868), image("iphone-69", 2, 1290, 2796), image("iphone-69", 1, 1260, 2736),
-      image("iphone-69", 1, 1320, 2868), image("duo-outer", 2, 1398, 2034), image("duo-inner", 2, 2007, 2853),
-    ], "portrait");
-    expect(plan.send.map((file) => file.name)).toEqual(["iphone-69-portrait/1320x2868/01.png", "iphone-69-portrait/1320x2868/02.png"]);
-    expect(plan.skipped.map((file) => file.name)).toEqual([
-      "duo-outer-portrait/01.png", "duo-outer-portrait/02.png", "duo-inner-portrait/01.png", "duo-inner-portrait/02.png",
-    ]);
+  it("accepts both landscape sizes in selection order", () => {
+    const plan = ascFilePlan([image("duo-inner", 2, 2853, 2007), image("duo-outer", 1, 2034, 1398)], "landscape");
+    expect(plan.send.map((file) => file.name)).toEqual(["duo-inner-landscape/02.png", "duo-outer-landscape/01.png"]);
+    expect(plan.skipped).toEqual([]);
   });
-
-  it("uses the landscape size in landscape and caps a set at ten", () => {
-    const images = Array.from({ length: 12 }, (_, index) => image("iphone-69", index + 1, 2868, 1320));
-    const plan = ascFilePlan([...images, image("iphone-69", 1, 1320, 2868)], "landscape");
-    expect(plan.send).toHaveLength(10);
-    expect(plan.send[0]!.name).toBe("iphone-69-landscape/2868x1320/01.png");
-  });
-
-  it("has nothing to send for a Duo-only export", () => {
-    const plan = ascFilePlan([image("duo-outer", 1, 1398, 2034), image("duo-inner", 1, 2007, 2853)], "portrait");
+  it.each([
+    image("duo-inner", 1, 1320, 2868),
+    image("duo-inner", 1, 2853, 2008),
+    { ...image("duo-inner", 1, 2007, 2853), format: "webp" },
+  ])("blocks the entire upload for invalid Duo metadata (%j)", (invalid) => {
+    const plan = ascFilePlan([image("duo-outer", 1, 1398, 2034), invalid, image("iphone-69", 1, 1320, 2868)], "portrait");
     expect(plan.send).toEqual([]);
-    expect(plan.skipped).toHaveLength(2);
+    expect(plan.skipped).toEqual([]);
+    expect(plan.error).toBe("ASC_INVALID");
+  });
+
+  it("sends a mixed Duo selection in its order, plus the preferred 6.9 size", () => {
+    const plan = ascFilePlan([image("duo-inner", 2, 2007, 2853), image("duo-outer", 1, 1398, 2034), image("iphone-69", 1, 1290, 2796), image("iphone-69", 1, 1320, 2868)], "portrait");
+    expect(plan.send.map((file) => file.name)).toEqual(["duo-inner-portrait/02.png", "duo-outer-portrait/01.png", "iphone-69-portrait/1320x2868/01.png"]);
+    expect(plan.skipped).toEqual([]);
+  });
+  it("refuses an overfull raw Duo export", () => {
+    const images = Array.from({ length: 6 }, (_, i) => [image("duo-outer", i + 1, 1398, 2034), image("duo-inner", i + 1, 2007, 2853)]).flat();
+    expect(ascFilePlan(images, "portrait").send).toEqual([]);
+    expect(ascFilePlan(images, "portrait").skipped).toHaveLength(12);
+    expect(ascFilePlan(images.slice(0, 10), "portrait").send).toHaveLength(10);
+  });
+  it("keeps the existing 6.9 preference and cap", () => {
+    const images = Array.from({ length: 12 }, (_, index) => image("iphone-69", index + 1, 2868, 1320));
+    expect(ascFilePlan(images, "landscape").send).toHaveLength(10);
   });
 });
 
@@ -74,10 +81,10 @@ describe("error and state messages", () => {
   });
 
   it("keeps the skipped reason and the plural forms", () => {
-    expect(fr.t("asct_skipped_reason")).toBe("Apple n’accepte pas encore les captures iPhone Duo dans l’API");
+    expect(fr.t("asct_skipped_reason")).toContain("emplacement unique");
     expect(fr.tf("asct_confirm", { n: 1 })).toBe("Envoyer 1 capture");
     expect(fr.tf("asct_confirm", { n: 3 })).toBe("Envoyer 3 captures");
-    expect(en.tf("asct_success_body", { n: 1 })).toBe("1 6.9″ screenshot is in App Store Connect.");
+    expect(en.tf("asct_success_body", { n: 1 })).toBe("1 screenshot is in App Store Connect.");
   });
 });
 

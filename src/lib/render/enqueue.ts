@@ -1,3 +1,4 @@
+import { validateDuoSelection } from "../duo-selection";
 import { readRenderBody } from "./read-body";
 import type { DbClient } from "@/lib/supabase/types";
 import { NextResponse } from "next/server";
@@ -7,7 +8,7 @@ import { parseRenderBody, renderErrorStatus } from "../pipeline/request";
 import { canUse69 } from "../specs";
 
 /** Codes thrown by body reading and validation; anything else is an internal failure. */
-const CLIENT_ERROR_CODES = new Set(["INVALID_REQUEST", "INPUT_TOO_LARGE", "INVALID_PAIRS", "PATH_FORBIDDEN", "INVALID_OPTIONS", "INVALID_TRANSFORMS"]);
+const CLIENT_ERROR_CODES = new Set(["INVALID_REQUEST", "INPUT_TOO_LARGE", "INVALID_PAIRS", "PATH_FORBIDDEN", "INVALID_OPTIONS", "INVALID_TRANSFORMS", "INVALID_DUO_SELECTION", "DUO_SLOT_LIMIT", "DUO_SELECTION_EMPTY"]);
 
 export async function enqueueRender(request: Request, client: DbClient, userId: string, kind: "export" | "review") {
   try {
@@ -20,6 +21,7 @@ export async function enqueueRender(request: Request, client: DbClient, userId: 
     const inner = body.sameSet ? outer : body.innerPaths ?? body.paths ?? [];
     if (!outer.length && !inner.length) return NextResponse.json({ error: "NO_IMAGES" }, { status: 400 });
     if (kind === "review" && (!outer.length || outer.length !== inner.length)) return NextResponse.json({ error: "INVALID_PAIRS" }, { status: 400 });
+    if (kind === "export") validateDuoSelection(body.duoSelection, outer.length, inner.length);
     const context = await readWorkspaceBilling(client, userId);
     if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
     if (kind === "review" && context.entitlements.plan !== "studio") return NextResponse.json({ error: "STUDIO_REQUIRED" }, { status: 403 });

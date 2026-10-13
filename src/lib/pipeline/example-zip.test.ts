@@ -29,6 +29,9 @@ describe("example-zip", () => {
     }
 
     const readme = await zip.file("exampleapp/README.txt")!.async("string");
+    expect(readme).toContain("Raw outer + inner sets: pick up to 10");
+    expect(readme).toContain("single Duo slot");
+    expect(zip.file("exampleapp/duo-slot.json")).toBeNull();
     expect(readme).toContain("duo-inner-portrait");
     expect(readme).toContain("duo-outer-portrait");
     expect(readme).toContain("duo-outer-portrait: 1398x2034");

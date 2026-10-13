@@ -1,6 +1,8 @@
 import type { Translator } from "@/lib/i18n/types";
 
 export function explainError({ t }: Translator, code: string) {
+  if (code === "DUO_SLOT_LIMIT") return t("tool_duo_over_limit");
+  if (code === "DUO_SELECTION_EMPTY" || code === "INVALID_DUO_SELECTION") return t("tool_duo_empty");
   if (code === "AUTH_REQUIRED") return t("error_auth");
   if (code === "TRIAL_EXHAUSTED") return t("error_trial");
   if (code === "DAILY_LIMIT") return t("error_daily");
