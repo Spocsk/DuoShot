@@ -64,7 +64,7 @@ function fileDatabase() {
 
 describe("local draft migration", () => {
   let store: typeof import("./sets-store");
-  let storage: { getItem: Mock<(key: string) => string | null>; setItem: Mock<(key: string, value: string) => void> };
+  let storage: { getItem: Mock<(key: string) => string | null>; setItem: Mock<(key: string, value: string) => void>; removeItem: Mock<(key: string) => void> };
   let db: ReturnType<typeof fileDatabase>;
   const guestSet = (id: string): SetMeta => ({ id, name: id, clientName: "Client", orientation: "portrait", sameSet: false });
   const image = (name: string, content = name) => new File([content], name, { type: "image/png" });
@@ -76,6 +76,7 @@ describe("local draft migration", () => {
     storage = {
       getItem: vi.fn((key: string) => values.get(key) ?? null),
       setItem: vi.fn((key: string, value: string) => { values.set(key, value); }),
+      removeItem: vi.fn((key: string) => { values.delete(key); }),
     };
     db = fileDatabase();
     vi.stubGlobal("window", { localStorage: storage });

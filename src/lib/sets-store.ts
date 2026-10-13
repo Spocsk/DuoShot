@@ -27,6 +27,7 @@ export type SetMeta = {
 const META_KEY = "duoshot.sets.v1";
 const ACTIVE_KEY = "duoshot.sets.active";
 const IMPORT_KEY = "duoshot.sets.import";
+const WRITE_KEY = "duoshot.sets.write";
 const DB_NAME = "duoshot-sets";
 const STORE = "files";
 type DraftScope = string;
@@ -126,7 +127,16 @@ export function saveSetFiles(setId: string, side: "outer" | "inner", files: File
   const previous = fileWrites.get(key) ?? Promise.resolve();
   // Request the lock before serialization or waiting for another save. Other tabs' migrations
   // must wait for this write too, even when it was started without awaiting persistence.
-  const write = withDraftLock(scope, "files", "shared", () => previous.catch(() => {}).then(() => writeSetFiles(key, files)));
+  const write = withDraftLock(scope, "files", "exclusive", async () => {
+    await previous.catch(() => {});
+    // Locks release on failure as well as success. Keep a durable marker so another tab
+    // (or a reload) cannot migrate stale files after serialization or IndexedDB fails.
+    // Serialize writes across tabs so a successful save cannot clear another pending save.
+    const pendingKey = `${WRITE_KEY}:${key}`;
+    window.localStorage.setItem(pendingKey, "pending");
+    await writeSetFiles(key, files);
+    window.localStorage.removeItem(pendingKey);
+  });
   fileWrites.set(key, write);
   return write;
 }
@@ -222,6 +232,13 @@ async function importDrafts(source: ImportSource, owner: string): Promise<number
   const claims = JSON.parse(window.localStorage.getItem(claimKey) ?? "{}") as ImportClaims;
   const originals = loadSetMetas(source).filter((set) => !claims[set.id] || claims[set.id].owner === owner);
   if (!originals.length) return 0;
+  for (const original of originals) {
+    for (const side of ["outer", "inner"] as const) {
+      if (window.localStorage.getItem(`${WRITE_KEY}:${scopedKey(`${original.id}:${side}`, source)}`)) {
+        throw new Error("DRAFT_SAVE_INCOMPLETE");
+      }
+    }
+  }
   // Persist stable destination IDs and ownership before copying anything. A retry (even after
   // reloading or switching accounts) cannot duplicate or claim another account's drafts.
   for (const original of originals) claims[original.id] ??= { owner, id: newSetId() };

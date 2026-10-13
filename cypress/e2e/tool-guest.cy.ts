@@ -103,7 +103,8 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-sets"][data-ready="true"]');
     cy.get('[data-testid="tool-tab-adjust"]').click();
     cy.contains("summary", "Réglages avancés").click();
-    cy.get('[data-testid="toggle-69"]').click();
+    cy.get("details.tool-advanced").should("have.attr", "open");
+    cy.get('[data-testid="toggle-69"]').should("have.attr", "aria-pressed", "false").click({ scrollBehavior: "center" });
     cy.get('[data-testid="auth-form"]').should("be.visible");
     cy.get('#auth-modal-title').should("contain", "Un compte est nécessaire pour continuer");
     cy.get('[data-testid="auth-submit"]').should("not.be.disabled");
@@ -113,9 +114,30 @@ describe("tool guest", () => {
     cy.get('[data-testid="dialog"] [aria-label="Fermer"]').click();
     cy.get('[data-testid="auth-form"]').should("not.exist");
     cy.get('[data-testid="paywall"]').should("not.exist");
-    cy.get('[data-testid="toggle-69"]').click().click();
+    cy.get('[data-testid="toggle-69"]').should("have.attr", "aria-pressed", "true").click({ scrollBehavior: "center" });
+    cy.get('[data-testid="toggle-69"]').should("have.attr", "aria-pressed", "false").click({ scrollBehavior: "center" });
     cy.get('[data-testid="auth-form"]').should("be.visible");
   });
+
+  for (const [width, height] of [[1000, 500], [390, 600]]) {
+    it(`keeps guest signup reachable and dismissible at ${width} × ${height}`, () => {
+      cy.viewport(width, height);
+      cy.visitFr("/tool?upgrade=1&reason=69");
+      cy.get('[data-testid="dialog"]').should("be.visible").and(($dialog) => {
+        const bounds = $dialog[0].getBoundingClientRect();
+        expect(bounds.top, "dialog top stays in the viewport").to.be.at.least(0);
+        expect(bounds.bottom, "dialog bottom stays in the viewport").to.be.at.most(height);
+      });
+      // Reach the last action, then scroll back to the close button without forcing clicks.
+      cy.contains('[data-testid="dialog"] button', "Déjà un compte ? Se connecter").scrollIntoView().should("be.visible");
+      cy.get('[data-testid="dialog"]').should(($dialog) => {
+        expect($dialog[0].scrollTop, "long signup form scrolls inside the dialog").to.be.greaterThan(0);
+      });
+      cy.get('[data-testid="dialog"] [aria-label="Fermer"]').scrollIntoView().should("be.visible").click();
+      cy.get('[data-testid="dialog"]').should("not.exist");
+      cy.get('[data-testid="paywall"]').should("not.exist");
+    });
+  }
 
   it("explains the account requirement for 6.9 sizes in English", () => {
     cy.visitEn("/en/tool");
