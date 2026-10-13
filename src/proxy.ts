@@ -8,6 +8,32 @@ import {
 import { updateSession } from "@/lib/supabase/proxy";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { isInternalRequest } from "@/lib/internal-request";
+import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE, landingAttribution } from "@/lib/attribution";
+
+function withAttribution(request: NextRequest, response: NextResponse) {
+  const pathname = request.nextUrl.pathname;
+  // Check the raw header: Next's cookie parser drops invalid URI encodings.
+  // Even an unreadable first-touch cookie must not be replaced by a later visit.
+  const hasAttribution = request.headers.get("cookie")?.split(";")
+    .some((cookie) => cookie.trim().split("=")[0] === ATTRIBUTION_COOKIE);
+  if (request.method !== "GET" || hasAttribution ||
+    /^\/(?:api|auth|_next)(?:\/|$)/.test(pathname) || /\.[^/]+$/.test(pathname) ||
+    request.headers.has("next-router-prefetch") || request.headers.get("purpose") === "prefetch" ||
+    isCrawler(request.headers.get("user-agent"))) return response;
+
+  const attribution = landingAttribution(new URL(request.url), request.headers.get("referer"));
+  if (Object.keys(attribution).length) {
+    response.cookies.set(ATTRIBUTION_COOKIE, JSON.stringify(attribution), {
+      maxAge: ATTRIBUTION_MAX_AGE,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      path: "/",
+    });
+    response.headers.set("Cache-Control", "private, no-store");
+  }
+  return response;
+}
 
 function needsSessionRefresh(pathname: string) {
   // Status handlers authenticate and refresh their own cookies. Repeating that
@@ -53,11 +79,12 @@ export async function proxy(request: NextRequest) {
       const redirect = NextResponse.redirect(url);
       redirect.headers.set("Cache-Control", "private, no-store");
       redirect.headers.set("Vary", "Accept-Language, Cookie");
-      return redirect;
+      return withAttribution(request, redirect);
     }
   }
 
-  return needsSessionRefresh(pathname) ? updateSession(request) : NextResponse.next();
+  const response = needsSessionRefresh(pathname) ? await updateSession(request) : NextResponse.next();
+  return withAttribution(request, response);
 }
 
 export const config = {
