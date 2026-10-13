@@ -39,7 +39,7 @@ async function admin({ createdAt = new Date().toISOString(), connected = true, r
   if (manifest !== undefined) zip.file("harbor/duo-slot.json", JSON.stringify(manifest));
   const archive = await zip.generateAsync({ type: "uint8array" });
   const sealed = sealSecret(pem, master, "ws-1");
-  const rpc = vi.fn<(name: string, args: unknown) => Promise<{ data: boolean; error: null }>>(async () => ({ data: true, error: null }));
+  const rpc = vi.fn<(name: string, args: unknown) => Promise<{ data: boolean; error: { message: string } | null }>>(async () => ({ data: true, error: null }));
   const client = {
     from: (table: string) => createQueryBuilder(
       table === "workspace_members" ? { data: { workspace_id: workspaceId, role }, error: null }
@@ -86,6 +86,15 @@ describe("App Store Connect upload planning", () => {
   it("honors selected mix order from the ZIP manifest", () => {
     const paths = ["app/duo-outer-landscape/03.jpg", "app/duo-inner-landscape/01.jpg"];
     expect(planAscFiles(paths, ascTargetsForExport(false).targets, [...paths].reverse()).map((file) => file.path)).toEqual([...paths].reverse());
+  });
+
+  it("does not mistake app or client names for screenshot folders", () => {
+    const paths = [
+      "duo-outer-portrait/duo-inner-landscape/duo-outer-portrait/01.png",
+      "duo-outer-portrait/duo-inner-landscape/duo-inner-portrait/02.png",
+      "duo-outer-portrait/duo-inner-landscape/iphone-69-portrait/1320x2868/01.png",
+    ];
+    expect(planAscFiles(paths, ascTargetsForExport(true).targets, paths.slice(0, 2)).map((file) => file.path)).toEqual(paths);
   });
 
   it("keeps only the largest 6.9\" size, in slide order, with or without a client folder", () => {
@@ -240,6 +249,38 @@ describe("asc_upload job", () => {
       expect.objectContaining({ state: "failed", error: "ASC_ROLLED_BACK" }),
       expect.objectContaining({ state: "failed", error: "ASC_INVALID" }),
     ]);
+  });
+
+  it("cleans up a reservation even when Apple returns no upload operations", async () => {
+    const apple = fakeApple({ parts: 0 });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_UPLOAD_FAILED" });
+    const created = [...apple.shots.keys()];
+    expect(created).toHaveLength(1);
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname))
+      .toEqual(created.map((id) => `/v1/appScreenshots/${id}`));
+    expect(apple.calls.some((call) => call.method === "PUT" || call.method === "PATCH")).toBe(false);
+    expect(progressCalls(rpc).at(-1)!.files[0]).toMatchObject({ state: "failed", error: "ASC_UPLOAD_FAILED" });
+  });
+
+  it.each(["response", "exception"])("keeps live replacements when recording the completed job fails (%s)", async (failure) => {
+    const previous = ["old-1", "old-2"];
+    const apple = fakeApple({ sets: [{ id: "duo", displayType: "APP_IPHONE_DUO" }], existing: { duo: [...previous] } });
+    const { client, rpc } = await admin();
+    rpc.mockImplementation(async (name) => {
+      if (name === "complete_render") {
+        if (failure === "exception") throw new Error("database unavailable");
+        return { data: false, error: { message: "database unavailable" } };
+      }
+      return { data: true, error: null };
+    });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting: true, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(apple.existing.duo).toEqual([]);
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname))
+      .toEqual(previous.map((id) => `/v1/appScreenshots/${id}`));
+    expect(await response.json()).toEqual({ error: "ASC_RETRY_UNSAFE" });
+    expect(progressCalls(rpc).at(-1)!.files.every((file) => file.state === "complete")).toBe(true);
   });
 
   it.each([false, true])("checks set capacity before touching anything (replaceExisting: %s)", async (replaceExisting) => {

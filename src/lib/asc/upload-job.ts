@@ -77,8 +77,9 @@ export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: s
     const files: PlannedFile[] = [];
     for (const path of paths) {
       const parts = path.split("/");
-      const folder = parts.findIndex((part) => /^(duo-outer|duo-inner|iphone-69)-(portrait|landscape)$/.test(part));
-      if (folder < 0 || !parts[folder]!.startsWith(`${target.slot}-`)) continue;
+      // Read from the filename back: app/client slugs can also look like slots.
+      const folder = parts.length - (target.slot === "iphone-69" ? 3 : 2);
+      if (folder < 1 || !/^(duo-outer|duo-inner|iphone-69)-(portrait|landscape)$/.test(parts[folder]!) || !parts[folder]!.startsWith(`${target.slot}-`)) continue;
       const orientation = parts[folder]!.slice(target.slot.length + 1) as Orientation;
       const rest = parts.slice(folder + 1);
       if (target.slot === "iphone-69" ? rest.length !== 2 || rest[0] !== ASC_PREFERRED_69_SIZE[orientation] : rest.length !== 1) continue;
@@ -242,7 +243,15 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
       uploaded: assetIds.length, replaced, reordered, files: progress.files,
       skipped: ascTargetsForExport(true).skipped,
     };
-    await completeRender(admin, job, result);
+    try {
+      await completeRender(admin, job, result);
+    } catch (error) {
+      if (error instanceof Error && error.message === "RENDER_LEASE_LOST") throw error;
+      // Apple has finalized the upload and previous screenshots may be gone.
+      // A database failure must never roll back these live replacements.
+      console.error("asc_result_commit_failed", { jobId: job.id });
+      return fail("ASC_RETRY_UNSAFE");
+    }
     return Response.json(result);
   } catch (error) {
     if (error instanceof Error && error.message === "RENDER_LEASE_LOST") return Response.json({ error: "RENDER_LEASE_LOST" }, { status: 409 });
