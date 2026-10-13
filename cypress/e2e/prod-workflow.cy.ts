@@ -38,6 +38,9 @@ describe("prod workflow", () => {
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-0"]').should("be.visible");
     cy.get('[data-testid="clone-badges"] [data-testid="clone-badge-2"]').should("be.visible");
     // Portrait open screen: the fold is a horizontal band across the middle height (device turned a quarter turn).
+    cy.get('[data-testid="preview-inner"] .division').should("not.be.visible");
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get('[data-testid="toggle-hinge"]').click();
     cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
       const band = $band[0]!.getBoundingClientRect();
       const frame = $band[0]!.parentElement!.getBoundingClientRect();

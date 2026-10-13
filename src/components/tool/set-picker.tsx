@@ -99,6 +99,7 @@ export function SetPicker({
   switchSet,
   addSet,
   removeSet,
+  renameSet,
 }: {
   hydrated: boolean;
   sets: SetMeta[];
@@ -107,9 +108,21 @@ export function SetPicker({
   switchSet: (id: string) => Promise<void>;
   addSet: () => void;
   removeSet: (id: string) => Promise<void>;
+  renameSet: (name: string) => void;
 }) {
   const { t, tf } = useI18n();
   const [deleting, setDeleting] = useState<SetMeta | null>(null);
+  // The set name is shown once, in this field: Rename swaps the listbox for an input in place.
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const renameRef = useRef<HTMLButtonElement>(null);
+  const shownName = active?.name?.trim() ? active.name : t("tool_default_set_label");
+  function finishRename(save: boolean) {
+    if (renaming === null) return;
+    const next = renaming.trim().slice(0, 80);
+    if (save && next && next !== active?.name) renameSet(next);
+    setRenaming(null);
+    requestAnimationFrame(() => renameRef.current?.focus());
+  }
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
   const { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey } = menu;
@@ -120,7 +133,25 @@ export function SetPicker({
         <p className="ds-label" id="tool-sets-label">
           {t("tool_set_label")}
         </p>
-        <details
+        {renaming !== null ? (
+          <>
+            <label className="sr-only" htmlFor="tool-set-name">{t("tool_set_rename_label")}</label>
+            <input
+              id="tool-set-name"
+              data-testid="tool-set-name"
+              className="ds-input ds-set-rename"
+              value={renaming}
+              maxLength={80}
+              autoFocus
+              onChange={(event) => setRenaming(event.target.value)}
+              onBlur={() => finishRename(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") { event.preventDefault(); finishRename(true); }
+                if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finishRename(false); }
+              }}
+            />
+          </>
+        ) : <details
           className="ds-listbox"
           ref={setsRef}
           onToggle={(event) => {
@@ -148,7 +179,7 @@ export function SetPicker({
             }}
             onKeyDown={onSetsTriggerKey}
          >
-            <span id="tool-sets-value" className="ds-listbox-value">{active?.name?.trim() ? active.name : t("tool_default_set_label")}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
+            <span id="tool-sets-value" className="ds-listbox-value">{shownName}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
             <span className="ds-listbox-caret" aria-hidden="true" />
           </summary>
           <ul
@@ -178,9 +209,19 @@ export function SetPicker({
               </li>
             ))}
           </ul>
-        </details>
+        </details>}
       </div>
       <div className="ds-set-actions">
+        <Button as="button" variant="text"
+          type="button"
+          ref={renameRef}
+          data-testid="tool-set-rename"
+          aria-label={`${t("tool_set_rename")} ${shownName}`}
+          disabled={!active || renaming !== null}
+          onClick={() => setRenaming(active?.name ?? "")}
+        >
+          {t("tool_set_rename")}
+        </Button>
         <Button as="button" variant="secondary" size="set" type="button"  data-testid="tool-set-new" onClick={addSet}>
           {t("tool_set_new")}
         </Button>

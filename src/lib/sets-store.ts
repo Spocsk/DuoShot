@@ -7,7 +7,7 @@ export type SetMeta = {
   id: string;
   /** Server app row this set syncs its name, client and orientation to. */
   appId?: string;
-  /** Set label in the picker ("Composition 01"). */
+  /** Set label in the picker ("Set 01"). */
   name: string;
   /** App name used for the export folder and ZIP. Older drafts lack it and fall back to `name`. */
   appName?: string;

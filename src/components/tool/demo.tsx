@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 
 /** Bumped when the generated Harbor images change, so cached demo media (max-age 1 h) is not reused. Keep in sync with harbor.ts. */
-const HARBOR_MEDIA_VERSION = 2;
+const HARBOR_MEDIA_VERSION = 3;
 
 export const HARBOR_PAIRS = 3;
 export type DemoState = "idle" | "loading" | "error";

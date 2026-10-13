@@ -93,6 +93,8 @@ describe("tool export", () => {
       inner: "cypress/fixtures/inner.png",
     });
     // Landscape open screen is the natural pose: the fold is a vertical band across the middle width.
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get('[data-testid="toggle-hinge"]').click();
     cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
       const band = $band[0]!.getBoundingClientRect();
       expect(band.height).to.be.greaterThan(band.width);

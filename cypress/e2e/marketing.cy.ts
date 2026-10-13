@@ -39,14 +39,17 @@ describe("marketing", () => {
     cy.get('[data-testid="footer-fazier"]').should("contain", "DuoShot sur Fazier").find("img").should("not.exist");
   });
 
-  it("keeps the Harbor devices equally tall", () => {
+  it("shows the open Harbor device turned to portrait, at its real scale", () => {
     cy.viewport(1397, 920);
     cy.visitFr("/");
     cy.get(".studio-hero-object .duo-chassis").then(($closed) => {
       cy.get(".studio-hero-object .duo-book").then(($open) => {
-        expect(Math.abs($closed[0].getBoundingClientRect().height - $open[0].getBoundingClientRect().height)).to.be.lessThan(2);
+        // Open 164.6 mm tall once turned, closed 117.8 mm.
+        const ratio = $open[0].getBoundingClientRect().height / $closed[0].getBoundingClientRect().height;
+        expect(ratio).to.be.closeTo(164.6 / 117.8, 0.03);
       });
     });
+    cy.get(".studio-hero-object .duo-book img").should("have.attr", "src", "/harbor/fr/01-inner.webp");
     cy.get('[data-testid="locale-switch"]').should("contain", "🇬🇧");
   });
 
@@ -245,14 +248,16 @@ describe("screenshot dimensions and search intent", () => {
       visit(prefix || "/");
       cy.get('[data-testid="hero-dimensions"]').should("be.visible")
         .and("contain", "1398 × 2034").and("contain", "2007 × 2853").and("contain", "portrait");
+      // The App Store Connect status lives on the dimensions page, not in the hero.
+      cy.get('[data-testid="apple-availability"]').should("not.exist");
+      cy.get('[data-testid="cta-tool"]').should("be.visible").and("have.attr", "href", `${prefix}/tool`);
+      cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
+      cy.location("pathname").should("eq", `${prefix}/specs`);
       cy.get('[data-testid="apple-availability"]').should("be.visible")
         .and("contain", "APP_IPHONE_DUO").and("contain", "10")
         .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested")
         .and("contain", locale === "fr" ? "avril 2027" : "April 2027")
         .and("contain", locale === "fr" ? "SDK iOS 27.1 ou ultérieur" : "for apps built with the iOS 27.1 SDK or later");
-      cy.get('[data-testid="cta-tool"]').should("be.visible").and("have.attr", "href", `${prefix}/tool`);
-      cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
-      cy.location("pathname").should("eq", `${prefix}/specs`);
       cy.get("table").first().find("tbody tr").should("have.length", 4);
       for (const size of ["1398 × 2034", "2034 × 1398", "2007 × 2853", "2853 × 2007"]) {
         cy.get("table").first().should("contain", size);
