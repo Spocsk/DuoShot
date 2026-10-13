@@ -1,4 +1,4 @@
-import { HARBOR_COPY, HARBOR_HOURS, HARBOR_TIDE_PATH } from "@/components/harbor-ui";
+import { HARBOR_COPY, HARBOR_HOURS, HARBOR_TIDE_PATH } from "./harbor-copy";
 import type { Locale } from "@/lib/specs";
 import { CHASSIS, HARBOR_SCREEN, OG } from "./theme";
 

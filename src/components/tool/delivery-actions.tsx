@@ -12,7 +12,7 @@ import type { useRenderJobs } from "@/components/tool/use-render-jobs";
 
 type Jobs = ReturnType<typeof useRenderJobs>;
 
-export const EXAMPLE_ZIP_URL = "/api/example-zip?v=3";
+export const EXAMPLE_ZIP_URL = "/api/example-zip?v=4";
 
 /** Secondary deliveries, folded away so "Prepare files" stays the one obvious action. */
 export function OtherActions({ hasExportable, jobs }: { hasExportable: boolean; jobs: Jobs }) {

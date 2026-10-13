@@ -67,7 +67,6 @@ import { isAllowedImage, takeFiles } from "@/components/tool/files";
 import { Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
 import { PairStrip, ToolCanvas, ToolStepBar, type ToolPanel } from "@/components/tool/canvas";
 import { PreviewCard } from "@/components/tool/preview-card";
-import { SetTitle } from "@/components/tool/set-title";
 import { AscToolAction } from "@/components/asc/asc-tool-action";
 import { useAscUpload } from "@/components/asc/use-asc-upload";
 
@@ -125,7 +124,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [innerFiles, setInnerFiles] = useState<File[]>([]);
   const options = useMemo(() => ({ ...DEFAULT_RENDER_OPTIONS, ...active?.renderOptions }), [active?.renderOptions]);
   const include69 = active?.include69 ?? false;
-  const [showHinge, setShowHinge] = useState(true);
+  // Off by default: the band hides part of the capture. Turn it on to check text near the fold.
+  const [showHinge, setShowHinge] = useState(false);
   const [previewMode, setPreviewMode] = useState<"device" | "pixels">("pixels");
   const [assumeClone, setAssumeClone] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -701,7 +701,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       <header className="tool-command-bar" id="tool-create">
         <div className="tool-command-brand"><span className="tool-command-dot" aria-hidden="true" /><span>{t("tool_workspace")}</span></div>
         <div className="tool-command-set">
-          <SetPicker hydrated={hydrated && draftsLoaded} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} />
+          <SetPicker hydrated={hydrated && draftsLoaded} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} renameSet={(name) => patchActive({ name })} />
           <div className="tool-command-notes">
             <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{t("tool_drafts_on_device_no")}</p>
             {draftsRecovered ? <p role="status" data-testid="tool-drafts-recovered" className="text-sm">{t("tool_drafts_recovered")}</p> : null}
@@ -732,8 +732,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       <div className="tool-workspace">
         <section className="studio-tool-main min-w-0" aria-label={t("tool_screenshot_preview")}>
           <div className="tool-canvas-heading" id="tool-inspect">
-            <div><p className="tool-eyebrow">{t("tool_composition")}</p><SetTitle name={active?.name ?? ""} onRename={(name) => patchActive({ name })} /></div>
-            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : t("tool_no_pairs")}</span>
+            <h1 className="sr-only">{active?.name?.trim() || t("tool_default_set_label")}</h1>
+            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? tf("tool_pair_position", { n: String(slideIndex + 1).padStart(2, "0"), total: String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0") }) : t("tool_no_pairs")}</span>
           </div>
           {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
             <span className="tool-demo-badge">{t("tool_demo_badge")}</span>

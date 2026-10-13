@@ -1,5 +1,5 @@
 import { SIZE_SPECS } from "../specs";
-import { HARBOR_SLIDES, harborInnerSvg, harborOuterSvg, pngFromSvg } from "./harbor";
+import { HARBOR_SLIDES, harborSlidePng } from "./harbor";
 import { buildZip } from "./zip";
 import { renderSlots } from "./render-slots";
 
@@ -21,17 +21,9 @@ async function renderExampleZip(): Promise<Buffer> {
   const outer = SIZE_SPECS.find((spec) => spec.id === "outer-p")!;
   const inner = SIZE_SPECS.find((spec) => spec.id === "inner-p")!;
   const images = [];
-  for (const [index, slide] of HARBOR_SLIDES.entries()) {
-    images.push({
-      spec: outer,
-      index,
-      buffer: await pngFromSvg(harborOuterSvg(outer.width, outer.height, slide), outer.width, outer.height),
-    });
-    images.push({
-      spec: inner,
-      index,
-      buffer: await pngFromSvg(harborInnerSvg(inner.width, inner.height, slide), inner.width, inner.height),
-    });
+  for (const index of HARBOR_SLIDES.keys()) {
+    images.push({ spec: outer, index, buffer: (await harborSlidePng(index, "outer"))! });
+    images.push({ spec: inner, index, buffer: (await harborSlidePng(index, "inner"))! });
   }
   return buildZip({
     appName: "ExampleApp",

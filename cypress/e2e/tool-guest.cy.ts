@@ -141,15 +141,15 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-set-new"]').click();
     cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
     cy.get('[data-testid="tool-set-delete"]').click();
-    cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("be.visible").and("contain", "Composition 02").and("have.attr", "aria-modal", "true");
+    cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("be.visible").and("contain", "Set 02").and("have.attr", "aria-modal", "true");
     cy.contains('[role="dialog"][aria-labelledby="tool-delete-title"] button', "Annuler").click();
     cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("not.exist");
-    cy.get('[data-testid="tool-sets"]').should("contain", "Composition 02");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Set 02");
     cy.get('[data-testid="preview-outer"] img').should("exist");
     cy.get('[data-testid="tool-set-delete"]').click();
     cy.get('[data-testid="tool-set-delete-confirm"]').click();
     cy.get('[role="dialog"][aria-labelledby="tool-delete-title"]').should("not.exist");
-    cy.get('[data-testid="tool-sets"]').should("contain", "Composition 01");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Set 01");
     cy.reload();
     cy.get('[data-testid="tool-sets"][data-ready="true"]').click();
     cy.get('[data-testid="tool-sets-menu"] [role="option"]').should("have.length", 1);
@@ -403,7 +403,7 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-demo-replace"]').click();
     cy.get('[data-testid="tool-demo-banner"]').should("not.exist");
     cy.get('[data-testid="preview-outer"] img').should("not.exist");
-    cy.get('[data-testid="tool-sets"]').should("contain", "Composition");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Set");
     cy.dropScreens({ outer: "cypress/fixtures/outer.png", inner: "cypress/fixtures/inner.png" });
     cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="confirm-app-usage"]').should("not.be.checked");
@@ -418,11 +418,11 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-sets-menu"] [role="option"]').should("have.length", 1);
   });
 
-  it("names new sets Composition 01, 02 and keeps the app name separate", () => {
+  it("names new sets Set 01, 02 and keeps the app name separate", () => {
     cy.visitFr("/tool");
-    cy.get('[data-testid="tool-sets"][data-ready="true"]').should("contain", "Composition 01");
+    cy.get('[data-testid="tool-sets"][data-ready="true"]').should("contain", "Set 01");
     cy.get('[data-testid="tool-set-new"]').click();
-    cy.get('[data-testid="tool-sets"]').should("contain", "Composition 02");
+    cy.get('[data-testid="tool-sets"]').should("contain", "Set 02");
     cy.get('label[for="tool-input-app"]').should("contain", "Nom de l’app");
   });
   it("offers existing-account login without losing the imported pair", () => {
@@ -456,7 +456,7 @@ describe("tool guest", () => {
     cy.get('[data-testid="tool-sets"][data-ready="true"]');
     cy.get('#tool-input-app').type("Harbor Pro");
     cy.get('[data-testid="tool-set-rename"]').click();
-    cy.get('h1').should("have.length", 1).and("contain", "Composition 01");
+    cy.get('h1').should("have.length", 1).and("contain", "Set 01");
     cy.get('[data-testid="tool-set-name"]').should("be.focused").clear().type("Lancement printemps{enter}");
     cy.contains(".tool-canvas-heading h1", "Lancement printemps");
     cy.get('[data-testid="tool-sets"]').should("contain", "Lancement printemps");
