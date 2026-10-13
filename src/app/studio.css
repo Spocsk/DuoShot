@@ -690,3 +690,52 @@ main:has(> .studio-auth-card) { min-height: calc(100svh - var(--header-h) - 10re
 @media (max-width: 639px) {
   .tool-command-set .ds-listbox-trigger .tool-demo-badge { display: none; }
 }
+
+:root[data-theme="dark"] {
+  --color-studio-canvas: var(--background);
+  --color-studio-ink: var(--foreground);
+  --color-studio-mist: var(--studio-mist);
+  --color-studio-sea: var(--studio-sea);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-studio-canvas: var(--background);
+    --color-studio-ink: var(--foreground);
+    --color-studio-mist: var(--studio-mist);
+    --color-studio-sea: var(--studio-sea);
+  }
+}
+
+/* Native details disclosure keeps the header compact; buttons also work in the mobile menu. */
+.ds-theme-menu { position: relative; flex: none; font-size: 0.8rem; }
+.ds-theme-menu summary { display: flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0.4rem 0.5rem; border-radius: 0.5rem; color: var(--studio-muted); font-weight: 550; list-style: none; cursor: pointer; }
+.ds-theme-menu summary::-webkit-details-marker { display: none; }
+.ds-theme-menu summary:hover { color: var(--studio-ink); background: var(--studio-mist); }
+.ds-theme-choices { display: flex; gap: 0.25rem; padding: 0.3rem; border: 1px solid var(--studio-line-strong); border-radius: 0.7rem; background: var(--studio-surface); }
+.ds-theme-menu .ds-theme-choices { position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 70; width: max-content; }
+.ds-theme-choices button { min-height: 2.5rem; min-width: 2.5rem; padding: 0.4rem 0.65rem; border-radius: 0.45rem; color: var(--studio-muted); font-size: 0.8rem; font-weight: 550; cursor: pointer; }
+.ds-theme-choices button:hover { background: var(--studio-mist); color: var(--studio-ink); }
+.ds-theme-choices button[aria-pressed="true"] { background: var(--studio-sea-soft); color: var(--studio-sea); box-shadow: inset 0 0 0 1px var(--studio-sea); }
+.ds-theme-mobile { display: grid; gap: 0.65rem; margin-top: 1.5rem; color: var(--studio-muted); font-size: 0.9rem; }
+.ds-theme-mobile .ds-theme-choices { width: fit-content; }
+
+/* Keep the light declarations above identical to the baseline; these overrides only apply in dark mode. */
+:where(:root[data-theme="dark"]) .studio-review-invite { color: var(--studio-on-deep-canvas); }
+:where(:root[data-theme="dark"]) .studio-review-invite .studio-inline-link { color: var(--studio-on-deep-surface); }
+:where(:root[data-theme="dark"]) .studio-review-steps li { color: var(--studio-on-deep-surface); }
+:where(:root[data-theme="dark"]) .studio-review-steps b { border-color: var(--studio-deep-line); }
+:where(:root[data-theme="dark"]) .tool-step:hover { background: var(--studio-step-hover); }
+:where(:root[data-theme="dark"]) .tool-step.is-on { background: var(--studio-surface); }
+:where(:root[data-theme="dark"]) .tool-dock-missing button { text-decoration-color: var(--studio-warning-underline); }
+:where(:root[data-theme="dark"]) .tool-review-actions li button { text-decoration-color: var(--studio-warning-underline); }
+
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) .studio-review-invite { color: var(--studio-on-deep-canvas); }
+  :where(:root:not([data-theme="light"])) .studio-review-invite .studio-inline-link { color: var(--studio-on-deep-surface); }
+  :where(:root:not([data-theme="light"])) .studio-review-steps li { color: var(--studio-on-deep-surface); }
+  :where(:root:not([data-theme="light"])) .studio-review-steps b { border-color: var(--studio-deep-line); }
+  :where(:root:not([data-theme="light"])) .tool-step:hover { background: var(--studio-step-hover); }
+  :where(:root:not([data-theme="light"])) .tool-step.is-on { background: var(--studio-surface); }
+  :where(:root:not([data-theme="light"])) .tool-dock-missing button { text-decoration-color: var(--studio-warning-underline); }
+  :where(:root:not([data-theme="light"])) .tool-review-actions li button { text-decoration-color: var(--studio-warning-underline); }
+}

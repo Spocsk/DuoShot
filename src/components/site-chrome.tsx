@@ -6,6 +6,7 @@ import { localePrefix, localizedPath, pricingPath, rejectionPath } from "@/lib/s
 import { HeaderAuth } from "@/components/header-auth";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { SiteNav } from "@/components/site-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsSettingsButton } from "@/components/analytics-settings-button";
 
 type Props = {
@@ -54,6 +55,7 @@ export function SiteHeader({ locale, path, variant = "full" }: Props) {
             <HeaderAuth locale={locale} secondarySignup={path === "/"} />
           </nav> : null}
           <LocaleSwitch locale={locale} href={otherHref} />
+          <div className={variant === "full" ? "hidden md:block" : undefined}><ThemeToggle /></div>
           {variant === "full" ? <SiteNav locale={locale} prefix={prefix} current={current} /> : null}
         </div>
       </div>

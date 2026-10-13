@@ -4,6 +4,10 @@
  * A key ending in `_one` is the singular variant of the key without it (see tf).
  */
 export const fr = {
+  theme_label: "Thème",
+  theme_light: "Clair",
+  theme_dark: "Sombre",
+  theme_system: "Système",
   // Legal pages
   legal_subprocessors_title: "Sous-traitants",
   legal_subprocessors_description: "Liste datée des sous-traitants DuoShot.",

@@ -1,6 +1,10 @@
 import type { Messages } from "./types";
 
 export const en: Messages = {
+  theme_label: "Theme",
+  theme_light: "Light",
+  theme_dark: "Dark",
+  theme_system: "System",
   // Legal pages
   legal_subprocessors_title: "Sub-processors",
   legal_subprocessors_description: "Dated DuoShot sub-processor list.",

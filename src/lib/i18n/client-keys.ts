@@ -7,6 +7,10 @@ import type { MessageKey } from "./types";
  */
 export const CLIENT_KEYS = {
   site: [
+    "theme_label",
+    "theme_light",
+    "theme_dark",
+    "theme_system",
     "nav_tool",
     "nav_specs",
     "nav_account",
