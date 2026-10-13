@@ -622,7 +622,7 @@ export const fr = {
   // App Store Connect connection
   asc_section_label: "Connexions",
   asc_title: "App Store Connect",
-  asc_lead: "Connectez une clé API App Store Connect pour envoyer vos captures Duo sélectionnées et vos éventuels sets iPhone 6,9″ dans une version en préparation. La clé est chiffrée sur nos serveurs et n’est jamais renvoyée à votre navigateur.",
+  asc_lead: "Connecteur App Store Connect expérimental : les envois Duo et iPhone 6,9″ n’ont pas encore été vérifiés de bout en bout par DuoShot. Utilisez le ZIP pour un dépôt manuel. La clé API est chiffrée sur nos serveurs et n’est jamais renvoyée à votre navigateur.",
   asc_duo_note: "App Store Connect propose un emplacement iPhone Duo unique (APP_IPHONE_DUO), avec 10 captures maximum par langue, externe et interne confondus. Les deux tailles sont acceptées : 1398 × 2034 et 2007 × 2853, ou leurs dimensions en paysage. Le dépôt n’a pas encore été testé par DuoShot.",
   asc_guide_title: "Créer une clé API",
   asc_guide_1: "Dans App Store Connect, ouvrez Utilisateurs et accès, puis l’onglet Intégrations.",

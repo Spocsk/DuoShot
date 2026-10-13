@@ -619,7 +619,7 @@ export const en: Messages = {
   // App Store Connect connection
   asc_section_label: "Connections",
   asc_title: "App Store Connect",
-  asc_lead: "Connect an App Store Connect API key to send your selected Duo screenshots and optional iPhone 6.9″ sets to a version in preparation. The key is encrypted on our servers and never sent back to your browser.",
+  asc_lead: "Experimental App Store Connect connector: Duo and iPhone 6.9″ uploads have not yet been verified end to end by DuoShot. Use the ZIP for manual upload. The API key is encrypted on our servers and never sent back to your browser.",
   asc_duo_note: "App Store Connect has one iPhone Duo slot (APP_IPHONE_DUO), with at most 10 screenshots per locale across outer and inner screens. Both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions. Uploads have not yet been tested by DuoShot.",
   asc_guide_title: "Create an API key",
   asc_guide_1: "In App Store Connect, open Users and Access, then the Integrations tab.",

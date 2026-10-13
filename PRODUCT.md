@@ -24,7 +24,7 @@ The business operates under the French VAT exemption (article 293 B of the CGI):
 
 ## Constraints
 
-- The ZIP contains the selected Duo screenshots in separate screen folders and `duo-slot.json` records their upload order. Both screen sizes share one `APP_IPHONE_DUO` slot, with at most 10 screenshots per locale. The optional App Store Connect connector supports selected Duo files and supported 6.9″ files; Duo uploads have not yet been tested by DuoShot. Manual ZIP upload remains available.
+- The ZIP contains the selected Duo screenshots in separate screen folders and `duo-slot.json` records their upload order. Both screen sizes share one `APP_IPHONE_DUO` slot, with at most 10 screenshots per locale. The optional App Store Connect connector is experimental: it is designed for selected Duo files and 6.9″ files, but no real upload has been verified end to end by DuoShot. Use the ZIP for manual upload. Keep this qualification until the end-to-end checks in `docs/app-store-connect.md` pass.
 - Stripe is the source for paid access. Manual grants are stored separately. A signed webhook projects billing state into the workspace.
 - Stripe test products and customer portal are configured. Live billing remains off until fiscal settings, webhook, database migration, credentials and end-to-end payment tests are complete.
 - The app supports French and English. It does not claim a rejection probability.
