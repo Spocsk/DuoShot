@@ -70,7 +70,51 @@ describe("account", () => {
       cy.get('[data-testid="studio-workspace"]').should("contain", locale === "fr" ? "Modifications demandées" : "Changes requested").and("contain", locale === "fr" ? "Acceptée" : "Accepted");
       cy.contains('[data-testid="studio-workspace"] label span', locale === "fr" ? "E-mail du membre" : "Member email").should("be.visible").and("not.have.class", "sr-only");
     });
+
+    it(`keeps recent reviews available to Studio members in ${locale}`, () => {
+      cy.loginAs("studio");
+      cy.intercept("GET", "**/api/reviews", {
+        reviews: [{ public_id: "member-review", set_name: "Harbor launch", status: "pending", expiresAt: null }],
+      }).as("reviews");
+      cy.intercept("GET", "**/api/workspace/invitations", { statusCode: 403, body: { error: "OWNER_REQUIRED" } }).as("invitations");
+      cy.intercept("GET", "**/api/workspace/members", { statusCode: 403, body: { error: "OWNER_REQUIRED" } }).as("members");
+      if (locale === "fr") cy.visitFr("/account");
+      else cy.visitEn("/en/account");
+      cy.wait(["@reviews", "@invitations", "@members"]);
+      cy.get('[data-testid="studio-workspace"]').within(() => {
+        cy.contains("li", "Harbor launch").should("contain", locale === "fr" ? "En attente" : "Pending")
+          .find("a").should("be.visible").and("have.attr", "href", `${locale === "fr" ? "" : "/en"}/r/member-review`);
+        cy.get('[role="alert"]').should("not.exist");
+        cy.get('form, input[type="email"]').should("not.exist");
+        cy.get('[data-testid="studio-members"]').should("not.exist");
+      });
+    });
   }
+
+  it("preserves recent reviews when an owner section fails and can retry it", () => {
+    cy.loginAs("studio");
+    cy.intercept("GET", "**/api/reviews", {
+      reviews: [{ public_id: "owner-review", set_name: "Harbor launch", status: "approved", expiresAt: null }],
+    }).as("reviews");
+    cy.intercept("GET", "**/api/workspace/invitations", { forceNetworkError: true }).as("invitations");
+    cy.intercept("GET", "**/api/workspace/members", {
+      members: [{ id: "owner-1", email: "owner@example.com", role: "owner" }],
+    }).as("members");
+    cy.visitFr("/account");
+    cy.wait(["@reviews", "@invitations", "@members"]);
+    cy.get('[data-testid="studio-workspace"] a[href="/r/owner-review"]').should("be.visible");
+    cy.get('[data-testid="studio-members"]').should("contain", "owner@example.com");
+    cy.get('[data-testid="studio-workspace"] [role="alert"]').should("contain", "Impossible de charger");
+
+    cy.intercept("GET", "**/api/workspace/invitations", {
+      invitations: [{ id: "invite-1", email: "guest@example.com", accepted_at: "2026-10-13T00:00:00Z" }],
+    }).as("retryInvitations");
+    cy.contains('[data-testid="studio-workspace"] button', "Réessayer").click();
+    cy.wait("@retryInvitations");
+    cy.get('[data-testid="studio-workspace"]').should("contain", "guest@example.com");
+    cy.get('[data-testid="studio-workspace"] a[href="/r/owner-review"]').should("be.visible");
+    cy.get('[data-testid="studio-workspace"] [role="alert"]').should("not.exist");
+  });
 
   it("surfaces Studio network failures and can retry loading", () => {
     cy.loginAs("studio");

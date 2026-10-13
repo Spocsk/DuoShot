@@ -12,6 +12,7 @@ import type { PlanId } from "@/lib/specs";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { AscConnectionPanel } from "@/components/asc/asc-connection-panel";
 import { Overlay } from "@/components/overlay";
+import { loadStudioWorkspace, type ReviewSummary, type Invitation, type WorkspaceMember } from "@/lib/studio-workspace";
 
 type Status = {
   plan?: PlanId;
@@ -267,28 +268,6 @@ export function AccountApp({ locale }: { locale: Locale }) {
   );
 }
 
-type ReviewSummary = {
-  public_id: string;
-  set_name: string;
-  client_name: string | null;
-  status: string;
-  expiresAt: string | null;
-};
-
-type Invitation = {
-  id: string;
-  email: string;
-  expires_at: string;
-  accepted_at?: string | null;
-  revoked_at?: string | null;
-};
-
-type WorkspaceMember = {
-  id: string;
-  email: string | null;
-  role: "owner" | "member";
-};
-
 function StudioWorkspace({ locale }: { locale: Locale }) {
   const { t, tf } = useI18n();
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
@@ -299,25 +278,22 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
   const [studioError, setStudioError] = useState<string | null>(null);
   const [studioBusy, setStudioBusy] = useState(false);
   const [studioLoading, setStudioLoading] = useState(true);
+  const [canInvite, setCanInvite] = useState(false);
 
   const refreshStudio = useCallback(async () => {
     setStudioLoading(true);
     setStudioError(null);
     try {
-      const responses = await Promise.all([
-        fetch("/api/reviews"),
-        fetch("/api/workspace/invitations"),
-        fetch("/api/workspace/members"),
-      ]);
-      if (responses.some((response) => !response.ok)) throw new Error("STUDIO_LOAD_FAILED");
-      const [reviewPayload, invitationPayload, memberPayload] = await Promise.all(responses.map((response) => response.json())) as [
-        { reviews?: ReviewSummary[] },
-        { invitations?: Invitation[] },
-        { members?: WorkspaceMember[] },
-      ];
-      setReviews(reviewPayload.reviews ?? []);
-      setInvitations(invitationPayload.invitations ?? []);
-      setMembers(memberPayload.members ?? []);
+      const { reviews, invitations, members } = await loadStudioWorkspace();
+      if (reviews.state === "ready") setReviews(reviews.items);
+      if (invitations.state === "ready") setInvitations(invitations.items);
+      else if (invitations.state === "restricted") setInvitations([]);
+      if (members.state === "ready") setMembers(members.items);
+      else if (members.state === "restricted") setMembers([]);
+      setCanInvite(invitations.state === "ready");
+      if ([reviews, invitations, members].some((result) => result.state === "error")) {
+        setStudioError(t("account_studio_load_error"));
+      }
     } catch {
       setStudioError(t("account_studio_load_error"));
     } finally {
@@ -387,7 +363,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
       <p className="mt-3 text-sm text-[var(--muted)]">
         {tf("account_three_seats_included_review", { seats: PLANS.studio.seats })}
       </p>
-      <form className="mt-6 flex items-end gap-3" onSubmit={(event) => { event.preventDefault(); void invite(); }}>
+      {canInvite ? <form className="mt-6 flex items-end gap-3" onSubmit={(event) => { event.preventDefault(); void invite(); }}>
         <label className="min-w-0 flex-1">
           <span className="ds-label mb-2 block">{t("account_member_email")}</span>
           <input
@@ -402,7 +378,7 @@ function StudioWorkspace({ locale }: { locale: Locale }) {
         <button type="submit" className="ds-cta" disabled={studioBusy || !inviteEmail}>
           {t("account_invite")}
         </button>
-      </form>
+      </form> : null}
       {studioMessage ? <p role="status" className="mt-3 text-sm text-[var(--muted)]">{studioMessage}</p> : null}
       {studioError ? (
         <div className="mt-3">
