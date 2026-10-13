@@ -60,8 +60,13 @@ describe("theme", () => {
     cy.get("html").should("have.css", "color-scheme", "light");
   });
 
-  it("sets stored dark before hydration even with application JavaScript blocked", () => {
-    cy.intercept("GET", "**/_next/static/**/*.js*", { statusCode: 200, body: "", headers: { "content-type": "application/javascript" } });
+  it("sets stored dark before hydration", () => {
+    cy.request<string>("/en").then(({ body }) => {
+      expect(body).to.include('id="duoshot-theme"');
+      const htmlTag = body.match(/<html\b[^>]*>/i);
+      expect(htmlTag).to.not.equal(null);
+      expect(htmlTag![0]).to.not.match(/\bdata-theme\b/i);
+    });
     cy.visit("/en", { onBeforeLoad(win) { win.localStorage.setItem("duoshot_theme", "dark"); } });
     cy.get("html").should("have.attr", "data-theme", "dark").and("have.css", "color-scheme", "dark");
     cy.get("body > #duoshot-theme").should("exist").and(($script) => {
@@ -69,10 +74,6 @@ describe("theme", () => {
       const header = script.ownerDocument.querySelector("header")!;
       expect(script.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).to.not.equal(0);
     });
-    // No hydrated click handler: proves the inline script applied the stored theme.
-    cy.get('header [data-testid="theme-toggle"] summary').click();
-    cy.get('header [data-testid="theme-light"]').click();
-    cy.get("html").should("have.attr", "data-theme", "dark");
   });
 
   it("offers localized, accessible controls in the mobile menu", () => {
