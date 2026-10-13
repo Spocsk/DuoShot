@@ -72,12 +72,12 @@ En local, pointer `NEXT_PUBLIC_SUPABASE_URL` vers une instance Supabase de déve
 
 | Offre | Prix | Notes |
 | --- | --- | --- |
-| Essai | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
-| Indie | 12 €/mo ou 120 €/an | 100 ZIP/jour UTC, 6,9″, multi-sets, préfixe Client/App |
+| Essai gratuit | 0 | Preview + ZIP exemple. 2 exports HD après inscription |
+| Indie | 12 €/mo ou 120 €/an | 100 exports/jour UTC, 6,9″, multi-sets, préfixe Client/App |
 | Studio | 49 €/mo ou 490 €/an | + 3 sièges et reviews client pendant 7 jours |
 | Pass 30 jours | 19 € une fois | Droits Indie pendant 30 jours, sans renouvellement ; masqué tant que `STRIPE_PRICE_PASS30` n’est pas renseigné |
 
-Stripe Checkout est ouvert en mode live depuis le 4 octobre 2026. Restent à faire : un achat réel suivi d’un remboursement par le propriétaire, puis la validation fiscale et la décision sur Stripe Tax. Voir [`docs/stripe-billing-setup.md`](docs/stripe-billing-setup.md).
+La disponibilité de Checkout dépend de la configuration d’exécution, évaluée par `src/lib/billing-availability.ts` et exposée par `/api/billing/availability`. Le dépôt seul ne permet pas d’établir si un déploiement accepte les paiements. L’historique d’activation et les vérifications de paiement restantes figurent dans [`docs/stripe-billing-setup.md`](docs/stripe-billing-setup.md).
 
 ## Specs
 

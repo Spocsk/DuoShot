@@ -58,7 +58,7 @@ export function PricingCta({
   return (
     <>
       <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
-        {!available ? t("pricing_payments_opening_soon") : busy ? t("pricing_opening") : label}
+        {!available ? t("pricing_payments_unavailable") : busy ? t("pricing_opening") : label}
       </button>
       {error ? (
         <p className="ds-warn mt-2 text-sm" role="alert" data-testid={`pricing-error-${kind}`}>{error}</p>

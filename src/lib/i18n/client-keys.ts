@@ -74,7 +74,7 @@ export const CLIENT_KEYS = {
     "pricing_pass_body",
     "pricing_pass_cta",
     "pricing_checkout_temporarily_unavailable_please",
-    "pricing_payments_opening_soon",
+    "pricing_payments_unavailable",
     "pricing_opening",
     "pricing_months_free",
     "pricing_year",

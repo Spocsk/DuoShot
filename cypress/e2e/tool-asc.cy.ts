@@ -77,7 +77,10 @@ describe("tool: send to App Store Connect", () => {
 
   it("shows the action locked with a link to pricing on a trial", () => {
     exportReady({ statusCode: 200, body: connectionStatus({ paid: false, connected: false }) });
-    cy.get('[data-testid="asc-tool-locked"]').within(() => {
+    cy.get('[data-testid="asc-tool-locked"]')
+      .should("contain", "connecteur App Store Connect expérimental")
+      .and("contain", "n’ont pas encore été vérifiés de bout en bout")
+      .and("contain", "ZIP pour un dépôt manuel").within(() => {
       cy.contains("button", "Envoyer vers App Store Connect").should("be.disabled");
       cy.get('[data-testid="asc-tool-pricing"]').should("have.attr", "href", "/pricing");
     });

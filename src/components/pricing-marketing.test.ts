@@ -61,7 +61,7 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     }
     expect(html).not.toContain("billing-monthly");
     expect(html).not.toContain("billing-yearly");
-    expect(html).not.toContain(getTranslator(locale).t("pricing_payments_opening_soon"));
+    expect(html).not.toContain(getTranslator(locale).t("pricing_payments_unavailable"));
   });
 
   it("keeps unavailable checkout disabled and omits an unconfigured pass on home", async () => {
@@ -70,6 +70,8 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     const html = render(locale, await HomeRoute({ params: Promise.resolve({ locale }) }));
     expect(checkoutButton(html, "indie_monthly")).toContain("disabled");
     expect(checkoutButton(html, "studio_monthly")).toContain("disabled");
+    expect(html).toContain(locale === "fr" ? "Paiement indisponible" : "Checkout unavailable");
+    expect(html).not.toContain(locale === "fr" ? "bientôt" : "soon");
     expect(html).not.toContain('data-testid="pricing-pass30"');
   });
 
