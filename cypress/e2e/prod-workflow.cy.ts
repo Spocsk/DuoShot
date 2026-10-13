@@ -40,6 +40,7 @@ describe("prod workflow", () => {
     // Portrait open screen: the fold is a horizontal band across the middle height (device turned a quarter turn).
     cy.get('[data-testid="preview-inner"] .division').should("not.be.visible");
     cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get("details.tool-advanced > summary").click();
     cy.get('[data-testid="toggle-hinge"]').click();
     cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
       const band = $band[0]!.getBoundingClientRect();

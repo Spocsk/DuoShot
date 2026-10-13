@@ -2,7 +2,7 @@ describe("tool export", () => {
   it("keeps the English canvas and contextual panels readable on a phone", () => {
     cy.viewport(390, 844);
     cy.visitEn("/en/tool");
-    cy.contains("Your composition").should("be.visible");
+    cy.get('[data-testid="tool-sets"]').should("be.visible").and("contain", "Set 01");
     cy.contains("Compare").should("be.visible");
     cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="readiness-report"]').scrollIntoView().should("be.visible");
@@ -94,6 +94,7 @@ describe("tool export", () => {
     });
     // Landscape open screen is the natural pose: the fold is a vertical band across the middle width.
     cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get("details.tool-advanced > summary").click();
     cy.get('[data-testid="toggle-hinge"]').click();
     cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
       const band = $band[0]!.getBoundingClientRect();
