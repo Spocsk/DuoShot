@@ -12,6 +12,8 @@ import { SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "./screens
 import { generateMetadata as specsMetadata } from "@/app/[locale]/specs/page";
 import { generateMetadata as outerMetadata } from "@/app/[locale]/1398x2034/page";
 import { generateMetadata as innerMetadata } from "@/app/[locale]/2007x2853/page";
+import { generateMetadata as iphone63Metadata } from "@/app/[locale]/1206x2622/page";
+import { generateImageMetadata as iphone63ImageMetadata, generateStaticParams as iphone63ImageParams } from "@/app/[locale]/1206x2622/opengraph-image";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -64,10 +66,11 @@ describe("public routes and crawler metadata", () => {
   });
 
   for (const locale of ["fr", "en"] as const) {
-    it(`gives specs and both size pages distinct metadata and sitemap entries in ${locale}`, async () => {
+    it(`gives specs and all size pages distinct metadata and sitemap entries in ${locale}`, async () => {
       vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
       const pages = [
         ["specs", specsMetadata], ["1398x2034", outerMetadata], ["2007x2853", innerMetadata],
+        ["1206x2622", iphone63Metadata],
       ] as const;
       const titles = new Set();
       const descriptions = new Set();
@@ -83,10 +86,20 @@ describe("public routes and crawler metadata", () => {
         titles.add(metadata.title);
         descriptions.add(metadata.description);
       }
-      expect(titles.size).toBe(3);
-      expect(descriptions.size).toBe(3);
+      expect(titles.size).toBe(4);
+      expect(descriptions.size).toBe(4);
     });
   }
+
+  it("publishes the new size page's localized Open Graph image metadata", () => {
+    expect(iphone63ImageParams()).toEqual([{ locale: "fr" }, { locale: "en" }]);
+    for (const locale of ["fr", "en"] as const) {
+      expect(iphone63ImageMetadata({ params: { locale } })).toEqual([{
+        id: "card", alt: expect.stringContaining(locale === "fr" ? "6,3" : "6.3"),
+        size: { width: 1200, height: 630 }, contentType: "image/png",
+      }]);
+    }
+  });
 });
 
 describe("page-specific structured data", () => {
@@ -111,6 +124,7 @@ describe("page-specific structured data", () => {
         ["/specs", SPECS_PAGE_COPY[locale]],
         ["/1398x2034", sizePageCopy(locale, "1398x2034")],
         ["/2007x2853", sizePageCopy(locale, "2007x2853")],
+        ["/1206x2622", sizePageCopy(locale, "1206x2622")],
       ] as const) {
         const graph = jsonLdGraph(locale, { path, article: { ...copy, dateModified: SCREENSHOT_VERIFIED_ON } })["@graph"];
         const url = `https://duoshot.site${localizedPath(locale, path)}`;
@@ -118,6 +132,26 @@ describe("page-specific structured data", () => {
         expect(graph[1]).toMatchObject({ headline: copy.title, description: copy.description, url, mainEntityOfPage: url, inLanguage: locale, dateModified: "2026-10-13" });
       }
     }
+  });
+
+  it.each(["fr", "en"] as const)("keeps the required free size and optional paid size in %s structured data", (locale) => {
+    const size63 = locale === "fr" ? "6,3″" : "6.3″";
+    const size69 = locale === "fr" ? "6,9″" : "6.9″";
+    for (const path of ["/", "/pricing"]) {
+      const graph = jsonLdGraph(locale, { path, software: true, faq: FAQ[locale] })["@graph"];
+      const app = graph.find((node) => "offers" in node)!;
+      expect(app.description).toContain(size63);
+      expect(app.description).toContain(size69);
+      expect(app.description).toContain(locale === "fr" ? "optionnel" : "optional");
+      expect(app.offers?.[0]).toMatchObject({ price: "0", description: expect.stringContaining(size63) });
+      const sizesAnswer = FAQ[locale].find(({ a }) => a.includes("1206×2622"))!.a;
+      expect(sizesAnswer).toContain(locale === "fr" ? "incluse dans l’essai gratuit" : "included in the free trial");
+      expect(sizesAnswer).toContain("1179×2556");
+    }
+    const article = sizePageCopy(locale, "1206x2622");
+    expect(article.description).toContain("1179x2556");
+    expect(article.intro).toContain(locale === "fr" ? "essai gratuit" : "free trial");
+    expect(SPECS_PAGE_COPY[locale].description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
   });
 
   it.each([undefined, "", "   ", "price_pass30"])("includes the 19 EUR 30-day pass only with a nonempty price ID (%s)", (priceId) => {

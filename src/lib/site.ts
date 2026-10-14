@@ -5,9 +5,9 @@ import { publicEnv } from "./env-public";
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
 export const SITE_PITCH_FR =
-  `Préparez vos captures iPhone Duo pour App Store Connect : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px en portrait, export PNG/JPEG opaque.`;
+  `Préparez vos captures iPhone Duo pour App Store Connect : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px en portrait, export PNG/JPEG opaque. iPhone 6,3″ requis, inclus dans l’essai gratuit ; 6,9″ optionnel avec Indie et Studio.`;
 export const SITE_PITCH_EN =
-  `Prepare iPhone Duo screenshots for App Store Connect: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px in portrait, with opaque PNG/JPEG export.`;
+  `Prepare iPhone Duo screenshots for App Store Connect: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px in portrait, with opaque PNG/JPEG export. Required 6.3″ iPhone screenshots are included in the free trial; 6.9″ is optional with Indie and Studio.`;
 
 export function getSiteUrl(): string {
   const explicit = publicEnv.siteUrl;
@@ -69,6 +69,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/specs", en: "/en/specs", priority: 1 },
   { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
   { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
+  { fr: "/1206x2622", en: "/en/1206x2622", priority: 0.8 },
   { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", priority: 0.7 },
   { fr: "/rejet", en: "/en/rejection", priority: 0.7 },
   { fr: "/privacy", en: "/en/privacy", priority: 0.4 },

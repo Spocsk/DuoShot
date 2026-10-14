@@ -140,6 +140,7 @@ function comparisonRows(i18n: Translator, ids: PlanId[]) {
   const rows: { label: string; pick: (plan: PlanRecord) => string }[] = [
     { label: t("pricing_feat_zip"), pick: (plan) => (num(plan, "freeExports") !== null ? quota(plan) : yes) },
     { label: t("pricing_feat_quota"), pick: quota },
+    { label: t("pricing_feat_63"), pick: () => yes },
     { label: t("pricing_feat_69"), pick: fullFormats },
     { label: t("pricing_feat_sets"), pick: () => yes },
     { label: t("pricing_feat_prefix"), pick: fullFormats },

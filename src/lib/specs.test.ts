@@ -1,5 +1,41 @@
-import { describe, expect, it } from "vitest";
-import { connectPreviewStyle, duoChassisAspect, duoSpec, formatInches, SIZE_SPECS, specRowDetail, targetsFor } from "./specs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { SpecsPage } from "@/components/specs-page";
+import { SizePage } from "@/components/size-page";
+import { connectPreviewStyle, duoChassisAspect, duoSpec, formatInches, IPHONE_63_ALTERNATIVE, iphone63Spec, SIZE_SPECS, specRowDetail, targetsFor } from "./specs";
+import { SCREENSHOT_SIZES, sizePageCopy } from "./screenshot-pages";
+
+vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
+
+describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
+  it("renders the required iPhone preset and its alternative alongside optional paid sizes", () => {
+    const html = renderToStaticMarkup(createElement(SpecsPage, { locale }));
+    const section = html.match(/<section[^>]*aria-labelledby="iphone-63-sizes"[^>]*>([\s\S]*?)<\/section>/)![1];
+    expect(section).toContain("1206 × 2622");
+    expect(section).toContain("2622 × 1206");
+    expect(section).toContain("1179 × 2556");
+    expect(section).toContain("2556 × 1179");
+    expect(section).toContain(locale === "fr" ? "essai gratuit" : "free trial");
+    expect(section).toContain(locale === "fr" ? "optionnelle" : "optional");
+    expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/1206x2622"`);
+    expect(html).toContain(locale === "fr" ? "dépôt pas encore testé par DuoShot" : "uploads have not yet been tested by DuoShot");
+  });
+
+  it("uses the iPhone slot copy on the new size page and preserves Duo slot copy on existing pages", () => {
+    for (const size of SCREENSHOT_SIZES) {
+      const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
+      if (size === "1206x2622") {
+        expect(html).toContain("1179 × 2556");
+        expect(html).toContain(locale === "fr" ? "essai gratuit" : "free trial");
+        expect(html).not.toContain(locale === "fr" ? "Déposer dans l’emplacement iPhone Duo" : "Upload to the iPhone Duo slot");
+      } else {
+        expect(html).toContain(locale === "fr" ? "un seul emplacement iPhone Duo" : "a single iPhone Duo slot");
+        expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/1206x2622"`);
+      }
+    }
+  });
+});
 
 describe("6.3-inch export preset", () => {
   it.each(["free", "indie", "studio"] as const)("is available on %s with portrait and landscape pixels", (plan) => {
@@ -18,6 +54,24 @@ describe("6.3-inch export preset", () => {
     const paid = targetsFor({ orientation: "portrait", include63: true, include69: true, plan: "indie" });
     expect(paid.filter((spec) => spec.slot === "iphone-63")).toHaveLength(1);
     expect(paid.filter((spec) => spec.slot === "iphone-69")).toHaveLength(3);
+  });
+
+  it("documents the accepted alternative without adding another export target", () => {
+    expect(IPHONE_63_ALTERNATIVE).toEqual({
+      portrait: { width: 1179, height: 2556 }, landscape: { width: 2556, height: 1179 },
+    });
+    expect(SIZE_SPECS.filter((spec) => spec.slot === "iphone-63")).toHaveLength(2);
+    for (const locale of ["fr", "en"] as const) {
+      const copy = sizePageCopy(locale, "1206x2622");
+      expect(copy.portrait).toEqual(iphone63Spec("portrait"));
+      expect(copy.landscape).toEqual(iphone63Spec("landscape"));
+      expect(copy.portrait).toMatchObject({ width: 1206, height: 2622, gated: undefined });
+      expect(copy.landscape).toMatchObject({ width: 2622, height: 1206, gated: undefined });
+      expect(copy.intro).toContain("1179 × 2556");
+      expect(copy.intro).toContain("2556 × 1179");
+      expect(copy.related).toEqual(SCREENSHOT_SIZES.filter((size) => size !== "1206x2622"));
+      expect(sizePageCopy(locale, "1398x2034").related).toContain("1206x2622");
+    }
   });
 });
 

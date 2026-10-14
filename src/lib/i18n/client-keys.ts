@@ -53,6 +53,7 @@ export const CLIENT_KEYS = {
     "pricing_note",
     "pricing_feat_zip",
     "pricing_feat_quota",
+    "pricing_feat_63",
     "pricing_feat_69",
     "pricing_feat_sets",
     "pricing_feat_prefix",

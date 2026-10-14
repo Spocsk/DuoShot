@@ -111,6 +111,16 @@ export const SIZE_SPECS: SizeSpec[] = [
   ...pair("69c", "iphone-69", 'iPhone 6.9"', '6.9"', 1260, 2736, "indie-studio"),
 ];
 
+/** Accepted 6.3-inch alternative for documentation; DuoShot exports 1206 × 2622. */
+export const IPHONE_63_ALTERNATIVE = {
+  portrait: { width: 1179, height: 2556 },
+  landscape: { width: 2556, height: 1179 },
+} as const;
+
+export function iphone63Spec(orientation: Orientation): SizeSpec {
+  return SIZE_SPECS.find((spec) => spec.slot === "iphone-63" && spec.orientation === orientation)!;
+}
+
 export function appStoreDisclaimer233(locale: Locale): string {
   return locale === "fr"
     ? "Apple App Store Review Guideline 2.3.3 : les captures doivent représenter l’app avec précision. DuoShot redimensionne et compose vos visuels ; il ne fabrique pas de fausses fonctionnalités. Vérifiez chaque set avant soumission."
