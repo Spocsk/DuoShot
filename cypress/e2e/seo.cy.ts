@@ -29,7 +29,15 @@ describe("SEO screenshot pages", () => {
 
     it(`links the home to factual specs and size pages in ${locale}`, () => {
       visit(prefix || "/");
+      for (const size of ["1398x2034", "2007x2853", "1206x2622", "1320x2868"]) {
+        cy.get(`main a[href="${prefix}/${size}"]`).should("exist");
+        cy.get(`footer a[href="${prefix}/${size}"]`).should("exist");
+      }
+      cy.get(`footer a[href="${prefix}/specs"]`).should("exist");
       cy.get('[data-testid="cta-specs"]').click();
+      for (const size of ["1398x2034", "2007x2853", "1206x2622", "1320x2868"]) {
+        cy.get(`main a[href="${prefix}/${size}"]`).should("exist");
+      }
       cy.get("main").should("contain", locale === "en" ? "Verified on 2026-10-13" : "Vérifié le 2026-10-13")
         .and("contain", locale === "en" ? "single iPhone Duo slot" : "un seul emplacement iPhone Duo")
         .and("contain", locale === "en" ? "10 screenshots per locale" : "10 captures par langue");
@@ -44,6 +52,8 @@ describe("SEO screenshot pages", () => {
       cy.location("pathname").should("eq", `${prefix}/2007x2853`);
       cy.get(`main a[href="${prefix}/1206x2622"]`).click();
       cy.location("pathname").should("eq", `${prefix}/1206x2622`);
+      cy.get(`main a[href="${prefix}/1320x2868"]`).click();
+      cy.location("pathname").should("eq", `${prefix}/1320x2868`);
       cy.get(`main a[href="${prefix}/specs"]`).should("exist");
     });
 
@@ -51,21 +61,32 @@ describe("SEO screenshot pages", () => {
       ["1398x2034", "1398 × 2034", "2034 × 1398"],
       ["2007x2853", "2007 × 2853", "2853 × 2007"],
       ["1206x2622", "1206 × 2622", "2622 × 1206"],
+      ["1320x2868", "1320 × 2868", "2868 × 1320"],
     ]) {
       it(`serves ${prefix}/${size} with an article, unique metadata and sitemap entry`, () => {
         visit(`${prefix}/${size}`);
         cy.get("h1").should("contain", size);
         cy.get("main").should("contain", portrait).and("contain", landscape);
+        if (size === "1320x2868") {
+          cy.get("main").should("contain", locale === "en" ? "optional in App Store Connect" : "optionnelles dans App Store Connect")
+            .and("contain", locale === "en" ? "with Indie and Studio" : "avec Indie et Studio");
+        }
         cy.contains("main a", locale === "en" ? "Prepare your screenshots" : "Préparer vos captures")
           .should("have.attr", "href", `${prefix}/tool`);
         cy.get(`main a[href="${prefix}/specs"]`).should("exist");
-        for (const related of ["1398x2034", "2007x2853", "1206x2622"].filter((related) => related !== size)) {
+        for (const related of ["1398x2034", "2007x2853", "1206x2622", "1320x2868"].filter((related) => related !== size)) {
           cy.get(`main a[href="${prefix}/${related}"]`).should("exist");
         }
         cy.document().then((doc) => {
           const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href");
           expect(doc.title).to.contain(size);
           expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.contain(size);
+          expect(canonical).to.eq(`${new URL(canonical!).origin}${prefix}/${size}`);
+          for (const language of ["fr", "en", "x-default"]) {
+            const alternate = doc.querySelector(`link[rel="alternate"][hreflang="${language}"]`)!.getAttribute("href");
+            expect(alternate).to.eq(`${new URL(canonical!).origin}${language === "en" ? "/en" : ""}/${size}`);
+          }
+          expect(doc.querySelector('meta[property="og:image"]')!.getAttribute("content")).to.contain(`/${size}/opengraph-image/`);
           const graph = graphOf(doc);
           expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "TechArticle"]);
           const article = graph.find((node) => node["@type"] === "TechArticle")!;

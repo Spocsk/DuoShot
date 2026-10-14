@@ -8,6 +8,7 @@ import { LocaleSwitch } from "@/components/locale-switch";
 import { SiteNav } from "@/components/site-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsSettingsButton } from "@/components/analytics-settings-button";
+import { SCREENSHOT_SIZES, sizePageCopy } from "@/lib/screenshot-pages";
 
 type Props = {
   locale: Locale;
@@ -73,6 +74,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <span data-testid="footer-privacy-line">{t("trust_retention")}</span>
         <span>{t("footer_stripe")}</span>
         <Link href={`${prefix}/specs`}>{t("nav_specs")}</Link>
+        {SCREENSHOT_SIZES.map((size) => <Link key={size} href={localizedPath(locale, `/${size}`)} title={sizePageCopy(locale, size).title}>{size.replace("x", " × ")}</Link>)}
         <Link href={`${prefix}/legal`}>{t("footer_legal")}</Link>
         <Link href={`${prefix}/terms`}>{t("footer_terms")}</Link>
         <Link href={`${prefix}/privacy`}>{t("footer_privacy")}</Link>

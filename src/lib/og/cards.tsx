@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { getTranslator } from "@/lib/i18n";
 import { PLANS } from "@/lib/plans";
 import { INNER_PORTRAIT, OUTER_PORTRAIT } from "@/lib/screenshot-copy";
-import { duoSpec, type Locale } from "@/lib/specs";
+import { duoSpec, SIZE_SPECS, type Locale } from "@/lib/specs";
 import { DuoPair, duoWidth } from "./duo";
 import { OgFrame } from "./frame";
 import { HARBOR_SCREEN, OG } from "./theme";
@@ -10,6 +10,7 @@ import { HARBOR_SCREEN, OG } from "./theme";
 export type OgPage =
   | "home"
   | "specs"
+  | "iphone-69"
   | "rejection"
   | "pricing"
   | "why-not-ai"
@@ -38,6 +39,10 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
   rejection: {
     fr: { eyebrow: "Points à vérifier", title: "Captures refusées ? Dimensions et canal alpha.", alt: "Bilan de préparation DuoShot : dimensions vérifiées, canal alpha aplati, PNG opaque." },
     en: { eyebrow: "Checks", title: "Screenshots rejected? Dimensions and alpha.", alt: "DuoShot preparation report: dimensions checked, alpha channel flattened, opaque PNG." },
+  },
+  "iphone-69": {
+    fr: { eyebrow: "Dimensions · iPhone 6,9″", title: "Captures iPhone\n1320 × 2868", lead: "Optionnel dans App Store Connect.\nExport avec Indie et Studio.", alt: "Captures iPhone 6,9 pouces : 1320 × 2868 px en portrait, 2868 × 1320 px en paysage. Optionnelles dans App Store Connect, export DuoShot avec Indie et Studio." },
+    en: { eyebrow: "Dimensions · iPhone 6.9″", title: "iPhone screenshots\n1320 × 2868", lead: "Optional in App Store Connect.\nExport with Indie and Studio.", alt: "6.9-inch iPhone screenshots: 1320 × 2868 px portrait, 2868 × 1320 px landscape. Optional in App Store Connect, DuoShot export with Indie and Studio." },
   },
   pricing: {
     fr: { eyebrow: "Tarifs", title: "Essai gratuit, Indie, Studio.", lead: `Commencez sans carte. ${PLANS.free.freeExports} exports HD offerts.`, alt: `Tarifs DuoShot : Essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },
@@ -125,11 +130,11 @@ function HomeArt({ locale }: { locale: Locale }) {
 }
 
 /** Both exported files drawn to scale, with blueprint-style dimension lines. */
-function SpecsArt({ locale }: { locale: Locale }) {
+function SpecsArt({ locale, iphone69 = false }: { locale: Locale; iphone69?: boolean }) {
   const { t } = getTranslator(locale);
-  const outer = duoSpec("duo-outer", "portrait");
-  const inner = duoSpec("duo-inner", "portrait");
-  const scale = 372 / inner.height;
+  const outer = iphone69 ? SIZE_SPECS.find((spec) => spec.id === "69a-p")! : duoSpec("duo-outer", "portrait");
+  const inner = iphone69 ? SIZE_SPECS.find((spec) => spec.id === "69a-l")! : duoSpec("duo-inner", "portrait");
+  const scale = (iphone69 ? 270 : 372) / Math.max(outer.height, inner.height);
   const file = (spec: { width: number; height: number }, caption: string) => {
     const w = Math.round(spec.width * scale);
     const h = Math.round(spec.height * scale);
@@ -165,10 +170,14 @@ function SpecsArt({ locale }: { locale: Locale }) {
   };
   return (
     <div style={{ position: "absolute", right: 72, bottom: 64, display: "flex", alignItems: "flex-end", gap: 34 }}>
-      {file(outer, t("closed_caption"))}
-      {file(inner, t("open_caption"))}
+      {file(outer, t(iphone69 ? "specs_portrait" : "closed_caption"))}
+      {file(inner, t(iphone69 ? "specs_landscape" : "open_caption"))}
     </div>
   );
+}
+
+function Iphone69Art({ locale }: { locale: Locale }) {
+  return <SpecsArt locale={locale} iphone69 />;
 }
 
 /** The preparation report the tool shows before an upload. */
@@ -363,6 +372,7 @@ function PairArt({ locale }: { locale: Locale }) {
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
   home: HomeArt,
   specs: SpecsArt,
+  "iphone-69": Iphone69Art,
   rejection: RejectionArt,
   pricing: PricingArt,
   "why-not-ai": WhyNotAiArt,
@@ -378,7 +388,7 @@ const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
 export function OgCard({ page, locale }: { page: OgPage; locale: Locale }) {
   const copy = COPY[page][locale];
   const Art = ART[page];
-  const narrow = ART[page] === PairArt || page === "specs" || page === "review";
+  const narrow = ART[page] === PairArt || page === "specs" || page === "iphone-69" || page === "review";
   return (
     <OgFrame
       eyebrow={copy.eyebrow}

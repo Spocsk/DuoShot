@@ -1,5 +1,6 @@
 import { RejectionPage } from "@/components/rejection-page";
 import { pageMetadata } from "@/lib/seo";
+import { REJECTION_PAGE_COPY } from "@/lib/marketing-copy";
 import { pageLocale, type LocaleParams } from "../params";
 
 // French slug of /en/rejection (same page, localized URL).
@@ -13,8 +14,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   return pageMetadata({
     locale,
     path: "/rejet",
-    title: "Erreurs de captures App Store : dimensions et canal alpha",
-    description: "Dimensions de capture invalides ou canal alpha : vérifiez les formats iPhone Duo et préparez des fichiers PNG/JPEG opaques pour App Store Connect.",
+    ...REJECTION_PAGE_COPY[locale],
   });
 }
 

@@ -31,8 +31,8 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         {size === "2007x2853" && <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: screenshotDimensions(copy.portrait) })}</p>}
       </section>
       <section className="mt-10">
-        <h2 className="font-display text-3xl">{t(size === "1206x2622" ? "specs_required_iphone_sizes" : "size_slot_heading")}</h2>
-        <p className="mt-4">{t(size === "1206x2622" ? "specs_iphone_63_body" : "specs_single_slot")}</p>
+        <h2 className="font-display text-3xl">{t(size === "1320x2868" ? "specs_optional_iphone_sizes" : size === "1206x2622" ? "specs_required_iphone_sizes" : "size_slot_heading")}</h2>
+        <p className="mt-4">{t(size === "1320x2868" ? "specs_iphone_69_body" : size === "1206x2622" ? "specs_iphone_63_body" : "specs_single_slot")}</p>
         <a href={APPLE_SCREENSHOT_SOURCE} className="ds-link mt-4 inline-block">{t("specs_read_connect_specifications")}</a>
       </section>
       <section className="mt-10">

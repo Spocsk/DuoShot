@@ -2,7 +2,7 @@ describe("marketing", () => {
   it("keeps the closed/open example and CTA readable on mobile", () => {
     cy.viewport(390, 844);
     cy.visitFr("/");
-    cy.contains("h1", "Captures iPhone Duo.").should("be.visible");
+    cy.contains("h1", "Générateur de captures App Store.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("be.visible");
     cy.get(".studio-sequence-stage").should("not.be.visible");
     cy.get(".studio-sequence-step-visual").should("have.length", 4);
@@ -15,7 +15,7 @@ describe("marketing", () => {
 
   it("renders the French home, pricing, and primary CTAs", () => {
     cy.visitFr("/");
-    cy.contains("h1", "Captures iPhone Duo.").should("be.visible");
+    cy.contains("h1", "Générateur de captures App Store.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="cta-demo"]').should("have.attr", "href", "/tool?demo=harbor");
     cy.get('[data-testid="nav-signup"]').should("have.class", "ds-cta-ghost").and("not.have.class", "ds-cta");
@@ -100,7 +100,7 @@ describe("marketing", () => {
 
   it("renders the English home", () => {
     cy.visitEn("/en");
-    cy.contains("h1", "iPhone Duo screenshots.").should("be.visible");
+    cy.contains("h1", "App Store screenshot generator.").should("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/en/tool");
     cy.get('[data-testid="nav-signup"]').should("have.class", "ds-cta-ghost");
     cy.get('[data-testid="cta-demo-proof"]').should("contain", "See the example");
@@ -118,14 +118,14 @@ describe("marketing", () => {
 
   it("serves a dedicated pricing page", () => {
     cy.visitFr("/pricing");
-    cy.contains("h1", "Essai gratuit, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "Tarifs des captures App Store : essai, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="nav-pricing"]').should("have.attr", "aria-current", "page");
     cy.contains("Paiement sécurisé par Stripe").should("be.visible");
     cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/r/harbor");
     cy.contains("3 sièges").should("be.visible");
     cy.visitEn("/en/pricing");
-    cy.contains("h1", "Free trial, Indie, Studio.").should("be.visible");
+    cy.contains("h1", "App Store screenshot plans: Free, Indie, Studio.").should("be.visible");
     cy.get('[data-testid="pricing-review-demo"]').should("have.attr", "href", "/en/r/harbor");
     cy.get('[data-testid="pricing-cta-trial"]').should("have.attr", "href", "/en/tool");
   });
@@ -158,17 +158,17 @@ describe("marketing", () => {
     cy.visitFr("/specs");
     cy.contains("h1", "Tailles des captures iPhone Duo").should("be.visible");
     cy.visitFr("/pourquoi-pas-ia");
-    cy.contains("h1", "Pourquoi pas votre IA").should("be.visible");
+    cy.contains("h1", "Captures App Store : IA ou captures réelles ?").should("be.visible");
     cy.contains("IA et DuoShot : les points à vérifier").should("be.visible");
     cy.contains("Listing exemple").should("not.exist");
     cy.visitFr("/why-not-ai");
-    cy.contains("h1", "Pourquoi pas votre IA").should("be.visible");
+    cy.contains("h1", "Captures App Store : IA ou captures réelles ?").should("be.visible");
     cy.visitFr("/rejet");
-    cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
+    cy.contains("h1", "Captures iPhone Duo dans App Store Connect").should("be.visible");
     cy.get('[data-testid="rejection-cta-tool"]').should("have.class", "ds-cta").and("have.attr", "href", "/tool");
     cy.get("article").eq(2).find("p").first().should("have.text", "contenu");
     cy.visitFr("/rejection");
-    cy.contains("h1", "Erreurs de captures App Store").should("be.visible");
+    cy.contains("h1", "Captures iPhone Duo dans App Store Connect").should("be.visible");
     cy.visitFr("/privacy");
     cy.contains("h1", "Confidentialité").should("be.visible");
     cy.visitFr("/terms");
@@ -287,9 +287,16 @@ describe("screenshot dimensions and search intent", () => {
       cy.request(`${prefix}/specs`).then(({ body }) => {
         const doc = new DOMParser().parseFromString(body, "text/html");
         expect(doc.querySelector("h1")!.textContent!.replace(/\u00a0/g, " ")).to.contain("App Store Connect");
-        expect(doc.title).to.contain("1398×2034").and.to.contain("2007×2853").and.to.contain("1206×2622");
-        expect(doc.title.length).to.be.at.most(65);
-        expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.contain("2007 × 2853");
+        expect(doc.title).to.contain(locale === "fr" ? "Tailles des captures iPhone Duo" : "iPhone Duo screenshot size");
+        expect(doc.title).to.contain(locale === "fr" ? "pli" : "fold");
+        expect(doc.title.length).to.be.at.most(60);
+        const description = doc.querySelector('meta[name="description"]')!.getAttribute("content")!;
+        expect(description.length).to.be.at.most(155);
+        expect(doc.querySelector('meta[property="og:title"]')!.getAttribute("content")).to.eq(doc.title);
+        expect(doc.querySelector('meta[name="twitter:title"]')!.getAttribute("content")).to.eq(doc.title);
+        expect(doc.querySelector('meta[property="og:description"]')!.getAttribute("content")).to.eq(description);
+        expect(doc.querySelector('meta[name="twitter:description"]')!.getAttribute("content")).to.eq(description);
+        expect(doc.querySelector('#safe-area-fold')!.textContent).to.contain(locale === "fr" ? "Zone de sécurité" : "safe area");
         const image = doc.querySelector('meta[property="og:image"]')!.getAttribute("content")!;
         expect(doc.querySelector('meta[name="twitter:image"]')!.getAttribute("content")).to.eq(image);
         cy.setCookie("duoshot_locale_manual", locale === "fr" ? "en" : "fr");

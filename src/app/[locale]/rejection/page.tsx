@@ -1,5 +1,6 @@
 import { RejectionPage } from "@/components/rejection-page";
 import { pageMetadata } from "@/lib/seo";
+import { REJECTION_PAGE_COPY } from "@/lib/marketing-copy";
 import { pageLocale, type LocaleParams } from "../params";
 
 // English slug of /rejet (same page, localized URL).
@@ -13,8 +14,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   return pageMetadata({
     locale,
     path: "/rejet",
-    title: "App Store screenshot errors: dimensions & alpha channel",
-    description: "Fix wrong screenshot dimensions, “image dimensions are not valid”, and alpha channel issues. Check iPhone Duo sizes before preparing your files.",
+    ...REJECTION_PAGE_COPY[locale],
   });
 }
 
