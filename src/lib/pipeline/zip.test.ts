@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import JSZip from "jszip";
 import { SIZE_SPECS, type SizeSpec } from "../specs";
 import { buildReadme, buildZip, zipEntryPath } from "./zip";
 
@@ -6,6 +7,16 @@ const outer = SIZE_SPECS.find((item) => item.id === "outer-p") as SizeSpec;
 const sixtyNine = SIZE_SPECS.find((item) => item.id === "69a-p") as SizeSpec;
 
 describe("zip", () => {
+  it("keeps ten 6.3-inch images outside the ten-image Duo cap and manifest", async () => {
+    const phone = SIZE_SPECS.find((spec) => spec.id === "63a-p")!;
+    const images = [outer, phone].flatMap((spec) => Array.from({ length: 10 }, (_, index) => ({ spec, index, buffer: Buffer.alloc(1) })));
+    const archive = await JSZip.loadAsync(await buildZip({ appName: "Trial", orientation: "portrait", branded: true, include63: true, include69: false, format: "png", images }));
+    expect(archive.file("trial/iphone-63-portrait/1206x2622/10.png")).toBeTruthy();
+    const manifest = JSON.parse(await archive.file("trial/duo-slot.json")!.async("string"));
+    expect(manifest.files).toHaveLength(10);
+    expect(manifest.files.every((file: string) => file.includes("duo-outer"))).toBe(true);
+    expect(buildReadme({ appName: "Trial", orientation: "portrait", branded: true, include63: true, include69: false })).toContain("iphone-63-portrait");
+  });
   it("rejects overfull normal ZIPs at the builder boundary", async () => {
     const images = Array.from({ length: 11 }, (_, index) => ({ spec: outer, index, buffer: Buffer.alloc(1) }));
     await expect(buildZip({ appName: "Cap", orientation: "portrait", branded: false, include69: false, format: "png", images })).rejects.toThrow("DUO_SLOT_LIMIT");

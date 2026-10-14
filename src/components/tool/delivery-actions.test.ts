@@ -12,6 +12,15 @@ function render(locale: Locale, children: ReactElement) {
 }
 
 describe("export guidance", () => {
+  it.each(["fr", "en"] as const)("lists 6.3-inch files with their own pixels and localized size in %s", (locale) => {
+    const html = render(locale, createElement(ExportPanel, {
+      locale, prefix: "", zipUrl: "https://storage.example/app.zip", session: "in", orientation: "portrait", demo: false,
+      jobs: { exportImages: [{ slot: "iphone-63", index: 1, width: 1206, height: 2622, format: "png" }] } as unknown as ComponentProps<typeof ExportPanel>["jobs"],
+    }));
+    expect(html).toContain("iphone-63-portrait/1206x2622/01.png");
+    expect(html).toContain(locale === "fr" ? "6,3″" : "6.3&quot;");
+    expect(html).toContain("1206 × 2622");
+  });
   it.each(["fr", "en"] as const)("explains the manual Duo delivery for example and user exports in %s", (locale) => {
     for (const demo of [true, false]) {
       const html = render(locale, createElement(ExportPanel, {

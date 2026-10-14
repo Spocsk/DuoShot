@@ -4,6 +4,7 @@ import { renderScreenshot } from "./process";
 import { inspectSource } from "./source-inspect";
 import {
   normalizeCropTransform,
+  isDuoSlot,
   targetsFor,
   type CropTransform,
   type CropTransforms,
@@ -27,12 +28,14 @@ export async function composeZipImages(input: {
   outerBuffers: Buffer[];
   innerBuffers: Buffer[];
   options: RenderOptions;
+  include63?: boolean;
   include69: boolean;
   plan: PlanId;
   transforms?: Partial<CropTransforms>;
 }): Promise<{ images: ZipImage[]; flattenAlpha: boolean; compositionWarnings: string[] }> {
   const targets = targetsFor({
     orientation: input.options.orientation,
+    include63: input.include63,
     include69: input.include69,
     plan: input.plan,
   });
@@ -45,7 +48,7 @@ export async function composeZipImages(input: {
   async function renderSide(buffers: Buffer[], slot: DeviceSlot, transforms: CropTransform[] = []) {
     const specs = slotTargets(targets, slot);
     const jobs = buffers.flatMap((buffer, index) => specs.map((spec) => ({ buffer, index, spec })));
-    const selectedJobs = picks && slot !== "iphone-69" ? jobs.filter((job) => picks.some((pick) => pick.side === (slot === "duo-outer" ? "outer" : "inner") && pick.index === job.index)) : jobs;
+    const selectedJobs = picks && isDuoSlot(slot) ? jobs.filter((job) => picks.some((pick) => pick.side === (slot === "duo-outer" ? "outer" : "inner") && pick.index === job.index)) : jobs;
     const rendered = await mapLimit(selectedJobs, COMPOSE_CONCURRENCY, async (job) => {
       const inspect = inspectSource(job.buffer);
       if (inspect.hasAlpha) flattenAlpha = true;
@@ -71,12 +74,14 @@ export async function composeZipImages(input: {
 
   await renderSide(input.outerBuffers, "duo-outer", input.transforms?.outer);
   await renderSide(input.innerBuffers, "duo-inner", input.transforms?.inner);
-  if (input.include69) {
+  if (input.include63 || input.include69) {
     const phone = input.innerBuffers.length ? input.innerBuffers : input.outerBuffers;
-    await renderSide(phone, "iphone-69", input.transforms?.inner?.length ? input.transforms.inner : input.transforms?.outer);
+    const transforms = input.innerBuffers.length ? input.transforms?.inner : input.transforms?.outer;
+    if (input.include63) await renderSide(phone, "iphone-63", transforms);
+    if (input.include69) await renderSide(phone, "iphone-69", input.transforms?.inner?.length ? input.transforms.inner : input.transforms?.outer);
   }
   if (picks) images.sort((a, b) => {
-    const position = (image: ZipImage) => image.spec.slot === "iphone-69" ? picks.length : picks.findIndex((pick) => pick.side === (image.spec.slot === "duo-outer" ? "outer" : "inner") && pick.index === image.index);
+    const position = (image: ZipImage) => !isDuoSlot(image.spec.slot) ? picks.length : picks.findIndex((pick) => pick.side === (image.spec.slot === "duo-outer" ? "outer" : "inner") && pick.index === image.index);
     return position(a) - position(b);
   });
   return { images, flattenAlpha, compositionWarnings };

@@ -99,8 +99,8 @@ export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo
         <ul className="mt-3 space-y-1 text-sm">
           {exportImages.map((image) => (
             <li key={`${image.slot}-${image.index}-${image.width}x${image.height}`} className="studio-delivered-file">
-              <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
-              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : formatInches(6.9, locale)} · {image.width} × {image.height}</span>
+              <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-63" || image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
+              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : formatInches(image.slot === "iphone-63" ? 6.3 : 6.9, locale)} · {image.width} × {image.height}</span>
             </li>
           ))}
         </ul>

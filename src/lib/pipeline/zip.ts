@@ -2,7 +2,7 @@ import { DUO_SLOT_MAX } from "../duo-selection";
 import { MAX_ZIP_BYTES } from "./limits";
 import JSZip from "jszip";
 import type { DeviceSlot, Orientation, RenderOptions, SizeSpec } from "../specs";
-import { specPixels, zipFolderName } from "../specs";
+import { isDuoSlot, specPixels, zipFolderName } from "../specs";
 import { slugify } from "./geometry";
 import type { CloneResult } from "./clone-score";
 
@@ -24,7 +24,7 @@ export function zipEntryPath(options: {
   const folder = zipFolderName(options.spec.slot, options.spec.orientation);
   const ext = options.format === "jpeg" ? "jpg" : "png";
   const seq = String(options.index + 1).padStart(2, "0");
-  if (options.spec.slot === "iphone-69") {
+  if (!isDuoSlot(options.spec.slot)) {
     return `${prefix}${app}/${folder}/${options.spec.width}x${options.spec.height}/${seq}.${ext}`;
   }
   return `${prefix}${app}/${folder}/${seq}.${ext}`;
@@ -41,6 +41,7 @@ export function buildReadme(options: {
   appName: string;
   orientation: string;
   branded: boolean;
+  include63?: boolean;
   include69: boolean;
   locale?: "fr" | "en";
   rawDuoSets?: boolean;
@@ -52,6 +53,7 @@ export function buildReadme(options: {
   compositionWarnings?: string[];
 }): string {
   const slots: DeviceSlot[] = options.rawDuoSets ? ["duo-outer", "duo-inner"] : ["duo-outer"];
+  if (options.include63) slots.push("iphone-63");
   if (options.include69) slots.push("iphone-69");
   const fallbackOrientation: Orientation =
     options.orientation === "landscape" ? "landscape" : "portrait";
@@ -112,6 +114,7 @@ export async function buildZip(options: {
   clientSlug?: string | null;
   orientation: Orientation;
   branded: boolean;
+  include63?: boolean;
   include69: boolean;
   format: RenderOptions["format"];
   images: ZipImage[];
@@ -121,7 +124,7 @@ export async function buildZip(options: {
   flattenAlpha?: boolean;
   compositionWarnings?: string[];
 }): Promise<Buffer> {
-  const duo = options.images.filter((image) => image.spec.slot !== "iphone-69");
+  const duo = options.images.filter((image) => isDuoSlot(image.spec.slot));
   if (!options.rawDuoSets && duo.length > DUO_SLOT_MAX) throw new Error("DUO_SLOT_LIMIT");
   const zip = new JSZip();
   const app = slugify(options.appName);
@@ -145,6 +148,7 @@ export async function buildZip(options: {
       rawDuoSets: options.rawDuoSets,
       orientation: orientations.join(" + "),
       branded: options.branded,
+      include63: options.include63,
       include69: options.include69,
       cloneScores: options.cloneScores,
       unpaired: options.unpaired,

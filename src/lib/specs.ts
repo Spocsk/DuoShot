@@ -14,7 +14,11 @@ export type BackgroundMode = "solid" | "gradient" | "blur";
 export type TitlePosition = "top" | "bottom";
 export type TitleFont = "sans" | "serif";
 export type OutputFormat = "png" | "jpeg";
-export type DeviceSlot = "duo-outer" | "duo-inner" | "iphone-69";
+export type DeviceSlot = "duo-outer" | "duo-inner" | "iphone-63" | "iphone-69";
+
+export function isDuoSlot(slot: string): slot is "duo-outer" | "duo-inner" {
+  return slot === "duo-outer" || slot === "duo-inner";
+}
 export type PlanId = "free" | "indie" | "studio";
 
 export type CropTransform = {
@@ -101,6 +105,7 @@ function pair(
 export const SIZE_SPECS: SizeSpec[] = [
   ...pair("outer", "duo-outer", "Duo outer", '5.4"', 1398, 2034),
   ...pair("inner", "duo-inner", "Duo inner", '7.6"', 2007, 2853),
+  ...pair("63a", "iphone-63", 'iPhone 6.3"', '6.3"', 1206, 2622),
   ...pair("69a", "iphone-69", 'iPhone 6.9"', '6.9"', 1320, 2868, "indie-studio"),
   ...pair("69b", "iphone-69", 'iPhone 6.9"', '6.9"', 1290, 2796, "indie-studio"),
   ...pair("69c", "iphone-69", 'iPhone 6.9"', '6.9"', 1260, 2736, "indie-studio"),
@@ -183,6 +188,7 @@ export function specPixels(spec: Pick<SizeSpec, "width" | "height">): string {
 
 export function targetsFor(options: {
   orientation: Orientation;
+  include63?: boolean;
   include69: boolean;
   plan: PlanId;
 }): SizeSpec[] {
@@ -191,6 +197,7 @@ export function targetsFor(options: {
   }
   return SIZE_SPECS.filter((spec) => {
     if (spec.orientation !== options.orientation) return false;
+    if (spec.slot === "iphone-63") return Boolean(options.include63);
     if (spec.slot === "iphone-69") return options.include69;
     return true;
   });

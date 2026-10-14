@@ -527,6 +527,8 @@ export const fr = {
   tool_label_font: "Typo",
   tool_label_format: "Format",
   tool_label_69: "Tailles 6,9″",
+  tool_label_63: "Captures iPhone 6,3″",
+  tool_63_hint: "1206 × 2622 px (dimensions inversées en paysage). Taille iPhone requise pour App Store Connect ; incluse dans l’essai gratuit.",
   tool_orient_portrait: "Portrait",
   tool_orient_landscape: "Paysage",
   tool_fit_contain: "Contain",

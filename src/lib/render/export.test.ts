@@ -95,9 +95,12 @@ describe("executeExport for a queued job", () => {
   it("uses the queued reservation even when the trial is now exhausted and commits through complete_render", async () => {
     const client = workerClient({ id: "ws-1", plan: "free", free_exports_used: 99 });
     vi.mocked(createAdminSupabase).mockReturnValue(client as never);
-    const { status, body } = await readJson(await executeExport(render(), client, USER, JOB));
+    const payload = { ...PAYLOAD, include63: true };
+    const { status, body } = await readJson(await executeExport(render(payload), client, USER, { ...JOB, payload }));
     expect(status).toBe(200);
     expect(body.exportId).toBe("res-1");
+    expect(composeZipImages).toHaveBeenCalledWith(expect.objectContaining({ include63: true, plan: "free" }));
+    expect(buildZip).toHaveBeenCalledWith(expect.objectContaining({ include63: true, branded: true }));
     const names = rpc.mock.calls.map(([name]) => name);
     expect(names).toEqual(["complete_render"]);
     expect(rpc).toHaveBeenCalledWith("complete_render", expect.objectContaining({

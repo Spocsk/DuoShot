@@ -281,6 +281,8 @@ export const CLIENT_KEYS = {
     "tool_label_font",
     "tool_label_format",
     "tool_label_69",
+    "tool_label_63",
+    "tool_63_hint",
     "tool_orient_portrait",
     "tool_orient_landscape",
     "tool_fit_contain",

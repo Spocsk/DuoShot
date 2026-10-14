@@ -51,6 +51,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
   if (job && context.membership.workspace_id !== job.workspace_id) return Response.json({ error: "NO_WORKSPACE" }, { status: 409 });
   const { membership, workspace, entitlements } = context;
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
+  const include63 = Boolean(body.include63);
   const include69 = Boolean(body.include69);
   const pro = isProPlan(entitlements.plan);
 
@@ -68,6 +69,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
   try {
     targetsFor({
       orientation: options.orientation,
+      include63,
       include69,
       plan: entitlements.plan,
     });
@@ -114,6 +116,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
       innerBuffers,
       duoSelection: body.duoSelection ?? { mode: "outer" },
       options,
+      include63,
       include69,
       plan: entitlements.plan,
       transforms: body.transforms,
@@ -129,6 +132,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
       clientSlug,
       orientation: options.orientation,
       branded: !pro,
+      include63,
       include69,
       format: options.format,
       images,

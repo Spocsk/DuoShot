@@ -37,6 +37,37 @@ async function samplePng(buffer: Buffer, x: number, y: number): Promise<number[]
 }
 
 describe("compose", () => {
+  it.each(["portrait", "landscape"] as const)("renders the free 6.3-inch set in %s using inner sources and their transforms", async (orientation) => {
+    const outer = await sharp({ create: { width: 30, height: 30, channels: 3, background: "red" } }).png().toBuffer();
+    const inner = await landmarkPng();
+    const options = { ...DEFAULT_RENDER_OPTIONS, orientation };
+    const { images } = await composeZipImages({
+      outerBuffers: [outer], innerBuffers: [inner, inner], options,
+      include63: true, include69: false, plan: "free", duoSelection: { mode: "outer" },
+      transforms: { inner: [{ fit: "cover", x: 0, y: 0.5 }, { fit: "cover", x: 1, y: 0.5 }] },
+    });
+    expect(images.map((image) => [image.spec.slot, image.index])).toEqual([["duo-outer", 0], ["iphone-63", 0], ["iphone-63", 1]]);
+    const phone = images[1]!;
+    const meta = await sharp(phone.buffer).metadata();
+    expect([meta.width, meta.height]).toEqual(orientation === "portrait" ? [1206, 2622] : [2622, 1206]);
+    expect(meta.hasAlpha).toBe(false);
+    expect(meta.channels).toBe(3);
+    if (orientation === "portrait") {
+      expect(await samplePng(phone.buffer, 603, 1311)).toEqual([255, 0, 0]);
+      expect(await samplePng(images[2]!.buffer, 603, 1311)).toEqual([0, 0, 255]);
+    }
+    const zip = await JSZip.loadAsync(await buildZip({ appName: "Free", orientation, branded: true, include63: true, include69: false, format: "png", images }));
+    const size = orientation === "portrait" ? "1206x2622" : "2622x1206";
+    expect(zip.file(`free/iphone-63-${orientation}/${size}/02.png`)).toBeTruthy();
+    expect(await zip.file("free/README.txt")!.async("string")).toContain(`iphone-63-${orientation}: ${size}`);
+    expect(JSON.parse(await zip.file("free/duo-slot.json")!.async("string")).files).toEqual([`free/duo-outer-${orientation}/01.png`]);
+  });
+
+  it("uses outer sources when no inner sources are present", async () => {
+    const input = await sourcePng();
+    const { images } = await composeZipImages({ outerBuffers: [input], innerBuffers: [], options: DEFAULT_RENDER_OPTIONS, include63: true, include69: false, plan: "free", duoSelection: { mode: "outer" } });
+    expect(images.map((image) => image.spec.slot)).toEqual(["duo-outer", "iphone-63"]);
+  });
   it.each(["outer", "inner"] as const)("exports %s only without requiring the other side", async (mode) => {
     const input = await sourcePng();
     const { images } = await composeZipImages({ outerBuffers: mode === "outer" ? [input] : [], innerBuffers: mode === "inner" ? [input] : [], options: DEFAULT_RENDER_OPTIONS, include69: false, plan: "free", duoSelection: { mode } });
@@ -136,6 +167,7 @@ describe("compose", () => {
       outerBuffers: [input],
       innerBuffers: [input],
       options,
+      include63: true,
       include69: true,
       plan: "indie",
     });
@@ -145,6 +177,7 @@ describe("compose", () => {
         clientSlug: "Acme",
         orientation: "portrait",
         branded: false,
+        include63: true,
         include69: true,
         format: "png",
         images,
@@ -158,14 +191,15 @@ describe("compose", () => {
       "acme/my-app/README.txt",
       "acme/my-app/duo-outer-portrait/01.png",
       "acme/my-app/duo-inner-portrait/01.png",
+      "acme/my-app/iphone-63-portrait/1206x2622/01.png",
       "acme/my-app/iphone-69-portrait/1320x2868/01.png",
       "acme/my-app/iphone-69-portrait/1290x2796/01.png",
       "acme/my-app/iphone-69-portrait/1260x2736/01.png",
     ]));
 
     for (const image of images) {
-      const folder = image.spec.slot === "iphone-69"
-        ? `iphone-69-portrait/${image.spec.width}x${image.spec.height}`
+      const folder = image.spec.slot === "iphone-69" || image.spec.slot === "iphone-63"
+        ? `${image.spec.slot}-portrait/${image.spec.width}x${image.spec.height}`
         : `${image.spec.slot}-portrait`;
       const file = archive.file(`acme/my-app/${folder}/01.png`);
       expect(file).toBeTruthy();

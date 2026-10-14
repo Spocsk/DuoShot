@@ -524,6 +524,8 @@ export const en: Messages = {
   tool_label_font: "Type",
   tool_label_format: "Format",
   tool_label_69: "6.9″ sizes",
+  tool_label_63: "6.3″ iPhone set",
+  tool_63_hint: "1206 × 2622 px (swapped in landscape). Required iPhone set for App Store Connect; included in the free trial.",
   tool_orient_portrait: "Portrait",
   tool_orient_landscape: "Landscape",
   tool_fit_contain: "Contain",

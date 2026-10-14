@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveEntitlements } from "@/lib/billing";
 import { composeZipImages } from "@/lib/pipeline/compose";
 import { buildZip } from "@/lib/pipeline/zip";
-import { duoSpec } from "@/lib/specs";
+import { duoSpec, SIZE_SPECS } from "@/lib/specs";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createQueryBuilder, createSupabaseMock, readJson } from "@/test/supabase-mock";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -99,6 +99,7 @@ describe("POST /api/export", () => {
         jsonRequest({
           outerPaths: ["user-1/outer.png"],
           innerPaths: ["user-1/inner.png"],
+          include63: true,
           include69: true,
         }),
       ),
@@ -149,15 +150,16 @@ describe("POST /api/export", () => {
     expect(body.error).toBe("PATH_FORBIDDEN");
   });
 
-  it("delivers a ZIP larger than 4.5 MB through a signed storage URL", async () => {
+  it.each([false, true])("delivers a ZIP larger than 4.5 MB through a signed storage URL (6.3-inch free trial: %s)", async (include63) => {
     const zip = Buffer.alloc(5_000_000, 7);
     const uploaded: number[] = [];
     const image = await sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } }).png().toBuffer();
-    vi.mocked(resolveEntitlements).mockReturnValue(INDIE);
+    vi.mocked(resolveEntitlements).mockReturnValue(include63 ? { ...FREE, remainingFreeExports: 2 } : INDIE);
     vi.mocked(composeZipImages).mockResolvedValue({
       images: [
         { spec: duoSpec("duo-outer", "portrait"), index: 0, buffer: image },
         { spec: duoSpec("duo-inner", "portrait"), index: 0, buffer: image },
+        ...(include63 ? [{ spec: SIZE_SPECS.find((spec) => spec.id === "63a-p")!, index: 0, buffer: image }] : []),
       ],
       flattenAlpha: false,
       compositionWarnings: [],
@@ -168,7 +170,7 @@ describe("POST /api/export", () => {
       from: (table: string) => createQueryBuilder({ data: table === "workspace_members"
         ? { workspace_id: "ws-1", role: "owner" }
         : table === "daily_export_counts" ? { count: 0 }
-          : { id: "ws-1", client_slug: null, plan: "indie", free_exports_used: 0 }, error: null }),
+          : { id: "ws-1", client_slug: null, plan: include63 ? "free" : "indie", free_exports_used: 0 }, error: null }),
       rpc: async () => ({ data: 1, error: null }),
       storage: { from: (bucket: string) => ({
         info: async () => ({ data: { size: bucket === "uploads" ? image.length : zip.length }, error: null }),
@@ -180,12 +182,15 @@ describe("POST /api/export", () => {
       }) },
     } as never);
     const { status, body } = await readJson(await POST(jsonRequest({
-      outerPaths: ["user-1/outer.png"], innerPaths: ["user-1/inner.png"], assumeCloneRisk: true,
+      outerPaths: ["user-1/outer.png"], innerPaths: ["user-1/inner.png"], assumeCloneRisk: true, include63,
     })));
     expect(status).toBe(200);
     expect(uploaded).toEqual([zip.length]);
     expect(body.url).toBe("https://storage.example/large.zip");
-    expect(body.images).toHaveLength(2);
+    expect(body.images).toHaveLength(include63 ? 3 : 2);
+    expect(composeZipImages).toHaveBeenCalledWith(expect.objectContaining({ include63, include69: false, plan: include63 ? "free" : "indie" }));
+    expect(buildZip).toHaveBeenCalledWith(expect.objectContaining({ include63, branded: include63 }));
+    if (include63) expect(body.images).toContainEqual({ slot: "iphone-63", index: 1, width: 1206, height: 2622, format: "png" });
     expect(body.exportId).toBe("export-1");
     expect(Date.parse(body.expiresAt as string)).toBeGreaterThan(Date.now());
   });
