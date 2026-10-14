@@ -66,6 +66,17 @@ describe("public routes and crawler metadata", () => {
   });
 
   for (const locale of ["fr", "en"] as const) {
+    it(`keeps screenshot dimensions in concise specs search and social titles in ${locale}`, async () => {
+      const metadata = await specsMetadata({ params: Promise.resolve({ locale }) });
+      const title = `${metadata.title} · DuoShot`;
+      for (const size of ["1398×2034", "2007×2853", "1206×2622"]) {
+        expect(title).toContain(size);
+      }
+      expect(title.length).toBeLessThanOrEqual(65);
+      expect(metadata.openGraph?.title).toBe(title);
+      expect(metadata.twitter?.title).toBe(title);
+    });
+
     it(`gives specs and all size pages distinct metadata and sitemap entries in ${locale}`, async () => {
       vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
       const pages = [

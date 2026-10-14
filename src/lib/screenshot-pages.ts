@@ -22,11 +22,11 @@ export function sizePageCopy(locale: Locale, size: ScreenshotSize) {
 
 export const SPECS_PAGE_COPY = {
   fr: {
-    title: "Tailles des captures iPhone Duo et iPhone 6,3 pouces",
+    title: "Captures iPhone Duo 1398×2034, 2007×2853, 1206×2622",
     description: `App Store Connect : iPhone 6,3″ requis, 1206×2622 ou 1179×2556 px ; 6,9″ optionnel. Duo : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px, un seul emplacement.`,
   },
   en: {
-    title: "iPhone Duo and 6.3-inch iPhone screenshot sizes",
+    title: "iPhone Duo sizes: 1398×2034, 2007×2853, 1206×2622",
     description: `App Store Connect: required 6.3″ iPhone, 1206×2622 or 1179×2556 px; optional 6.9″. Duo: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px, one slot.`,
   },
 };
