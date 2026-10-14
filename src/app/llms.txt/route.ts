@@ -22,6 +22,7 @@ export function GET() {
 - Outer display sizes: ${getSiteUrl()}/1398x2034
 - Inner display sizes: ${getSiteUrl()}/2007x2853
 - Required 6.3" iPhone sizes: ${getSiteUrl()}/1206x2622 (EN: ${getSiteUrl()}/en/1206x2622)
+- Optional 6.9" iPhone sizes: ${getSiteUrl()}/1320x2868 (EN: ${getSiteUrl()}/en/1320x2868)
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia
 - Rejection decoder: ${getSiteUrl()}/rejet
 - Tool (noindex): ${getSiteUrl()}/tool

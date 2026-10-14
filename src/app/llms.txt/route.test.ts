@@ -38,6 +38,7 @@ describe("GET /llms.txt", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
     const body = await GET().text();
     expect(body).toContain('Required 6.3" iPhone sizes: https://duoshot.site/1206x2622 (EN: https://duoshot.site/en/1206x2622)');
+    expect(body).toContain('Optional 6.9" iPhone sizes: https://duoshot.site/1320x2868 (EN: https://duoshot.site/en/1320x2868)');
     expect(body).toContain('iPhone 6.3" portrait alternative accepted by App Store Connect: 1179x2556');
     expect(body).toContain('iPhone 6.3" landscape alternative accepted by App Store Connect: 2556x1179');
     expect(body).toContain('App Store Connect requires 6.3" iPhone screenshots');

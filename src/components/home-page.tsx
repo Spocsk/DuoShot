@@ -242,17 +242,21 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
               <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
                 <div className="is-outer">
                   <dt>{t("home_closed_screen")} · {formatInches(OUTER.inches, locale)}</dt>
-                  <dd>{screenshotDimensions(OUTER)}<small> {t("home_pixels_portrait")}</small></dd>
+                  <dd><Link href={`${prefix}/1398x2034`} className="ds-link">{screenshotDimensions(OUTER)}</Link><small> {t("home_pixels_portrait")}</small></dd>
                 </div>
                 <div className="is-inner">
                   <dt>{t("home_open_screen")} · {formatInches(INNER.inches, locale)}</dt>
-                  <dd>{screenshotDimensions(INNER)}<small> {t("home_pixels_portrait")}</small></dd>
+                  <dd><Link href={`${prefix}/2007x2853`} className="ds-link">{screenshotDimensions(INNER)}</Link><small> {t("home_pixels_portrait")}</small></dd>
                 </div>
               </dl>
               <div className="studio-hero-foot">
                 <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link studio-hero-specs">
                   {t("cta_specs")} <span aria-hidden="true">↗</span>
                 </Link>
+                <p className="studio-hero-footnote">
+                  <Link href={`${prefix}/1206x2622`} className="ds-link">{t("home_iphone_63_size_guide")}</Link>{" · "}
+                  <Link href={`${prefix}/1320x2868`} className="ds-link">{t("home_iphone_69_size_guide")}</Link>
+                </p>
                 <p className="studio-hero-footnote">{t("home_harbor_fictional_app")}</p>
               </div>
             </div>

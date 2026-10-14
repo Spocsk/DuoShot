@@ -14,6 +14,8 @@ import { generateMetadata as outerMetadata } from "@/app/[locale]/1398x2034/page
 import { generateMetadata as innerMetadata } from "@/app/[locale]/2007x2853/page";
 import { generateMetadata as iphone63Metadata } from "@/app/[locale]/1206x2622/page";
 import { generateImageMetadata as iphone63ImageMetadata, generateStaticParams as iphone63ImageParams } from "@/app/[locale]/1206x2622/opengraph-image";
+import { generateMetadata as iphone69Metadata } from "@/app/[locale]/1320x2868/page";
+import { generateImageMetadata as iphone69ImageMetadata, generateStaticParams as iphone69ImageParams } from "@/app/[locale]/1320x2868/opengraph-image";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -82,6 +84,7 @@ describe("public routes and crawler metadata", () => {
       const pages = [
         ["specs", specsMetadata], ["1398x2034", outerMetadata], ["2007x2853", innerMetadata],
         ["1206x2622", iphone63Metadata],
+        ["1320x2868", iphone69Metadata],
       ] as const;
       const titles = new Set();
       const descriptions = new Set();
@@ -97,8 +100,8 @@ describe("public routes and crawler metadata", () => {
         titles.add(metadata.title);
         descriptions.add(metadata.description);
       }
-      expect(titles.size).toBe(4);
-      expect(descriptions.size).toBe(4);
+      expect(titles.size).toBe(pages.length);
+      expect(descriptions.size).toBe(pages.length);
     });
   }
 
@@ -109,6 +112,17 @@ describe("public routes and crawler metadata", () => {
         id: "card", alt: expect.stringContaining(locale === "fr" ? "6,3" : "6.3"),
         size: { width: 1200, height: 630 }, contentType: "image/png",
       }]);
+    }
+  });
+
+  it("publishes the optional 6.9-inch page's localized Open Graph image metadata", () => {
+    expect(iphone69ImageParams()).toEqual([{ locale: "fr" }, { locale: "en" }]);
+    for (const locale of ["fr", "en"] as const) {
+      expect(iphone69ImageMetadata({ params: { locale } })).toEqual([{
+        id: "card", alt: expect.stringContaining(locale === "fr" ? "6,9" : "6.9"),
+        size: { width: 1200, height: 630 }, contentType: "image/png",
+      }]);
+      expect(iphone69ImageMetadata({ params: { locale } })[0].alt).toContain("1320 × 2868");
     }
   });
 });
@@ -136,6 +150,7 @@ describe("page-specific structured data", () => {
         ["/1398x2034", sizePageCopy(locale, "1398x2034")],
         ["/2007x2853", sizePageCopy(locale, "2007x2853")],
         ["/1206x2622", sizePageCopy(locale, "1206x2622")],
+        ["/1320x2868", sizePageCopy(locale, "1320x2868")],
       ] as const) {
         const graph = jsonLdGraph(locale, { path, article: { ...copy, dateModified: SCREENSHOT_VERIFIED_ON } })["@graph"];
         const url = `https://duoshot.site${localizedPath(locale, path)}`;
@@ -162,6 +177,14 @@ describe("page-specific structured data", () => {
     const article = sizePageCopy(locale, "1206x2622");
     expect(article.description).toContain("1179x2556");
     expect(article.intro).toContain(locale === "fr" ? "essai gratuit" : "free trial");
+    const optionalArticle = sizePageCopy(locale, "1320x2868");
+    expect(optionalArticle.description).toContain(locale === "fr" ? "optionnelles" : "Optional");
+    expect(optionalArticle.description).toContain("1320x2868");
+    expect(optionalArticle.description).toContain("2868x1320");
+    expect(optionalArticle.description).toContain("Indie");
+    expect(optionalArticle.description).toContain("Studio");
+    expect(optionalArticle.portrait).toMatchObject({ slot: "iphone-69", width: 1320, height: 2868, gated: "indie-studio" });
+    expect(optionalArticle.landscape).toMatchObject({ slot: "iphone-69", width: 2868, height: 1320, gated: "indie-studio" });
     expect(SPECS_PAGE_COPY[locale].description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
   });
 

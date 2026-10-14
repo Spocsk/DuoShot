@@ -70,6 +70,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
   { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
   { fr: "/1206x2622", en: "/en/1206x2622", priority: 0.8 },
+  { fr: "/1320x2868", en: "/en/1320x2868", priority: 0.8 },
   { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", priority: 0.7 },
   { fr: "/rejet", en: "/en/rejection", priority: 0.7 },
   { fr: "/privacy", en: "/en/privacy", priority: 0.4 },

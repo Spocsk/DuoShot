@@ -80,7 +80,7 @@ export function SpecsPage({ locale }: { locale: Locale }) {
         </section>
         <section className="mt-12" aria-labelledby="iphone-69-sizes">
           <h2 id="iphone-69-sizes" className="font-display text-3xl">{tf("specs_additional_iphone_sizes", { size69 })}</h2>
-          <p className="mt-4 text-[var(--muted)]">{tf("specs_these_formats_belong_iphone", { size69 })}</p>
+          <p className="mt-4 text-[var(--muted)]">{t("specs_iphone_69_body")}</p>
           <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot === "iphone-69")} caption={t("specs_iphone_6_9_inch")} />
         </section>
         <section className="mt-12">

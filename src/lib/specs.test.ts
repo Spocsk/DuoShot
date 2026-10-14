@@ -18,20 +18,34 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
     expect(section).toContain("2556 × 1179");
     expect(section).toContain(locale === "fr" ? "essai gratuit" : "free trial");
     expect(section).toContain(locale === "fr" ? "optionnelle" : "optional");
-    expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/1206x2622"`);
+    for (const size of SCREENSHOT_SIZES) {
+      expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/${size}"`);
+    }
     expect(html).toContain(locale === "fr" ? "dépôt pas encore testé par DuoShot" : "uploads have not yet been tested by DuoShot");
   });
 
-  it("uses the iPhone slot copy on the new size page and preserves Duo slot copy on existing pages", () => {
+  it("uses the correct slot copy and links every guide to specs and the other sizes", () => {
     for (const size of SCREENSHOT_SIZES) {
       const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
       if (size === "1206x2622") {
         expect(html).toContain("1179 × 2556");
         expect(html).toContain(locale === "fr" ? "essai gratuit" : "free trial");
         expect(html).not.toContain(locale === "fr" ? "Déposer dans l’emplacement iPhone Duo" : "Upload to the iPhone Duo slot");
+      } else if (size === "1320x2868") {
+        expect(html).toContain("1320 × 2868");
+        expect(html).toContain("2868 × 1320");
+        expect(html).toContain("1290 × 2796");
+        expect(html).toContain(locale === "fr" ? "optionnelles" : "optional");
+        expect(html).toContain(locale === "fr" ? "avec Indie et Studio" : "with Indie and Studio");
+        const slotSection = html.match(/<section[^>]*>\s*<h2[^>]*>[^<]*6[,.]9[^<]*<\/h2>([\s\S]*?)<\/section>/)![1];
+        expect(slotSection).not.toContain(locale === "fr" ? "emplacement iPhone Duo" : "iPhone Duo slot");
       } else {
         expect(html).toContain(locale === "fr" ? "un seul emplacement iPhone Duo" : "a single iPhone Duo slot");
-        expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/1206x2622"`);
+      }
+      const prefix = locale === "en" ? "/en" : "";
+      expect(html).toContain(`href="${prefix}/specs"`);
+      for (const related of SCREENSHOT_SIZES.filter((related) => related !== size)) {
+        expect(html).toContain(`href="${prefix}/${related}"`);
       }
     }
   });
