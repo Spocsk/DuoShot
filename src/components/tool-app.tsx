@@ -123,6 +123,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [outerFiles, setOuterFiles] = useState<File[]>([]);
   const [innerFiles, setInnerFiles] = useState<File[]>([]);
   const options = useMemo(() => ({ ...DEFAULT_RENDER_OPTIONS, ...active?.renderOptions }), [active?.renderOptions]);
+  const include63 = active?.include63 ?? false;
   const include69 = active?.include69 ?? false;
   // Off by default: the band hides part of the capture. Turn it on to check text near the fold.
   const [showHinge, setShowHinge] = useState(false);
@@ -358,7 +359,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
     setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
     zipUrl, setZipUrl, patchActive, outerFiles, innerFiles, effectiveInner, sameSet,
-    duoSelection, cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
+    duoSelection, cloneForced, include63, include69, assumeClone, severeQualityCount, qualityAcknowledged,
     orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
   });
   const isDemo = Boolean(active?.demo);
@@ -800,7 +801,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
                 innerSlide={innerSlide} currentFoldCheck={currentFoldCheck}
               />
               <AdvancedSettings globalFit={globalFit} updateGlobalFit={updateGlobalFit} options={options} updateOptions={updateOptions}
-                showHinge={showHinge} setShowHinge={setShowHinge} include69={include69} patchActive={patchActive} setZipUrl={setZipUrl}
+                showHinge={showHinge} setShowHinge={setShowHinge} include63={include63} include69={include69} patchActive={patchActive} setZipUrl={setZipUrl}
                 billing={billing} setPaywall={openUpgrade} cloneLabel={cloneLabel} assumeClone={assumeClone} setAssumeClone={setAssumeClone}
               />
             </> : null}

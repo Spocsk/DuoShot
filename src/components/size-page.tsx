@@ -31,15 +31,15 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         {size === "2007x2853" && <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: screenshotDimensions(copy.portrait) })}</p>}
       </section>
       <section className="mt-10">
-        <h2 className="font-display text-3xl">{t("size_slot_heading")}</h2>
-        <p className="mt-4">{t("specs_single_slot")}</p>
+        <h2 className="font-display text-3xl">{t(size === "1206x2622" ? "specs_required_iphone_sizes" : "size_slot_heading")}</h2>
+        <p className="mt-4">{t(size === "1206x2622" ? "specs_iphone_63_body" : "specs_single_slot")}</p>
         <a href={APPLE_SCREENSHOT_SOURCE} className="ds-link mt-4 inline-block">{t("specs_read_connect_specifications")}</a>
       </section>
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t("size_related_heading")}</h2>
         <ul className="mt-4 space-y-3">
           <li><Link href={localizedPath(locale, "/specs")} className="ds-link">{t("specs_iphone_duo_screenshot_sizes")}</Link></li>
-          <li><Link href={localizedPath(locale, `/${copy.related}`)} className="ds-link">{sizePageCopy(locale, copy.related).title}</Link></li>
+          {copy.related.map((related) => <li key={related}><Link href={localizedPath(locale, `/${related}`)} className="ds-link">{sizePageCopy(locale, related).title}</Link></li>)}
         </ul>
       </section>
       <Button as="link" variant="primary" href={toolPath(locale)} className="mt-8">{t("specs_prepare_screenshots")}</Button>

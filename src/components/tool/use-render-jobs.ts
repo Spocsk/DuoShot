@@ -42,6 +42,7 @@ export type RenderJobsContext = {
   duoSelection: DuoSelection;
   sameSet: boolean;
   cloneForced: boolean;
+  include63: boolean;
   include69: boolean;
   assumeClone: boolean;
   severeQualityCount: number;
@@ -64,7 +65,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
     setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
     zipUrl, setZipUrl, patchActive, outerFiles, innerFiles, effectiveInner, sameSet,
-    cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
+    cloneForced, include63, include69, assumeClone, severeQualityCount, qualityAcknowledged,
     orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
   } = ctx;
   const [zipName, setZipName] = useState("app.zip");
@@ -197,6 +198,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
           sameSet: cloneForced,
           appName: appNameOf(active),
           clientName: active?.clientName || "",
+          include63,
           include69,
           assumeCloneRisk: assumeClone,
           options: renderOptions,

@@ -30,7 +30,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article }: Pa
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
         offers: [
-          { "@type": "Offer", name: `${getTranslator(locale).t("pricing_trial_title")} · ${FREE_EXPORTS} exports`, price: "0", priceCurrency: "EUR" },
+          { "@type": "Offer", name: `${getTranslator(locale).t("pricing_trial_title")} · ${FREE_EXPORTS} exports`, description: getTranslator(locale).tf("pricing_trial_body", { exports: FREE_EXPORTS }), price: "0", priceCurrency: "EUR" },
           ...Object.entries(CHECKOUT_CATALOG).map(([kind, offer]) => ({
             "@type": "Offer", name: offer.name, url: absoluteUrl(pricingPath(locale)),
             price: String(offer.amountCents / 100), priceCurrency: "EUR",

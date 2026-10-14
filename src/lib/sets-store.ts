@@ -17,6 +17,7 @@ export type SetMeta = {
   fitMode?: FitMode;
   renderOptions?: Partial<RenderOptions>;
   include69?: boolean;
+  include63?: boolean;
   transforms?: CropTransforms;
   lastReviewId?: string | null;
   lastReviewStatus?: string | null;

@@ -258,11 +258,13 @@ describe("screenshot dimensions and search intent", () => {
         .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested")
         .and("contain", locale === "fr" ? "avril 2027" : "April 2027")
         .and("contain", locale === "fr" ? "SDK iOS 27.1 ou ultérieur" : "for apps built with the iOS 27.1 SDK or later");
-      cy.get("table").first().find("tbody tr").should("have.length", 4);
+      cy.get('section[aria-labelledby="iphone-63-sizes"] table').find("tbody tr").should("have.length", 2);
+      cy.get('section[aria-labelledby="iphone-63-sizes"] table').should("contain", "1206 × 2622").and("contain", "2622 × 1206");
+      cy.get('section[aria-labelledby="duo-sizes"] table').find("tbody tr").should("have.length", 4);
       for (const size of ["1398 × 2034", "2034 × 1398", "2007 × 2853", "2853 × 2007"]) {
-        cy.get("table").first().should("contain", size);
+        cy.get('section[aria-labelledby="duo-sizes"] table').should("contain", size);
       }
-      cy.get("table").first().should("not.contain", "Indie").and("not.contain", "6.9");
+      cy.get('section[aria-labelledby="duo-sizes"] table').should("not.contain", "Indie").and("not.contain", "6.9");
       cy.get("#panel-vs-connect").parent().should("contain", "1878 × 2670").and("contain", "2007 × 2853");
       cy.get('[data-testid="specs-cta-tool"]').should("have.attr", "href", `${prefix}/tool`);
       cy.document().then((doc) => {
@@ -285,7 +287,8 @@ describe("screenshot dimensions and search intent", () => {
       cy.request(`${prefix}/specs`).then(({ body }) => {
         const doc = new DOMParser().parseFromString(body, "text/html");
         expect(doc.querySelector("h1")!.textContent!.replace(/\u00a0/g, " ")).to.contain("App Store Connect");
-        expect(doc.title).to.contain("1398×2034").and.to.contain("2007×2853");
+        expect(doc.title).to.contain("1398×2034").and.to.contain("2007×2853").and.to.contain("1206×2622");
+        expect(doc.title.length).to.be.at.most(65);
         expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.contain("2007 × 2853");
         const image = doc.querySelector('meta[property="og:image"]')!.getAttribute("content")!;
         expect(doc.querySelector('meta[name="twitter:image"]')!.getAttribute("content")).to.eq(image);
@@ -298,7 +301,10 @@ describe("screenshot dimensions and search intent", () => {
         expect(doc.querySelector('link[hreflang="en"]')!.getAttribute("href")).to.match(/\/en\/specs$/);
         expect(doc.querySelector('link[hreflang="fr"]')!.getAttribute("href")).to.match(/\/specs$/);
         for (const size of ["1398 × 2034", "2034 × 1398", "2007 × 2853", "2853 × 2007"]) {
-          expect(doc.querySelector("table")!.textContent).to.contain(size);
+          expect(doc.querySelector('section[aria-labelledby="duo-sizes"] table')!.textContent).to.contain(size);
+        }
+        for (const size of ["1206 × 2622", "2622 × 1206"]) {
+          expect(doc.querySelector('section[aria-labelledby="iphone-63-sizes"] table')!.textContent).to.contain(size);
         }
       });
       visit(locale === "fr" ? "/rejet" : "/en/rejection");

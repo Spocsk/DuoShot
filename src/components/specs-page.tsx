@@ -56,9 +56,14 @@ export function SpecsPage({ locale }: { locale: Locale }) {
         </p>
         <p className="mt-4 text-lg">{t("specs_single_slot")}</p>
         <AppleAvailability locale={locale} />
+        <section className="mt-10" aria-labelledby="iphone-63-sizes">
+          <h2 id="iphone-63-sizes" className="font-display text-3xl">{t("specs_required_iphone_sizes")}</h2>
+          <p className="mt-4 text-[var(--muted)]">{t("specs_iphone_63_body")}</p>
+          <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot === "iphone-63")} caption={t("specs_iphone_6_3_inch")} />
+        </section>
         <section className="mt-10" aria-labelledby="duo-sizes">
           <h2 id="duo-sizes" className="font-display text-3xl">{t("specs_screenshot_dimensions_outer_inner")}</h2>
-          <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot !== "iphone-69")} caption={t("specs_iphone_duo_portrait_landscape")} />
+          <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot === "duo-outer" || spec.slot === "duo-inner")} caption={t("specs_iphone_duo_portrait_landscape")} />
           <p className="mt-4 text-sm text-[var(--muted)]">{t("specs_png_jpeg_without_alpha")}{" "}<a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{t("specs_read_connect_specifications")}</a></p>
         </section>
         <section className="mt-10" aria-labelledby="size-guides">

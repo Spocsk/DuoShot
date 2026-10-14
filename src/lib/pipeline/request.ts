@@ -10,6 +10,7 @@ export type RenderBody = {
   appName?: string;
   clientName?: string;
   sameSet?: boolean;
+  include63?: boolean;
   include69?: boolean;
   assumeCloneRisk?: boolean;
   orientation?: "portrait" | "landscape";
@@ -34,7 +35,7 @@ export function parseRenderBody(value: unknown, userId: string): RenderBody {
       throw new Error("PATH_FORBIDDEN");
     }
   }
-  for (const key of ["sameSet", "include69", "assumeCloneRisk"] as const) {
+  for (const key of ["sameSet", "include63", "include69", "assumeCloneRisk"] as const) {
     if (value[key] !== undefined && typeof value[key] !== "boolean") throw new Error("INVALID_REQUEST");
   }
   for (const key of ["appName", "clientName"] as const) {

@@ -120,6 +120,17 @@ describe("enqueueRender", () => {
     expect(allowed.status).toBe(202);
   });
 
+  it("enqueues 6.3-inch exports on the free trial and preserves the worker payload", async () => {
+    const payload = { ...PAIR, include63: true, include69: false };
+    const response = await enqueueRender(request(payload), userClient(FREE_WS), USER_ID, "export");
+    expect(response.status).toBe(202);
+    expect(rpc).toHaveBeenCalledWith("enqueue_render", expect.objectContaining({ p_payload: payload }));
+    rpc.mockClear();
+    const gated = await enqueueRender(request({ ...payload, include69: true }), userClient(FREE_WS), USER_ID, "export");
+    expect(await readJson(gated)).toEqual({ status: 403, body: { error: "IPHONE_69_GATED" } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("returns 503 without an admin client", async () => {
     vi.mocked(createAdminSupabase).mockReturnValue(null);
     const { status, body } = await readJson(await enqueueRender(request(PAIR), userClient(), USER_ID, "export"));

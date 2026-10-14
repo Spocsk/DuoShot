@@ -24,11 +24,26 @@ describe("GET /llms.txt", () => {
     expect(body).toContain("Specs version: 2026-10-13");
     expect(body).toContain('Duo outer 5.4" portrait: 1398x2034');
     expect(body).toContain('Duo inner 7.6" landscape: 2853x2007');
+    expect(body).toContain('iPhone 6.3" portrait: 1206x2622');
+    expect(body).toContain('iPhone 6.3" landscape: 2622x1206');
     for (const [width, height] of [[1320, 2868], [1290, 2796], [1260, 2736]]) {
       expect(body).toContain(`iPhone 6.9" portrait: ${width}x${height}`);
       expect(body).toContain(`iPhone 6.9" landscape: ${height}x${width}`);
     }
     expect(body).not.toContain('6.9" 6.9"');
+    expect(body).not.toContain('6.3" 6.3"');
+  });
+
+  it("documents the required free-trial size, accepted alternatives, and optional paid size", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
+    const body = await GET().text();
+    expect(body).toContain('Required 6.3" iPhone sizes: https://duoshot.site/1206x2622 (EN: https://duoshot.site/en/1206x2622)');
+    expect(body).toContain('iPhone 6.3" portrait alternative accepted by App Store Connect: 1179x2556');
+    expect(body).toContain('iPhone 6.3" landscape alternative accepted by App Store Connect: 2556x1179');
+    expect(body).toContain('App Store Connect requires 6.3" iPhone screenshots');
+    expect(body).toContain('included in the free trial');
+    expect(body).toContain('1179x2556 alternative is not a DuoShot export preset');
+    expect(body).toContain('Optional 6.9" sizes are Indie / Studio');
   });
 
   it("preserves the single slot contract and untested uploads alongside the qualified deadline", async () => {

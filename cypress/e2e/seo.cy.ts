@@ -42,17 +42,26 @@ describe("SEO screenshot pages", () => {
       cy.location("pathname").should("eq", `${prefix}/1398x2034`);
       cy.get(`main a[href="${prefix}/2007x2853"]`).click();
       cy.location("pathname").should("eq", `${prefix}/2007x2853`);
+      cy.get(`main a[href="${prefix}/1206x2622"]`).click();
+      cy.location("pathname").should("eq", `${prefix}/1206x2622`);
       cy.get(`main a[href="${prefix}/specs"]`).should("exist");
     });
 
     for (const [size, portrait, landscape] of [
       ["1398x2034", "1398 × 2034", "2034 × 1398"],
       ["2007x2853", "2007 × 2853", "2853 × 2007"],
+      ["1206x2622", "1206 × 2622", "2622 × 1206"],
     ]) {
       it(`serves ${prefix}/${size} with an article, unique metadata and sitemap entry`, () => {
         visit(`${prefix}/${size}`);
         cy.get("h1").should("contain", size);
         cy.get("main").should("contain", portrait).and("contain", landscape);
+        cy.contains("main a", locale === "en" ? "Prepare your screenshots" : "Préparer vos captures")
+          .should("have.attr", "href", `${prefix}/tool`);
+        cy.get(`main a[href="${prefix}/specs"]`).should("exist");
+        for (const related of ["1398x2034", "2007x2853", "1206x2622"].filter((related) => related !== size)) {
+          cy.get(`main a[href="${prefix}/${related}"]`).should("exist");
+        }
         cy.document().then((doc) => {
           const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href");
           expect(doc.title).to.contain(size);

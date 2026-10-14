@@ -87,6 +87,10 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(html).toContain(locale === "fr" ? "Pass 45 jours — 29 €" : "45-day pass — €29");
     expect(html).not.toMatch(/\{(?:exports|dailyCap|seats|days|price|months)\}/);
     expect(html).not.toContain('class="studio-plan-local"');
+    const row63 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(getTranslator(locale).t("pricing_feat_63")));
+    expect(row63).toBeDefined();
+    expect(row63!.match(/>Yes<|>Oui</g)).toHaveLength(4);
+    expect(html).toContain(locale === "fr" ? "Tailles 6,9″ optionnelles" : "Optional 6.9″ sizes");
   });
 
   it("keeps configured prices and the shared Studio benefits in the FAQ and metadata", async () => {

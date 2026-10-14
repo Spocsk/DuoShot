@@ -32,6 +32,7 @@ export const ASC_EDITABLE_VERSION_STATES = [
 export const ASC_DISPLAY_TYPES: Record<DeviceSlot, string | null> = {
   "duo-outer": "APP_IPHONE_DUO",
   "duo-inner": "APP_IPHONE_DUO",
+  "iphone-63": null,
   "iphone-69": "APP_IPHONE_67",
 };
 
