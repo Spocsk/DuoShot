@@ -78,6 +78,10 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           <p className="mt-3 text-[var(--muted)]">{tf("specs_outer_display_panel_portrait", { outerPortrait: OUTER_PORTRAIT })}</p>
           <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm"><a className="ds-link" href={APPLE_DEVICE_SOURCE}>{tf("specs_apple_tech_specs_displays", { outerSize, innerSize })}</a><a className="ds-link" href={APPLE_SCREENSHOT_SOURCE}>{t("specs_apple_connect_screenshot_dimensions")}</a></p>
         </section>
+        <section className="mt-12" aria-labelledby="safe-area-fold">
+          <h2 id="safe-area-fold" className="font-display text-3xl">{t("specs_fold_heading")}</h2>
+          <p className="mt-4 text-[var(--muted)]">{t("specs_fold_body")}</p>
+        </section>
         <section className="mt-12" aria-labelledby="iphone-69-sizes">
           <h2 id="iphone-69-sizes" className="font-display text-3xl">{tf("specs_additional_iphone_sizes", { size69 })}</h2>
           <p className="mt-4 text-[var(--muted)]">{t("specs_iphone_69_body")}</p>

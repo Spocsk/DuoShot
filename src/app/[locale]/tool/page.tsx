@@ -2,16 +2,12 @@ import { ToolApp } from "@/components/tool-app";
 import { MessagesScope } from "@/components/messages-scope";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { pageMetadata } from "@/lib/seo";
+import { TOOL_PAGE_COPY } from "@/lib/marketing-copy";
 import { pageLocale, type LocaleParams } from "../params";
-
-const COPY = {
-  fr: { title: "Outil", description: "Composez vos captures Duo : import, double aperçu, ZIP." },
-  en: { title: "Tool", description: "Compose Duo screenshots: drop, dual preview, ZIP." },
-};
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await pageLocale(params);
-  return pageMetadata({ locale, path: "/tool", ...COPY[locale] });
+  return pageMetadata({ locale, path: "/tool", ...TOOL_PAGE_COPY[locale] });
 }
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,5 @@
 import { getTranslator } from "./i18n";
 import { SIZE_SPECS, type Locale } from "./specs";
-import { INNER_PORTRAIT, OUTER_PORTRAIT } from "./screenshot-copy";
 
 export const SCREENSHOT_SIZES = ["1398x2034", "2007x2853", "1206x2622", "1320x2868"] as const;
 export type ScreenshotSize = typeof SCREENSHOT_SIZES[number];
@@ -23,11 +22,11 @@ export function sizePageCopy(locale: Locale, size: ScreenshotSize) {
 
 export const SPECS_PAGE_COPY = {
   fr: {
-    title: "Captures iPhone Duo 1398×2034, 2007×2853, 1206×2622",
-    description: `App Store Connect : iPhone 6,3″ requis, 1206×2622 ou 1179×2556 px ; 6,9″ optionnel, 1320×2868 px avec Indie et Studio. Duo : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px, un seul emplacement.`,
+    title: "Tailles des captures iPhone Duo et zone du pli",
+    description: "Tailles des captures iPhone Duo et repères du pli. App Store Connect : iPhone 6,3″ requis, 6,9″ optionnel. Dépôt Duo non testé.",
   },
   en: {
-    title: "iPhone Duo sizes: 1398×2034, 2007×2853, 1206×2622",
-    description: `App Store Connect: required 6.3″ iPhone, 1206×2622 or 1179×2556 px; optional 6.9″, 1320×2868 px with Indie and Studio. Duo: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px, one slot.`,
+    title: "iPhone Duo screenshot size, safe area & fold",
+    description: "Check iPhone Duo screenshot sizes and fold guides. App Store Connect requires 6.3″ iPhone screenshots; 6.9″ is optional. Duo uploads remain untested.",
   },
 };

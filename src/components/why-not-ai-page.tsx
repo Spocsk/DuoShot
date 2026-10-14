@@ -1,9 +1,10 @@
 
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
-import { localePrefix } from "@/lib/site";
+import { localePrefix, localizedPath } from "@/lib/site";
 
 const COLS = ["alpha", "clone", "hinge", "zip"] as const;
 
@@ -28,6 +29,7 @@ export function WhyNotAiPage({ locale }: { locale: Locale }) {
               <h2 className="font-display text-3xl">{t(`ai_${key}_title`)}</h2>
               <p className="mt-3 text-[var(--muted)]">{t(`ai_${key}_ai`)}</p>
               <p className="mt-2">{t(`ai_${key}_us`)}</p>
+              {key === "hinge" && <Link href={localizedPath(locale, "/specs")} className="ds-link mt-4 inline-block">{t("why_specs_link")}</Link>}
             </section>
           ))}
         </div>

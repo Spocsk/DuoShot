@@ -15,6 +15,14 @@ import { generateMetadata as innerMetadata } from "@/app/[locale]/2007x2853/page
 import { generateMetadata as iphone63Metadata } from "@/app/[locale]/1206x2622/page";
 import { generateImageMetadata as iphone63ImageMetadata, generateStaticParams as iphone63ImageParams } from "@/app/[locale]/1206x2622/opengraph-image";
 import { generateMetadata as iphone69Metadata } from "@/app/[locale]/1320x2868/page";
+import { generateMetadata as homeMetadata } from "@/app/[locale]/page";
+import { generateMetadata as pricingMetadata } from "@/app/[locale]/pricing/page";
+import { generateMetadata as toolMetadata } from "@/app/[locale]/tool/page";
+import { generateMetadata as whyFrMetadata } from "@/app/[locale]/pourquoi-pas-ia/page";
+import { generateMetadata as whyEnMetadata } from "@/app/[locale]/why-not-ai/page";
+import { generateMetadata as rejectionFrMetadata } from "@/app/[locale]/rejet/page";
+import { generateMetadata as rejectionEnMetadata } from "@/app/[locale]/rejection/page";
+import { HOME_PAGE_COPY, PRICING_PAGE_COPY } from "./marketing-copy";
 import { generateImageMetadata as iphone69ImageMetadata, generateStaticParams as iphone69ImageParams } from "@/app/[locale]/1320x2868/opengraph-image";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -68,15 +76,38 @@ describe("public routes and crawler metadata", () => {
   });
 
   for (const locale of ["fr", "en"] as const) {
-    it(`keeps screenshot dimensions in concise specs search and social titles in ${locale}`, async () => {
+    it(`gives specs the general size and fold intent in ${locale}`, async () => {
       const metadata = await specsMetadata({ params: Promise.resolve({ locale }) });
       const title = `${metadata.title} · DuoShot`;
-      for (const size of ["1398×2034", "2007×2853", "1206×2622"]) {
-        expect(title).toContain(size);
-      }
-      expect(title.length).toBeLessThanOrEqual(65);
+      expect(title).toContain(locale === "fr" ? "Tailles des captures iPhone Duo" : "iPhone Duo screenshot size");
+      expect(title).toContain(locale === "fr" ? "pli" : "fold");
+      expect(title).not.toMatch(/1398|2007|1206|1320/);
+      expect(title.length).toBeLessThanOrEqual(60);
       expect(metadata.openGraph?.title).toBe(title);
       expect(metadata.twitter?.title).toBe(title);
+    });
+
+    it(`keeps all edited search and social metadata concise, synchronized and distinct in ${locale}`, async () => {
+      const titles = new Set();
+      const descriptions = new Set();
+      for (const generateMetadata of [
+        homeMetadata, specsMetadata, pricingMetadata, toolMetadata,
+        outerMetadata, innerMetadata, iphone63Metadata, iphone69Metadata,
+        locale === "fr" ? whyFrMetadata : whyEnMetadata,
+        locale === "fr" ? rejectionFrMetadata : rejectionEnMetadata,
+      ]) {
+        const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
+        // Include the document layout's brand suffix when measuring <title>.
+        const title = typeof metadata.title === "string" ? `${metadata.title} · DuoShot` : (metadata.title as { absolute: string }).absolute;
+        expect(title.length, title).toBeLessThanOrEqual(60);
+        expect(metadata.description?.length, title).toBeLessThanOrEqual(155);
+        expect(metadata.openGraph).toMatchObject({ title, description: metadata.description });
+        expect(metadata.twitter).toMatchObject({ title, description: metadata.description });
+        titles.add(title);
+        descriptions.add(metadata.description);
+      }
+      expect(titles.size).toBe(10);
+      expect(descriptions.size).toBe(10);
     });
 
     it(`gives specs and all size pages distinct metadata and sitemap entries in ${locale}`, async () => {
@@ -185,7 +216,21 @@ describe("page-specific structured data", () => {
     expect(optionalArticle.description).toContain("Studio");
     expect(optionalArticle.portrait).toMatchObject({ slot: "iphone-69", width: 1320, height: 2868, gated: "indie-studio" });
     expect(optionalArticle.landscape).toMatchObject({ slot: "iphone-69", width: 2868, height: 1320, gated: "indie-studio" });
-    expect(SPECS_PAGE_COPY[locale].description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
+    expect(SPECS_PAGE_COPY[locale].description).toContain(locale === "fr" ? "6,9″ optionnel" : "6.9″ is optional");
+  });
+
+  it("matches home and pricing software descriptions to their page metadata", async () => {
+    for (const locale of ["fr", "en"] as const) {
+      for (const [path, copy, generateMetadata] of [
+        ["/", HOME_PAGE_COPY[locale], homeMetadata],
+        ["/pricing", PRICING_PAGE_COPY[locale], pricingMetadata],
+      ] as const) {
+        const app = jsonLdGraph(locale, { path, software: true })["@graph"].find((node) => "offers" in node);
+        const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
+        expect(app?.description).toBe(copy.description);
+        expect(app?.description).toBe(metadata.description);
+      }
+    }
   });
 
   it.each([undefined, "", "   ", "price_pass30"])("includes the 19 EUR 30-day pass only with a nonempty price ID (%s)", (priceId) => {

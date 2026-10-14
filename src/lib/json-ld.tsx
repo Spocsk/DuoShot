@@ -4,6 +4,7 @@ import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, absoluteUrl, 
 import type { Locale } from "./specs";
 import type { FaqItem } from "./screenshot-copy";
 import { APPLE_SCREENSHOT_SOURCE } from "./apple-screenshot-status";
+import { PRICING_PAGE_COPY } from "./marketing-copy";
 
 export type PageSchema = {
   path: string;
@@ -46,7 +47,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article }: Pa
             priceSpecification: { "@type": "UnitPriceSpecification", price: String(PASS30.priceEur), priceCurrency: "EUR", billingDuration: `P${PASS30.days}D` },
           }] : []),
         ],
-        description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
+        description: localizedPath("fr", path) === "/pricing" ? PRICING_PAGE_COPY[locale].description : locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
         url,
       }] : []),
       ...(article ? [{

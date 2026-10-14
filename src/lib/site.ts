@@ -1,13 +1,12 @@
 import type { Locale } from "./specs";
-import { OUTER_PORTRAIT, INNER_PORTRAIT } from "./screenshot-copy";
 import { publicEnv } from "./env-public";
 
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
 export const SITE_PITCH_FR =
-  `Préparez vos captures iPhone Duo pour App Store Connect : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px en portrait, export PNG/JPEG opaque. iPhone 6,3″ requis, inclus dans l’essai gratuit ; 6,9″ optionnel avec Indie et Studio.`;
+  "Créez vos captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit avec le 6,3″ requis ; 6,9″ optionnel avec Indie et Studio.";
 export const SITE_PITCH_EN =
-  `Prepare iPhone Duo screenshots for App Store Connect: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px in portrait, with opaque PNG/JPEG export. Required 6.3″ iPhone screenshots are included in the free trial; 6.9″ is optional with Indie and Studio.`;
+  "Create iPhone Duo App Store screenshots as opaque PNG/JPEG. Free trial with required 6.3″; optional 6.9″ with Indie and Studio.";
 
 export function getSiteUrl(): string {
   const explicit = publicEnv.siteUrl;
