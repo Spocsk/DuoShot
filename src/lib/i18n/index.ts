@@ -48,4 +48,4 @@ export function getTranslator(locale: Locale): Translator {
 
 export { createTranslator } from "./core";
 export type { MessageKey, MessageVars, Messages, PluralKey, Translator } from "./types";
-export { FAQ } from "./faq";
+export { FAQ, getFaq } from "./faq";

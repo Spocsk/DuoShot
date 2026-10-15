@@ -64,12 +64,14 @@ describe("GET /llms.txt", () => {
 
   it("mirrors the pricing page's one-time pass wording and price", async () => {
     vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
-    expect(await GET().text()).toContain("Pass 30 jours: 19 € une fois. Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.");
+    const body = await GET().text();
+    expect(body).toContain("Pass 30 jours: 19 € une fois. Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.");
+    expect(body).toContain('Optional 6.9" sizes are Pass / Indie / Studio');
   });
 
   it("hides the pass when checkout is disabled, even with a configured price", async () => {
     vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
     vi.stubEnv("STRIPE_CHECKOUT_ENABLED", "false");
-    expect(await GET().text()).not.toContain("Pass 30 jours");
+    expect(await GET().text()).not.toContain("Pass");
   });
 });

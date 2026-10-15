@@ -1,5 +1,6 @@
-import { PLANS } from "./plans";
+import { PASS30, PLANS, pass30PriceId } from "./plans";
 import { SITE_PITCH_EN, SITE_PITCH_FR } from "./site";
+import type { Locale } from "./specs";
 
 export const HOME_PAGE_COPY = {
   fr: { title: "Générateur de captures App Store pour iPhone Duo", description: SITE_PITCH_FR },
@@ -16,6 +17,18 @@ export const PRICING_PAGE_COPY = {
     description: `Free trial with ${PLANS.free.freeExports} exports and required 6.3″. Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; client reviews with Studio.`,
   },
 };
+
+/** As with structured offers, omit the Pass when its Stripe price is absent. */
+export function pricingPageCopy(locale: Locale) {
+  const copy = PRICING_PAGE_COPY[locale];
+  if (!pass30PriceId()?.trim()) return copy;
+  return {
+    ...copy,
+    description: locale === "fr"
+      ? `Essai gratuit avec ${PLANS.free.freeExports} exports et 6,3″ requis. Pass ${PASS30.priceEur} €/${PASS30.days} j, Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ inclus ; revue client Studio.`
+      : `Free trial with ${PLANS.free.freeExports} exports and required 6.3″. Pass €${PASS30.priceEur}/${PASS30.days} days, Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; Studio client reviews.`,
+  };
+}
 
 export const TOOL_PAGE_COPY = {
   fr: {

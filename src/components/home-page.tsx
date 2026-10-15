@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { FaqList } from "@/components/faq-list";
 import { getTranslator } from "@/lib/i18n";
-import { FAQ } from "@/lib/i18n";
+import { getFaq } from "@/lib/i18n";
 import { duoSpec, formatInches, type Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
@@ -94,8 +94,6 @@ function ProofSection({ locale }: { locale: Locale }) {
       </div>
     </div>
     <div className="studio-proof-actions">
-      {/* A file download from an API route, not a page: the rule reads app/[locale] as matching every path. */}
-      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <Button as="a" variant="secondary" href="/api/example-zip?v=4" data-testid="cta-example" >{t("cta_example")}</Button>
       <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo-proof" className="studio-inline-link">
         {t("home_see_example")} <span aria-hidden="true">↗</span>
@@ -211,10 +209,11 @@ function SequenceSection({ locale }: { locale: Locale }) {
 export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale: Locale; checkoutAvailable: boolean; passAvailable: boolean }) {
   const { t } = getTranslator(locale);
   const prefix = localePrefix(locale);
+  const faq = getFaq(locale, passAvailable);
 
   return (
     <div className="studio-home flex min-h-full flex-col">
-      <JsonLd locale={locale} path="/" software faq={FAQ[locale]} />
+      <JsonLd locale={locale} path="/" software faq={faq} />
       <SiteHeader locale={locale} path="/" />
       <LandingMotion>
         <main id="main">
@@ -226,7 +225,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
                 <span>{t("home_exact_app_store_sizes")}</span>
               </h1>
               <p className="studio-hero-lead">
-                {t("home_import_closed_open_captures")}
+                {t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass")}
               </p>
               <div className="studio-hero-actions">
                 <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool" >
@@ -306,7 +305,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
 
           <section className="studio-faq" data-reveal>
             <h2>{t("faq_title")}</h2>
-            <FaqList items={FAQ[locale]} />
+            <FaqList items={faq} />
             <TrustLine locale={locale} />
             <div className="mt-8">
               <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool-closing" >

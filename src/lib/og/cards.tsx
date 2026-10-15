@@ -10,6 +10,7 @@ import { HARBOR_SCREEN, OG } from "./theme";
 export type OgPage =
   | "home"
   | "specs"
+  | "comparison-guide"
   | "iphone-69"
   | "rejection"
   | "pricing"
@@ -28,6 +29,10 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
+  "comparison-guide": {
+    fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },
+    en: { eyebrow: "Guide · 2026 comparison", title: "App Store screenshot generators", lead: "Five tools compared: prices, sizes and export.", alt: "2026 App Store screenshot generator comparison: AppScreens, AppLaunchFlow, SnapMonk, Screenpane and DuoShot." },
+  },
   home: {
     fr: { eyebrow: "iPhone Duo · App Store Connect", title: "Captures iPhone Duo.\nAux dimensions App Store.", alt: `DuoShot : captures iPhone Duo aux dimensions App Store, ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px.` },
     en: { eyebrow: "iPhone Duo · App Store Connect", title: "iPhone Duo screenshots.\nExact App Store sizes.", alt: `DuoShot: iPhone Duo screenshots at exact App Store sizes, ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px.` },
@@ -41,8 +46,8 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
     en: { eyebrow: "Checks", title: "Screenshots rejected? Dimensions and alpha.", alt: "DuoShot preparation report: dimensions checked, alpha channel flattened, opaque PNG." },
   },
   "iphone-69": {
-    fr: { eyebrow: "Dimensions · iPhone 6,9″", title: "Captures iPhone\n1320 × 2868", lead: "Optionnel dans App Store Connect.\nExport avec Indie et Studio.", alt: "Captures iPhone 6,9 pouces : 1320 × 2868 px en portrait, 2868 × 1320 px en paysage. Optionnelles dans App Store Connect, export DuoShot avec Indie et Studio." },
-    en: { eyebrow: "Dimensions · iPhone 6.9″", title: "iPhone screenshots\n1320 × 2868", lead: "Optional in App Store Connect.\nExport with Indie and Studio.", alt: "6.9-inch iPhone screenshots: 1320 × 2868 px portrait, 2868 × 1320 px landscape. Optional in App Store Connect, DuoShot export with Indie and Studio." },
+    fr: { eyebrow: "Dimensions · iPhone 6,9″", title: "Captures iPhone\n1320 × 2868", lead: "Optionnel dans App Store Connect.\nExport avec Pass, Indie et Studio.", alt: "Captures iPhone 6,9 pouces : 1320 × 2868 px en portrait, 2868 × 1320 px en paysage. Optionnelles dans App Store Connect, export DuoShot avec Pass, Indie et Studio." },
+    en: { eyebrow: "Dimensions · iPhone 6.9″", title: "iPhone screenshots\n1320 × 2868", lead: "Optional in App Store Connect.\nExport with Pass, Indie and Studio.", alt: "6.9-inch iPhone screenshots: 1320 × 2868 px portrait, 2868 × 1320 px landscape. Optional in App Store Connect, DuoShot export with Pass, Indie and Studio." },
   },
   pricing: {
     fr: { eyebrow: "Tarifs", title: "Essai gratuit, Indie, Studio.", lead: `Commencez sans carte. ${PLANS.free.freeExports} exports HD offerts.`, alt: `Tarifs DuoShot : Essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },
@@ -370,6 +375,7 @@ function PairArt({ locale }: { locale: Locale }) {
 }
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
+  "comparison-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,
   "iphone-69": Iphone69Art,
