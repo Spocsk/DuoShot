@@ -28,11 +28,11 @@ All sizes in one place: [/en/specs](/en/specs).
 |---|---|---|---|---|---|
 | Type | Web editor | Web launch suite | AI web generator + ASO | Mac app (macOS 15+) | Web, Duo-focused |
 | Free tier | Yes: 1 project, up to 5 screens, essential sizes | Yes, but preview only (no full-resolution downloads) | "Free to try" on homepage; no free plan on pricing page | 14-day full trial, no card | 2 HD exports, no card, includes 6.3″ |
-| Paid price | Pro $99/year ($8.25/mo); Scale $180/year | Launch Pass €9 once (7 days); Unlimited €15/mo or €99/yr | $12/mo (Starter, $144/yr); Pro $230/yr; Max $566/yr | £29 once or £7/month | Pass €19 once (30 days); Indie €12/mo or €120/yr; Studio €49/mo or €490/yr |
+| Paid price | Pro $99/year ($8.25/mo); Scale $180/year | Launch Pass €9 once (7 days); Unlimited €15/mo or €99/yr | Starter $12/month billed annually ($144/year); the monthly plan costs more and includes screenshots only ([source](https://snapmonk.com/pricing)); Pro $230/yr; Max $566/yr | £29 once or £7/month | Pass €19 once (30 days); Indie €12/mo or €120/yr; Studio €49/mo or €490/yr |
 | iPhone Duo (1398 × 2034, 2007 × 2853) | Listed as an iPhone size; subscription required | Yes, inner and outer canvases, fold and pose controls | Not stated | Yes, all four Duo sizes from one design | Yes, core focus |
 | 6.3″ 1206 × 2622 | Yes ("iPhone with Dynamic Island (medium)"), free | Not stated on pages checked | Not stated | "3 iPhone sizes"; exact list not stated | Yes, free trial |
 | AI | AI captions; AI restyling (Pro) | AI illustrations (1/mo free, 200/mo Unlimited) | AI renders, edits, review analysis (credits) | Translation with your own OpenAI key; agent control via MCP | None: rule-based checks |
-| Localization | 80+ languages (Pro) | Paid | Yes | 36 languages | Not stated / not a focus |
+| Localization | 80+ languages (Pro) | Paid | Yes | 36 languages | No translation |
 | Export / upload | Export; 1-click upload to App Store Connect and Google Play (Pro) | Bundle download; App Store Connect upload (paid) | HD exports; can send a test variant to App Store Connect | Export; upload to App Store Connect and Google Play | ZIP sorted by screen; **you upload manually** |
 | Pre-submission checks | Not stated | Advice to check files, no automated checks stated | Not stated | Live issue list (overflow, sample text, missing translations) | Dimensions/format, framing, similar screens, legibility near the fold |
 | Team / client | Scale: extended licence for client work | Not stated | 1 seat | Not stated | Studio: 3 seats + 7-day client review link |
@@ -57,7 +57,7 @@ Screenpane imports Simulator captures, exports all four Duo sizes from one desig
 
 ### DuoShot: focused on getting Duo submissions right
 
-DuoShot does one thing: turns your real app captures into Duo screenshots at the exact sizes (1398 × 2034 and 2007 × 2853), plus the required 6.3″ (1206 × 2622), as opaque PNG or JPEG in a ZIP sorted by screen. Before you submit, it checks dimensions and format, flags framing issues and screens that look too similar, and helps you review legibility near the fold. Studio adds a client review link. It does **not** upload to App Store Connect: you add the files to your listing yourself. It has no AI design or translation, and no Android. 6.9″ (1320 × 2868) comes with Indie and Studio.
+DuoShot does one thing: turns your real app captures into Duo screenshots at the exact sizes (1398 × 2034 and 2007 × 2853), plus the required 6.3″ (1206 × 2622), as opaque PNG or JPEG in a ZIP sorted by screen. Before you submit, it checks dimensions and format, flags framing issues and screens that look too similar, and helps you review legibility near the fold. Studio adds a client review link. It does **not** upload to App Store Connect: you add the files to your listing yourself. It has no AI design or translation, and no Android. 6.9″ (1320 × 2868, 1290 × 2796, 1260 × 2736) comes with Indie and Studio.
 
 ## Which one should you pick?
 
