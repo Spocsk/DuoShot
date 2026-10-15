@@ -83,6 +83,12 @@ describe("first-touch attribution", () => {
       },
     }).then((response) => {
       expect(response.headers["set-cookie"]).to.exist;
+      const setCookies = response.headers["set-cookie"];
+      const attributionCookie = (Array.isArray(setCookies) ? setCookies : [setCookies])
+        .find((header) => header?.startsWith("ds_attr="));
+      expect(attributionCookie).to.exist;
+      // Sans Domain, le cookie est host-only ; Cypress n'expose pas toujours hostOnly.
+      expect(attributionCookie).not.to.match(/(?:^|;)\s*domain\s*=/i);
       expect(response.headers["cache-control"]).to.contain("no-store");
     });
     cy.getCookie("ds_attr").should("exist").then((cookie) => {
@@ -91,7 +97,6 @@ describe("first-touch attribution", () => {
       });
       expect(cookie!.path).to.eq("/");
       expect(cookie!.httpOnly).to.eq(true);
-      expect(cookie!.hostOnly).to.eq(true);
       const original = cookie!;
       cy.visitEn("/en/pricing?utm_source=second");
       cy.getCookie("ds_attr").should((current) => {
