@@ -9,6 +9,7 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { toolPath } from "@/lib/site";
 import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
+import { captureAttribution } from "@/lib/attribution-client";
 
 export function PricingCta({
   locale,
@@ -39,6 +40,7 @@ export function PricingCta({
   const [error, setError] = useState<string | null>(null);
 
   async function onUpgrade() {
+    captureAttribution();
     setBusy(true);
     setError(null);
     try {

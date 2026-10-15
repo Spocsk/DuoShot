@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, IBM_Plex_Mono } from "next/font/google";
+import { AttributionCapture } from "@/components/attribution-capture";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getClientMessages } from "@/lib/i18n";
@@ -47,6 +49,9 @@ export function DocumentLayout({ children, locale }: { children: React.ReactNode
       <body className="min-h-full flex flex-col">
         <script id="duoshot-theme" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
+        <Suspense fallback={null}>
+          <AttributionCapture />
+        </Suspense>
         <I18nProvider locale={locale} messages={getClientMessages(locale, "site")}>
           {children}
           <AnalyticsProvider />

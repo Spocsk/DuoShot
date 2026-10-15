@@ -58,7 +58,7 @@ describe("proxy internal-route gate", () => {
 });
 
 describe("proxy first-touch attribution", () => {
-  it.each(["/", "/tool"])("captures attribution on landing %s, including locale redirects", async (path) => {
+  it.each(["/", "/tool", "/en/pricing"])("captures attribution on landing %s, including locale redirects", async (path) => {
     vi.stubEnv("NODE_ENV", "production");
     const response = await proxy(new NextRequest(`https://duoshot.site${path}?utm_source=GOOGLE&utm_content=Hero!`, {
       headers: { referer: "https://news.example/private?email=a@example.com" },

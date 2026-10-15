@@ -53,7 +53,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("POST /api/stripe/checkout", () => {
-  it.each(["indie_monthly", "pass30"])("propagates sanitized first-touch metadata to the session and payment/subscription for %s", async (kind) => {
+  it.each(["indie_monthly", "indie_yearly", "studio_monthly", "studio_yearly", "pass30"])("propagates sanitized first-touch metadata to the session and payment/subscription for %s", async (kind) => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
     vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
     const create = vi.fn().mockResolvedValue({ id: "cs_attr", url: "https://checkout.stripe.test/session" });
@@ -99,6 +99,27 @@ describe("POST /api/stripe/checkout", () => {
     expect(keys[2]).toMatch(/^duoshot-checkout-attempt-1-[a-f0-9]{12}$/);
     expect(keys[2]).not.toBe(keys[0]);
     expect(keys[3]).toBe("duoshot-checkout-attempt-1");
+  });
+
+  it.each([
+    ["pass30", "studio_yearly"], ["indie_yearly", "pass30"],
+  ])("keeps attribution on the reused %s attempt when %s was requested", async (selectedKind, requestedKind) => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+    vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({
+      rpc: (name, args) => attemptRpc(name, { ...(args as object), p_kind: selectedKind }),
+    }) as never);
+    const create = vi.fn().mockResolvedValue({ id: "cs_reused", url: "https://checkout.stripe.test/session" });
+    vi.mocked(getStripe).mockReturnValue({
+      subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
+      checkout: { sessions: { create } },
+    } as never);
+    const cookie = `ds_attr=${encodeURIComponent(JSON.stringify({ utm_source: "first", referrer: "news.example" }))}`;
+    expect((await POST(request(requestedKind, cookie))).status).toBe(200);
+    const metadata = { kind: selectedKind, workspace_id: "ws-1", utm_source: "first", referrer: "news.example" };
+    const params = create.mock.calls[0][0];
+    expect(params.metadata).toEqual(metadata);
+    expect(params[selectedKind === "pass30" ? "payment_intent_data" : "subscription_data"]).toEqual({ metadata });
   });
 
   it.each([undefined, "ds_attr=%E0%A4%A", "ds_attr={broken", "ds_attr=null", "ds_attr=%5B%5D"])("keeps checkout working without usable attribution (%s)", async (cookie) => {

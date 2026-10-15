@@ -3,6 +3,7 @@ import { localePrefix } from "./site";
 import type { Locale } from "./specs";
 import { trackProduct } from "./analytics-client";
 import type { MessageKey, Translator } from "./i18n/types";
+import { captureAttribution } from "./attribution-client";
 
 export { PRO_CHECKOUT_KIND };
 
@@ -22,6 +23,7 @@ class CheckoutError extends Error {}
 
 export async function startCheckout(kind: PurchaseKind, nextPath: string, t: Translator["t"]): Promise<void> {
   try {
+    captureAttribution();
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
