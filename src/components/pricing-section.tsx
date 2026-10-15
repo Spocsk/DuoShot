@@ -188,8 +188,8 @@ export function PricingSection({
     <section id="pricing" data-testid="pricing" className={`studio-pricing scroll-mt-24${compact ? " is-compact" : ""}`} data-reveal>
       <div className="studio-pricing-head">
         <div>
-          <Title>{t("pricing_title")}</Title>
-          <p className="studio-pricing-lead">{t("pricing_lead")}</p>
+          <Title>{t(passAvailable ? "pricing_title_with_pass" : "pricing_title")}</Title>
+          <p className="studio-pricing-lead">{t(passAvailable ? "pricing_lead" : "pricing_lead_without_pass")}</p>
           <p className="studio-pricing-free">{tf("pricing_free_body", { exports: PLANS.free.freeExports })}</p>
         </div>
         {!compact ? <div className="studio-billing-switch" role="group" aria-label={t("pricing_billing_period")}>

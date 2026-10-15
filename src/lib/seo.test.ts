@@ -246,6 +246,18 @@ describe("page-specific structured data", () => {
     }
   });
 
+  it.each(["", "price_pass30"])("keeps pricing metadata and structured descriptions aligned with Pass availability (%s)", async (priceId) => {
+    vi.stubEnv("STRIPE_PRICE_PASS30", priceId);
+    for (const locale of ["fr", "en"] as const) {
+      const metadata = await pricingMetadata({ params: Promise.resolve({ locale }) });
+      expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
+      expect(metadata.description!.length).toBeLessThanOrEqual(155);
+      expect(metadata.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
+      const app = jsonLdGraph(locale, { path: "/pricing", software: true })["@graph"].find((node) => "offers" in node);
+      expect(app?.description).toBe(metadata.description);
+    }
+  });
+
   it("escapes HTML in structured data while preserving the JSON content", () => {
     const script = JsonLd({ locale: "en", path: "/", faq: [{ q: "</script><script>alert(1)</script>", a: "Safe text" }] });
     const serialized = script.props.dangerouslySetInnerHTML.__html;

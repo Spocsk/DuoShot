@@ -4,9 +4,9 @@ import { publicEnv } from "./env-public";
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
 export const SITE_PITCH_FR =
-  "Créez vos captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit avec le 6,3″ requis ; 6,9″ optionnel avec Indie et Studio.";
+  "Créez vos captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit avec le 6,3″ requis ; 6,9″ optionnel avec Pass, Indie et Studio.";
 export const SITE_PITCH_EN =
-  "Create iPhone Duo App Store screenshots as opaque PNG/JPEG. Free trial with required 6.3″; optional 6.9″ with Indie and Studio.";
+  "Create iPhone Duo App Store screenshots as opaque PNG/JPEG. Free trial with required 6.3″; optional 6.9″ with Pass, Indie and Studio.";
 
 export function getSiteUrl(): string {
   const explicit = publicEnv.siteUrl;
@@ -66,6 +66,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/", en: "/en", priority: 1 },
   { fr: "/pricing", en: "/en/pricing", priority: 0.8 },
   { fr: "/specs", en: "/en/specs", priority: 1 },
+  { fr: "/guides/best-app-store-screenshot-generator", en: "/en/guides/best-app-store-screenshot-generator", priority: 0.7 },
   { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
   { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
   { fr: "/1206x2622", en: "/en/1206x2622", priority: 0.8 },

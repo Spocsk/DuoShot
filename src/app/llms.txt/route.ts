@@ -1,5 +1,5 @@
 import { IPHONE_63_ALTERNATIVE, SIZE_SPECS, SPECS_VERSION_DATE, specPixels } from "@/lib/specs";
-import { SITE_PITCH_FR, getSiteUrl } from "@/lib/site";
+import { getSiteUrl } from "@/lib/site";
 import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_COPY, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { passCheckoutAvailable } from "@/lib/billing-availability";
 import { getTranslator } from "@/lib/i18n";
@@ -9,12 +9,13 @@ export function GET() {
   const sizes = SIZE_SPECS.map(
     (spec) => `- ${spec.label}${spec.label.includes(spec.inches) ? "" : ` ${spec.inches}`} ${spec.orientation}: ${spec.width}x${spec.height}`,
   ).join("\n");
-  const { tf } = getTranslator("fr");
-  const passOffer = passCheckoutAvailable()
+  const { t, tf } = getTranslator("fr");
+  const passAvailable = passCheckoutAvailable();
+  const passOffer = passAvailable
     ? `- ${tf("pricing_pass_title", { days: PASS30.days })}: ${tf("pricing_pass_price", { price: `${PASS30.priceEur} €` })}. ${tf("pricing_pass_body", { days: PASS30.days })}\n`
     : "";
   const body = `# DuoShot — App Store Screenshot QA
-> ${SITE_PITCH_FR}
+> ${t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass")}
 
 - Specs version: ${SPECS_VERSION_DATE}
 - Frameless App Store screenshots for iPhone Duo
@@ -25,6 +26,7 @@ export function GET() {
 - Optional 6.9" iPhone sizes: ${getSiteUrl()}/1320x2868 (EN: ${getSiteUrl()}/en/1320x2868)
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia
 - Rejection decoder: ${getSiteUrl()}/rejet
+- Screenshot generator comparison: ${getSiteUrl()}/guides/best-app-store-screenshot-generator (EN: ${getSiteUrl()}/en/guides/best-app-store-screenshot-generator)
 - Tool (noindex): ${getSiteUrl()}/tool
 
 ## Pixels
@@ -39,7 +41,7 @@ ${sizes}
 - Example ZIP: raw outer + inner sets; pick up to 10 for the single Duo slot
 - Exports over the combined cap return HTTP 400 DUO_SLOT_LIMIT; no silent trimming
 - Guideline 2.3.3: screenshots must accurately represent the app
-- Optional 6.9" sizes are Indie / Studio
+- Optional 6.9" sizes are ${passAvailable ? "Pass / Indie / Studio" : "Indie / Studio"}
 - App Store Connect requires 6.3" iPhone screenshots; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
 - Free trial: ${FREE_EXPORTS} HD exports after signup, no card; selected Duo screenshots and the required 6.3" iPhone size
 - Indie: ${PLANS.indie.monthlyEur} EUR/month or ${PLANS.indie.yearlyEur} EUR/year; Studio: ${PLANS.studio.monthlyEur} EUR/month or ${PLANS.studio.yearlyEur} EUR/year. Annual billing upfront; paid limit ${PLANS.indie.dailyHdSets} exports per UTC day.

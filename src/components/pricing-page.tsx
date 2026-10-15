@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { getTranslator } from "@/lib/i18n";
-import { FAQ } from "@/lib/i18n";
+import { getFaq } from "@/lib/i18n";
 import { checkoutDisplayAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import type { Locale } from "@/lib/specs";
 import { pricingFaq } from "@/lib/pricing-faq";
@@ -17,7 +17,7 @@ export async function PricingPage({ locale }: { locale: Locale }) {
   await connection();
   const available = checkoutDisplayAvailable();
   const passAvailable = passCheckoutAvailable();
-  const faq = [...pricingFaq(i18n), ...FAQ[locale]];
+  const faq = [...pricingFaq(i18n), ...getFaq(locale, passAvailable)];
   return (
     <div className="flex min-h-full flex-col">
       <JsonLd locale={locale} path="/pricing" software faq={faq} />

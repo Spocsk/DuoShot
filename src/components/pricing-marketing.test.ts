@@ -73,6 +73,8 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(html).toContain(locale === "fr" ? "Paiement indisponible" : "Checkout unavailable");
     expect(html).not.toContain(locale === "fr" ? "bientôt" : "soon");
     expect(html).not.toContain('data-testid="pricing-pass30"');
+    expect(html).toContain(getTranslator(locale).t("pricing_lead_without_pass"));
+    expect(html).not.toContain(getTranslator(locale).t("pricing_lead"));
   });
 
   it("keeps the pricing toggle and derives offer copy from plans", () => {
@@ -91,6 +93,9 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(row63).toBeDefined();
     expect(row63!.match(/>Yes<|>Oui</g)).toHaveLength(4);
     expect(html).toContain(locale === "fr" ? "Tailles 6,9″ optionnelles" : "Optional 6.9″ sizes");
+    expect(html).toContain(getTranslator(locale).t("pricing_lead"));
+    const row69 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(getTranslator(locale).t("pricing_feat_69")));
+    expect(row69!.match(/>Yes<|>Oui</g)).toHaveLength(3);
   });
 
   it("keeps configured prices and the shared Studio benefits in the FAQ and metadata", async () => {

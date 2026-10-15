@@ -38,9 +38,9 @@ export function PaywallModal({
   return (
     <Overlay onClose={onClose} labelledBy="paywall-title" closeLabel={t("paywall_close")}>
       <h2 id="paywall-title" data-testid="paywall" className="font-display text-3xl">
-        {pass ? tf("pricing_pass_title", { days: PASS30.days }) : reason === "69" ? t("paywall_69") : tf("paywall_title", { exports: FREE_EXPORTS })}
+        {pass ? tf("pricing_pass_title", { days: PASS30.days }) : reason === "69" ? t(passAvailable ? "paywall_69" : "paywall_69_without_pass") : tf("paywall_title", { exports: FREE_EXPORTS })}
       </h2>
-      <p className="mt-3 text-[var(--muted)]">{pass ? tf("pricing_pass_body", { days: PASS30.days }) : tf("paywall_lead", { dailyCap: PRO_DAILY_CAP })}</p>
+      <p className="mt-3 text-[var(--muted)]">{pass ? tf("pricing_pass_body", { days: PASS30.days }) : tf(passAvailable ? "paywall_lead" : "paywall_lead_without_pass", { dailyCap: PRO_DAILY_CAP })}</p>
       {!available && (!pass || !passAvailable) ? <p role="status" className="mt-3 text-sm">{t("billing_error_unavailable")}</p> : null}
       {error ? <p role="alert" className="ds-warn mt-3 text-sm">{error}</p> : null}
       {pass ? (
