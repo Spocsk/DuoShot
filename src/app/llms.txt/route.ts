@@ -41,7 +41,7 @@ ${sizes}
 - Example ZIP: raw outer + inner sets; pick up to 10 for the single Duo slot
 - Exports over the combined cap return HTTP 400 DUO_SLOT_LIMIT; no silent trimming
 - Guideline 2.3.3: screenshots must accurately represent the app
-- Optional 6.9" sizes are ${passAvailable ? "Pass / Indie / Studio" : "Indie / Studio"}
+- Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
 - App Store Connect requires 6.3" iPhone screenshots; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
 - Free trial: ${FREE_EXPORTS} HD exports after signup, no card; selected Duo screenshots and the required 6.3" iPhone size
 - Indie: ${PLANS.indie.monthlyEur} EUR/month or ${PLANS.indie.yearlyEur} EUR/year; Studio: ${PLANS.studio.monthlyEur} EUR/month or ${PLANS.studio.yearlyEur} EUR/year. Annual billing upfront; paid limit ${PLANS.indie.dailyHdSets} exports per UTC day.

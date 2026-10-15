@@ -69,7 +69,7 @@ describe("SEO screenshot pages", () => {
         cy.get("main").should("contain", portrait).and("contain", landscape);
         if (size === "1320x2868") {
           cy.get("main").should("contain", locale === "en" ? "optional in App Store Connect" : "optionnelles dans App Store Connect")
-            .and("contain", locale === "en" ? "with Indie and Studio" : "avec Indie et Studio");
+            .and("contain", locale === "en" ? "with Pass, Indie and Studio" : "avec Pass, Indie et Studio");
         }
         cy.contains("main a", locale === "en" ? "Prepare your screenshots" : "Préparer vos captures")
           .should("have.attr", "href", `${prefix}/tool`);

@@ -44,7 +44,7 @@ describe("GET /llms.txt", () => {
     expect(body).toContain('App Store Connect requires 6.3" iPhone screenshots');
     expect(body).toContain('included in the free trial');
     expect(body).toContain('1179x2556 alternative is not a DuoShot export preset');
-    expect(body).toContain('Optional 6.9" sizes are Indie / Studio');
+    expect(body).toContain('Optional 6.9" sizes are included with paid access');
   });
 
   it("preserves the single slot contract and untested uploads alongside the qualified deadline", async () => {
@@ -66,7 +66,7 @@ describe("GET /llms.txt", () => {
     vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
     const body = await GET().text();
     expect(body).toContain("Pass 30 jours: 19 € une fois. Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.");
-    expect(body).toContain('Optional 6.9" sizes are Pass / Indie / Studio');
+    expect(body).toContain('Optional 6.9" sizes are included with Pass / Indie / Studio');
   });
 
   it("hides the pass when checkout is disabled, even with a configured price", async () => {

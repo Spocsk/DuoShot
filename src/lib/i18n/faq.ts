@@ -9,9 +9,10 @@ const freeMonths = 12 - PLANS.indie.yearlyEur / PLANS.indie.monthlyEur;
 
 /** FAQ entries for the landing and pricing pages and their JSON-LD. Server components only. */
 function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string }[]> {
-  const plans = passAvailable ? "Pass / Indie / Studio" : "Indie / Studio";
-  const frOffers = passAvailable ? "Pass, Indie et Studio" : "Indie et Studio";
-  const enOffers = passAvailable ? "Pass, Indie and Studio" : "Indie and Studio";
+  const frPlans = passAvailable ? "Pass / Indie / Studio" : "offres payantes";
+  const enPlans = passAvailable ? "Pass / Indie / Studio" : "paid access";
+  const frOffers = passAvailable ? "Pass, Indie et Studio" : "les offres payantes";
+  const enOffers = passAvailable ? "Pass, Indie and Studio" : "paid access";
   return {
     fr: [
       {
@@ -24,7 +25,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "Quelles tailles pour l’iPhone Duo ?",
-        a: `Écran fermé 5,4″ : 1398×2034 (portrait) et 2034×1398 (paysage). Écran ouvert 7,6″ : 2007×2853 et 2853×2007. Taille iPhone 6,3″ requise pour App Store Connect, incluse dans l’essai gratuit : 1206×2622 et 2622×1206. Connect accepte aussi 1179×2556 et 2556×1179 ; DuoShot exporte en 1206×2622 ou son paysage. Option 6,9″ (${plans}) : 1320×2868, 1290×2796, 1260×2736 et leurs paysages.`,
+        a: `Écran fermé 5,4″ : 1398×2034 (portrait) et 2034×1398 (paysage). Écran ouvert 7,6″ : 2007×2853 et 2853×2007. Taille iPhone 6,3″ requise pour App Store Connect, incluse dans l’essai gratuit : 1206×2622 et 2622×1206. Connect accepte aussi 1179×2556 et 2556×1179 ; DuoShot exporte en 1206×2622 ou son paysage. Option 6,9″ (${frPlans}) : 1320×2868, 1290×2796, 1260×2736 et leurs paysages.`,
       },
       {
         q: "Faut-il un iPhone Duo physique ?",
@@ -66,7 +67,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "What sizes for iPhone Duo?",
-        a: `Closed (outer) screen 5.4″: 1398×2034 (portrait) and 2034×1398 (landscape). Open (inner) screen 7.6″: 2007×2853 and 2853×2007. Required 6.3″ iPhone size for App Store Connect, included in the free trial: 1206×2622 and 2622×1206. Connect also accepts 1179×2556 and 2556×1179; DuoShot exports 1206×2622 or its landscape. Optional 6.9″ (${plans}): 1320×2868, 1290×2796, 1260×2736 and their landscapes.`,
+        a: `Closed (outer) screen 5.4″: 1398×2034 (portrait) and 2034×1398 (landscape). Open (inner) screen 7.6″: 2007×2853 and 2853×2007. Required 6.3″ iPhone size for App Store Connect, included in the free trial: 1206×2622 and 2622×1206. Connect also accepts 1179×2556 and 2556×1179; DuoShot exports 1206×2622 or its landscape. Optional 6.9″ (${enPlans}): 1320×2868, 1290×2796, 1260×2736 and their landscapes.`,
       },
       {
         q: "Do I need a physical iPhone Duo?",

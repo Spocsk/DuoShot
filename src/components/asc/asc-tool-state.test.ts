@@ -65,7 +65,7 @@ describe("error and state messages", () => {
     const hint = t("asct_locked_hint");
     expect(hint).toContain("App Store Connect");
     expect(hint).toContain(locale === "fr" ? "expérimental" : "experimental");
-    expect(hint).toContain(locale === "fr" ? "Indie et Studio" : "Indie and Studio");
+    expect(hint).toContain(locale === "fr" ? "Pass, Indie et Studio" : "Pass, Indie and Studio");
     expect(hint).toContain(locale === "fr" ? "Duo et iPhone 6,9″" : "Duo and iPhone 6.9″");
     expect(hint).toContain(locale === "fr" ? "n’ont pas encore été vérifiés de bout en bout" : "have not yet been verified end to end");
     expect(hint).toContain(locale === "fr" ? "ZIP pour un dépôt manuel" : "ZIP for manual upload");
