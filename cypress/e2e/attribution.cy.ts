@@ -17,6 +17,11 @@ describe("first-touch attribution", () => {
           Object.defineProperty(win.document, "referrer", { value: "https://news.example/private?email=private@example.com" });
         },
       });
+      // Cypress 15's getCookie() reads once, even with should("exist").
+      // Retry the browser read until the hydration effect has captured the landing.
+      cy.document().should((doc) => {
+        expect(doc.cookie).to.match(/(?:^|;\s*)ds_attr=/);
+      });
       cy.getCookie("ds_attr").should("exist").then((cookie) => {
         expect(JSON.parse(decodeURIComponent(cookie!.value))).to.deep.eq({
           utm_source: "x", utm_medium: "y", utm_campaign: "z", referrer: "news.example",
@@ -47,6 +52,52 @@ describe("first-touch attribution", () => {
           utm_source: "x", utm_medium: "y", utm_campaign: "z", referrer: "news.example",
         });
       });
+      // Simulate the confirmed session after following the signup email, then
+      // check the actual browser request that the checkout route reads.
+      cy.loginAs("free");
+      cy.intercept("POST", "**/api/stripe/checkout", (req) => {
+        const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+        expect(body).to.deep.eq({ kind, next: "/en/tool" });
+        const cookie = String(req.headers.cookie).split(";").map((part) => part.trim())
+          .find((part) => part.startsWith("ds_attr="));
+        expect(cookie).to.exist;
+        expect(JSON.parse(decodeURIComponent(cookie!.slice("ds_attr=".length)))).to.deep.eq({
+          utm_source: "x", utm_medium: "y", utm_campaign: "z", referrer: "news.example",
+        });
+        req.reply({ url: "/en/tool?checkout=cancel" });
+      }).as("checkout");
+      cy.visitEn(next);
+      const plan = kind.split("_")[0];
+      cy.get(`[data-testid="paywall-cta-${plan}"]`).should("not.be.disabled").click();
+      cy.wait("@checkout");
+      cy.location("search").should("include", "checkout=cancel");
     });
   }
+
+  it("sets a host-only first-touch cookie on the landing response and preserves it on later visits", () => {
+    cy.request({
+      url: "/en/pricing?utm_source=first&utm_content=hero",
+      headers: {
+        "Accept-Language": "en-US,en;q=0.9",
+        Referer: "https://news.example/private?email=private@example.com",
+      },
+    }).then((response) => {
+      expect(response.headers["set-cookie"]).to.exist;
+      expect(response.headers["cache-control"]).to.contain("no-store");
+    });
+    cy.getCookie("ds_attr").should("exist").then((cookie) => {
+      expect(JSON.parse(decodeURIComponent(cookie!.value))).to.deep.eq({
+        utm_source: "first", utm_content: "hero", referrer: "news.example",
+      });
+      expect(cookie!.path).to.eq("/");
+      expect(cookie!.httpOnly).to.eq(true);
+      expect(cookie!.hostOnly).to.eq(true);
+      const original = cookie!;
+      cy.visitEn("/en/pricing?utm_source=second");
+      cy.getCookie("ds_attr").should((current) => {
+        expect(current!.value).to.eq(original.value);
+        expect(current!.expiry).to.eq(original.expiry);
+      });
+    });
+  });
 });
