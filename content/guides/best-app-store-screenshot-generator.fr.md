@@ -57,7 +57,7 @@ Screenpane récupère les captures du Simulateur, exporte les quatre tailles Duo
 
 ### DuoShot, pour réussir sa soumission Duo
 
-DuoShot fait une seule chose : transformer vos vraies captures d'app en visuels Duo aux tailles exactes (1398 × 2034 et 2007 × 2853), avec le 6,3″ obligatoire (1206 × 2622), en PNG ou JPEG opaques, dans un ZIP trié par écran. Avant la soumission, il vérifie dimensions et format, signale les problèmes de cadrage et les écrans trop semblables, et vous aide à relire le texte près du pli. L'offre Studio ajoute un lien de validation pour vos clients. DuoShot **n'envoie rien** dans App Store Connect : c'est vous qui ajoutez les fichiers à votre fiche. Pas d'IA de design, pas de traduction, pas d'Android. Le 6,9″ (1320 × 2868, 1290 × 2796, 1260 × 2736) est inclus dans Indie et Studio.
+DuoShot fait une seule chose : transformer vos vraies captures d'app en visuels Duo aux tailles exactes (1398 × 2034 et 2007 × 2853), avec le 6,3″ obligatoire (1206 × 2622), en PNG ou JPEG opaques, dans un ZIP trié par écran. Avant la soumission, il vérifie dimensions et format, signale les problèmes de cadrage et les écrans trop semblables, et vous aide à relire le texte près du pli. L'offre Studio ajoute un lien de validation pour vos clients. DuoShot **n'envoie rien** dans App Store Connect : c'est vous qui ajoutez les fichiers à votre fiche. Pas d'IA de design, pas de traduction, pas d'Android. Le 6,9″ (1320 × 2868, 1290 × 2796, 1260 × 2736) est inclus dans Pass, Indie et Studio.
 
 ## Lequel choisir ?
 
