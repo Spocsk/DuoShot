@@ -23,10 +23,10 @@ export function sizePageCopy(locale: Locale, size: ScreenshotSize) {
 export const SPECS_PAGE_COPY = {
   fr: {
     title: "Tailles des captures iPhone Duo et zone du pli",
-    description: "Tailles des captures iPhone Duo et repères du pli. App Store Connect : iPhone Dynamic Island (écran moyen, 6,3″) requis, 6,9″ optionnel. Dépôt Duo non testé.",
+    description: "Tailles iPhone Duo et repères du pli. App Store Connect : iPhone Dynamic Island (écran moyen, 6,3″) requis, 6,9″ optionnel. Dépôt Duo non testé.",
   },
   en: {
     title: "iPhone Duo screenshot size, safe area & fold",
-    description: "Check iPhone Duo screenshot sizes and fold guides. App Store Connect: iPhone with Dynamic Island (medium display, 6.3\") required; 6.9″ is optional. Duo uploads remain untested.",
+    description: "iPhone Duo screenshot sizes and fold guides. iPhone with Dynamic Island (medium display, 6.3\") required; 6.9″ is optional. Duo uploads untested.",
   },
 };
