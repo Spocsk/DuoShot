@@ -9,20 +9,22 @@ updated: 2026-10-16
 
 # iPhone Duo (Apple's foldable iPhone) screenshots in App Store Connect
 
-Prepare real captures of your app, export opaque PNG or JPEG files, then upload them manually from your app’s listing in App Store Connect. **DuoShot has not yet tested Duo uploads, including its experimental automatic connector.** File preparation does not guarantee Apple approval.
+Prepare real captures of your app, export opaque PNG or JPEG files, then upload them manually from your app’s listing in App Store Connect. **DuoShot (duoshot.site) has not yet tested Duo uploads, including its experimental automatic connector.** File preparation does not guarantee Apple approval.
 
 ## Which display slots should you use?
 
-App Store Connect has **one dedicated iPhone Duo slot (APP_IPHONE_DUO) per localization**, shared by the outer and inner screens, accepting **1 to 10 screenshots**. Use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions; they are not separate App Store Connect slots. See [all screenshot specifications](/en/specs).
+Apple allows **up to 10 screenshots per device size** in App Store Connect. Use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs).
 
 | Display | Portrait pixels | App Store Connect slot | DuoShot access |
 | --- | --- | --- | --- |
-| iPhone Duo outer 5.4″ | 1398 × 2034 | iPhone Duo (APP_IPHONE_DUO), shared with inner | Free trial included |
-| iPhone Duo inner 7.6″ | 2007 × 2853 | iPhone Duo (APP_IPHONE_DUO), shared with outer | Free trial included |
-| iPhone 6.3″ | 1206 × 2622 | Required 6.3″ iPhone slot | Free trial included |
+| iPhone Duo outer display | 1398 × 2034 | iPhone Duo | Free trial included |
+| iPhone Duo inner display | 2007 × 2853 | iPhone Duo | Free trial included |
+| iPhone 6.3″ | 1206 × 2622 | iPhone with Dynamic Island (medium display, 6.3") required | Free trial included |
 | iPhone 6.9″ | 1320 × 2868 | Optional 6.9″ iPhone slot | Pass, Indie and Studio |
 
-Apple also accepts Duo landscape screenshots: **2034 × 1398** for the outer display and **2853 × 2007** for the inner display. Keep Duo files in the Duo slot, the required 6.3″ set in its own slot, and optional 6.9″ files in theirs. The free trial includes **2 HD ZIPs** after signup, with selected Duo captures and the required 6.3″ size.
+If the optional 6.9″ screenshots are not provided, App Store Connect uses scaled versions of screenshots from another size: iPhone with Face ID (large display), as specified in [Apple’s screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
+
+Apple also accepts Duo landscape screenshots: **2034 × 1398** for the outer display and **2853 × 2007** for the inner display. Keep Duo files in the Duo slot, the required 6.3" screenshots in their own slot, and optional 6.9″ files in theirs. The free trial includes **2 HD ZIPs** after signup, with selected Duo captures and the required 6.3″ size.
 
 ## When are Duo screenshots required?
 

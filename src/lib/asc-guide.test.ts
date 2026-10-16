@@ -11,7 +11,6 @@ import { appStoreConnectGuide, ASC_GUIDE_PATH } from "./guides";
 import { jsonLdGraph } from "./json-ld";
 import { shouldSkipLocaleRewrite } from "./locale";
 import { absoluteUrl, localizedPath } from "./site";
-import { DUO_SLOT_COPY } from "./apple-screenshot-status";
 import { generateImageMetadata, generateStaticParams } from "@/app/[locale]/guides/iphone-duo-app-store-connect/opengraph-image";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
@@ -53,8 +52,17 @@ describe.each(["fr", "en"] as const)("%s App Store Connect guide", (locale) => {
     expect(guide.body).toContain(locale === "fr"
       ? "avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur"
       : "April 2027 for apps built with the iOS 27.1 SDK or later");
-    expect(guide.body).toContain(locale === "fr" ? "de 1 à 10 captures" : "1 to 10 screenshots");
-    expect(html).toContain(escaped(DUO_SLOT_COPY[locale]));
+    expect(guide.body.match(/DuoShot[^*]+/)?.[0]).toMatch(/^DuoShot \(duoshot\.site\)/);
+    expect(html).toContain(locale === "fr" ? "jusqu’à 10 captures par taille d’appareil" : "up to 10 screenshots per device size");
+    expect(html).toContain(escaped(locale === "fr"
+      ? "iPhone Dynamic Island (écran moyen, 6,3″) requis"
+      : 'iPhone with Dynamic Island (medium display, 6.3") required'));
+    expect(html).toContain(escaped(locale === "fr" ? "les captures 6,3″ requises" : 'the required 6.3" screenshots'));
+    for (const display of locale === "fr" ? ["écran externe", "écran interne"] : ["outer display", "inner display"]) expect(html).toContain(display);
+    expect(guide.body).toContain(locale === "fr"
+      ? "App Store Connect utilise des versions mises à l’échelle de captures d’une autre taille : iPhone avec Face ID (grand écran)"
+      : "App Store Connect uses scaled versions of screenshots from another size: iPhone with Face ID (large display)");
+    expect(html).not.toMatch(/APP_IPHONE_DUO|5[,.]4[″"]|7[,.]6[″"]|\bset\b|partag|shared|share|per locale|per localization|par langue|\bone slot\b|un seul emplacement/);
     expect(html).toContain(locale === "fr" ? "2 ZIP HD" : "2 HD ZIPs");
     expect(html).toContain(locale === "fr" ? "Pass, Indie et Studio" : "Pass, Indie and Studio");
     expect(html).toContain(locale === "fr" ? "connecteur automatique expérimental" : "experimental automatic connector");

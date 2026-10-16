@@ -9,20 +9,22 @@ updated: 2026-10-16
 
 # Captures iPhone Duo (le téléphone pliable d'Apple) dans App Store Connect
 
-Préparez de vraies captures de votre app, exportez des fichiers PNG ou JPEG opaques, puis déposez-les manuellement depuis la fiche de votre app dans App Store Connect. **DuoShot n’a pas encore testé le dépôt Duo, y compris via son connecteur automatique expérimental.** La préparation des fichiers ne garantit pas l’approbation d’Apple.
+Préparez de vraies captures de votre app, exportez des fichiers PNG ou JPEG opaques, puis déposez-les manuellement depuis la fiche de votre app dans App Store Connect. **DuoShot (duoshot.site) n’a pas encore testé le dépôt Duo, y compris via son connecteur automatique expérimental.** La préparation des fichiers ne garantit pas l’approbation d’Apple.
 
 ## Quels emplacements utiliser ?
 
-App Store Connect propose **un emplacement iPhone Duo dédié (APP_IPHONE_DUO) par langue**, partagé entre les écrans externe et interne, qui accepte **de 1 à 10 captures**. Choisissez l’externe seul, l’interne seul ou un mélange sélectionné. Les dossiers du ZIP indiquent les dimensions ; ce ne sont pas des emplacements App Store Connect distincts. Consultez [toutes les spécifications des captures](/specs).
+Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store Connect. Choisissez l’externe seul, l’interne seul ou un mélange sélectionné. Les dossiers du ZIP indiquent les dimensions. Consultez [toutes les spécifications des captures](/specs).
 
 | Écran | Pixels en portrait | Emplacement App Store Connect | Accès DuoShot |
 | --- | --- | --- | --- |
-| iPhone Duo externe 5,4″ | 1398 × 2034 | iPhone Duo (APP_IPHONE_DUO), partagé avec l’interne | Inclus dans l’essai gratuit |
-| iPhone Duo interne 7,6″ | 2007 × 2853 | iPhone Duo (APP_IPHONE_DUO), partagé avec l’externe | Inclus dans l’essai gratuit |
-| iPhone 6,3″ | 1206 × 2622 | Emplacement iPhone 6,3″ requis | Inclus dans l’essai gratuit |
+| iPhone Duo — écran externe | 1398 × 2034 | iPhone Duo | Inclus dans l’essai gratuit |
+| iPhone Duo — écran interne | 2007 × 2853 | iPhone Duo | Inclus dans l’essai gratuit |
+| iPhone 6,3″ | 1206 × 2622 | iPhone Dynamic Island (écran moyen, 6,3″) requis | Inclus dans l’essai gratuit |
 | iPhone 6,9″ | 1320 × 2868 | Emplacement iPhone 6,9″ optionnel | Pass, Indie et Studio |
 
-Apple accepte aussi les captures Duo en paysage : **2034 × 1398** pour l’écran externe et **2853 × 2007** pour l’écran interne. Placez les fichiers Duo dans l’emplacement Duo, le set 6,3″ requis dans son propre emplacement et les fichiers 6,9″ optionnels dans le leur. L’essai gratuit comprend **2 ZIP HD** après inscription, avec les captures Duo sélectionnées et le format 6,3″ requis.
+Si les captures 6,9″ optionnelles ne sont pas fournies, App Store Connect utilise des versions mises à l’échelle de captures d’une autre taille : iPhone avec Face ID (grand écran), selon les [spécifications d’Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
+
+Apple accepte aussi les captures Duo en paysage : **2034 × 1398** pour l’écran externe et **2853 × 2007** pour l’écran interne. Placez les fichiers Duo dans l’emplacement Duo, les captures 6,3″ requises dans leur propre emplacement et les fichiers 6,9″ optionnels dans le leur. L’essai gratuit comprend **2 ZIP HD** après inscription, avec les captures Duo sélectionnées et le format 6,3″ requis.
 
 ## Quand les captures Duo seront-elles obligatoires ?
 
