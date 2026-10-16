@@ -23,6 +23,7 @@ function escaped(text: string) {
 describe.each(["fr", "en"] as const)("%s App Store Connect guide", (locale) => {
   const props = () => ({ params: Promise.resolve({ locale }) });
   const url = () => absoluteUrl(localizedPath(locale, ASC_GUIDE_PATH));
+  const device = locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)";
 
   it("publishes indexable localized metadata, reciprocal hreflang and a sitemap entry", async () => {
     const guide = appStoreConnectGuide(locale);
@@ -45,7 +46,7 @@ describe.each(["fr", "en"] as const)("%s App Store Connect guide", (locale) => {
     const html = renderToStaticMarkup(await GuidePage(props()));
     const guide = appStoreConnectGuide(locale);
     expect(html.match(/<h1\b/g)).toHaveLength(1);
-    expect(html).toContain(`<h1 class="font-display text-4xl sm:text-5xl">${escaped(guide.title)}</h1>`);
+    expect(html).toContain(`<h1 class="font-display text-4xl sm:text-5xl">${escaped(guide.title.replace("iPhone Duo", device))}</h1>`);
     expect(html).toContain("<table");
     for (const size of ["1398 × 2034", "2007 × 2853", "2034 × 1398", "2853 × 2007", "1206 × 2622", "1320 × 2868"]) expect(html).toContain(size);
     expect(html).toContain('href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications"');
@@ -68,6 +69,8 @@ describe.each(["fr", "en"] as const)("%s App Store Connect guide", (locale) => {
     const copy = ascGuideCopy(locale);
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
     expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["Organization", "TechArticle", "HowTo", "FAQPage"]);
+    expect(appStoreConnectGuide(locale).description).toContain(device);
+    for (const node of graph.slice(1)) expect(node.description).toBe(appStoreConnectGuide(locale).description);
     expect(graph[1]).toMatchObject({ headline: appStoreConnectGuide(locale).title, dateModified: "2026-10-16", inLanguage: locale, url: url() });
     expect(graph[2]).toMatchObject({ name: copy.howToHeading, inLanguage: locale, url: url() });
     expect(graph[2].step).toHaveLength(copy.steps.length);
@@ -87,7 +90,8 @@ describe.each(["fr", "en"] as const)("%s App Store Connect guide", (locale) => {
     const href = `href="${localizedPath(locale, ASC_GUIDE_PATH)}"`;
     expect(renderToStaticMarkup(createElement(SpecsPage, { locale }))).toContain(href);
     expect(renderToStaticMarkup(await ComparisonPage(props()))).toContain(href);
-    expect(await llms().text()).toContain(url());
+    const entry = (await llms().text()).split("\n").find((line) => line.includes(url()));
+    expect(entry).toContain("iPhone Duo (Apple's foldable iPhone)");
   });
 
   it("publishes a localized social image", () => {

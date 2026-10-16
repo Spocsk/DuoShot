@@ -68,6 +68,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
         "@id": `${url}#howto`,
         url,
         name: howTo.name,
+        description: article?.description,
         inLanguage: locale,
         step: howTo.steps.map((step, index) => ({
           "@type": "HowToStep",
@@ -81,6 +82,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
         "@type": "FAQPage",
         "@id": `${url}#faq`,
         url,
+        description: article?.description,
         inLanguage: locale,
         mainEntity: faq.map((item) => ({
           "@type": "Question",

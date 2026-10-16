@@ -1,13 +1,13 @@
 ---
 title: "iPhone Duo screenshots in App Store Connect"
-description: "Prepare iPhone Duo screenshots, choose the Duo, 6.3-inch and optional 6.9-inch slots, and upload manually. DuoShot uploads remain untested."
+description: "Prepare iPhone Duo (Apple's foldable iPhone) screenshots for manual upload to App Store Connect. DuoShot uploads remain untested."
 lang: en
 slug: iphone-duo-app-store-connect
 alternate: /guides/iphone-duo-app-store-connect
 updated: 2026-10-16
 ---
 
-# iPhone Duo screenshots in App Store Connect
+# iPhone Duo (Apple's foldable iPhone) screenshots in App Store Connect
 
 Prepare real captures of your app, export opaque PNG or JPEG files, then upload them manually from your app’s listing in App Store Connect. **DuoShot has not yet tested Duo uploads, including its experimental automatic connector.** File preparation does not guarantee Apple approval.
 

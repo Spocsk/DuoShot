@@ -1,13 +1,13 @@
 ---
 title: "Captures iPhone Duo dans App Store Connect"
-description: "Préparez les captures iPhone Duo, choisissez les emplacements Duo, 6,3 et 6,9 pouces, puis déposez manuellement. Dépôt DuoShot non testé."
+description: "Préparez les captures iPhone Duo (le téléphone pliable d'Apple) et déposez-les manuellement dans App Store Connect. Dépôt DuoShot non testé."
 lang: fr
 slug: iphone-duo-app-store-connect
 alternate: /en/guides/iphone-duo-app-store-connect
 updated: 2026-10-16
 ---
 
-# Captures iPhone Duo dans App Store Connect
+# Captures iPhone Duo (le téléphone pliable d'Apple) dans App Store Connect
 
 Préparez de vraies captures de votre app, exportez des fichiers PNG ou JPEG opaques, puis déposez-les manuellement depuis la fiche de votre app dans App Store Connect. **DuoShot n’a pas encore testé le dépôt Duo, y compris via son connecteur automatique expérimental.** La préparation des fichiers ne garantit pas l’approbation d’Apple.
 

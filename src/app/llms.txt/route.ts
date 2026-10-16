@@ -27,7 +27,7 @@ export function GET() {
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia
 - Rejection decoder: ${getSiteUrl()}/rejet
 - Screenshot generator comparison: ${getSiteUrl()}/guides/best-app-store-screenshot-generator (EN: ${getSiteUrl()}/en/guides/best-app-store-screenshot-generator)
-- Manual iPhone Duo upload guide: ${getSiteUrl()}/guides/iphone-duo-app-store-connect (EN: ${getSiteUrl()}/en/guides/iphone-duo-app-store-connect)
+- Manual iPhone Duo (Apple's foldable iPhone) upload guide: ${getSiteUrl()}/guides/iphone-duo-app-store-connect (EN: ${getSiteUrl()}/en/guides/iphone-duo-app-store-connect)
 - Tool (noindex): ${getSiteUrl()}/tool
 
 ## Pixels
