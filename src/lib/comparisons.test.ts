@@ -37,6 +37,8 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       expect(html).toContain(`<table`);
       expect(html).toContain(`href="${url}"`);
       expect(html).not.toContain("**");
+      expect(guide.body.split("\n\n")[1]).toMatch(/^DuoShot \(duoshot\.site\) /);
+      expect(html).toContain("DuoShot (duoshot.site)");
       const duoDefinition = locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)";
       const firstMention = guide.body.indexOf("iPhone Duo");
       expect(firstMention).toBeLessThan(guide.body.indexOf("\n## "));
@@ -44,9 +46,12 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       expect(html).toContain(duoDefinition.replace("'", "&#x27;"));
       expect(guide.body).not.toMatch(/\$|£|\b(?:USD|GBP|coupon|discount|remise|réduction)\b/i);
       for (const size of ["1398 × 2034", "2007 × 2853", "1206 × 2622", "1320 × 2868"]) expect(html).toContain(size);
+      for (const label of locale === "fr" ? ["écran externe : 1398 × 2034", "écran interne : 2007 × 2853"] : ["outer display: 1398 × 2034", "inner display: 2007 × 2853"]) expect(html).toContain(label);
+      expect(html).not.toMatch(/(?:5[,.]4|7[,.]6)[″"]/);
       expect(html).toContain(locale === "fr" ? "Pass, Indie et Studio" : "Pass, Indie and Studio");
       expect(html).toContain(locale === "fr" ? "2 ZIP HD" : "2 HD ZIPs");
-      for (const price of locale === "fr" ? ["19 €", "12 €/mois ou 120 €/an", "49 €/mois ou 490 €/an"] : ["€19", "€12/month or €120/year", "€49/month or €490/year"]) expect(html).toContain(price);
+      for (const price of locale === "fr" ? ["19 €", "12 €/mois, ou 120 €/an payés en une fois", "49 €/mois, ou 490 €/an payés en une fois"] : ["€19", "€12/month, or €120/year paid upfront", "€49/month, or €490/year paid upfront"]) expect(html).toContain(price);
+      expect(html).toContain(locale === "fr" ? "TVA non applicable (art. 293 B du CGI)" : "VAT not applicable, art. 293 B of the French CGI");
       expect(html).toContain(locale === "fr" ? "n’a pas été testé par DuoShot" : "has not tested iPhone Duo uploads");
       for (const path of ["/specs", "/pricing", "/tool", ...COMPARISONS.filter((entry) => entry.slug !== slug).map((entry) => comparisonPath(entry.slug))]) {
         expect(html).toContain(`href="${localizedPath(locale, path)}"`);
@@ -65,16 +70,17 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       "traitées localement dans le navigateur, sans être envoyées au serveur",
       "aucune inscription", "aucun filigrane",
       "importez un à cinq écrans, choisissez un modèle et exportez un ZIP organisé de PNG",
-      "dimensions App Store par défaut sont 1320 × 2868 (6,9″) et 2064 × 2752 (iPad 13″)",
+      "dimensions App Store par défaut sont 1320 × 2868 (6,9″).",
     ] : [
       "free browser-based App Store and Google Play screenshot maker",
       "also generates app icons",
       "processed locally in the browser and are not uploaded",
       "no signup", "no watermark",
       "upload one to five screens, pick a template and export an organized ZIP of PNGs",
-      "Default App Store sizes are 1320 × 2868 (6.9″) and 2064 × 2752 (13″ iPad)",
+      "The default App Store size is 1320 × 2868 (6.9″).",
     ];
     for (const fact of facts) expect(html).toContain(fact);
+    expect(html).not.toContain("2064 × 2752");
   });
 });
 
