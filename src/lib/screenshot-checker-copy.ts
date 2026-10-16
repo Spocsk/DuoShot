@@ -21,7 +21,7 @@ export function screenshotCheckerCopy(locale: Locale) {
       duoCount: t("checker_duo_count"), tooMany: t("checker_too_many"),
       outer: t("specs_outer_display"), inner: t("specs_inner_display"),
       portrait: t("specs_portrait"), landscape: t("specs_landscape"),
-      matched: t("checker_matched"), wrongSize: t("checker_wrong_size"),
+      matched: t("checker_matched"), appleOnly: t("checker_apple_only"), wrongSize: t("checker_wrong_size"),
       transparent: t("checker_transparent"), alpha: t("checker_alpha"), opaque: t("checker_opaque"),
       format: t("checker_format"), error: t("checker_error"),
     },

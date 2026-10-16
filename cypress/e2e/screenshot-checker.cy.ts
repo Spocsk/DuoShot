@@ -25,7 +25,7 @@ describe("free client-side screenshot checker", () => {
       visit();
       cy.get("#checker-files").focus().should("have.focus").and("not.be.disabled");
       cy.document().then((doc) => {
-        const sizes = [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622]];
+        const sizes = [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622], [1179, 2556], [1290, 2796], [1260, 2736]];
         const files = sizes.flatMap(([width, height]) => [
           imageFile(doc, width, height, `${width}x${height}.jpg`),
           imageFile(doc, height, width, `${height}x${width}.jpg`),
@@ -36,7 +36,7 @@ describe("free client-side screenshot checker", () => {
           { contents: Cypress.Buffer.from("not an image"), fileName: "broken.png", mimeType: "image/png" },
         ]);
       });
-      cy.get('[data-testid="checker-result"]').should("have.length", 11);
+      cy.get('[data-testid="checker-result"]').should("have.length", 17);
       cy.get("#checker-files").should("not.be.disabled");
       for (const [width, height] of [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622]]) {
         cy.contains('[data-testid="checker-result"]', `${width}x${height}.jpg`)
@@ -48,10 +48,17 @@ describe("free client-side screenshot checker", () => {
           .should("contain", `${height} × ${width}`)
           .and("contain", locale === "fr" ? "Paysage" : "Landscape");
       }
+      for (const [width, height] of [[1179, 2556], [1290, 2796], [1260, 2736]]) {
+        for (const [w, h] of [[width, height], [height, width]]) {
+          cy.contains('[data-testid="checker-result"]', `${w}x${h}.jpg`)
+            .should("contain", locale === "fr" ? "Taille valide pour Apple, non produite par DuoShot" : "Valid Apple size, not produced by DuoShot")
+            .and("not.contain", locale === "fr" ? "Dimensions incorrectes" : "Wrong dimensions");
+        }
+      }
       cy.contains('[data-testid="checker-result"]', "wrong.jpg").should("contain", locale === "fr" ? "Dimensions incorrectes" : "Wrong dimensions");
       cy.contains('[data-testid="checker-result"]', "transparent.png").should("contain", locale === "fr" ? "Transparence détectée" : "Transparency detected");
       cy.contains('[data-testid="checker-result"]', "broken.png").should("contain", locale === "fr" ? "Impossible d’analyser" : "Could not check");
-      cy.get('[data-testid="checker-duo-count"]').should("contain", "5/10");
+      cy.get('[data-testid="checker-duo-count"]').should("contain", "3/10").and("contain", "2/10");
       cy.get('[data-testid="checker-duo-limit"]').should("not.exist");
       cy.get("@apiPost.all").should("have.length", 0);
       cy.get("@put.all").should("have.length", 0);
@@ -59,7 +66,7 @@ describe("free client-side screenshot checker", () => {
       cy.document().then((doc) => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1));
     });
 
-    it(`counts mixed Duo batches together and can clear and recheck in ${locale}`, () => {
+    it(`counts Duo batches per device size and can clear and recheck in ${locale}`, () => {
       visit();
       cy.document().then((doc) => {
         const outer = imageFile(doc, 1398, 2034, "outer.jpg");
@@ -68,6 +75,12 @@ describe("free client-side screenshot checker", () => {
         cy.get('[data-testid="checker-duo-count"]').should("contain", "6/10");
         cy.get("#checker-files").should("not.be.disabled");
         cy.get("#checker-files").selectFile(Array(4).fill(inner));
+        cy.get('[data-testid="checker-duo-count"]').should("contain", "6/10").and("contain", "4/10");
+        cy.get('[data-testid="checker-duo-limit"]').should("not.exist");
+        cy.get("#checker-files").should("not.be.disabled").selectFile(inner);
+        cy.get('[data-testid="checker-duo-count"]').should("contain", "6/10").and("contain", "5/10");
+        cy.get('[data-testid="checker-duo-limit"]').should("not.exist");
+        cy.get("#checker-files").should("not.be.disabled").selectFile(Array(5).fill(inner));
         cy.get('[data-testid="checker-duo-count"]').should("contain", "10/10");
         cy.get('[data-testid="checker-duo-limit"]').should("not.exist");
         cy.get("#checker-files").should("not.be.disabled").selectFile(inner);

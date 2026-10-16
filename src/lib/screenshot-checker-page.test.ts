@@ -37,10 +37,13 @@ describe.each(["fr", "en"] as const)("%s screenshot checker page", (locale) => {
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     expect(html).toContain(copy.privacy);
     expect(html).toContain(copy.scope);
+    expect(copy.labels.duoRule).toContain(locale === "fr" ? "10 captures par taille d’appareil" : "10 screenshots per device size");
+    expect(copy.labels.appleOnly).toBe(locale === "fr" ? "Taille valide pour Apple, non produite par DuoShot :" : "Valid Apple size, not produced by DuoShot:");
+    expect(html).not.toMatch(/single.*slot|seul emplacement/);
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('type="file"');
     expect(html).toContain(`href="${localizedPath(locale, "/tool")}"`);
-    for (const [width, height] of [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622]]) {
+    for (const [width, height] of [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622], [1179, 2556], [1290, 2796], [1260, 2736]]) {
       expect(html).toContain(`${width} × ${height}`);
       expect(html).toContain(`${height} × ${width}`);
     }

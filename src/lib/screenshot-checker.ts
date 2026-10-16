@@ -1,11 +1,19 @@
-import { isDuoSlot, MAX_IMAGES, SIZE_SPECS, type SizeSpec } from "./specs";
+import { IPHONE_63_ALTERNATIVE, isDuoSlot, MAX_IMAGES, SIZE_SPECS, type SizeSpec } from "./specs";
 
 export const SCREENSHOT_CHECKER_PATH = "/tools/iphone-duo-screenshot-checker";
 
-// This tool checks the four DuoShot formats advertised on the page.
-export const CHECKER_SPECS = SIZE_SPECS.filter((spec) => /^(outer|inner|63a|69a)-/.test(spec.id));
+export type ScreenshotSizeMatch = SizeSpec & { producedByDuoShot: boolean };
 
-export function matchScreenshotSize(width: number, height: number): SizeSpec | null {
+// Keep DuoShot output sizes distinct from other accepted Apple dimensions.
+export const CHECKER_SPECS: ScreenshotSizeMatch[] = [
+  ...SIZE_SPECS.map((spec) => ({ ...spec, producedByDuoShot: /^(outer|inner|63a|69a)-/.test(spec.id) })),
+  ...(["portrait", "landscape"] as const).map((orientation) => ({
+    id: `63b-${orientation}`, slot: "iphone-63" as const, label: 'iPhone 6.3"', inches: '6.3"',
+    ...IPHONE_63_ALTERNATIVE[orientation], orientation, producedByDuoShot: false,
+  })),
+];
+
+export function matchScreenshotSize(width: number, height: number): ScreenshotSizeMatch | null {
   return CHECKER_SPECS.find((spec) => spec.width === width && spec.height === height) ?? null;
 }
 
@@ -33,8 +41,11 @@ export function pngHasAlphaChannel(bytes: Uint8Array): boolean {
   return false;
 }
 
-/** Outer, inner, portrait and landscape share one Duo slot per language. */
+/** Count orientations together for each device size, with a separate limit for each. */
 export function duoSlotSummary(matches: readonly (SizeSpec | null)[]) {
-  const count = matches.filter((spec) => spec && isDuoSlot(spec.slot)).length;
-  return { count, overLimit: count > MAX_IMAGES };
+  const counts = { "duo-outer": 0, "duo-inner": 0 };
+  for (const spec of matches) {
+    if (spec && isDuoSlot(spec.slot)) counts[spec.slot] += 1;
+  }
+  return { counts, overLimit: Object.values(counts).some((count) => count > MAX_IMAGES) };
 }

@@ -60,7 +60,7 @@ export function ScreenshotChecker({ locale, labels }: {
     <div aria-live="polite" aria-atomic="true" role="status" className="mt-6">
       <p>{busy ? labels.checking : results.length ? `${labels.results} ${results.length}` : labels.empty}</p>
       {results.length > 0 && <>
-        <p className="mt-2" data-testid="checker-duo-count">{labels.duoCount} {duo.count}/10</p>
+        <p className="mt-2" data-testid="checker-duo-count">{labels.duoCount} {labels.outer}: {duo.counts["duo-outer"]}/10 · {labels.inner}: {duo.counts["duo-inner"]}/10</p>
         {duo.overLimit && <p className="mt-2 font-semibold" data-testid="checker-duo-limit">{labels.tooMany}</p>}
       </>}
     </div>
@@ -73,7 +73,7 @@ export function ScreenshotChecker({ locale, labels }: {
           {inspection ? <>
             <p className="mt-2 font-mono">{inspection.width} × {inspection.height} px</p>
             <p className="mt-2">{match
-              ? `${labels.matched} ${match.slot === "duo-outer" ? `iPhone Duo — ${labels.outer}` : match.slot === "duo-inner" ? `iPhone Duo — ${labels.inner}` : `iPhone ${formatInches(match.inches, locale)}`} · ${match.orientation === "portrait" ? labels.portrait : labels.landscape}`
+              ? `${match.producedByDuoShot ? labels.matched : labels.appleOnly} ${match.slot === "duo-outer" ? `iPhone Duo — ${labels.outer}` : match.slot === "duo-inner" ? `iPhone Duo — ${labels.inner}` : `iPhone ${formatInches(match.inches, locale)}`} · ${match.orientation === "portrait" ? labels.portrait : labels.landscape}`
               : labels.wrongSize}</p>
             <p className="mt-2">{inspection.transparent ? labels.transparent : inspection.alphaChannel ? labels.alpha : labels.opaque}</p>
             {!inspection.supportedFormat && <p className="mt-2">{labels.format}</p>}

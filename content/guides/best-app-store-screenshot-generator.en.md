@@ -22,7 +22,7 @@ Apple's [screenshot specifications](https://developer.apple.com/help/app-store-c
 
 All sizes in one place: [/en/specs](/en/specs).
 
-Check your files with the [free iPhone Duo screenshot checker](/en/tools/iphone-duo-screenshot-checker): dimensions, transparency and the 10-image Duo limit, in your browser, with no file uploads.
+Check your files with the [free iPhone Duo screenshot checker](/en/tools/iphone-duo-screenshot-checker): dimensions, transparency and Apple’s limit of 10 screenshots per device size, in your browser, with no file uploads.
 
 ## Comparison table
 
