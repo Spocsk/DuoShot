@@ -76,19 +76,19 @@ describe.each(["fr", "en"] as const)("%s App Store Connect guide", (locale) => {
     const html = renderToStaticMarkup(await GuidePage(props()));
     const copy = ascGuideCopy(locale);
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
-    expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["Organization", "TechArticle", "HowTo", "FAQPage"]);
+    expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle", "HowTo", "FAQPage"]);
     expect(appStoreConnectGuide(locale).description).toContain(device);
-    for (const node of graph.slice(1)) expect(node.description).toBe(appStoreConnectGuide(locale).description);
-    expect(graph[1]).toMatchObject({ headline: appStoreConnectGuide(locale).title, dateModified: "2026-10-16", inLanguage: locale, url: url() });
-    expect(graph[2]).toMatchObject({ name: copy.howToHeading, inLanguage: locale, url: url() });
-    expect(graph[2].step).toHaveLength(copy.steps.length);
+    for (const node of graph) expect(node.description).toBe(appStoreConnectGuide(locale).description);
+    expect(graph[0]).toMatchObject({ headline: appStoreConnectGuide(locale).title, dateModified: "2026-10-16", inLanguage: locale, url: url() });
+    expect(graph[1]).toMatchObject({ name: copy.howToHeading, inLanguage: locale, url: url() });
+    expect(graph[1].step).toHaveLength(copy.steps.length);
     copy.steps.forEach((step, index) => {
-      expect(graph[2].step[index]).toEqual({ "@type": "HowToStep", position: index + 1, name: step.name, text: step.text, url: `${url()}#${step.id}` });
+      expect(graph[1].step[index]).toEqual({ "@type": "HowToStep", position: index + 1, name: step.name, text: step.text, url: `${url()}#${step.id}` });
       expect(html).toContain(`<li id="${step.id}"><h3 class="font-display text-2xl">${escaped(step.name)}</h3><p class="mt-3 leading-relaxed">${escaped(step.text)}</p></li>`);
     });
-    expect(graph[3].mainEntity).toHaveLength(copy.faq.length);
+    expect(graph[2].mainEntity).toHaveLength(copy.faq.length);
     copy.faq.forEach((item, index) => {
-      expect(graph[3].mainEntity[index]).toEqual({ "@type": "Question", name: item.q, acceptedAnswer: { "@type": "Answer", text: item.a } });
+      expect(graph[2].mainEntity[index]).toEqual({ "@type": "Question", name: item.q, acceptedAnswer: { "@type": "Answer", text: item.a } });
       expect(html).toContain(`<span>${escaped(item.q)}</span>`);
       expect(html).toContain(`<p class="max-w-3xl pb-4 text-[var(--muted)]">${escaped(item.a)}</p>`);
     });

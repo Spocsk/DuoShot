@@ -30,7 +30,7 @@ function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpe
         {specs.map((spec) => <tr key={spec.id} className="border-t border-[var(--line)]">
           <th scope="row" className="py-3 pr-3 font-normal">
             {spec.slot === "duo-outer" ? t("specs_outer_display") : spec.slot === "duo-inner" ? t("specs_inner_display") : t("specs_iphone")}
-            <span className="block text-[var(--muted)]">{specRowDetail(spec, locale)}</span>
+            {spec.slot !== "duo-outer" && spec.slot !== "duo-inner" && <span className="block text-[var(--muted)]">{specRowDetail(spec, locale)}</span>}
           </th>
           <td className="px-2 py-3">{spec.orientation === "portrait" ? t("specs_portrait") : t("specs_landscape")}</td>
           <td className="py-3 pl-2 font-mono">{screenshotDimensions(spec)}</td>
@@ -43,8 +43,6 @@ function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpe
 export function SpecsPage({ locale }: { locale: Locale }) {
   const { t, tf } = getTranslator(locale);
   const faq = SPECS_FAQ[locale];
-  const outerSize = formatInches(SIZE_SPECS.find((spec) => spec.slot === "duo-outer")!.inches, locale);
-  const innerSize = formatInches(SIZE_SPECS.find((spec) => spec.slot === "duo-inner")!.inches, locale);
   const size69 = formatInches(SIZE_SPECS.find((spec) => spec.slot === "iphone-69")!.inches, locale);
   return (
     <div className="flex min-h-full flex-col">
@@ -54,9 +52,10 @@ export function SpecsPage({ locale }: { locale: Locale }) {
         <p className="ds-label">{tf("specs_verified_on", { date: SCREENSHOT_VERIFIED_ON })}</p>
         <h1 className="font-display mt-3 text-4xl sm:text-5xl">{t("specs_iphone_duo_screenshot_sizes")}</h1>
         <p className="mt-4 max-w-3xl text-lg">
-          {tf("specs_app_store_connect_prepare", { outerPortrait: OUTER_PORTRAIT, outerSize, innerPortrait: INNER_PORTRAIT, innerSize })}
+          {tf("specs_app_store_connect_prepare", { outerPortrait: OUTER_PORTRAIT, innerPortrait: INNER_PORTRAIT })}
         </p>
         <p className="mt-4 text-lg">{t("specs_single_slot")}</p>
+        <p className="mt-4 text-sm text-[var(--muted)]">{t("specs_duoshot_identity")}</p>
         <AppleAvailability locale={locale} />
         <section className="mt-10" aria-labelledby="iphone-63-sizes">
           <h2 id="iphone-63-sizes" className="font-display text-3xl">{t("specs_required_iphone_sizes")}</h2>
@@ -81,7 +80,7 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           <h2 id="panel-vs-connect" className="font-display text-3xl">{t("specs_panel_resolution_vs_app")}</h2>
           <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: INNER_PORTRAIT })}</p>
           <p className="mt-3 text-[var(--muted)]">{tf("specs_outer_display_panel_portrait", { outerPortrait: OUTER_PORTRAIT })}</p>
-          <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm"><a className="ds-link" href={APPLE_DEVICE_SOURCE}>{tf("specs_apple_tech_specs_displays", { outerSize, innerSize })}</a><a className="ds-link" href={APPLE_SCREENSHOT_SOURCE}>{t("specs_apple_connect_screenshot_dimensions")}</a></p>
+          <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm"><a className="ds-link" href={APPLE_DEVICE_SOURCE}>{t("specs_apple_tech_specs_displays")}</a><a className="ds-link" href={APPLE_SCREENSHOT_SOURCE}>{t("specs_apple_connect_screenshot_dimensions")}</a></p>
         </section>
         <section className="mt-12" aria-labelledby="safe-area-fold">
           <h2 id="safe-area-fold" className="font-display text-3xl">{t("specs_fold_heading")}</h2>

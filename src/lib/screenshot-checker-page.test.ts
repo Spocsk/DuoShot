@@ -48,10 +48,10 @@ describe.each(["fr", "en"] as const)("%s screenshot checker page", (locale) => {
       expect(html).toContain(`${height} × ${width}`);
     }
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
-    expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["Organization", "SoftwareApplication", "FAQPage"]);
-    expect(graph[1]).toMatchObject({ name: copy.title, description: copy.description, url: absoluteUrl(localizedPath(locale, SCREENSHOT_CHECKER_PATH)), offers: [{ price: "0", priceCurrency: "EUR" }] });
-    expect(graph[1].offers).toHaveLength(1);
-    expect(graph[2].mainEntity).toEqual(copy.faq.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })));
+    expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["SoftwareApplication", "FAQPage"]);
+    expect(graph[0]).toMatchObject({ name: copy.title, description: copy.description, url: absoluteUrl(localizedPath(locale, SCREENSHOT_CHECKER_PATH)), offers: [{ price: "0", priceCurrency: "EUR" }] });
+    expect(graph[0].offers).toHaveLength(1);
+    expect(graph[1].mainEntity).toEqual(copy.faq.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })));
     expect(html.match(/class="t-acc /g)).toHaveLength(copy.faq.length);
   });
 

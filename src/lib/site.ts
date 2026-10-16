@@ -4,9 +4,9 @@ import { publicEnv } from "./env-public";
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
 export const SITE_PITCH_FR =
-  "Créez vos captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit avec le 6,3″ requis ; 6,9″ optionnel avec Pass, Indie et Studio.";
+  "Créez vos captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit avec l’iPhone Dynamic Island (écran moyen, 6,3″) requis ; 6,9″ optionnel avec Pass, Indie et Studio.";
 export const SITE_PITCH_EN =
-  "Create iPhone Duo App Store screenshots as opaque PNG/JPEG. Free trial with required 6.3″; optional 6.9″ with Pass, Indie and Studio.";
+  "Create iPhone Duo App Store screenshots as opaque PNG/JPEG. Free trial with iPhone with Dynamic Island (medium display, 6.3\") required; optional 6.9″ with Pass, Indie and Studio.";
 
 export function getSiteUrl(): string {
   const explicit = publicEnv.siteUrl;

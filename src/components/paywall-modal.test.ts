@@ -99,7 +99,7 @@ describe.each(["fr", "en"] as const)("commercial copy in %s", (locale) => {
   it.each([false, true])("mentions Pass for 6.9-inch access only when available (%s)", (passAvailable) => {
     const html = renderPaywall({ locale, reason: "69", available: true, passAvailable });
     expect(html.includes("Pass")).toBe(passAvailable);
-    expect(html).toContain(getTranslator(locale).t(passAvailable ? "paywall_69" : "paywall_69_without_pass"));
+    expect(html).toContain(renderToStaticMarkup(getTranslator(locale).t(passAvailable ? "paywall_69" : "paywall_69_without_pass")));
   });
 
   it.each([false, true])("reads paywall prices and quotas from plans (yearly=%s)", (yearly) => {

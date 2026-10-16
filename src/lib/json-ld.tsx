@@ -4,7 +4,6 @@ import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, absoluteUrl, 
 import type { Locale } from "./specs";
 import type { FaqItem } from "./screenshot-copy";
 import { APPLE_SCREENSHOT_SOURCE } from "./apple-screenshot-status";
-import { pricingPageCopy } from "./marketing-copy";
 
 export type PageSchema = {
   path: string;
@@ -14,8 +13,10 @@ export type PageSchema = {
   howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
 };
 
-export function jsonLdGraph(locale: Locale, { path, faq, software, article, howTo }: PageSchema) {
-  const url = absoluteUrl(localizedPath(locale, path));
+export function siteJsonLdGraph(locale: Locale) {
+  const description = (locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN).replace(
+    "iPhone Duo", locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)",
+  );
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -24,16 +25,16 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
         "@id": `${absoluteUrl("/")}#organization`,
         name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         url: absoluteUrl("/"),
-        description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
+        description,
       },
-      ...(software ? [{
+      {
         "@type": "SoftwareApplication",
-        name: typeof software === "object" ? software.name : `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
+        "@id": `${absoluteUrl("/")}#software`,
+        publisher: { "@id": `${absoluteUrl("/")}#organization` },
+        name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
-        offers: typeof software === "object" ? [
-          { "@type": "Offer", name: software.name, description: software.description, price: "0", priceCurrency: "EUR" },
-        ] : [
+        offers: [
           { "@type": "Offer", name: `${getTranslator(locale).t("pricing_trial_title")} · ${FREE_EXPORTS} exports`, description: getTranslator(locale).tf("pricing_trial_body", { exports: FREE_EXPORTS }), price: "0", priceCurrency: "EUR" },
           ...Object.entries(CHECKOUT_CATALOG).map(([kind, offer]) => ({
             "@type": "Offer", name: offer.name, url: absoluteUrl(pricingPath(locale)),
@@ -50,7 +51,28 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
             priceSpecification: { "@type": "UnitPriceSpecification", price: String(PASS30.priceEur), priceCurrency: "EUR", billingDuration: `P${PASS30.days}D` },
           }] : []),
         ],
-        description: typeof software === "object" ? software.description : localizedPath("fr", path) === "/pricing" ? pricingPageCopy(locale).description : locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
+        description,
+        url: absoluteUrl(localizedPath(locale, "/")),
+      },
+    ],
+  };
+}
+
+export function jsonLdGraph(locale: Locale, { path, faq, software, article, howTo }: PageSchema) {
+  const url = absoluteUrl(localizedPath(locale, path));
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      // Shared site entities are emitted by SiteJsonLd in the document layout.
+      ...(typeof software === "object" ? [{
+        "@type": "SoftwareApplication",
+        "@id": `${url}#software`,
+        publisher: { "@id": `${absoluteUrl("/")}#organization` },
+        name: software.name,
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Web",
+        offers: [{ "@type": "Offer", name: software.name, description: software.description, price: "0", priceCurrency: "EUR" }],
+        description: software.description,
         url,
       }] : []),
       ...(article ? [{
@@ -98,5 +120,10 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
 
 export function JsonLd({ locale, ...schema }: { locale: Locale } & PageSchema) {
   const json = JSON.stringify(jsonLdGraph(locale, schema)).replace(/</g, "\\u003c");
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
+}
+
+export function SiteJsonLd({ locale }: { locale: Locale }) {
+  const json = JSON.stringify(siteJsonLdGraph(locale)).replace(/</g, "\\u003c");
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
 }

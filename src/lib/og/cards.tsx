@@ -53,8 +53,8 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
     en: { eyebrow: "iPhone Duo · App Store Connect", title: "iPhone Duo screenshots.\nExact App Store sizes.", alt: `DuoShot: iPhone Duo screenshots at exact App Store sizes, ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px.` },
   },
   specs: {
-    fr: { eyebrow: "Dimensions", title: "Captures iPhone Duo et 6,3 pouces", lead: "6,3″ requis, inclus dans l’essai gratuit.", alt: `Tailles des captures iPhone Duo : écran fermé ${OUTER_PORTRAIT} px, écran ouvert ${INNER_PORTRAIT} px. iPhone 6,3″ requis : 1206 × 2622 px ; alternative 1179 × 2556 px.` },
-    en: { eyebrow: "Dimensions", title: "iPhone Duo and 6.3-inch screenshots", lead: "Required 6.3″ size, included in the free trial.", alt: `iPhone Duo screenshot sizes: closed display ${OUTER_PORTRAIT} px, open display ${INNER_PORTRAIT} px. Required 6.3″ iPhone: 1206 × 2622 px; alternative 1179 × 2556 px.` },
+    fr: { eyebrow: "Dimensions", title: "Captures iPhone Duo et 6,3 pouces", lead: "iPhone Dynamic Island (écran moyen, 6,3″) requis, inclus dans l’essai gratuit.", alt: `Tailles des captures iPhone Duo : écran fermé ${OUTER_PORTRAIT} px, écran ouvert ${INNER_PORTRAIT} px. iPhone Dynamic Island (écran moyen, 6,3″) requis : 1206 × 2622 px ; alternative 1179 × 2556 px.` },
+    en: { eyebrow: "Dimensions", title: "iPhone Duo and 6.3-inch screenshots", lead: "iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial.", alt: `iPhone Duo screenshot sizes: closed display ${OUTER_PORTRAIT} px, open display ${INNER_PORTRAIT} px. iPhone with Dynamic Island (medium display, 6.3") required: 1206 × 2622 px; alternative 1179 × 2556 px.` },
   },
   rejection: {
     fr: { eyebrow: "Points à vérifier", title: "Captures refusées ? Dimensions et canal alpha.", alt: "Bilan de préparation DuoShot : dimensions vérifiées, canal alpha aplati, PNG opaque." },
