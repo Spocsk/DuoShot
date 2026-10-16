@@ -72,6 +72,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/guides/duoshot-vs-appscreens", en: "/en/guides/duoshot-vs-appscreens", priority: 0.7 },
   { fr: "/guides/duoshot-vs-screenhance", en: "/en/guides/duoshot-vs-screenhance", priority: 0.7 },
   { fr: "/guides/duoshot-vs-app-asset-kit", en: "/en/guides/duoshot-vs-app-asset-kit", priority: 0.7 },
+  { fr: "/guides/iphone-duo-app-store-connect", en: "/en/guides/iphone-duo-app-store-connect", priority: 0.7 },
   { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
   { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
   { fr: "/1206x2622", en: "/en/1206x2622", priority: 0.8 },

@@ -3,10 +3,19 @@ import path from "node:path";
 import type { Locale } from "./specs";
 
 export const COMPARISON_GUIDE_PATH = "/guides/best-app-store-screenshot-generator";
+export const ASC_GUIDE_PATH = "/guides/iphone-duo-app-store-connect";
+
+export function comparisonGuide(locale: Locale) {
+  return readGuide(locale, COMPARISON_GUIDE_PATH);
+}
+
+export function appStoreConnectGuide(locale: Locale) {
+  return readGuide(locale, ASC_GUIDE_PATH);
+}
 
 /** The checked-in guides use flat string frontmatter; the body stays untouched. */
-export function comparisonGuide(locale: Locale) {
-  const source = readFileSync(path.join(process.cwd(), `content/guides/best-app-store-screenshot-generator.${locale}.md`), "utf8");
+function readGuide(locale: Locale, guidePath: string) {
+  const source = readFileSync(path.join(process.cwd(), `content${guidePath}.${locale}.md`), "utf8");
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) throw new Error(`Missing guide frontmatter: ${locale}`);
   const fields = Object.fromEntries(match[1].split(/\r?\n/).map((line) => {
