@@ -151,6 +151,54 @@ describe("SEO screenshot pages", () => {
       });
     }
 
+    for (const [slug, name, officialUrl] of [
+      ["duoshot-vs-applaunchflow", "AppLaunchFlow", "https://applaunchflow.com/"],
+      ["duoshot-vs-appscreens", "AppScreens", "https://appscreens.com/"],
+      ["duoshot-vs-screenhance", "Screenhance", "https://screenhance.com/"],
+    ]) {
+      it(`discovers the ${name} comparison from the guide and serves indexable ${locale} content`, () => {
+        const path = `/guides/${slug}`;
+        visit(`${prefix}/guides/best-app-store-screenshot-generator`);
+        cy.get(`main a[href="${prefix}${path}"]`).click();
+        cy.location("pathname").should("eq", `${prefix}${path}`);
+        cy.get("h1").should("have.length", 1).and("contain", `DuoShot vs ${name}`);
+        cy.get(`main a[href="${officialUrl}"]`).should("exist");
+        for (const target of ["/specs", "/pricing", "/tool", "/guides/best-app-store-screenshot-generator"]) {
+          cy.get(`main a[href="${prefix}${target}"]`).should("exist");
+        }
+        cy.get("main").should("contain", "1398 × 2034").and("contain", "2007 × 2853")
+          .and("contain", "1206 × 2622").and("contain", "1320 × 2868")
+          .and("contain", locale === "fr" ? "n’a pas été testé par DuoShot" : "has not tested iPhone Duo uploads");
+        cy.document().then((doc) => {
+          const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
+          const origin = new URL(canonical).origin;
+          expect(canonical).to.eq(`${origin}${prefix}${path}`);
+          expect(doc.title).to.contain(`DuoShot vs ${name}`);
+          expect(doc.documentElement.lang).to.eq(locale);
+          expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.contain(name);
+          expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content") || "").not.to.contain("noindex");
+          for (const language of ["fr", "en", "x-default"]) {
+            expect(doc.querySelector(`link[rel="alternate"][hreflang="${language}"]`)!.getAttribute("href"))
+              .to.eq(`${origin}${language === "en" ? "/en" : ""}${path}`);
+          }
+          expect(doc.querySelector('meta[property="og:url"]')!.getAttribute("content")).to.eq(canonical);
+          expect(doc.querySelector('meta[property="og:image"]')?.getAttribute("content")).to.contain(`${path}/opengraph-image`);
+          expect(doc.querySelector('meta[name="twitter:card"]')?.getAttribute("content")).to.eq("summary_large_image");
+          const article = graphOf(doc).find((node) => node["@type"] === "TechArticle")!;
+          expect(article.headline).to.eq(doc.querySelector("h1")!.textContent);
+          expect(article.url).to.eq(canonical);
+          expect(article.dateModified).to.eq("2026-10-16");
+          expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
+          cy.request("/sitemap.xml").its("body").should("contain", `<loc>${canonical}</loc>`);
+        });
+        const otherPrefix = locale === "fr" ? "/en" : "";
+        cy.get('[data-testid="locale-switch"]').should("have.attr", "href", `${otherPrefix}${path}`).click();
+        cy.location("pathname").should("eq", `${otherPrefix}${path}`);
+        cy.get("html").should("have.attr", "lang", locale === "fr" ? "en" : "fr");
+        cy.get("h1").should("contain", `DuoShot vs ${name}`);
+      });
+    }
+
     it(`matches FAQ markup to displayed questions on home, pricing and rejection in ${locale}`, () => {
       for (const path of [prefix || "/", `${prefix}/pricing`, locale === "fr" ? "/rejet" : "/en/rejection"]) {
         visit(path);

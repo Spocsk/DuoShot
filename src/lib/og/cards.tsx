@@ -11,6 +11,7 @@ export type OgPage =
   | "home"
   | "specs"
   | "comparison-guide"
+  | "competitor-comparison"
   | "asc-guide"
   | "screenshot-checker"
   | "iphone-69"
@@ -31,6 +32,10 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
+  "competitor-comparison": {
+    fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens, Screenhance et App Asset Kit : sources officielles et fonctionnement DuoShot." },
+    en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens, Screenhance and App Asset Kit: official sources and DuoShot workflow." },
+  },
   "asc-guide": {
     fr: { eyebrow: "Guide · App Store Connect", title: "Déposer vos captures iPhone Duo", lead: "Dimensions, emplacement dédié et dépôt manuel.", alt: "Guide de dépôt manuel des captures iPhone Duo dans App Store Connect : tailles des écrans externe et interne et emplacement dédié par langue." },
     en: { eyebrow: "Guide · App Store Connect", title: "Upload your iPhone Duo screenshots", lead: "Sizes, dedicated slot and manual upload.", alt: "Manual iPhone Duo screenshot upload guide for App Store Connect: outer and inner display sizes and the dedicated slot per localization." },
@@ -385,6 +390,7 @@ function PairArt({ locale }: { locale: Locale }) {
 }
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
+  "competitor-comparison": PairArt,
   "asc-guide": PairArt,
   "screenshot-checker": PairArt,
   "comparison-guide": PairArt,
