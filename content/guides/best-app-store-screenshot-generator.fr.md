@@ -86,6 +86,12 @@ AppScreens permet d'exporter les tailles essentielles ; DuoShot donne 2 exports 
 **DuoShot envoie-t-il les captures dans App Store Connect ?**
 Non. DuoShot produit un ZIP, et vous déposez les captures vous-même. AppScreens, AppLaunchFlow et Screenpane proposent l'envoi direct.
 
+## Comparatifs DuoShot détaillés
+
+- [DuoShot vs AppLaunchFlow](/guides/duoshot-vs-applaunchflow)
+- [DuoShot vs AppScreens](/guides/duoshot-vs-appscreens)
+- [DuoShot vs Screenhance](/guides/duoshot-vs-screenhance)
+
 ## Sources (consultées le 15 octobre 2026)
 
 - Apple, spécifications des captures : https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
