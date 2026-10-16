@@ -10,7 +10,7 @@ describe("Apple upload status", () => {
   it("qualifies the deadline in the crawler reference", async () => {
     const body = await GET().text();
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
-    expect(body).toContain("single iPhone Duo slot, with up to 10 screenshots per locale");
+    expect(body).toContain("iPhone Duo slot, with up to 10 screenshots per device size");
   });
   it("defaults to the configured open state and check date", () => {
     expect(appleUploadStatus("fr")).toBe(appleUploadStatus("fr", APPLE_UPLOAD_STATE));
@@ -35,10 +35,11 @@ describe("Apple upload status", () => {
     expect(en).not.toContain("later this year");
   });
 
-  it.each(["fr", "en"] as const)("describes one shared slot without claiming tested uploads (%s)", (locale) => {
+  it.each(["fr", "en"] as const)("describes the Duo slot without claiming tested uploads (%s)", (locale) => {
     const status = appleUploadStatus(locale);
-    expect(status).toContain("APP_IPHONE_DUO");
-    expect(status).toContain("10");
+    expect(status).toContain(locale === "fr"
+      ? "un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil."
+      : "an iPhone Duo slot, with up to 10 screenshots per device size.");
     expect(status).toContain("1398 × 2034");
     expect(status).toContain("2007 × 2853");
     expect(status).toContain(locale === "fr" ? "pas encore été testé" : "not yet been tested");
@@ -54,7 +55,9 @@ describe("Apple upload status", () => {
     const html = renderToStaticMarkup(createElement(AppleAvailability, { locale }));
     expect(html).toContain(`href="${APPLE_UPLOAD_NEWS_SOURCE}"`);
     expect(html).toContain(`href="${DUO_SLOT_SOURCE}"`);
-    expect(html).toContain("APP_IPHONE_DUO");
+    expect(html).toContain(locale === "fr"
+      ? "un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil."
+      : "an iPhone Duo slot, with up to 10 screenshots per device size.");
     expect(html).toContain('data-state="open"');
     expect(html).not.toContain("<form");
   });

@@ -22,6 +22,8 @@ Apple's [screenshot specifications](https://developer.apple.com/help/app-store-c
 
 All sizes in one place: [/en/specs](/en/specs).
 
+Check your files with the [free iPhone Duo screenshot checker](/en/tools/iphone-duo-screenshot-checker): dimensions, transparency and Apple’s limit of 10 screenshots per device size, in your browser, with no file uploads.
+
 ## Comparison table
 
 | | AppScreens | AppLaunchFlow | SnapMonk | Screenpane | DuoShot |
@@ -85,6 +87,15 @@ AppScreens lets you export essential sizes on its free plan; DuoShot gives 2 HD 
 
 **Does DuoShot upload to App Store Connect?**
 No. DuoShot exports a ZIP; you upload the screenshots manually. AppScreens, AppLaunchFlow and Screenpane offer direct upload.
+
+## Detailed DuoShot comparisons
+
+- [DuoShot vs AppLaunchFlow](/en/guides/duoshot-vs-applaunchflow)
+- [DuoShot vs AppScreens](/en/guides/duoshot-vs-appscreens)
+- [DuoShot vs Screenhance](/en/guides/duoshot-vs-screenhance)
+- [DuoShot vs App Asset Kit](/en/guides/duoshot-vs-app-asset-kit)
+
+For file preparation, display slots and manual upload steps, read [iPhone Duo screenshots in App Store Connect](/en/guides/iphone-duo-app-store-connect).
 
 ## Sources (checked October 15, 2026)
 

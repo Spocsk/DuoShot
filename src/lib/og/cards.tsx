@@ -11,6 +11,9 @@ export type OgPage =
   | "home"
   | "specs"
   | "comparison-guide"
+  | "competitor-comparison"
+  | "asc-guide"
+  | "screenshot-checker"
   | "iphone-69"
   | "rejection"
   | "pricing"
@@ -29,6 +32,18 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
+  "competitor-comparison": {
+    fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens, Screenhance et App Asset Kit : sources officielles et fonctionnement DuoShot." },
+    en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens, Screenhance and App Asset Kit: official sources and DuoShot workflow." },
+  },
+  "asc-guide": {
+    fr: { eyebrow: "Guide · App Store Connect", title: "Déposer vos captures iPhone Duo", lead: "Dimensions, emplacement dédié et dépôt manuel.", alt: "Guide de dépôt manuel des captures iPhone Duo dans App Store Connect : tailles des écrans externe et interne et emplacement dédié par langue." },
+    en: { eyebrow: "Guide · App Store Connect", title: "Upload your iPhone Duo screenshots", lead: "Sizes, dedicated slot and manual upload.", alt: "Manual iPhone Duo screenshot upload guide for App Store Connect: outer and inner display sizes and the dedicated slot per localization." },
+  },
+  "screenshot-checker": {
+    fr: { eyebrow: "Outil gratuit", title: "Vérifiez vos captures iPhone Duo.", lead: "Dimensions et transparence.\nAucune image envoyée.", alt: "Vérificateur gratuit de captures iPhone Duo : dimensions, transparence et limite de 10 images, dans votre navigateur." },
+    en: { eyebrow: "Free tool", title: "Check your iPhone Duo screenshots.", lead: "Dimensions and transparency.\nNo images uploaded.", alt: "Free iPhone Duo screenshot checker: dimensions, transparency and the 10-image limit, in your browser." },
+  },
   "comparison-guide": {
     fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },
     en: { eyebrow: "Guide · 2026 comparison", title: "App Store screenshot generators", lead: "Five tools compared: prices, sizes and export.", alt: "2026 App Store screenshot generator comparison: AppScreens, AppLaunchFlow, SnapMonk, Screenpane and DuoShot." },
@@ -38,8 +53,8 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
     en: { eyebrow: "iPhone Duo · App Store Connect", title: "iPhone Duo screenshots.\nExact App Store sizes.", alt: `DuoShot: iPhone Duo screenshots at exact App Store sizes, ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px.` },
   },
   specs: {
-    fr: { eyebrow: "Dimensions", title: "Captures iPhone Duo et 6,3 pouces", lead: "6,3″ requis, inclus dans l’essai gratuit.", alt: `Tailles des captures iPhone Duo : écran fermé ${OUTER_PORTRAIT} px, écran ouvert ${INNER_PORTRAIT} px. iPhone 6,3″ requis : 1206 × 2622 px ; alternative 1179 × 2556 px.` },
-    en: { eyebrow: "Dimensions", title: "iPhone Duo and 6.3-inch screenshots", lead: "Required 6.3″ size, included in the free trial.", alt: `iPhone Duo screenshot sizes: closed display ${OUTER_PORTRAIT} px, open display ${INNER_PORTRAIT} px. Required 6.3″ iPhone: 1206 × 2622 px; alternative 1179 × 2556 px.` },
+    fr: { eyebrow: "Dimensions", title: "Captures iPhone Duo et 6,3 pouces", lead: "iPhone Dynamic Island (écran moyen, 6,3″) requis, inclus dans l’essai gratuit.", alt: `Tailles des captures iPhone Duo : écran fermé ${OUTER_PORTRAIT} px, écran ouvert ${INNER_PORTRAIT} px. iPhone Dynamic Island (écran moyen, 6,3″) requis : 1206 × 2622 px ; alternative 1179 × 2556 px.` },
+    en: { eyebrow: "Dimensions", title: "iPhone Duo and 6.3-inch screenshots", lead: "iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial.", alt: `iPhone Duo screenshot sizes: closed display ${OUTER_PORTRAIT} px, open display ${INNER_PORTRAIT} px. iPhone with Dynamic Island (medium display, 6.3") required: 1206 × 2622 px; alternative 1179 × 2556 px.` },
   },
   rejection: {
     fr: { eyebrow: "Points à vérifier", title: "Captures refusées ? Dimensions et canal alpha.", alt: "Bilan de préparation DuoShot : dimensions vérifiées, canal alpha aplati, PNG opaque." },
@@ -375,6 +390,9 @@ function PairArt({ locale }: { locale: Locale }) {
 }
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
+  "competitor-comparison": PairArt,
+  "asc-guide": PairArt,
+  "screenshot-checker": PairArt,
   "comparison-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,

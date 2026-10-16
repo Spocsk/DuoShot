@@ -73,8 +73,8 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(html).toContain(locale === "fr" ? "Paiement indisponible" : "Checkout unavailable");
     expect(html).not.toContain(locale === "fr" ? "bientôt" : "soon");
     expect(html).not.toContain('data-testid="pricing-pass30"');
-    expect(html).toContain(getTranslator(locale).t("pricing_lead_without_pass"));
-    expect(html).not.toContain(getTranslator(locale).t("pricing_lead"));
+    expect(html).toContain(renderToStaticMarkup(getTranslator(locale).t("pricing_lead_without_pass")));
+    expect(html).not.toContain(renderToStaticMarkup(getTranslator(locale).t("pricing_lead")));
   });
 
   it("keeps the pricing toggle and derives offer copy from plans", () => {
@@ -89,11 +89,11 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(html).toContain(locale === "fr" ? "Pass 45 jours — 29 €" : "45-day pass — €29");
     expect(html).not.toMatch(/\{(?:exports|dailyCap|seats|days|price|months)\}/);
     expect(html).not.toContain('class="studio-plan-local"');
-    const row63 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(getTranslator(locale).t("pricing_feat_63")));
+    const row63 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(renderToStaticMarkup(getTranslator(locale).t("pricing_feat_63"))));
     expect(row63).toBeDefined();
     expect(row63!.match(/>Yes<|>Oui</g)).toHaveLength(4);
     expect(html).toContain(locale === "fr" ? "Tailles 6,9″ optionnelles" : "Optional 6.9″ sizes");
-    expect(html).toContain(getTranslator(locale).t("pricing_lead"));
+    expect(html).toContain(renderToStaticMarkup(getTranslator(locale).t("pricing_lead")));
     const row69 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(getTranslator(locale).t("pricing_feat_69")));
     expect(row69!.match(/>Yes<|>Oui</g)).toHaveLength(3);
   });

@@ -20,7 +20,7 @@ export async function PricingPage({ locale }: { locale: Locale }) {
   const faq = [...pricingFaq(i18n), ...getFaq(locale, passAvailable)];
   return (
     <div className="flex min-h-full flex-col">
-      <JsonLd locale={locale} path="/pricing" software faq={faq} />
+      <JsonLd locale={locale} path="/pricing" faq={faq} />
       <SiteHeader locale={locale} path="/pricing" />
       <main id="main">
         <PricingSection locale={locale} heading="h1" checkoutAvailable={available} passAvailable={passAvailable} />

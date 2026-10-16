@@ -25,7 +25,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "Quelles tailles pour l’iPhone Duo ?",
-        a: `Écran fermé 5,4″ : 1398×2034 (portrait) et 2034×1398 (paysage). Écran ouvert 7,6″ : 2007×2853 et 2853×2007. Taille iPhone 6,3″ requise pour App Store Connect, incluse dans l’essai gratuit : 1206×2622 et 2622×1206. Connect accepte aussi 1179×2556 et 2556×1179 ; DuoShot exporte en 1206×2622 ou son paysage. Option 6,9″ (${frPlans}) : 1320×2868, 1290×2796, 1260×2736 et leurs paysages.`,
+        a: `Écran externe : 1398×2034 (portrait) et 2034×1398 (paysage). Écran interne : 2007×2853 et 2853×2007. iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect ; taille incluse dans l’essai gratuit : 1206×2622 et 2622×1206. Connect accepte aussi 1179×2556 et 2556×1179 ; DuoShot exporte en 1206×2622 ou son paysage. Option 6,9″ (${frPlans}) : 1320×2868, 1290×2796, 1260×2736 et leurs paysages.`,
       },
       {
         q: "Faut-il un iPhone Duo physique ?",
@@ -37,7 +37,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "Comment ça se paie ?",
-        a: `Accès libre : aperçu, contrôles et ZIP exemple. Essai gratuit : ${PLANS.free.freeExports} exports après inscription, sans carte, avec les captures Duo sélectionnées et la taille iPhone 6,3″ requise. Le 6,9″ est optionnel avec ${frOffers}. Indie : ${PLANS.indie.monthlyEur} €/mois ou ${PLANS.indie.yearlyEur} €/an. Studio : ${PLANS.studio.monthlyEur} €/mois ou ${PLANS.studio.yearlyEur} €/an avec ${PLANS.studio.seats} sièges et une revue client pendant ${REVIEW_TTL_DAYS} jours. L’année offre ${freeMonths} mois par rapport au paiement mensuel.`,
+        a: `Accès libre : aperçu, contrôles et ZIP exemple. Essai gratuit : ${PLANS.free.freeExports} exports après inscription, sans carte, avec les captures Duo sélectionnées et l’iPhone Dynamic Island (écran moyen, 6,3″) requis. Le 6,9″ est optionnel avec ${frOffers}. Indie : ${PLANS.indie.monthlyEur} €/mois ou ${PLANS.indie.yearlyEur} €/an. Studio : ${PLANS.studio.monthlyEur} €/mois ou ${PLANS.studio.yearlyEur} €/an avec ${PLANS.studio.seats} sièges et une revue client pendant ${REVIEW_TTL_DAYS} jours. L’année offre ${freeMonths} mois par rapport au paiement mensuel.`,
       },
       {
         q: "PNG ou JPEG ?",
@@ -67,7 +67,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "What sizes for iPhone Duo?",
-        a: `Closed (outer) screen 5.4″: 1398×2034 (portrait) and 2034×1398 (landscape). Open (inner) screen 7.6″: 2007×2853 and 2853×2007. Required 6.3″ iPhone size for App Store Connect, included in the free trial: 1206×2622 and 2622×1206. Connect also accepts 1179×2556 and 2556×1179; DuoShot exports 1206×2622 or its landscape. Optional 6.9″ (${enPlans}): 1320×2868, 1290×2796, 1260×2736 and their landscapes.`,
+        a: `Outer display: 1398×2034 (portrait) and 2034×1398 (landscape). Inner display: 2007×2853 and 2853×2007. iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect, included in the free trial: 1206×2622 and 2622×1206. Connect also accepts 1179×2556 and 2556×1179; DuoShot exports 1206×2622 or its landscape. Optional 6.9″ (${enPlans}): 1320×2868, 1290×2796, 1260×2736 and their landscapes.`,
       },
       {
         q: "Do I need a physical iPhone Duo?",
@@ -79,7 +79,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "How does payment work?",
-        a: `Open access includes preview, checks, and an example ZIP. Free trial includes ${PLANS.free.freeExports} exports after signup, no card, with selected Duo screenshots and the required 6.3″ iPhone size. The 6.9″ size is optional with ${enOffers}. Indie is €${PLANS.indie.monthlyEur}/month or €${PLANS.indie.yearlyEur}/year. Studio is €${PLANS.studio.monthlyEur}/month or €${PLANS.studio.yearlyEur}/year with ${PLANS.studio.seats} seats and a ${REVIEW_TTL_DAYS}-day client review. Annual billing includes ${freeMonths} months free compared with monthly billing.`,
+        a: `Open access includes preview, checks, and an example ZIP. Free trial includes ${PLANS.free.freeExports} exports after signup, no card, with selected Duo screenshots and iPhone with Dynamic Island (medium display, 6.3") required. The 6.9″ size is optional with ${enOffers}. Indie is €${PLANS.indie.monthlyEur}/month or €${PLANS.indie.yearlyEur}/year. Studio is €${PLANS.studio.monthlyEur}/month or €${PLANS.studio.yearlyEur}/year with ${PLANS.studio.seats} seats and a ${REVIEW_TTL_DAYS}-day client review. Annual billing includes ${freeMonths} months free compared with monthly billing.`,
       },
       {
         q: "PNG or JPEG?",

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FaqList } from "@/components/faq-list";
 import { getTranslator } from "@/lib/i18n";
 import { getFaq } from "@/lib/i18n";
-import { duoSpec, formatInches, type Locale } from "@/lib/specs";
+import { duoSpec, type Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { DuoDevice } from "@/components/duo-device";
@@ -213,7 +213,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
 
   return (
     <div className="studio-home flex min-h-full flex-col">
-      <JsonLd locale={locale} path="/" software faq={faq} />
+      <JsonLd locale={locale} path="/" faq={faq} />
       <SiteHeader locale={locale} path="/" />
       <LandingMotion>
         <main id="main">
@@ -240,11 +240,11 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
               <DuoDevice locale={locale} />
               <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
                 <div className="is-outer">
-                  <dt>{t("home_closed_screen")} · {formatInches(OUTER.inches, locale)}</dt>
+                  <dt>{t("specs_outer_display")}</dt>
                   <dd><Link href={`${prefix}/1398x2034`} className="ds-link">{screenshotDimensions(OUTER)}</Link><small> {t("home_pixels_portrait")}</small></dd>
                 </div>
                 <div className="is-inner">
-                  <dt>{t("home_open_screen")} · {formatInches(INNER.inches, locale)}</dt>
+                  <dt>{t("specs_inner_display")}</dt>
                   <dd><Link href={`${prefix}/2007x2853`} className="ds-link">{screenshotDimensions(INNER)}</Link><small> {t("home_pixels_portrait")}</small></dd>
                 </div>
               </dl>

@@ -254,7 +254,9 @@ describe("screenshot dimensions and search intent", () => {
       cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
       cy.location("pathname").should("eq", `${prefix}/specs`);
       cy.get('[data-testid="apple-availability"]').should("be.visible")
-        .and("contain", "APP_IPHONE_DUO").and("contain", "10")
+        .and("contain", locale === "fr"
+          ? "un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil."
+          : "an iPhone Duo slot, with up to 10 screenshots per device size.")
         .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested")
         .and("contain", locale === "fr" ? "avril 2027" : "April 2027")
         .and("contain", locale === "fr" ? "SDK iOS 27.1 ou ultérieur" : "for apps built with the iOS 27.1 SDK or later");
@@ -269,7 +271,8 @@ describe("screenshot dimensions and search intent", () => {
       cy.get('[data-testid="specs-cta-tool"]').should("have.attr", "href", `${prefix}/tool`);
       cy.document().then((doc) => {
         expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
-        const graph = JSON.parse(doc.querySelector('script[type="application/ld+json"]')!.textContent!)["@graph"];
+        const graph = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'))
+          .flatMap((script) => JSON.parse(script.textContent!)["@graph"]);
         const faq = graph.find((item: { "@type": string }) => item["@type"] === "FAQPage");
         const rows = Array.from(doc.querySelectorAll(".t-acc"));
         expect(faq.mainEntity).to.have.length(rows.length);

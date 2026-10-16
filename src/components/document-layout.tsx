@@ -6,6 +6,7 @@ import { AnalyticsProvider } from "@/components/analytics-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getClientMessages } from "@/lib/i18n";
 import { LANDING_MOTION_QUERY } from "@/lib/motion";
+import { SiteJsonLd } from "@/lib/json-ld";
 import { THEME_SCRIPT } from "@/lib/theme";
 import "@/app/transitions-root.css";
 import "@/app/transitions-dev.css";
@@ -49,6 +50,7 @@ export function DocumentLayout({ children, locale }: { children: React.ReactNode
       <body className="min-h-full flex flex-col">
         <script id="duoshot-theme" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
+        <SiteJsonLd locale={locale} />
         <Suspense fallback={null}>
           <AttributionCapture />
         </Suspense>

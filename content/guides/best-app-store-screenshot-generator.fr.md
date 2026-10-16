@@ -22,6 +22,8 @@ La référence, ce sont les [spécifications de captures d'Apple](https://develo
 
 Toutes les tailles sur une page : [/specs](/specs).
 
+Vérifiez vos fichiers avec le [vérificateur gratuit de captures iPhone Duo](/tools/iphone-duo-screenshot-checker) : dimensions, transparence et limite Apple de 10 captures par taille d’appareil, dans votre navigateur, sans envoi de fichier.
+
 ## Le tableau comparatif
 
 | | AppScreens | AppLaunchFlow | SnapMonk | Screenpane | DuoShot |
@@ -85,6 +87,15 @@ AppScreens permet d'exporter les tailles essentielles ; DuoShot donne 2 exports 
 
 **DuoShot envoie-t-il les captures dans App Store Connect ?**
 Non. DuoShot produit un ZIP, et vous déposez les captures vous-même. AppScreens, AppLaunchFlow et Screenpane proposent l'envoi direct.
+
+## Comparatifs DuoShot détaillés
+
+- [DuoShot vs AppLaunchFlow](/guides/duoshot-vs-applaunchflow)
+- [DuoShot vs AppScreens](/guides/duoshot-vs-appscreens)
+- [DuoShot vs Screenhance](/guides/duoshot-vs-screenhance)
+- [DuoShot vs App Asset Kit](/guides/duoshot-vs-app-asset-kit)
+
+Pour préparer les fichiers, choisir les emplacements et effectuer le dépôt manuel, consultez [Captures iPhone Duo dans App Store Connect](/guides/iphone-duo-app-store-connect).
 
 ## Sources (consultées le 15 octobre 2026)
 
