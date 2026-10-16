@@ -57,8 +57,8 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
         expect(html).toContain(`href="${localizedPath(locale, path)}"`);
       }
       const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
-      expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["Organization", "TechArticle"]);
-      expect(graph[1]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: "2026-10-16", url: absoluteUrl(localizedPath(locale, comparisonPath(slug))) });
+      expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle"]);
+      expect(graph[0]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: "2026-10-16", url: absoluteUrl(localizedPath(locale, comparisonPath(slug))), author: { "@id": `${absoluteUrl("/")}#organization` } });
     });
   }
 
