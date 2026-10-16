@@ -39,7 +39,8 @@ describe("SEO screenshot pages", () => {
       }
       cy.get("h1").should("have.length", 1).and("contain", "App Store Connect");
       cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications"]').should("exist");
-      cy.get("main").should("contain", "APP_IPHONE_DUO")
+      cy.get("main").should("contain", locale === "en" ? "up to 10 screenshots per device size" : "jusqu’à 10 captures par taille d’appareil")
+        .and("not.contain", "APP_IPHONE_DUO")
         .and("contain", locale === "en" ? "DuoShot has not yet tested Duo uploads" : "DuoShot n’a pas encore testé le dépôt Duo")
         .and("contain", locale === "en" ? "April 2027 for apps built with the iOS 27.1 SDK or later" : "avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur")
         .and("contain", "2034 × 1398").and("contain", "2853 × 2007")
