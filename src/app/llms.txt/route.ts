@@ -27,6 +27,7 @@ export function GET() {
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia
 - Rejection decoder: ${getSiteUrl()}/rejet
 - Screenshot generator comparison: ${getSiteUrl()}/guides/best-app-store-screenshot-generator (EN: ${getSiteUrl()}/en/guides/best-app-store-screenshot-generator)
+- Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): ${getSiteUrl()}/tools/iphone-duo-screenshot-checker (EN: ${getSiteUrl()}/en/tools/iphone-duo-screenshot-checker)
 - Tool (noindex): ${getSiteUrl()}/tool
 
 ## Pixels
