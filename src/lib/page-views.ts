@@ -10,11 +10,13 @@ function pagePath(pathname: string): string | null {
   const unprefixed = path.slice(prefix.length) || "/";
   const segments = unprefixed.split("/");
   const routes: string[] = JSON.parse(process.env.DUOSHOT_LOCALIZED_PAGE_ROUTES ?? "[]");
-  const route = routes.find((route) => {
+  // Exact routes win, then patterns with fewer dynamic segments.
+  const route = routes.filter((route) => {
     const parts = route.split("/");
     return parts.length === segments.length && parts.every((part, index) =>
       /^\[[^\]]+\]$/.test(part) ? Boolean(segments[index]) : part === segments[index]);
-  });
+  }).sort((a, b) =>
+    (a.match(/\[[^\]]+\]/g)?.length ?? 0) - (b.match(/\[[^\]]+\]/g)?.length ?? 0))[0];
   return route ? `${prefix}${route === "/" && prefix ? "" : route}`.slice(0, 256) : null;
 }
 

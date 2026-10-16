@@ -87,6 +87,22 @@ describe("anonymous aggregation key", () => {
     expect(pageViewKey(request(input), day)?.path).toBe(path);
   });
 
+  it.each([
+    ["duoshot-vs-appscreens", "[slug]"],
+    ["best-app-store-screenshot-generator", "best-app-store-screenshot-generator"],
+    ["iphone-duo-app-store-connect", "iphone-duo-app-store-connect"],
+  ])("normalizes guide %s to %s", (slug, route) => {
+    for (const prefix of ["", "/en"]) {
+      expect(pageViewKey(request(`${prefix}/guides/${slug}`), day)?.path).toBe(`${prefix}/guides/${route}`);
+    }
+  });
+
+  it.each([false, true])("prefers fewer dynamic segments regardless of route order (reversed: %s)", (reversed) => {
+    const routes = ["/[section]/[slug]", "/guides/[slug]"];
+    vi.stubEnv("DUOSHOT_LOCALIZED_PAGE_ROUTES", JSON.stringify(reversed ? routes.reverse() : routes));
+    expect(pageViewKey(request("/en/guides/duoshot-vs-appscreens"), day)?.path).toBe("/en/guides/[slug]");
+  });
+
   it("discards unknown paths and bounds stored paths", () => {
     expect(pageViewKey(request("/unknown-private-identifier"), day)).toBeNull();
     const path = "/" + "a".repeat(300);
