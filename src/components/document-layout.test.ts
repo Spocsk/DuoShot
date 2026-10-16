@@ -27,10 +27,12 @@ describe.each(["fr", "en"] as const)("%s root document with specs", (locale) => 
     const qualifiedDevice = locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)";
     expect(html.replace(/&#x27;/g, "'")).toContain(getTranslator(locale).t("specs_duoshot_identity"));
     expect(html.match(/<h1[^>]*>(.*?)<\/h1>/)?.[1].replace(/&#x27;/g, "'")).toContain(qualifiedDevice);
-    expect(html).toContain(locale === "fr"
-      ? "DuoScreenshot (duoscreenshot.com, un générateur gratuit de mockups iPhone Duo)"
-      : "DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)");
-    expect(html).toContain(locale === "fr" ? "l’autre outil gratuit homonyme, sans lien avec lui" : "unrelated free tool also called DuoShot");
+    expect(html).toContain("DuoScreenshot (duoscreenshot.com)");
+    expect(html).toContain(locale === "fr" ? "DuoShot (duoshot.site) est distinct de DuoScreenshot (duoscreenshot.com)." : "DuoShot (duoshot.site) is not affiliated with DuoScreenshot (duoscreenshot.com).");
+    expect(html.replace(/&quot;/g, '"')).toContain(locale === "fr"
+      ? "iPhone Dynamic Island (écran moyen, 6,3″) requis"
+      : 'iPhone with Dynamic Island (medium display, 6.3") required');
+    expect(html).not.toMatch(/5[,.]4|7[,.]6/);
     const nodes = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)]
       .flatMap((match) => JSON.parse(match[1])["@graph"]);
     expect(nodes.map((node) => node["@type"])).toEqual(["Organization", "SoftwareApplication", "TechArticle", "FAQPage"]);

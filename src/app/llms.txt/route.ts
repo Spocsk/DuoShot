@@ -7,9 +7,12 @@ import { COMPARISON_GUIDE_PATH } from "@/lib/guides";
 import { FREE_EXPORTS, PASS30, PLANS, STUDIO_SEATS } from "@/lib/plans";
 
 export function GET() {
-  const sizes = SIZE_SPECS.map(
-    (spec) => `- ${spec.label}${spec.label.includes(spec.inches) ? "" : ` ${spec.inches}`} ${spec.orientation}: ${spec.width}x${spec.height}`,
-  ).join("\n");
+  const sizes = SIZE_SPECS.map((spec) => {
+    const label = spec.slot === "duo-outer" ? "iPhone Duo outer display"
+      : spec.slot === "duo-inner" ? "iPhone Duo inner display"
+      : `${spec.label}${spec.label.includes(spec.inches) ? "" : ` ${spec.inches}`}`;
+    return `- ${label} ${spec.orientation}: ${spec.width}x${spec.height}`;
+  }).join("\n");
   const { t, tf } = getTranslator("fr");
   const passAvailable = passCheckoutAvailable();
   const passOffer = passAvailable
@@ -25,7 +28,7 @@ ${getTranslator("en").t("specs_duoshot_identity")}
 - Canonical specs: ${getSiteUrl()}/specs (EN: ${getSiteUrl()}/en/specs)
 - Outer display sizes: ${getSiteUrl()}/1398x2034 (EN: ${getSiteUrl()}/en/1398x2034)
 - Inner display sizes: ${getSiteUrl()}/2007x2853 (EN: ${getSiteUrl()}/en/2007x2853)
-- Required 6.3" iPhone sizes: ${getSiteUrl()}/1206x2622 (EN: ${getSiteUrl()}/en/1206x2622)
+- iPhone with Dynamic Island (medium display, 6.3") required: ${getSiteUrl()}/1206x2622 (EN: ${getSiteUrl()}/en/1206x2622)
 - Optional 6.9" iPhone sizes: ${getSiteUrl()}/1320x2868 (EN: ${getSiteUrl()}/en/1320x2868)
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia (EN: ${getSiteUrl()}/en/why-not-ai)
 - Rejection decoder: ${getSiteUrl()}/rejet (EN: ${getSiteUrl()}/en/rejection)
@@ -33,9 +36,9 @@ ${getTranslator("en").t("specs_duoshot_identity")}
 - Tool (noindex): ${getSiteUrl()}/tool
 
 ## Export sizes (portrait)
-- iPhone Duo outer 5.4": 1398x2034
-- iPhone Duo inner 7.6": 2007x2853
-- iPhone 6.3": 1206x2622, included in the free trial
+- iPhone Duo outer display: 1398x2034
+- iPhone Duo inner display: 2007x2853
+- iPhone with Dynamic Island (medium display, 6.3") required: 1206x2622, included in the free trial
 - iPhone 6.9": 1320x2868, optional with ${passAvailable ? "Pass, Indie and Studio" : "Indie and Studio"}
 
 ## Pixels
@@ -51,11 +54,11 @@ ${sizes}
 - Exports over the combined cap return HTTP 400 DUO_SLOT_LIMIT; no silent trimming
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
-- App Store Connect requires 6.3" iPhone screenshots; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
+- iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
 
 ## Prices (EUR)
 - Pricing: ${getSiteUrl()}/pricing (EN: ${getSiteUrl()}/en/pricing)
-- Free trial: 0 EUR, ${FREE_EXPORTS} HD ZIPs after signup, no card; selected Duo screenshots and the required 6.3" iPhone size
+- Free trial: 0 EUR, ${FREE_EXPORTS} HD ZIPs after signup, no card; selected Duo screenshots and iPhone with Dynamic Island (medium display, 6.3") required
 - Indie: ${PLANS.indie.monthlyEur} EUR/month or ${PLANS.indie.yearlyEur} EUR/year; Studio: ${PLANS.studio.monthlyEur} EUR/month or ${PLANS.studio.yearlyEur} EUR/year. Annual billing upfront; paid limit ${PLANS.indie.dailyHdSets} exports per UTC day.
 ${passOffer}
 ## Upload status

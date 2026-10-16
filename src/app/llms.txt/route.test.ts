@@ -23,8 +23,8 @@ describe("GET /llms.txt", () => {
     expect(response.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
     const body = await response.text();
     expect(body).toContain("Specs version: 2026-10-13");
-    expect(body).toContain('Duo outer 5.4" portrait: 1398x2034');
-    expect(body).toContain('Duo inner 7.6" landscape: 2853x2007');
+    expect(body).toContain('iPhone Duo outer display portrait: 1398x2034');
+    expect(body).toContain('iPhone Duo inner display landscape: 2853x2007');
     expect(body).toContain('iPhone 6.3" portrait: 1206x2622');
     expect(body).toContain('iPhone 6.3" landscape: 2622x1206');
     for (const [width, height] of [[1320, 2868], [1290, 2796], [1260, 2736]]) {
@@ -33,16 +33,17 @@ describe("GET /llms.txt", () => {
     }
     expect(body).not.toContain('6.9" 6.9"');
     expect(body).not.toContain('6.3" 6.3"');
+    expect(body).not.toMatch(/5[,.]4|7[,.]6/);
   });
 
   it("documents the required free-trial size, accepted alternatives, and optional paid size", async () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
     const body = await GET().text();
-    expect(body).toContain('Required 6.3" iPhone sizes: https://duoshot.site/1206x2622 (EN: https://duoshot.site/en/1206x2622)');
+    expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required: https://duoshot.site/1206x2622 (EN: https://duoshot.site/en/1206x2622)');
     expect(body).toContain('Optional 6.9" iPhone sizes: https://duoshot.site/1320x2868 (EN: https://duoshot.site/en/1320x2868)');
     expect(body).toContain('iPhone 6.3" portrait alternative accepted by App Store Connect: 1179x2556');
     expect(body).toContain('iPhone 6.3" landscape alternative accepted by App Store Connect: 2556x1179');
-    expect(body).toContain('App Store Connect requires 6.3" iPhone screenshots');
+    expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect');
     expect(body).toContain('included in the free trial');
     expect(body).toContain('1179x2556 alternative is not a DuoShot export preset');
     expect(body).toContain('Optional 6.9" sizes are included with paid access');
@@ -62,13 +63,13 @@ describe("GET /llms.txt", () => {
   it("distinguishes duoshot.site and links to existing bilingual guides and prices", async () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
     const body = await GET().text();
-    expect(body).toContain("DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo (Apple's foldable iPhone)");
+    expect(body).toContain("DuoShot (duoshot.site) is the App Store screenshot studio for iPhone Duo (Apple's foldable iPhone)");
     expect(body.slice(body.indexOf("iPhone Duo"))).toMatch(/^iPhone Duo \(Apple's foldable iPhone\)/);
-    expect(body).toContain("DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)");
-    expect(body).toContain("unrelated free tool also called DuoShot");
-    expect(body).toContain('iPhone Duo outer 5.4": 1398x2034');
-    expect(body).toContain('iPhone Duo inner 7.6": 2007x2853');
-    expect(body).toContain('iPhone 6.3": 1206x2622, included in the free trial');
+    expect(body).toContain("DuoScreenshot (duoscreenshot.com)");
+    expect(body).toContain("DuoShot (duoshot.site) is not affiliated with DuoScreenshot (duoscreenshot.com).");
+    expect(body).toContain('iPhone Duo outer display: 1398x2034');
+    expect(body).toContain('iPhone Duo inner display: 2007x2853');
+    expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required: 1206x2622, included in the free trial');
     expect(body).toContain('iPhone 6.9": 1320x2868, optional with Indie and Studio');
     expect(body).toContain("Free trial: 0 EUR, 2 HD ZIPs");
     expect(body).toContain("Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year");

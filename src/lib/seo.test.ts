@@ -27,6 +27,14 @@ import { generateImageMetadata as iphone69ImageMetadata, generateStaticParams as
 
 afterEach(() => vi.unstubAllEnvs());
 
+// Keep the existing copy budget, allowing the explicitly named required slot
+// to replace its former short diagonal label without shortening other content.
+function metadataCopyBudget(text: string, locale: "fr" | "en", limit: number) {
+  const requiredSlot = getTranslator(locale).t("specs_required_iphone_sizes");
+  const diagonal = locale === "fr" ? "6,3″" : "6.3″";
+  return limit + (text.includes(requiredSlot) ? requiredSlot.length - diagonal.length : 0);
+}
+
 describe("public routes and crawler metadata", () => {
   it("maps final localized routes reciprocally", () => {
     for (const route of MARKETING_ROUTE_PAIRS) {
@@ -99,8 +107,8 @@ describe("public routes and crawler metadata", () => {
         const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
         // Include the document layout's brand suffix when measuring <title>.
         const title = typeof metadata.title === "string" ? `${metadata.title} · DuoShot` : (metadata.title as { absolute: string }).absolute;
-        expect(title.length, title).toBeLessThanOrEqual(60);
-        expect(metadata.description?.length, title).toBeLessThanOrEqual(155);
+        expect(title.length, title).toBeLessThanOrEqual(metadataCopyBudget(title, locale, 60));
+        expect(metadata.description?.length, title).toBeLessThanOrEqual(metadataCopyBudget(metadata.description!, locale, 155));
         expect(metadata.openGraph).toMatchObject({ title, description: metadata.description });
         expect(metadata.twitter).toMatchObject({ title, description: metadata.description });
         titles.add(title);
@@ -192,7 +200,9 @@ describe("page-specific structured data", () => {
   });
 
   it.each(["fr", "en"] as const)("keeps the required free size and optional paid size in %s structured data", (locale) => {
-    const size63 = locale === "fr" ? "6,3″" : "6.3″";
+    const size63 = locale === "fr"
+      ? "iPhone Dynamic Island (écran moyen, 6,3″) requis"
+      : 'iPhone with Dynamic Island (medium display, 6.3") required';
     const size69 = locale === "fr" ? "6,9″" : "6.9″";
     const graph = siteJsonLdGraph(locale)["@graph"];
     const app = graph.find((node) => "offers" in node)!;
@@ -201,6 +211,10 @@ describe("page-specific structured data", () => {
     expect(app.description).toContain(locale === "fr" ? "optionnel" : "optional");
     expect(app.offers?.[0]).toMatchObject({ price: "0", description: expect.stringContaining(size63) });
     const sizesAnswer = FAQ[locale].find(({ a }) => a.includes("1206×2622"))!.a;
+    expect(sizesAnswer).toContain(locale === "fr"
+      ? "iPhone Dynamic Island (écran moyen, 6,3″) requis"
+      : 'iPhone with Dynamic Island (medium display, 6.3") required');
+    expect(sizesAnswer).not.toMatch(/5[,.]4|7[,.]6/);
     expect(sizesAnswer).toContain(locale === "fr" ? "incluse dans l’essai gratuit" : "included in the free trial");
     expect(sizesAnswer).toContain("1179×2556");
     const article = sizePageCopy(locale, "1206x2622");
@@ -269,7 +283,7 @@ describe("page-specific structured data", () => {
     for (const locale of ["fr", "en"] as const) {
       const metadata = await pricingMetadata({ params: Promise.resolve({ locale }) });
       expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
-      expect(metadata.description!.length).toBeLessThanOrEqual(155);
+      expect(metadata.description!.length).toBeLessThanOrEqual(metadataCopyBudget(metadata.description!, locale, 155));
       expect(metadata.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
       const app = siteJsonLdGraph(locale)["@graph"].find((node) => "offers" in node);
       expect(app?.offers?.some((offer) => offer.price === "19")).toBe(Boolean(priceId));

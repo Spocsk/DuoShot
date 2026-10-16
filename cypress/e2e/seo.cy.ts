@@ -68,10 +68,8 @@ describe("SEO screenshot pages", () => {
         .and("contain", locale === "en" ? "single iPhone Duo slot" : "un seul emplacement iPhone Duo")
         .and("contain", locale === "en" ? "10 screenshots per locale" : "10 captures par langue")
         .and("contain", "DuoShot (duoshot.site)")
-        .and("contain", locale === "en"
-          ? "DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)"
-          : "DuoScreenshot (duoscreenshot.com, un générateur gratuit de mockups iPhone Duo)")
-        .and("contain", locale === "en" ? "unrelated free tool also called DuoShot" : "l’autre outil gratuit homonyme, sans lien avec lui");
+        .and("contain", "DuoScreenshot (duoscreenshot.com)")
+        .and("contain", locale === "en" ? "DuoShot (duoshot.site) is not affiliated with DuoScreenshot (duoscreenshot.com)." : "DuoShot (duoshot.site) est distinct de DuoScreenshot (duoscreenshot.com).");
       cy.get("h1").should("contain", locale === "en"
         ? "iPhone Duo (Apple's foldable iPhone)" : "iPhone Duo (le téléphone pliable d'Apple)");
       cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications"]').should("exist");
@@ -177,12 +175,12 @@ describe("SEO screenshot pages", () => {
 
   it("publishes the identity, sizes, prices and bilingual guides alongside the SDK qualifier in llms.txt", () => {
     cy.request("/llms.txt").its("body").should("match", /April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/)
-      .and("contain", "DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo (Apple's foldable iPhone)")
-      .and("contain", "DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)")
-      .and("contain", "unrelated free tool also called DuoShot")
-      .and("contain", 'iPhone Duo outer 5.4": 1398x2034')
-      .and("contain", 'iPhone Duo inner 7.6": 2007x2853')
-      .and("contain", 'iPhone 6.3": 1206x2622, included in the free trial')
+      .and("contain", "DuoShot (duoshot.site) is the App Store screenshot studio for iPhone Duo (Apple's foldable iPhone)")
+      .and("contain", "DuoScreenshot (duoscreenshot.com)")
+      .and("contain", "DuoShot (duoshot.site) is not affiliated with DuoScreenshot (duoscreenshot.com).")
+      .and("contain", 'iPhone Duo outer display: 1398x2034')
+      .and("contain", 'iPhone Duo inner display: 2007x2853')
+      .and("contain", 'iPhone with Dynamic Island (medium display, 6.3") required: 1206x2622, included in the free trial')
       .and("contain", 'iPhone 6.9": 1320x2868, optional with')
       .and("contain", "Free trial: 0 EUR, 2 HD ZIPs")
       .and("contain", "Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year")
