@@ -40,7 +40,7 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
         const slotSection = html.match(/<section[^>]*>\s*<h2[^>]*>[^<]*6[,.]9[^<]*<\/h2>([\s\S]*?)<\/section>/)![1];
         expect(slotSection).not.toContain(locale === "fr" ? "emplacement iPhone Duo" : "iPhone Duo slot");
       } else {
-        expect(html).toContain(locale === "fr" ? "un seul emplacement iPhone Duo" : "a single iPhone Duo slot");
+        expect(html).toContain(locale === "fr" ? "un emplacement iPhone Duo" : "an iPhone Duo slot");
       }
       const prefix = locale === "en" ? "/en" : "";
       expect(html).toContain(`href="${prefix}/specs"`);

@@ -49,10 +49,10 @@ describe("GET /llms.txt", () => {
     expect(body).toContain('Optional 6.9" sizes are included with paid access');
   });
 
-  it("preserves the single slot contract and untested uploads alongside the qualified deadline", async () => {
+  it("preserves the Duo slot copy and untested uploads alongside the qualified deadline", async () => {
     const body = await GET().text();
-    expect(body).toContain("one iPhone Duo slot (APP_IPHONE_DUO)");
-    expect(body).toContain("10 screenshots per locale across outer and inner screens");
+    expect(body).toContain("iPhone Duo slot (APP_IPHONE_DUO)");
+    expect(body).toContain("10 screenshots per device size across outer and inner screens");
     expect(body).toContain("Both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions");
     expect(body).toContain("Uploads have not yet been tested by DuoShot");
     expect(body).toContain(DUO_SLOT_SOURCE);

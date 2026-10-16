@@ -10,7 +10,7 @@ describe("Apple upload status", () => {
   it("qualifies the deadline in the crawler reference", async () => {
     const body = await GET().text();
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
-    expect(body).toContain("single iPhone Duo slot, with up to 10 screenshots per locale");
+    expect(body).toContain("iPhone Duo slot, with up to 10 screenshots per device size");
   });
   it("defaults to the configured open state and check date", () => {
     expect(appleUploadStatus("fr")).toBe(appleUploadStatus("fr", APPLE_UPLOAD_STATE));
@@ -35,7 +35,7 @@ describe("Apple upload status", () => {
     expect(en).not.toContain("later this year");
   });
 
-  it.each(["fr", "en"] as const)("describes one shared slot without claiming tested uploads (%s)", (locale) => {
+  it.each(["fr", "en"] as const)("describes the Duo slot without claiming tested uploads (%s)", (locale) => {
     const status = appleUploadStatus(locale);
     expect(status).toContain("APP_IPHONE_DUO");
     expect(status).toContain("10");

@@ -47,10 +47,10 @@ ${sizes}
 - iPhone 6.3" landscape alternative accepted by App Store Connect: ${specPixels(IPHONE_63_ALTERNATIVE.landscape)}
 
 ## Notes
-- App Store Connect uses a single iPhone Duo slot, with up to 10 screenshots per locale; both outer and inner sizes are accepted.
+- App Store Connect uses an iPhone Duo slot, with up to 10 screenshots per device size; both outer and inner sizes are accepted.
 - Duo slot content: outer only, inner only, or a user-selected mix; normal ZIPs contain the selection only
 - Screen folders identify dimensions, not separate ASC slots; duo-slot.json records upload order
-- Example ZIP: raw outer + inner sets; pick up to 10 for the single Duo slot
+- Example ZIP: raw outer + inner sets; pick up to 10 for the Duo slot
 - Exports over the combined cap return HTTP 400 DUO_SLOT_LIMIT; no silent trimming
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
