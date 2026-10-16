@@ -62,7 +62,9 @@ describe("GET /llms.txt", () => {
   it("distinguishes duoshot.site and links to existing bilingual guides and prices", async () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
     const body = await GET().text();
-    expect(body).toContain("DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo");
+    expect(body).toContain("DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo (Apple's foldable iPhone)");
+    expect(body.slice(body.indexOf("iPhone Duo"))).toMatch(/^iPhone Duo \(Apple's foldable iPhone\)/);
+    expect(body).toContain("DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)");
     expect(body).toContain("unrelated free tool also called DuoShot");
     expect(body).toContain('iPhone Duo outer 5.4": 1398x2034');
     expect(body).toContain('iPhone Duo inner 7.6": 2007x2853');
@@ -70,6 +72,7 @@ describe("GET /llms.txt", () => {
     expect(body).toContain('iPhone 6.9": 1320x2868, optional with Indie and Studio');
     expect(body).toContain("Free trial: 0 EUR, 2 HD ZIPs");
     expect(body).toContain("Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year");
+    expect(body).not.toMatch(/coupon|discount|remise|réduction/i);
     for (const route of MARKETING_ROUTE_PAIRS.filter(({ fr }) => /specs|guides|x\d|pourquoi|rejet|pricing/.test(fr))) {
       expect(body).toContain(`https://duoshot.site${route.fr}`);
       expect(body).toContain(`https://duoshot.site${route.en}`);
@@ -84,6 +87,7 @@ describe("GET /llms.txt", () => {
     vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
     const body = await GET().text();
     expect(body).toContain("Pass 30 jours: 19 € une fois. Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.");
+    expect(body).not.toMatch(/coupon|discount|remise|réduction/i);
     expect(body).toContain('Optional 6.9" sizes are included with Pass / Indie / Studio');
     expect(body).toContain('iPhone 6.9": 1320x2868, optional with Pass, Indie and Studio');
   });

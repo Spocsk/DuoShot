@@ -269,7 +269,8 @@ describe("screenshot dimensions and search intent", () => {
       cy.get('[data-testid="specs-cta-tool"]').should("have.attr", "href", `${prefix}/tool`);
       cy.document().then((doc) => {
         expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
-        const graph = JSON.parse(doc.querySelector('script[type="application/ld+json"]')!.textContent!)["@graph"];
+        const graph = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'))
+          .flatMap((script) => JSON.parse(script.textContent!)["@graph"]);
         const faq = graph.find((item: { "@type": string }) => item["@type"] === "FAQPage");
         const rows = Array.from(doc.querySelectorAll(".t-acc"));
         expect(faq.mainEntity).to.have.length(rows.length);

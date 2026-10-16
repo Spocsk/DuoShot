@@ -2,6 +2,7 @@ type SchemaNode = {
   "@type": string;
   "@id"?: string;
   name?: string;
+  description?: string;
   url?: string;
   publisher?: { "@id": string };
   headline?: string;
@@ -23,7 +24,12 @@ function checkSiteEntities(doc: Document) {
   expect(applications).to.have.length(1);
   expect(organizations[0].name).to.eq("DuoShot — iPhone Duo App Store Screenshots");
   expect(applications[0].publisher?.["@id"]).to.eq(organizations[0]["@id"]);
+  for (const node of [organizations[0], applications[0]]) {
+    expect(node.description).to.contain(doc.documentElement.lang === "fr"
+      ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)");
+  }
   const offers = applications[0].offers!;
+  expect(JSON.stringify(offers)).not.to.match(/coupon|discount|remise|réduction/i);
   const passConfigured = Cypress.expose("passPriceConfigured");
   expect(offers.map(({ price }) => price)).to.deep.eq(passConfigured ? ["0", "12", "49", "120", "490", "19"] : ["0", "12", "49", "120", "490"]);
   offers.forEach((offer) => expect(offer.priceCurrency).to.eq("EUR"));
@@ -62,7 +68,12 @@ describe("SEO screenshot pages", () => {
         .and("contain", locale === "en" ? "single iPhone Duo slot" : "un seul emplacement iPhone Duo")
         .and("contain", locale === "en" ? "10 screenshots per locale" : "10 captures par langue")
         .and("contain", "DuoShot (duoshot.site)")
+        .and("contain", locale === "en"
+          ? "DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)"
+          : "DuoScreenshot (duoscreenshot.com, un générateur gratuit de mockups iPhone Duo)")
         .and("contain", locale === "en" ? "unrelated free tool also called DuoShot" : "l’autre outil gratuit homonyme, sans lien avec lui");
+      cy.get("h1").should("contain", locale === "en"
+        ? "iPhone Duo (Apple's foldable iPhone)" : "iPhone Duo (le téléphone pliable d'Apple)");
       cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications"]').should("exist");
       cy.document().then((doc) => {
         checkSiteEntities(doc);
@@ -166,7 +177,8 @@ describe("SEO screenshot pages", () => {
 
   it("publishes the identity, sizes, prices and bilingual guides alongside the SDK qualifier in llms.txt", () => {
     cy.request("/llms.txt").its("body").should("match", /April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/)
-      .and("contain", "DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo")
+      .and("contain", "DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo (Apple's foldable iPhone)")
+      .and("contain", "DuoScreenshot (duoscreenshot.com, a free iPhone Duo mockup generator)")
       .and("contain", "unrelated free tool also called DuoShot")
       .and("contain", 'iPhone Duo outer 5.4": 1398x2034')
       .and("contain", 'iPhone Duo inner 7.6": 2007x2853')
@@ -174,6 +186,7 @@ describe("SEO screenshot pages", () => {
       .and("contain", 'iPhone 6.9": 1320x2868, optional with')
       .and("contain", "Free trial: 0 EUR, 2 HD ZIPs")
       .and("contain", "Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year")
+      .and("not.match", /coupon|discount|remise|réduction/i)
       .and("contain", "/guides/best-app-store-screenshot-generator")
       .and("contain", "/en/guides/best-app-store-screenshot-generator")
       .and("contain", "Uploads have not yet been tested by DuoShot");

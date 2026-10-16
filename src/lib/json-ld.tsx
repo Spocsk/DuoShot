@@ -12,6 +12,9 @@ export type PageSchema = {
 };
 
 export function siteJsonLdGraph(locale: Locale) {
+  const description = (locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN).replace(
+    "iPhone Duo", locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)",
+  );
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -20,7 +23,7 @@ export function siteJsonLdGraph(locale: Locale) {
         "@id": `${absoluteUrl("/")}#organization`,
         name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         url: absoluteUrl("/"),
-        description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
+        description,
       },
       {
         "@type": "SoftwareApplication",
@@ -46,7 +49,7 @@ export function siteJsonLdGraph(locale: Locale) {
             priceSpecification: { "@type": "UnitPriceSpecification", price: String(PASS30.priceEur), priceCurrency: "EUR", billingDuration: `P${PASS30.days}D` },
           }] : []),
         ],
-        description: locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
+        description,
         url: absoluteUrl(localizedPath(locale, "/")),
       },
     ],

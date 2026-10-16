@@ -228,8 +228,10 @@ describe("page-specific structured data", () => {
       url: `https://duoshot.site${locale === "en" ? "/en" : ""}`,
       publisher: { "@id": graph[0]["@id"] },
       applicationCategory: "DeveloperApplication", operatingSystem: "Web",
-      description: HOME_PAGE_COPY[locale].description,
+      description: HOME_PAGE_COPY[locale].description.replace("iPhone Duo", locale === "fr"
+        ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)"),
     });
+    expect(graph[0].description).toBe(graph[1].description);
     const script = SiteJsonLd({ locale });
     expect(JSON.parse(script.props.dangerouslySetInnerHTML.__html)).toEqual(siteJsonLdGraph(locale));
     for (const path of ["/", "/pricing", "/specs"]) {
@@ -248,6 +250,7 @@ describe("page-specific structured data", () => {
       ["12", "P1M"], ["49", "P1M"], ["120", "P1Y"], ["490", "P1Y"], ["19", "P30D"],
     ].map(([price, billingDuration]) => ({ "@type": "UnitPriceSpecification", price, priceCurrency: "EUR", billingDuration })));
     expect(app.offers?.[0].name).toContain("2 exports");
+    expect(JSON.stringify(app.offers)).not.toMatch(/coupon|discount|remise|réduction/i);
   });
 
   it.each([undefined, "", "   ", "price_pass30"])("includes the 19 EUR 30-day pass only with a nonempty price ID (%s)", (priceId) => {
