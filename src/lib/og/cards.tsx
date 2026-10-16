@@ -11,6 +11,7 @@ export type OgPage =
   | "home"
   | "specs"
   | "comparison-guide"
+  | "screenshot-checker"
   | "iphone-69"
   | "rejection"
   | "pricing"
@@ -29,6 +30,10 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
+  "screenshot-checker": {
+    fr: { eyebrow: "Outil gratuit", title: "Vérifiez vos captures iPhone Duo.", lead: "Dimensions et transparence.\nAucune image envoyée.", alt: "Vérificateur gratuit de captures iPhone Duo : dimensions, transparence et limite de 10 images, dans votre navigateur." },
+    en: { eyebrow: "Free tool", title: "Check your iPhone Duo screenshots.", lead: "Dimensions and transparency.\nNo images uploaded.", alt: "Free iPhone Duo screenshot checker: dimensions, transparency and the 10-image limit, in your browser." },
+  },
   "comparison-guide": {
     fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },
     en: { eyebrow: "Guide · 2026 comparison", title: "App Store screenshot generators", lead: "Five tools compared: prices, sizes and export.", alt: "2026 App Store screenshot generator comparison: AppScreens, AppLaunchFlow, SnapMonk, Screenpane and DuoShot." },
@@ -375,6 +380,7 @@ function PairArt({ locale }: { locale: Locale }) {
 }
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
+  "screenshot-checker": PairArt,
   "comparison-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,
