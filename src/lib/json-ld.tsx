@@ -9,7 +9,7 @@ import { pricingPageCopy } from "./marketing-copy";
 export type PageSchema = {
   path: string;
   faq?: readonly FaqItem[];
-  software?: boolean;
+  software?: boolean | { name: string; description: string };
   article?: { title: string; description: string; dateModified: string };
   howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
 };
@@ -28,10 +28,12 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
       },
       ...(software ? [{
         "@type": "SoftwareApplication",
-        name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
+        name: typeof software === "object" ? software.name : `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
-        offers: [
+        offers: typeof software === "object" ? [
+          { "@type": "Offer", name: software.name, description: software.description, price: "0", priceCurrency: "EUR" },
+        ] : [
           { "@type": "Offer", name: `${getTranslator(locale).t("pricing_trial_title")} · ${FREE_EXPORTS} exports`, description: getTranslator(locale).tf("pricing_trial_body", { exports: FREE_EXPORTS }), price: "0", priceCurrency: "EUR" },
           ...Object.entries(CHECKOUT_CATALOG).map(([kind, offer]) => ({
             "@type": "Offer", name: offer.name, url: absoluteUrl(pricingPath(locale)),
@@ -48,7 +50,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
             priceSpecification: { "@type": "UnitPriceSpecification", price: String(PASS30.priceEur), priceCurrency: "EUR", billingDuration: `P${PASS30.days}D` },
           }] : []),
         ],
-        description: localizedPath("fr", path) === "/pricing" ? pricingPageCopy(locale).description : locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
+        description: typeof software === "object" ? software.description : localizedPath("fr", path) === "/pricing" ? pricingPageCopy(locale).description : locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN,
         url,
       }] : []),
       ...(article ? [{

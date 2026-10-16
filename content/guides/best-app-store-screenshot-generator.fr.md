@@ -22,6 +22,8 @@ La référence, ce sont les [spécifications de captures d'Apple](https://develo
 
 Toutes les tailles sur une page : [/specs](/specs).
 
+Vérifiez vos fichiers avec le [vérificateur gratuit de captures iPhone Duo](/tools/iphone-duo-screenshot-checker) : dimensions, transparence et limite Apple de 10 captures par taille d’appareil, dans votre navigateur, sans envoi de fichier.
+
 ## Le tableau comparatif
 
 | | AppScreens | AppLaunchFlow | SnapMonk | Screenpane | DuoShot |

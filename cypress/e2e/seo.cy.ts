@@ -8,6 +8,8 @@ type SchemaNode = {
   step?: { "@type": string; position: number; name: string; text: string; url: string }[];
   mainEntity?: { name: string; acceptedAnswer: { text: string } }[];
   offers?: { price: string; priceCurrency: string }[];
+  name?: string;
+  description?: string;
 };
 
 function graphOf(doc: Document): SchemaNode[] {
@@ -154,6 +156,38 @@ describe("SEO screenshot pages", () => {
         visit(path);
         cy.document().then(checkFaq);
       }
+    });
+
+    it(`publishes the free screenshot checker with localized links and SEO in ${locale}`, () => {
+      const path = `${prefix}/tools/iphone-duo-screenshot-checker`;
+      visit(`${prefix}/specs`);
+      cy.get(`main a[href="${path}"]`).click();
+      cy.location("pathname").should("eq", path);
+      cy.get("h1").should("contain", locale === "fr" ? "Vérificateur gratuit" : "Free iPhone Duo screenshot checker");
+      cy.get("#checker-privacy").should("contain", locale === "fr" ? "Aucune image n’est envoyée" : "No images are uploaded");
+      cy.get('input[type="file"]').should("have.attr", "multiple");
+      cy.get('[aria-live="polite"]').should("exist");
+      cy.contains("main a", locale === "fr" ? "Générer mes captures" : "Generate screenshots").should("have.attr", "href", `${prefix}/tool`);
+      cy.document().then((doc) => {
+        const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
+        expect(canonical).to.eq(`${new URL(canonical).origin}${path}`);
+        expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content") ?? "").not.to.contain("noindex");
+        for (const language of ["fr", "en", "x-default"]) {
+          expect(doc.querySelector(`link[rel="alternate"][hreflang="${language}"]`)!.getAttribute("href"))
+            .to.eq(`${new URL(canonical).origin}${language === "en" ? "/en" : ""}/tools/iphone-duo-screenshot-checker`);
+        }
+        const software = graphOf(doc).find((node) => node["@type"] === "SoftwareApplication")!;
+        expect(software.name).to.eq(doc.querySelector("h1")!.textContent);
+        expect(software.description).to.eq(doc.querySelector('meta[name="description"]')!.getAttribute("content"));
+        expect(software.url).to.eq(canonical);
+        expect(software.offers).to.have.length(1);
+        expect(software.offers![0]).to.include({ price: "0", priceCurrency: "EUR" });
+        expect(doc.querySelector('meta[property="og:image"]')!.getAttribute("content")).to.contain("/tools/iphone-duo-screenshot-checker/opengraph-image/");
+        checkFaq(doc);
+        cy.request("/sitemap.xml").its("body").should("contain", `<loc>${canonical}</loc>`);
+      });
+      visit(`${prefix}/guides/best-app-store-screenshot-generator`);
+      cy.get(`main a[href="${path}"]`).should("exist");
     });
 
     it(`advertises the 19 EUR Pass only when configured in ${locale}`, () => {
