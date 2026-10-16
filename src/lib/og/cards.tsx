@@ -12,6 +12,7 @@ export type OgPage =
   | "specs"
   | "comparison-guide"
   | "competitor-comparison"
+  | "screenshot-checker"
   | "iphone-69"
   | "rejection"
   | "pricing"
@@ -33,6 +34,10 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
   "competitor-comparison": {
     fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens, Screenhance et App Asset Kit : sources officielles et fonctionnement DuoShot." },
     en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens, Screenhance and App Asset Kit: official sources and DuoShot workflow." },
+  },
+  "screenshot-checker": {
+    fr: { eyebrow: "Outil gratuit", title: "Vérifiez vos captures iPhone Duo.", lead: "Dimensions et transparence.\nAucune image envoyée.", alt: "Vérificateur gratuit de captures iPhone Duo : dimensions, transparence et limite de 10 images, dans votre navigateur." },
+    en: { eyebrow: "Free tool", title: "Check your iPhone Duo screenshots.", lead: "Dimensions and transparency.\nNo images uploaded.", alt: "Free iPhone Duo screenshot checker: dimensions, transparency and the 10-image limit, in your browser." },
   },
   "comparison-guide": {
     fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },
@@ -381,6 +386,7 @@ function PairArt({ locale }: { locale: Locale }) {
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
   "competitor-comparison": PairArt,
+  "screenshot-checker": PairArt,
   "comparison-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,

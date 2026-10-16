@@ -66,6 +66,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/", en: "/en", priority: 1 },
   { fr: "/pricing", en: "/en/pricing", priority: 0.8 },
   { fr: "/specs", en: "/en/specs", priority: 1 },
+  { fr: "/tools/iphone-duo-screenshot-checker", en: "/en/tools/iphone-duo-screenshot-checker", priority: 0.8 },
   { fr: "/guides/best-app-store-screenshot-generator", en: "/en/guides/best-app-store-screenshot-generator", priority: 0.7 },
   { fr: "/guides/duoshot-vs-applaunchflow", en: "/en/guides/duoshot-vs-applaunchflow", priority: 0.7 },
   { fr: "/guides/duoshot-vs-appscreens", en: "/en/guides/duoshot-vs-appscreens", priority: 0.7 },
