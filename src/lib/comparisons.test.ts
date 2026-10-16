@@ -37,6 +37,12 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       expect(html).toContain(`<table`);
       expect(html).toContain(`href="${url}"`);
       expect(html).not.toContain("**");
+      const duoDefinition = locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)";
+      const firstMention = guide.body.indexOf("iPhone Duo");
+      expect(firstMention).toBeLessThan(guide.body.indexOf("\n## "));
+      expect(guide.body.slice(firstMention).startsWith(duoDefinition)).toBe(true);
+      expect(html).toContain(duoDefinition.replace("'", "&#x27;"));
+      expect(guide.body).not.toMatch(/\$|£|\b(?:USD|GBP|coupon|discount|remise|réduction)\b/i);
       for (const size of ["1398 × 2034", "2007 × 2853", "1206 × 2622", "1320 × 2868"]) expect(html).toContain(size);
       expect(html).toContain(locale === "fr" ? "Pass, Indie et Studio" : "Pass, Indie and Studio");
       expect(html).toContain(locale === "fr" ? "2 ZIP HD" : "2 HD ZIPs");
@@ -50,11 +56,36 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       expect(graph[1]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: "2026-10-16", url: absoluteUrl(localizedPath(locale, comparisonPath(slug))) });
     });
   }
+
+  it("renders the supplied App Asset Kit facts with its default App Store sizes", async () => {
+    const html = renderToStaticMarkup(await ComparisonPage({ params: Promise.resolve({ locale, slug: "duoshot-vs-app-asset-kit" }) }));
+    const facts = locale === "fr" ? [
+      "générateur gratuit de captures App Store et Google Play dans le navigateur",
+      "génère aussi des icônes d’app",
+      "traitées localement dans le navigateur, sans être envoyées au serveur",
+      "aucune inscription", "aucun filigrane",
+      "importez un à cinq écrans, choisissez un modèle et exportez un ZIP organisé de PNG",
+      "dimensions App Store par défaut sont 1320 × 2868 (6,9″) et 2064 × 2752 (iPad 13″)",
+    ] : [
+      "free browser-based App Store and Google Play screenshot maker",
+      "also generates app icons",
+      "processed locally in the browser and are not uploaded",
+      "no signup", "no watermark",
+      "upload one to five screens, pick a template and export an organized ZIP of PNGs",
+      "Default App Store sizes are 1320 × 2868 (6.9″) and 2064 × 2752 (13″ iPad)",
+    ];
+    for (const fact of facts) expect(html).toContain(fact);
+  });
 });
 
-it("generates only the three comparison slugs", () => {
-  expect(generateStaticParams()).toEqual(COMPARISONS.map(({ slug }) => ({ slug })));
-  expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(3);
+it("generates all four comparison slugs, keeping Screenhance", () => {
+  expect(generateStaticParams()).toEqual([
+    { slug: "duoshot-vs-applaunchflow" },
+    { slug: "duoshot-vs-appscreens" },
+    { slug: "duoshot-vs-screenhance" },
+    { slug: "duoshot-vs-app-asset-kit" },
+  ]);
+  expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(4);
 });
 
 it("returns 404 for unknown comparisons and unsupported languages", async () => {

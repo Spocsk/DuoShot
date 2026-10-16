@@ -91,6 +91,7 @@ No. DuoShot exports a ZIP; you upload the screenshots manually. AppScreens, AppL
 - [DuoShot vs AppLaunchFlow](/en/guides/duoshot-vs-applaunchflow)
 - [DuoShot vs AppScreens](/en/guides/duoshot-vs-appscreens)
 - [DuoShot vs Screenhance](/en/guides/duoshot-vs-screenhance)
+- [DuoShot vs App Asset Kit](/en/guides/duoshot-vs-app-asset-kit)
 
 ## Sources (checked October 15, 2026)
 

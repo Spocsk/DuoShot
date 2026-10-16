@@ -31,8 +31,8 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
   "competitor-comparison": {
-    fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens et Screenhance : sources officielles et fonctionnement DuoShot." },
-    en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens and Screenhance: official sources and DuoShot workflow." },
+    fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens, Screenhance et App Asset Kit : sources officielles et fonctionnement DuoShot." },
+    en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens, Screenhance and App Asset Kit: official sources and DuoShot workflow." },
   },
   "comparison-guide": {
     fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },

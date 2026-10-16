@@ -6,6 +6,7 @@ import type { Locale } from "./specs";
 // AppLaunchFlow: Screenshot Editor, Promo Videos and ASO Copy sections.
 // AppScreens: template, visual editor and localized screenshot FAQs.
 // Screenhance: homepage introduction (store screenshots, mockups and launch visuals).
+// App Asset Kit: screenshot/icon maker, local processing, export workflow and default sizes.
 export const COMPARISONS = [
   {
     slug: "duoshot-vs-applaunchflow",
@@ -46,6 +47,19 @@ export const COMPARISONS = [
       en: "Screenshots, mockups and launch visuals",
     },
   },
+  {
+    slug: "duoshot-vs-app-asset-kit",
+    name: "App Asset Kit",
+    url: "https://www.appassetkit.com/",
+    summary: {
+      fr: "App Asset Kit est un générateur gratuit de captures App Store et Google Play dans le navigateur, qui génère aussi des icônes d’app. Les images sont traitées localement dans le navigateur, sans être envoyées au serveur. Il ne demande aucune inscription et n’ajoute aucun filigrane. Vous importez un à cinq écrans, choisissez un modèle et exportez un ZIP organisé de PNG. Les dimensions App Store par défaut sont 1320 × 2868 (6,9″) et 2064 × 2752 (iPad 13″).",
+      en: "App Asset Kit is a free browser-based App Store and Google Play screenshot maker that also generates app icons. Images are processed locally in the browser and are not uploaded. It requires no signup and adds no watermark. You upload one to five screens, pick a template and export an organized ZIP of PNGs. Default App Store sizes are 1320 × 2868 (6.9″) and 2064 × 2752 (13″ iPad).",
+    },
+    focus: {
+      fr: "Captures et icônes d’app, traitement local dans le navigateur",
+      en: "Screenshots and app icons, local browser processing",
+    },
+  },
 ] as const;
 
 export function comparisonPath(slug: string) {
@@ -67,7 +81,7 @@ export function competitorComparison(locale: Locale, slug: string) {
     .map((entry) => `- [DuoShot vs ${entry.name}](${link(comparisonPath(entry.slug))})`).join("\n");
   const body = locale === "fr" ? `# ${title}
 
-DuoShot est notre produit. Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **16 octobre 2026**. Il ne s’agit pas d’un test du service concurrent.
+DuoShot est notre produit pour préparer les captures iPhone Duo (le téléphone pliable d'Apple). Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **16 octobre 2026**. Il ne s’agit pas d’un test du service concurrent.
 
 ## Ce que présente ${name}
 
@@ -111,7 +125,7 @@ Partez de votre besoin : composition visuelle, langues à traiter, dimensions de
 ${related}
 ` : `# ${title}
 
-DuoShot is our product. This comparison describes its workflow and summarizes the public presentation of [${name}](${url}), checked on **October 16, 2026**. We have not tested the competing service.
+DuoShot is our product for preparing iPhone Duo (Apple's foldable iPhone) screenshots. This comparison describes its workflow and summarizes the public presentation of [${name}](${url}), checked on **October 16, 2026**. We have not tested the competing service.
 
 ## What ${name} presents
 

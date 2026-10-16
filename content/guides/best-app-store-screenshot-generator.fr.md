@@ -91,6 +91,7 @@ Non. DuoShot produit un ZIP, et vous déposez les captures vous-même. AppScreen
 - [DuoShot vs AppLaunchFlow](/guides/duoshot-vs-applaunchflow)
 - [DuoShot vs AppScreens](/guides/duoshot-vs-appscreens)
 - [DuoShot vs Screenhance](/guides/duoshot-vs-screenhance)
+- [DuoShot vs App Asset Kit](/guides/duoshot-vs-app-asset-kit)
 
 ## Sources (consultées le 15 octobre 2026)
 
