@@ -8,6 +8,7 @@ import { APPLE_SCREENSHOT_SOURCE } from "./apple-screenshot-status";
 export type PageSchema = {
   path: string;
   faq?: readonly FaqItem[];
+  software?: boolean | { name: string; description: string };
   article?: { title: string; description: string; dateModified: string };
 };
 
@@ -56,11 +57,23 @@ export function siteJsonLdGraph(locale: Locale) {
   };
 }
 
-export function jsonLdGraph(locale: Locale, { path, faq, article }: PageSchema) {
+export function jsonLdGraph(locale: Locale, { path, faq, software, article }: PageSchema) {
   const url = absoluteUrl(localizedPath(locale, path));
   return {
     "@context": "https://schema.org",
     "@graph": [
+      // Shared site entities are emitted by SiteJsonLd in the document layout.
+      ...(typeof software === "object" ? [{
+        "@type": "SoftwareApplication",
+        "@id": `${url}#software`,
+        publisher: { "@id": `${absoluteUrl("/")}#organization` },
+        name: software.name,
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Web",
+        offers: [{ "@type": "Offer", name: software.name, description: software.description, price: "0", priceCurrency: "EUR" }],
+        description: software.description,
+        url,
+      }] : []),
       ...(article ? [{
         "@type": "TechArticle",
         "@id": `${url}#article`,

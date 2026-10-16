@@ -33,6 +33,7 @@ ${getTranslator("en").t("specs_duoshot_identity")}
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia (EN: ${getSiteUrl()}/en/why-not-ai)
 - Rejection decoder: ${getSiteUrl()}/rejet (EN: ${getSiteUrl()}/en/rejection)
 - Screenshot generator comparison: ${getSiteUrl()}${COMPARISON_GUIDE_PATH} (EN: ${getSiteUrl()}/en${COMPARISON_GUIDE_PATH})
+- Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): ${getSiteUrl()}/tools/iphone-duo-screenshot-checker (EN: ${getSiteUrl()}/en/tools/iphone-duo-screenshot-checker)
 - Tool (noindex): ${getSiteUrl()}/tool
 
 ## Export sizes (portrait)

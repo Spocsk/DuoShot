@@ -41,6 +41,7 @@ describe("GET /llms.txt", () => {
     const body = await GET().text();
     expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required: https://duoshot.site/1206x2622 (EN: https://duoshot.site/en/1206x2622)');
     expect(body).toContain('Optional 6.9" iPhone sizes: https://duoshot.site/1320x2868 (EN: https://duoshot.site/en/1320x2868)');
+    expect(body).toContain('Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): https://duoshot.site/tools/iphone-duo-screenshot-checker (EN: https://duoshot.site/en/tools/iphone-duo-screenshot-checker)');
     expect(body).toContain('iPhone 6.3" portrait alternative accepted by App Store Connect: 1179x2556');
     expect(body).toContain('iPhone 6.3" landscape alternative accepted by App Store Connect: 2556x1179');
     expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect');
