@@ -3,6 +3,9 @@ type SchemaNode = {
   url?: string;
   headline?: string;
   dateModified?: string;
+  name?: string;
+  inLanguage?: string;
+  step?: { "@type": string; position: number; name: string; text: string; url: string }[];
   mainEntity?: { name: string; acceptedAnswer: { text: string } }[];
   offers?: { price: string; priceCurrency: string }[];
 };
@@ -26,6 +29,53 @@ describe("SEO screenshot pages", () => {
   for (const locale of ["fr", "en"] as const) {
     const prefix = locale === "en" ? "/en" : "";
     const visit = (path: string) => locale === "fr" ? cy.visitFr(path) : cy.visitEn(path);
+
+    it(`links to the manual Duo upload guide with matching HowTo and FAQ in ${locale}`, () => {
+      const guidePath = `${prefix}/guides/iphone-duo-app-store-connect`;
+      for (const source of [`${prefix}/specs`, `${prefix}/guides/best-app-store-screenshot-generator`]) {
+        visit(source);
+        cy.get(`main a[href="${guidePath}"]`).click();
+        cy.location("pathname").should("eq", guidePath);
+      }
+      cy.get("h1").should("have.length", 1).and("contain", "App Store Connect");
+      cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications"]').should("exist");
+      cy.get("main").should("contain", "APP_IPHONE_DUO")
+        .and("contain", locale === "en" ? "DuoShot has not yet tested Duo uploads" : "DuoShot n’a pas encore testé le dépôt Duo")
+        .and("contain", locale === "en" ? "April 2027 for apps built with the iOS 27.1 SDK or later" : "avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur")
+        .and("contain", "2034 × 1398").and("contain", "2853 × 2007")
+        .and("contain", locale === "en" ? "Pass, Indie and Studio" : "Pass, Indie et Studio");
+      for (const size of ["1398 × 2034", "2007 × 2853", "1206 × 2622", "1320 × 2868"]) {
+        cy.get("main table").should("contain", size);
+      }
+      cy.document().then((doc) => {
+        const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
+        const origin = new URL(canonical).origin;
+        expect(canonical).to.eq(`${origin}${guidePath}`);
+        expect(doc.querySelector('meta[property="og:image"]')!.getAttribute("content")).to.contain("/guides/iphone-duo-app-store-connect/opengraph-image/");
+        expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content") ?? "").not.to.contain("noindex");
+        for (const language of ["fr", "en", "x-default"]) {
+          expect(doc.querySelector(`link[rel="alternate"][hreflang="${language}"]`)!.getAttribute("href"))
+            .to.eq(`${origin}${language === "en" ? "/en" : ""}/guides/iphone-duo-app-store-connect`);
+        }
+        const howTo = graphOf(doc).find((node) => node["@type"] === "HowTo")!;
+        const steps = Array.from(doc.querySelectorAll('section[aria-labelledby="howto"] ol > li'));
+        expect(steps).to.have.length(6);
+        expect(howTo.inLanguage).to.eq(locale);
+        expect(howTo.name).to.eq(doc.querySelector("h2#howto")!.textContent);
+        expect(howTo.step).to.have.length(steps.length);
+        steps.forEach((step, index) => {
+          expect(howTo.step![index]).to.deep.eq({
+            "@type": "HowToStep", position: index + 1,
+            name: step.querySelector("h3")!.textContent, text: step.querySelector("p")!.textContent,
+            url: `${canonical}#${step.id}`,
+          });
+        });
+        checkFaq(doc);
+        cy.request("/sitemap.xml").its("body").should("contain", `<loc>${canonical}</loc>`);
+      });
+      cy.get(".t-acc button").first().click().should("have.attr", "aria-expanded", "true");
+      cy.get(".t-acc p").first().should("be.visible");
+    });
 
     it(`links the home to factual specs and size pages in ${locale}`, () => {
       visit(prefix || "/");

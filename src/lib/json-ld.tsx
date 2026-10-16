@@ -11,9 +11,10 @@ export type PageSchema = {
   faq?: readonly FaqItem[];
   software?: boolean;
   article?: { title: string; description: string; dateModified: string };
+  howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
 };
 
-export function jsonLdGraph(locale: Locale, { path, faq, software, article }: PageSchema) {
+export function jsonLdGraph(locale: Locale, { path, faq, software, article, howTo }: PageSchema) {
   const url = absoluteUrl(localizedPath(locale, path));
   return {
     "@context": "https://schema.org",
@@ -61,6 +62,20 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article }: Pa
         dateModified: article.dateModified,
         author: { "@id": `${absoluteUrl("/")}#organization` },
         citation: APPLE_SCREENSHOT_SOURCE,
+      }] : []),
+      ...(howTo?.steps.length ? [{
+        "@type": "HowTo",
+        "@id": `${url}#howto`,
+        url,
+        name: howTo.name,
+        inLanguage: locale,
+        step: howTo.steps.map((step, index) => ({
+          "@type": "HowToStep",
+          position: index + 1,
+          name: step.name,
+          text: step.text,
+          url: `${url}#${step.id}`,
+        })),
       }] : []),
       ...(faq?.length ? [{
         "@type": "FAQPage",

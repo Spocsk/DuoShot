@@ -11,7 +11,7 @@ import { INNER_PORTRAIT, OUTER_PORTRAIT, screenshotDimensions, SPECS_FAQ } from 
 import { localizedPath, toolPath } from "@/lib/site";
 import { SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "@/lib/screenshot-pages";
 import { getTranslator } from "@/lib/i18n";
-import { comparisonGuide, COMPARISON_GUIDE_PATH } from "@/lib/guides";
+import { appStoreConnectGuide, ASC_GUIDE_PATH, comparisonGuide, COMPARISON_GUIDE_PATH } from "@/lib/guides";
 
 function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpec[]; caption: string }) {
   const { t } = getTranslator(locale);
@@ -72,6 +72,7 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           <ul className="mt-4 space-y-3">
             {SCREENSHOT_SIZES.map((size) => <li key={size}><Link className="ds-link" href={localizedPath(locale, `/${size}`)}>{sizePageCopy(locale, size).title}</Link></li>)}
             <li><Link className="ds-link" href={localizedPath(locale, COMPARISON_GUIDE_PATH)}>{comparisonGuide(locale).title}</Link></li>
+            <li><Link className="ds-link" href={localizedPath(locale, ASC_GUIDE_PATH)}>{appStoreConnectGuide(locale).title}</Link></li>
           </ul>
         </section>
         <section className="mt-12" aria-labelledby="panel-vs-connect">

@@ -86,6 +86,8 @@ AppScreens lets you export essential sizes on its free plan; DuoShot gives 2 HD 
 **Does DuoShot upload to App Store Connect?**
 No. DuoShot exports a ZIP; you upload the screenshots manually. AppScreens, AppLaunchFlow and Screenpane offer direct upload.
 
+For file preparation, display slots and manual upload steps, read [iPhone Duo screenshots in App Store Connect](/en/guides/iphone-duo-app-store-connect).
+
 ## Sources (checked October 15, 2026)
 
 - Apple, Screenshot specifications: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
