@@ -56,6 +56,7 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           {tf("specs_app_store_connect_prepare", { outerPortrait: OUTER_PORTRAIT, outerSize, innerPortrait: INNER_PORTRAIT, innerSize })}
         </p>
         <p className="mt-4 text-lg">{t("specs_single_slot")}</p>
+        <p className="mt-4 text-sm text-[var(--muted)]">{t("specs_duoshot_identity")}</p>
         <AppleAvailability locale={locale} />
         <section className="mt-10" aria-labelledby="iphone-63-sizes">
           <h2 id="iphone-63-sizes" className="font-display text-3xl">{t("specs_required_iphone_sizes")}</h2>

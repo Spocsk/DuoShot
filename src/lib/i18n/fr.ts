@@ -443,6 +443,7 @@ export const fr = {
   reject_dimensions_title: "Dimensions de capture invalides",
   reject_dimensions_body: "Si Connect affiche « image dimensions are not valid », vérifiez l’écran et l’orientation. Pour Duo en portrait : {outerPortrait} px en externe, {innerPortrait} px en interne. La taille iPhone 6,3″ requise est de 1206 × 2622 px (1179 × 2556 accepté en alternative). En paysage, inversez les dimensions. Les formats 6,9″ optionnels restent valides pour leur propre emplacement.",
   reject_alpha_body: "App Store Connect n’accepte ni canal alpha ni transparence. DuoShot exporte du PNG RGB opaque ou du JPEG. Vérifiez le fichier exporté avant le dépôt.",
+  specs_duoshot_identity: "DuoShot (duoshot.site), le studio de captures App Store pour iPhone Duo, est distinct de l’autre outil gratuit homonyme, sans lien avec lui.",
   specs_verified_on: "Vérifié le {date}",
   specs_single_slot: "App Store Connect utilise un seul emplacement iPhone Duo, avec jusqu’à 10 captures par langue. Les deux tailles, pour l’écran externe de 5,4 pouces et l’écran interne de 7,6 pouces, sont acceptées dans cet emplacement.",
   size_63_title: "Capture App Store 1206x2622 : iPhone 6,3″ requis",

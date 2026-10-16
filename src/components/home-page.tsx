@@ -213,7 +213,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
 
   return (
     <div className="studio-home flex min-h-full flex-col">
-      <JsonLd locale={locale} path="/" software faq={faq} />
+      <JsonLd locale={locale} path="/" faq={faq} />
       <SiteHeader locale={locale} path="/" />
       <LandingMotion>
         <main id="main">

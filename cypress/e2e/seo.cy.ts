@@ -1,14 +1,34 @@
 type SchemaNode = {
   "@type": string;
+  "@id"?: string;
+  name?: string;
   url?: string;
+  publisher?: { "@id": string };
   headline?: string;
   dateModified?: string;
   mainEntity?: { name: string; acceptedAnswer: { text: string } }[];
-  offers?: { price: string; priceCurrency: string }[];
+  offers?: { price: string; priceCurrency: string; priceSpecification?: { billingDuration: string } }[];
 };
 
 function graphOf(doc: Document): SchemaNode[] {
-  return JSON.parse(doc.querySelector('script[type="application/ld+json"]')!.textContent!)["@graph"];
+  return Array.from(doc.querySelectorAll('script[type="application/ld+json"]'))
+    .flatMap((script) => JSON.parse(script.textContent!)["@graph"]);
+}
+
+function checkSiteEntities(doc: Document) {
+  const graph = graphOf(doc);
+  const organizations = graph.filter((node) => node["@type"] === "Organization");
+  const applications = graph.filter((node) => node["@type"] === "SoftwareApplication");
+  expect(organizations).to.have.length(1);
+  expect(applications).to.have.length(1);
+  expect(organizations[0].name).to.eq("DuoShot — iPhone Duo App Store Screenshots");
+  expect(applications[0].publisher?.["@id"]).to.eq(organizations[0]["@id"]);
+  const offers = applications[0].offers!;
+  const passConfigured = Cypress.expose("passPriceConfigured");
+  expect(offers.map(({ price }) => price)).to.deep.eq(passConfigured ? ["0", "12", "49", "120", "490", "19"] : ["0", "12", "49", "120", "490"]);
+  offers.forEach((offer) => expect(offer.priceCurrency).to.eq("EUR"));
+  expect(offers.slice(1).map((offer) => offer.priceSpecification?.billingDuration))
+    .to.deep.eq(passConfigured ? ["P1M", "P1M", "P1Y", "P1Y", "P30D"] : ["P1M", "P1M", "P1Y", "P1Y"]);
 }
 
 function checkFaq(doc: Document) {
@@ -40,9 +60,12 @@ describe("SEO screenshot pages", () => {
       }
       cy.get("main").should("contain", locale === "en" ? "Verified on 2026-10-13" : "Vérifié le 2026-10-13")
         .and("contain", locale === "en" ? "single iPhone Duo slot" : "un seul emplacement iPhone Duo")
-        .and("contain", locale === "en" ? "10 screenshots per locale" : "10 captures par langue");
+        .and("contain", locale === "en" ? "10 screenshots per locale" : "10 captures par langue")
+        .and("contain", "DuoShot (duoshot.site)")
+        .and("contain", locale === "en" ? "unrelated free tool also called DuoShot" : "l’autre outil gratuit homonyme, sans lien avec lui");
       cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications"]').should("exist");
       cy.document().then((doc) => {
+        checkSiteEntities(doc);
         expect(graphOf(doc).find((node) => node["@type"] === "TechArticle")?.dateModified).to.eq("2026-10-13");
         checkFaq(doc);
       });
@@ -88,7 +111,8 @@ describe("SEO screenshot pages", () => {
           }
           expect(doc.querySelector('meta[property="og:image"]')!.getAttribute("content")).to.contain(`/${size}/opengraph-image/`);
           const graph = graphOf(doc);
-          expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "TechArticle"]);
+          checkSiteEntities(doc);
+          expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "SoftwareApplication", "TechArticle"]);
           const article = graph.find((node) => node["@type"] === "TechArticle")!;
           expect(article.url).to.eq(canonical);
           expect(article.headline).to.eq(doc.querySelector("h1")!.textContent);
@@ -101,7 +125,17 @@ describe("SEO screenshot pages", () => {
     it(`matches FAQ markup to displayed questions on home, pricing and rejection in ${locale}`, () => {
       for (const path of [prefix || "/", `${prefix}/pricing`, locale === "fr" ? "/rejet" : "/en/rejection"]) {
         visit(path);
-        cy.document().then(checkFaq);
+        cy.document().then((doc) => {
+          checkSiteEntities(doc);
+          checkFaq(doc);
+        });
+      }
+    });
+
+    it(`includes the shared entities on the guide and legal page in ${locale}`, () => {
+      for (const path of [`${prefix}/guides/best-app-store-screenshot-generator`, `${prefix}/legal`]) {
+        visit(path);
+        cy.document().then(checkSiteEntities);
       }
     });
 
@@ -130,7 +164,18 @@ describe("SEO screenshot pages", () => {
     });
   }
 
-  it("keeps the SDK qualifier in llms.txt", () => {
-    cy.request("/llms.txt").its("body").should("match", /April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
+  it("publishes the identity, sizes, prices and bilingual guides alongside the SDK qualifier in llms.txt", () => {
+    cy.request("/llms.txt").its("body").should("match", /April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/)
+      .and("contain", "DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo")
+      .and("contain", "unrelated free tool also called DuoShot")
+      .and("contain", 'iPhone Duo outer 5.4": 1398x2034')
+      .and("contain", 'iPhone Duo inner 7.6": 2007x2853')
+      .and("contain", 'iPhone 6.3": 1206x2622, included in the free trial')
+      .and("contain", 'iPhone 6.9": 1320x2868, optional with')
+      .and("contain", "Free trial: 0 EUR, 2 HD ZIPs")
+      .and("contain", "Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year")
+      .and("contain", "/guides/best-app-store-screenshot-generator")
+      .and("contain", "/en/guides/best-app-store-screenshot-generator")
+      .and("contain", "Uploads have not yet been tested by DuoShot");
   });
 });

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { MARKETING_ROUTE_PAIRS } from "@/lib/site";
 import { GET } from "./route";
 
 beforeEach(() => {
@@ -58,6 +59,23 @@ describe("GET /llms.txt", () => {
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
   });
 
+  it("distinguishes duoshot.site and links to existing bilingual guides and prices", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
+    const body = await GET().text();
+    expect(body).toContain("DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo");
+    expect(body).toContain("unrelated free tool also called DuoShot");
+    expect(body).toContain('iPhone Duo outer 5.4": 1398x2034');
+    expect(body).toContain('iPhone Duo inner 7.6": 2007x2853');
+    expect(body).toContain('iPhone 6.3": 1206x2622, included in the free trial');
+    expect(body).toContain('iPhone 6.9": 1320x2868, optional with Indie and Studio');
+    expect(body).toContain("Free trial: 0 EUR, 2 HD ZIPs");
+    expect(body).toContain("Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year");
+    for (const route of MARKETING_ROUTE_PAIRS.filter(({ fr }) => /specs|guides|x\d|pourquoi|rejet|pricing/.test(fr))) {
+      expect(body).toContain(`https://duoshot.site${route.fr}`);
+      expect(body).toContain(`https://duoshot.site${route.en}`);
+    }
+  });
+
   it("hides the pass without its Stripe price", async () => {
     expect(await GET().text()).not.toContain("Pass 30 jours");
   });
@@ -67,6 +85,7 @@ describe("GET /llms.txt", () => {
     const body = await GET().text();
     expect(body).toContain("Pass 30 jours: 19 € une fois. Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.");
     expect(body).toContain('Optional 6.9" sizes are included with Pass / Indie / Studio');
+    expect(body).toContain('iPhone 6.9": 1320x2868, optional with Pass, Indie and Studio');
   });
 
   it("hides the pass when checkout is disabled, even with a configured price", async () => {

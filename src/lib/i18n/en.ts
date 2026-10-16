@@ -440,6 +440,7 @@ export const en: Messages = {
   reject_dimensions_title: "Wrong screenshot dimensions",
   reject_dimensions_body: "If Connect reports “image dimensions are not valid”, check the display and orientation. For Duo portrait: {outerPortrait} px outer, {innerPortrait} px inner. The required iPhone 6.3″ size is 1206 × 2622 px (1179 × 2556 accepted as an alternative). Swap dimensions for landscape. Optional 6.9″ formats remain valid for their own slot.",
   reject_alpha_body: "App Store Connect accepts neither an alpha channel nor transparency. DuoShot exports opaque RGB PNG or JPEG. Check the exported file before uploading.",
+  specs_duoshot_identity: "DuoShot (duoshot.site), the App Store screenshot studio for iPhone Duo, is separate from the unrelated free tool also called DuoShot.",
   specs_verified_on: "Verified on {date}",
   specs_single_slot: "App Store Connect uses a single iPhone Duo slot, with up to 10 screenshots per locale. Both the 5.4-inch outer-display and 7.6-inch inner-display sizes are accepted in that slot.",
   size_63_title: "1206x2622 screenshot size: required 6.3″ iPhone",

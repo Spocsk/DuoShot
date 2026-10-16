@@ -3,6 +3,7 @@ import { getSiteUrl } from "@/lib/site";
 import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_COPY, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { passCheckoutAvailable } from "@/lib/billing-availability";
 import { getTranslator } from "@/lib/i18n";
+import { COMPARISON_GUIDE_PATH } from "@/lib/guides";
 import { FREE_EXPORTS, PASS30, PLANS, STUDIO_SEATS } from "@/lib/plans";
 
 export function GET() {
@@ -17,17 +18,25 @@ export function GET() {
   const body = `# DuoShot — App Store Screenshot QA
 > ${t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass")}
 
+${getTranslator("en").t("specs_duoshot_identity")}
+
 - Specs version: ${SPECS_VERSION_DATE}
 - Frameless App Store screenshots for iPhone Duo
-- Canonical specs: ${getSiteUrl()}/specs
-- Outer display sizes: ${getSiteUrl()}/1398x2034
-- Inner display sizes: ${getSiteUrl()}/2007x2853
+- Canonical specs: ${getSiteUrl()}/specs (EN: ${getSiteUrl()}/en/specs)
+- Outer display sizes: ${getSiteUrl()}/1398x2034 (EN: ${getSiteUrl()}/en/1398x2034)
+- Inner display sizes: ${getSiteUrl()}/2007x2853 (EN: ${getSiteUrl()}/en/2007x2853)
 - Required 6.3" iPhone sizes: ${getSiteUrl()}/1206x2622 (EN: ${getSiteUrl()}/en/1206x2622)
 - Optional 6.9" iPhone sizes: ${getSiteUrl()}/1320x2868 (EN: ${getSiteUrl()}/en/1320x2868)
-- Why not AI: ${getSiteUrl()}/pourquoi-pas-ia
-- Rejection decoder: ${getSiteUrl()}/rejet
-- Screenshot generator comparison: ${getSiteUrl()}/guides/best-app-store-screenshot-generator (EN: ${getSiteUrl()}/en/guides/best-app-store-screenshot-generator)
+- Why not AI: ${getSiteUrl()}/pourquoi-pas-ia (EN: ${getSiteUrl()}/en/why-not-ai)
+- Rejection decoder: ${getSiteUrl()}/rejet (EN: ${getSiteUrl()}/en/rejection)
+- Screenshot generator comparison: ${getSiteUrl()}${COMPARISON_GUIDE_PATH} (EN: ${getSiteUrl()}/en${COMPARISON_GUIDE_PATH})
 - Tool (noindex): ${getSiteUrl()}/tool
+
+## Export sizes (portrait)
+- iPhone Duo outer 5.4": 1398x2034
+- iPhone Duo inner 7.6": 2007x2853
+- iPhone 6.3": 1206x2622, included in the free trial
+- iPhone 6.9": 1320x2868, optional with ${passAvailable ? "Pass, Indie and Studio" : "Indie and Studio"}
 
 ## Pixels
 ${sizes}
@@ -43,9 +52,14 @@ ${sizes}
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
 - App Store Connect requires 6.3" iPhone screenshots; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
-- Free trial: ${FREE_EXPORTS} HD exports after signup, no card; selected Duo screenshots and the required 6.3" iPhone size
+
+## Prices (EUR)
+- Pricing: ${getSiteUrl()}/pricing (EN: ${getSiteUrl()}/en/pricing)
+- Free trial: 0 EUR, ${FREE_EXPORTS} HD ZIPs after signup, no card; selected Duo screenshots and the required 6.3" iPhone size
 - Indie: ${PLANS.indie.monthlyEur} EUR/month or ${PLANS.indie.yearlyEur} EUR/year; Studio: ${PLANS.studio.monthlyEur} EUR/month or ${PLANS.studio.yearlyEur} EUR/year. Annual billing upfront; paid limit ${PLANS.indie.dailyHdSets} exports per UTC day.
-${passOffer}- ${DUO_SLOT_COPY.en}
+${passOffer}
+## Upload status
+- ${DUO_SLOT_COPY.en}
 - Duo slot source: ${DUO_SLOT_SOURCE}
 - Apple upload status checked 2026-10-13: since 2026-10-05, App Store Connect accepts iPhone Duo optimized apps; from April 2027, every app submission must include iPhone Duo screenshots (for apps built with the iOS 27.1 SDK or later). Upload files manually.
 - Apple source: ${APPLE_SCREENSHOT_SOURCE}
