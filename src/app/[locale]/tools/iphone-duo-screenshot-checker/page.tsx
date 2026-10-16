@@ -52,7 +52,7 @@ export default async function Page({ params }: LocaleParams) {
           <Link className="ds-link" href={localizedPath(locale, "/specs")}>{t("specs_iphone_duo_screenshot_sizes")}</Link>
         </p>
       </section>
-      <Button as="link" variant="primary" href={toolPath(locale)} className="mt-8">{copy.cta}</Button>
+      <Button as="link" variant="primary" href={toolPath(locale)} className="mt-8 max-w-full whitespace-normal! text-center">{copy.cta}</Button>
       <section className="mt-12" aria-labelledby="checker-faq">
         <h2 id="checker-faq" className="font-display text-3xl">{copy.faqHeading}</h2>
         <FaqList items={copy.faq} />

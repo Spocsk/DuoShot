@@ -38,7 +38,7 @@ export function ScreenshotChecker({ locale, labels }: {
     }
   }
 
-  return <section className="mt-8" aria-labelledby="checker-input-label">
+  return <section className="mt-8 min-w-0 wrap-anywhere" aria-labelledby="checker-input-label">
     <div
       data-testid="checker-drop"
       className={`rounded-xl border-2 border-dashed p-6 sm:p-10 ${dragging ? "border-[var(--ink)]" : "border-[var(--line)]"}`}
@@ -69,7 +69,7 @@ export function ScreenshotChecker({ locale, labels }: {
       {results.map(({ name, inspection }, index) => {
         const match = inspection?.match;
         return <li key={index} data-testid="checker-result" className="rounded-lg border border-[var(--line)] p-4">
-          <p className="break-all font-semibold">{name}</p>
+          <p className="font-semibold">{name}</p>
           {inspection ? <>
             <p className="mt-2 font-mono">{inspection.width} × {inspection.height} px</p>
             <p className="mt-2">{match
