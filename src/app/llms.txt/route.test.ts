@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { MARKETING_ROUTE_PAIRS } from "@/lib/site";
 import { GET } from "./route";
 
@@ -55,7 +55,8 @@ describe("GET /llms.txt", () => {
     expect(body).toContain("iPhone Duo slot, with up to 10 screenshots per device size.");
     expect(body).toContain("Both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions");
     expect(body).toContain("Uploads have not yet been tested by DuoShot");
-    expect(body).toContain(DUO_SLOT_SOURCE);
+    expect(body).toContain(`Third-party reference (ASC CLI): ${DUO_SLOT_SOURCE}`);
+    expect(body).toContain(`Primary source (Apple screenshot specifications): ${APPLE_SCREENSHOT_SOURCE}`);
     expect(body).toContain("DUO_SLOT_LIMIT");
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
   });

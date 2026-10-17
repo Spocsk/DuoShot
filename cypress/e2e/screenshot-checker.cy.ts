@@ -23,6 +23,7 @@ describe("free client-side screenshot checker", () => {
       cy.intercept("POST", "**/api/**").as("apiPost");
       cy.intercept("PUT", "**").as("put");
       visit();
+      cy.get("main").invoke("text").should("not.match", /scaled|redimension/i);
       cy.get("#checker-files").focus().should("have.focus").and("not.be.disabled");
       cy.document().then((doc) => {
         const sizes = [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622], [1179, 2556], [1290, 2796], [1260, 2736]];

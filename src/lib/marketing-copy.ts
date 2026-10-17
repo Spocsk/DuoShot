@@ -25,7 +25,7 @@ export function pricingPageCopy(locale: Locale) {
   return {
     ...copy,
     description: locale === "fr"
-      ? `Essai gratuit : ${PLANS.free.freeExports} exports, iPhone Dynamic Island 6,3″ requis. Pass ${PASS30.priceEur} €/${PASS30.days} j, Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ inclus ; revue client Studio.`
+      ? `Essai gratuit : ${PLANS.free.freeExports} exports, iPhone Dynamic Island 6,3″ requis. Pass ${PASS30.priceEur} €/${PASS30.days} j, Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ optionnel ; revue client Studio.`
       : `Free trial: ${PLANS.free.freeExports} exports, Dynamic Island 6.3″ iPhone required. Pass €${PASS30.priceEur}/${PASS30.days} days, Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; Studio client reviews.`,
   };
 }
