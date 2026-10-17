@@ -43,11 +43,11 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
 
   it.each([true, false])("renders the approved home hero and first H2 with preserved details below the buttons (pass: %s)", (passAvailable) => {
     const heading = locale === "fr"
-      ? "Vos captures App Store, prêtes pour l'iPhone Duo."
+      ? "Vos captures App Store, prêtes pour l’iPhone Duo."
       : "Your App Store screenshots, ready for iPhone Duo.";
     const subtitle = locale === "fr"
-      ? "Importez les captures de votre app : DuoShot les met aux deux formats Duo exigés par Apple (1398×2034 et 2007×2853) et vous les exporte en un ZIP."
-      : "Upload your app's screenshots: DuoShot fits them to the two Duo sizes Apple requires (1398×2034 and 2007×2853) and exports them as a ZIP.";
+      ? "Importez les captures de votre app : DuoShot les met aux formats Duo acceptés par Apple (1398×2034 et 2007×2853) et vous les exporte en un ZIP."
+      : "Upload your app's screenshots: DuoShot fits them to the Duo sizes Apple accepts (1398×2034 and 2007×2853) and exports them as a ZIP.";
     const h2 = locale === "fr"
       ? "Un générateur de captures App Store qui part de votre vraie app"
       : "An App Store screenshot generator that starts from your real app";

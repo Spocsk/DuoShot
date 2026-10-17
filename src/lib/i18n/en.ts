@@ -188,7 +188,7 @@ export const en: Messages = {
   home_preparation_journey: "Preparation journey",
   home_iphone_duo_screenshots: "Your App Store screenshots,",
   home_exact_app_store_sizes: "ready for iPhone Duo.",
-  home_hero_subtitle: "Upload your app's screenshots: DuoShot fits them to the two Duo sizes Apple requires (1398×2034 and 2007×2853) and exports them as a ZIP.",
+  home_hero_subtitle: "Upload your app's screenshots: DuoShot fits them to the Duo sizes Apple accepts (1398×2034 and 2007×2853) and exports them as a ZIP.",
   home_hero_details_without_pass: "Choose outer only, inner only, or a mix of up to 10 opaque PNG/JPEG files for the Duo slot. iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial; optional 6.9″ exports are included with paid access.",
   home_hero_details: "Choose outer only, inner only, or a mix of up to 10 opaque PNG/JPEG files for the Duo slot. iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial; optional 6.9″ exports come with Pass, Indie and Studio.",
   home_import_closed_open_captures_without_pass: "Turn real app captures into App Store screenshots. Choose outer only, inner only, or a mix of up to 10 opaque PNG/JPEG files for the Duo slot. iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial; optional 6.9″ exports are included with paid access.",

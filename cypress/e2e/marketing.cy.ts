@@ -2,7 +2,7 @@ describe("marketing", () => {
   it("keeps the closed/open example and CTA readable on mobile", () => {
     cy.viewport(390, 844);
     cy.visitFr("/");
-    cy.get("h1").should("have.length", 1).and("have.text", "Vos captures App Store, prêtes pour l'iPhone Duo.").and("be.visible");
+    cy.get("h1").should("have.length", 1).and("have.text", "Vos captures App Store, prêtes pour l’iPhone Duo.").and("be.visible");
     cy.get('[data-testid="cta-tool"]').should("be.visible");
     cy.get(".studio-sequence-stage").should("not.be.visible");
     cy.get(".studio-sequence-step-visual").should("have.length", 4);
@@ -15,7 +15,7 @@ describe("marketing", () => {
 
   it("renders the French home, pricing, and primary CTAs", () => {
     cy.visitFr("/");
-    cy.get("h1").should("have.length", 1).and("have.text", "Vos captures App Store, prêtes pour l'iPhone Duo.").and("be.visible");
+    cy.get("h1").should("have.length", 1).and("have.text", "Vos captures App Store, prêtes pour l’iPhone Duo.").and("be.visible");
     cy.get('[data-testid="cta-tool"]').should("have.attr", "href", "/tool");
     cy.get('[data-testid="cta-demo"]').should("have.attr", "href", "/tool?demo=harbor");
     cy.get('[data-testid="nav-signup"]').should("have.class", "ds-cta-ghost").and("not.have.class", "ds-cta");
