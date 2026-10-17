@@ -2,6 +2,7 @@ type SchemaNode = {
   "@type": string;
   "@id"?: string;
   name?: string;
+  logo?: string;
   description?: string;
   url?: string;
   publisher?: { "@id": string };
@@ -25,7 +26,9 @@ function checkSiteEntities(doc: Document) {
   const applications = graph.filter((node) => node["@type"] === "SoftwareApplication");
   expect(organizations).to.have.length(1);
   expect(applications).to.have.length(1);
-  expect(organizations[0].name).to.eq("DuoShot — iPhone Duo App Store Screenshots");
+  expect(organizations[0].name).to.eq("DuoShot");
+  expect(organizations[0].logo).to.eq(`${organizations[0].url}/brand/duoshot-logo.png`);
+  expect(organizations[0]).not.to.have.property("sameAs");
   expect(applications[0].publisher?.["@id"]).to.eq(organizations[0]["@id"]);
   for (const node of [organizations[0], applications[0]]) {
     expect(node.description).to.contain(doc.documentElement.lang === "fr"

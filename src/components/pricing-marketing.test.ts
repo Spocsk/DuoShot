@@ -100,7 +100,7 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
 
   it("keeps configured prices and the shared Studio benefits in the FAQ and metadata", async () => {
     const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
-    expect(metadata.description).toContain(locale === "fr" ? "Essai gratuit avec 5 exports" : "Free trial with 5 exports");
+    expect(metadata.description).toContain(locale === "fr" ? "Essai gratuit : 5 exports" : "Free trial: 5 exports");
     expect(metadata.description).toContain(locale === "fr" ? "18 €/mois" : "€18/month");
     expect(metadata.description).toContain(locale === "fr" ? "69 €/mois" : "€69/month");
     const payment = FAQ[locale].find(({ q }) => q === (locale === "fr" ? "Comment ça se paie ?" : "How does payment work?"))!;
