@@ -27,7 +27,7 @@ describe("tool export", () => {
     cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href", "https://storage.example/app.zip");
     cy.get('[data-testid="tool-export-delivery"]').should("contain", "1398 × 2034");
     cy.get('[data-testid="tool-export-delivery"]').should("contain", "duo-outer-portrait/01.png");
-    cy.get('[data-testid="tool-export-delivery"]').should("not.contain", "duo-inner-portrait/01.png").and("contain", "APP_IPHONE_DUO");
+    cy.get('[data-testid="tool-export-delivery"]').should("not.contain", "duo-inner-portrait/01.png").and("contain", "jusqu’à 10 captures par taille d’appareil");
   });
 
   it("opens the trial paywall when free exports are exhausted", () => {

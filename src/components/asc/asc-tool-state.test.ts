@@ -92,7 +92,7 @@ describe("error and state messages", () => {
   });
 
   it("keeps the skipped reason and the plural forms", () => {
-    expect(fr.t("asct_skipped_reason")).toContain("emplacement unique");
+    expect(fr.t("asct_skipped_reason")).toContain("limite de sélection de DuoShot");
     expect(fr.tf("asct_confirm", { n: 1 })).toBe("Envoyer 1 capture");
     expect(fr.tf("asct_confirm", { n: 3 })).toBe("Envoyer 3 captures");
     expect(en.tf("asct_success_body", { n: 1 })).toBe("1 screenshot is in App Store Connect.");

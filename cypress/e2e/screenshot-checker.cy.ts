@@ -37,6 +37,7 @@ describe("free client-side screenshot checker", () => {
         ]);
       });
       cy.get('[data-testid="checker-result"]').should("have.length", 17);
+      cy.get("main").invoke("text").should("not.match", /5[.,]4\s*(?:″|"|in)|7[.,]6\s*(?:″|"|in)/);
       cy.get("#checker-files").should("not.be.disabled");
       for (const [width, height] of [[1398, 2034], [2007, 2853], [1320, 2868], [1206, 2622]]) {
         cy.contains('[data-testid="checker-result"]', `${width}x${height}.jpg`)

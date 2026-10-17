@@ -21,10 +21,12 @@ describe("zip", () => {
     const images = Array.from({ length: 11 }, (_, index) => ({ spec: outer, index, buffer: Buffer.alloc(1) }));
     await expect(buildZip({ appName: "Cap", orientation: "portrait", branded: false, include69: false, format: "png", images })).rejects.toThrow("DUO_SLOT_LIMIT");
   });
-  it("labels raw examples and documents the shared cap and untested status", () => {
+  it("labels raw examples and documents Apple’s device-size limit and untested status", () => {
     const readme = buildReadme({ appName: "Raw", orientation: "portrait", branded: false, include69: false, rawDuoSets: true });
     expect(readme).toContain("Raw outer + inner sets: pick up to 10");
-    expect(readme).toContain("APP_IPHONE_DUO");
+    expect(readme).not.toContain("APP_IPHONE_DUO");
+    expect(readme).toContain("up to 10 screenshots per device size");
+    expect(readme).toContain("jusqu’à 10 captures par taille d’appareil");
     expect(readme).toContain("Not yet tested by DuoShot");
     expect(readme).toContain("April 2027 for apps built with the iOS 27.1 SDK or later");
   });

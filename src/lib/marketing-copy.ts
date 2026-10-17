@@ -10,11 +10,11 @@ export const HOME_PAGE_COPY = {
 export const PRICING_PAGE_COPY = {
   fr: {
     title: "Tarifs des captures App Store",
-    description: `Essai gratuit avec ${PLANS.free.freeExports} exports et iPhone Dynamic Island (écran moyen, 6,3″) requis. Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ optionnel et validation client avec Studio.`,
+    description: `Essai gratuit : ${PLANS.free.freeExports} exports, iPhone Dynamic Island 6,3″ requis. Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ optionnel ; validation client Studio.`,
   },
   en: {
     title: "App Store screenshot plans & pricing",
-    description: `Free trial with ${PLANS.free.freeExports} exports and iPhone with Dynamic Island (medium display, 6.3") required. Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; client reviews with Studio.`,
+    description: `Free trial: ${PLANS.free.freeExports} exports, Dynamic Island 6.3″ iPhone required. Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; Studio client reviews.`,
   },
 };
 
@@ -25,8 +25,8 @@ export function pricingPageCopy(locale: Locale) {
   return {
     ...copy,
     description: locale === "fr"
-      ? `Essai gratuit avec ${PLANS.free.freeExports} exports et iPhone Dynamic Island (écran moyen, 6,3″) requis. Pass ${PASS30.priceEur} €/${PASS30.days} j, Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ inclus ; revue client Studio.`
-      : `Free trial with ${PLANS.free.freeExports} exports and iPhone with Dynamic Island (medium display, 6.3") required. Pass €${PASS30.priceEur}/${PASS30.days} days, Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; Studio client reviews.`,
+      ? `Essai gratuit : ${PLANS.free.freeExports} exports, iPhone Dynamic Island 6,3″ requis. Pass ${PASS30.priceEur} €/${PASS30.days} j, Indie ${PLANS.indie.monthlyEur} €/mois, Studio ${PLANS.studio.monthlyEur} €/mois : 6,9″ inclus ; revue client Studio.`
+      : `Free trial: ${PLANS.free.freeExports} exports, Dynamic Island 6.3″ iPhone required. Pass €${PASS30.priceEur}/${PASS30.days} days, Indie €${PLANS.indie.monthlyEur}/month, Studio €${PLANS.studio.monthlyEur}/month: optional 6.9″; Studio client reviews.`,
   };
 }
 

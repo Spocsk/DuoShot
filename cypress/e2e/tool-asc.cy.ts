@@ -91,7 +91,7 @@ describe("tool: send to App Store Connect", () => {
     exportReady({ statusCode: 200, body: connectionStatus() }, raw);
     cy.get('[data-testid="asc-tool-open"]').click();
     cy.get('[data-testid="asc-dialog"]').should("have.attr", "data-view", "no69");
-    cy.get('[data-testid="asc-skipped-reason"]').should("contain", "emplacement unique").and("contain", "10");
+    cy.get('[data-testid="asc-skipped-reason"]').should("contain", "limite de sélection de DuoShot").and("contain", "10");
     cy.get('[data-testid="asc-enable-69"]').click();
     cy.focused().should("have.value", "mix");
   });

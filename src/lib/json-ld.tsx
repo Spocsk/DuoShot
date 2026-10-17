@@ -23,7 +23,8 @@ export function siteJsonLdGraph(locale: Locale) {
       {
         "@type": "Organization",
         "@id": `${absoluteUrl("/")}#organization`,
-        name: `${SITE_NAME} — ${SITE_DESCRIPTOR}`,
+        name: SITE_NAME,
+        logo: absoluteUrl("/brand/duoshot-logo.png"),
         url: absoluteUrl("/"),
         description,
       },
