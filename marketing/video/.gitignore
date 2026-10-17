@@ -1,0 +1,6 @@
+node_modules/
+public/captures/
+public/fonts/
+public/brand/
+out/
+*.tsbuildinfo

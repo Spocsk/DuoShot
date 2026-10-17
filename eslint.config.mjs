@@ -18,6 +18,7 @@ const eslintConfig = defineConfig([
     "cypress.config.ts",
     // Vendored Tesseract assets copied by scripts/copy-ocr-assets.mjs.
     "public/ocr/**",
+    "marketing/**",
   ]),
 ]);
 
