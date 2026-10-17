@@ -5,7 +5,7 @@ import { getTranslator } from "./i18n";
 import { FAQ } from "./i18n";
 import sitemap from "@/app/sitemap";
 import robots from "@/app/robots";
-import { absoluteUrl, localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
+import { absoluteUrl, localizedPath, MARKETING_ROUTE_PAIRS, SITE_PITCH_FR, SITE_PITCH_EN } from "./site";
 import { pageMetadata } from "./seo";
 import { JsonLd, SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
 import { SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "./screenshot-pages";
@@ -62,7 +62,7 @@ describe("public routes and crawler metadata", () => {
     for (const locale of ["fr", "en"] as const) {
       const metadata = pageMetadata({ locale, path: "/", title: "iPhone Duo screenshots", description: "DuoShot" });
       const url = `https://duoshot.site${locale === "fr" ? "" : "/en"}`;
-      expect(metadata.title).toEqual({ absolute: expect.stringMatching(/^DuoShot — /) });
+      expect(metadata.title).toEqual({ absolute: "iPhone Duo screenshots" });
       expect(metadata.alternates?.canonical).toBe(url);
       const entry = sitemap().find((item) => item.url === url);
       expect(entry).toBeDefined();
@@ -85,6 +85,24 @@ describe("public routes and crawler metadata", () => {
   });
 
   for (const locale of ["fr", "en"] as const) {
+    it(`uses the exact approved home search and social metadata in ${locale}`, async () => {
+      const title = locale === "fr"
+        ? "Générateur de captures App Store pour iPhone Duo | DuoShot"
+        : "iPhone Duo App Store Screenshot Generator | DuoShot";
+      const description = locale === "fr"
+        ? "Générateur de captures App Store pour iPhone Duo à partir de vos vraies captures : cadrage aux formats Apple, vérifications et export PNG/JPEG en ZIP."
+        : "App Store screenshot generator for iPhone Duo, built from your real screenshots: framed to Apple's sizes, checked, and exported as PNG/JPEG in a ZIP.";
+      const metadata = await homeMetadata({ params: Promise.resolve({ locale }) });
+      expect(HOME_PAGE_COPY[locale]).toEqual({ title, description });
+      expect(metadata.title).toEqual({ absolute: title });
+      expect(metadata.description).toBe(description);
+      expect(description.length).toBe(locale === "fr" ? 150 : 149);
+      expect(description.length).toBeLessThanOrEqual(160);
+      for (const text of [title, description]) expect(text.toLowerCase()).toContain(locale === "fr" ? "générateur" : "generator");
+      expect(metadata.openGraph).toMatchObject({ title, description });
+      expect(metadata.twitter).toMatchObject({ title, description });
+    });
+
     it(`limits rendered size and comparison titles to 65 characters in ${locale}`, async () => {
       for (const generateMetadata of [iphone63Metadata, comparisonMetadata]) {
         const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
@@ -265,7 +283,7 @@ describe("page-specific structured data", () => {
       url: `https://duoshot.site${locale === "en" ? "/en" : ""}`,
       publisher: { "@id": graph[0]["@id"] },
       applicationCategory: "DeveloperApplication", operatingSystem: "Web",
-      description: HOME_PAGE_COPY[locale].description.replace("iPhone Duo", locale === "fr"
+      description: (locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN).replace("iPhone Duo", locale === "fr"
         ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)"),
     });
     expect(graph[0].description).toBe(graph[1].description);

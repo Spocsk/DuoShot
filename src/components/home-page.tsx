@@ -225,7 +225,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
                 <span>{t("home_exact_app_store_sizes")}</span>
               </h1>
               <p className="studio-hero-lead">
-                {t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass")}
+                {t("home_hero_subtitle")}
               </p>
               <div className="studio-hero-actions">
                 <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool" >
@@ -235,6 +235,9 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
                   {t("home_see_example")}
                 </Button>
               </div>
+              <p className="studio-hero-footnote mt-4">
+                {t(passAvailable ? "home_hero_details" : "home_hero_details_without_pass")}
+              </p>
             </div>
             <div className="studio-hero-object">
               <DuoDevice locale={locale} />

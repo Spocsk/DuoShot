@@ -59,6 +59,32 @@ describe("SEO screenshot pages", () => {
     const prefix = locale === "en" ? "/en" : "";
     const visit = (path: string) => locale === "fr" ? cy.visitFr(path) : cy.visitEn(path);
 
+    it(`renders the approved home search and social copy in ${locale}`, () => {
+      const title = locale === "fr"
+        ? "Générateur de captures App Store pour iPhone Duo | DuoShot"
+        : "iPhone Duo App Store Screenshot Generator | DuoShot";
+      const description = locale === "fr"
+        ? "Générateur de captures App Store pour iPhone Duo à partir de vos vraies captures : cadrage aux formats Apple, vérifications et export PNG/JPEG en ZIP."
+        : "App Store screenshot generator for iPhone Duo, built from your real screenshots: framed to Apple's sizes, checked, and exported as PNG/JPEG in a ZIP.";
+      visit(prefix || "/");
+      cy.get("main h2").first().should("have.text", locale === "fr"
+        ? "Un générateur de captures App Store qui part de votre vraie app"
+        : "An App Store screenshot generator that starts from your real app");
+      cy.document().then((doc) => {
+        expect(doc.querySelectorAll("title")).to.have.length(1);
+        expect(doc.title).to.eq(title);
+        expect(doc.querySelector('meta[name="description"]')!.getAttribute("content")).to.eq(description);
+        expect(description.length).to.be.at.most(160);
+        for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) {
+          expect(doc.querySelectorAll(selector)).to.have.length(1);
+          expect(doc.querySelector(selector)!.getAttribute("content")).to.eq(title);
+        }
+        expect(doc.querySelector('meta[property="og:description"]')!.getAttribute("content")).to.eq(description);
+        expect(doc.querySelector('meta[name="twitter:description"]')!.getAttribute("content")).to.eq(description);
+        checkSiteEntities(doc);
+      });
+    });
+
     it(`links to the manual Duo upload guide with matching HowTo and FAQ in ${locale}`, () => {
       const guidePath = `${prefix}/guides/iphone-duo-app-store-connect`;
       for (const source of [`${prefix}/specs`, `${prefix}/guides/best-app-store-screenshot-generator`]) {
