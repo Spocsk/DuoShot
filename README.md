@@ -23,6 +23,8 @@ npm run dev
 
 Quality gate : `npm test` (Vitest) puis, après `npm run build`, `npm run test:e2e` (Cypress). GitHub Actions lance les deux sur chaque PR.
 
+Outillage TypeScript : `tsc` utilise TS 7 ; le paquet `typescript` fournit l’API TS 6 pour typescript-eslint, en attendant sa prise en charge de TS 7.1.
+
 Renseigne uniquement les **noms** de variables dans `.env.example`. Les secrets vont dans `.env.local` en local et dans `/data/duoshot/app.env` (root uniquement) sur le VPS — jamais dans git.
 
 Analytics : Datafast, seul outil d’analytics, mesure les pages et parcours uniquement après accord. Configuration : [`docs/datafast.md`](docs/datafast.md). Événements, rapports et effacement des données Mixpanel historiques : [`docs/analytics.md`](docs/analytics.md).

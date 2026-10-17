@@ -13,6 +13,10 @@ const localizedPageRoutes = readdirSync(path.join(__dirname, "src/app/[locale]")
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  experimental: {
+    // The TS 6 API alias's tsc6 shim produces no CLI output; keep build type checking enabled via its API.
+    useTypeScriptCli: false,
+  },
   env: {
     DUOSHOT_LOCALIZED_PAGE_ROUTES: JSON.stringify(localizedPageRoutes),
   },
