@@ -1,14 +1,18 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
+import { FREE_EXPORTS } from "@/lib/plans";
 import { useI18n } from "@/components/i18n-provider";
 import { localePrefix } from "@/lib/site";
 import { clearAnalyticsAuthIntent, markAnalyticsAuthIntent, trackProduct } from "@/lib/analytics-client";
+import { authErrorKey } from "@/lib/auth-error";
 
 type Mode = "login" | "signup";
 
@@ -16,6 +20,8 @@ export function AuthForm({
   locale,
   mode,
   variant = "page",
+  title,
+  lead,
   nextPath,
   onSuccess,
   initialError = false,
@@ -23,11 +29,13 @@ export function AuthForm({
   locale: Locale;
   mode: Mode;
   variant?: "page" | "modal";
+  title?: string;
+  lead?: string;
   nextPath?: string;
   onSuccess?: () => void;
   initialError?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const router = useRouter();
   const prefix = localePrefix(locale);
   const afterAuth = nextPath ?? `${prefix}/tool`;
@@ -37,6 +45,7 @@ export function AuthForm({
   const [message, setMessage] = useState<string | null>(initialError ? t("auth_sign_in_link_invalid") : null);
   const [messageOk, setMessageOk] = useState(false);
   const [busy, setBusy] = useState(false);
+  const Heading = variant === "modal" ? "h2" : "h1";
 
   function fail(text: string) {
     setMessageOk(false);
@@ -52,6 +61,10 @@ export function AuthForm({
   }
 
   async function onGoogle() {
+    if (mode === "signup" && !privacy) {
+      fail(t("auth_please_accept_terms_privacy"));
+      return;
+    }
     setBusy(true);
     setMessage(null);
     setMessageOk(false);
@@ -66,9 +79,7 @@ export function AuthForm({
         },
       });
       if (error || !data.url) {
-        const raw = error?.message ?? "";
-        const providerOff = /provider is not enabled|unsupported provider/i.test(raw);
-        fail(providerOff ? t("google_error") : raw || t("google_error"));
+        fail(t(authErrorKey(error, "google_error")));
         return;
       }
       const check = await fetch("/api/auth/oauth-check", {
@@ -84,7 +95,7 @@ export function AuthForm({
       markAnalyticsAuthIntent("google");
       window.location.assign(data.url);
     } catch (error) {
-      fail(error instanceof Error ? error.message : t("google_error"));
+      fail(t(authErrorKey(error, "google_error")));
     } finally {
       setBusy(false);
     }
@@ -133,77 +144,72 @@ export function AuthForm({
       }
     } catch (error) {
       clearAnalyticsAuthIntent();
-      fail(error instanceof Error ? error.message : "Erreur");
+      fail(t(authErrorKey(error)));
     } finally {
       setBusy(false);
     }
   }
 
   async function onMagic() {
+    if (mode === "signup" && !privacy) {
+      fail(t("auth_please_accept_terms_privacy"));
+      return;
+    }
     setBusy(true);
     setMessage(null);
     setMessageOk(false);
-    const supabase = createBrowserSupabase();
-    const origin = window.location.origin;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(afterAuth)}` },
-    });
-    if (error) {
-      fail(error.message);
-    } else {
+    try {
+      const supabase = createBrowserSupabase();
+      const origin = window.location.origin;
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(afterAuth)}`,
+          shouldCreateUser: mode === "signup",
+        },
+      });
+      if (error) throw error;
       markAnalyticsAuthIntent("magic");
       setMessageOk(true);
       setMessage(t("auth_magic_link_sent"));
+    } catch (error) {
+      fail(t(authErrorKey(error)));
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   return (
     <div className={variant === "page" ? "studio-auth-card mx-auto w-full max-w-md" : "studio-auth-card"}>
-      <h1 id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
-        {variant === "modal" && mode === "signup" ? t("auth_modal_title") : t(mode === "signup" ? "signup_title" : "login_title")}
-      </h1>
+      <Heading id={variant === "modal" ? "auth-modal-title" : undefined} data-testid="auth-form" className="font-display text-3xl">
+        {title ?? (variant === "modal" && mode === "signup" ? tf("auth_modal_title", { exports: FREE_EXPORTS }) : t(mode === "signup" ? "signup_title" : "login_title"))}
+      </Heading>
       {variant === "modal" && mode === "signup" ? (
-        <p className="mt-2 text-sm text-[var(--muted)]">{t("auth_modal_lead")}</p>
+        <p className="mt-2 text-sm text-[var(--muted)]">{lead ?? t("auth_modal_lead")}</p>
       ) : null}
-      <button type="button" onClick={onGoogle} data-testid="auth-google" className="ds-cta-ghost mt-6 w-full gap-2.5" disabled={busy}>
-        <GoogleMark />
-        {t("google")}
-      </button>
       {mode === "signup" ? (
-        <p className="mt-3 text-center text-xs leading-relaxed text-[var(--muted)]">
-          {locale === "fr" ? (
-            <>
-              En continuant, vous acceptez les{" "}
-              <Link href={`${prefix}/terms`} className="ds-link">
-                conditions générales
-              </Link>{" "}
-              et la{" "}
-              <Link href={`${prefix}/privacy`} className="ds-link">
-                politique de confidentialité
-              </Link>
-              .
-            </>
-          ) : (
-            <>
-              By continuing, you agree to the{" "}
-              <Link href={`${prefix}/terms`} className="ds-link">
-                terms
-              </Link>{" "}
-              and the{" "}
-              <Link href={`${prefix}/privacy`} className="ds-link">
-                privacy policy
-              </Link>
-              .
-            </>
-          )}
-        </p>
+        <label className="ds-check mt-5 text-sm">
+          <span className="t-check" aria-hidden="true" aria-checked={privacy ? "true" : "false"}>
+            <svg viewBox="0 0 10.1668 10.1668"><path d="M1 5.52L3.92 9.17L9.17 1" /></svg>
+          </span>
+          <input type="checkbox" data-testid="auth-privacy" className="sr-check" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} />
+          <span>
+            {t("auth_consent_start")}{" "}
+            <Link href={`${prefix}/terms`} className="ds-link">{t("auth_consent_terms")}</Link>{" "}
+            {t("auth_consent_and")}{" "}
+            <Link href={`${prefix}/privacy`} className="ds-link">{t("auth_consent_privacy")}</Link>
+            {t("auth_consent_end")}
+          </span>
+        </label>
       ) : null}
+      <Button as="button" variant="secondary" type="button" onClick={onGoogle} data-testid="auth-google" className="mt-6 w-full gap-2.5" disabled={busy}>
+        <GoogleMark />
+        {t("auth_google")}
+      </Button>
       <form onSubmit={onPassword} className="mt-6 grid gap-3">
         <div>
           <label className="ds-label" htmlFor="auth-email">
-            {t("email")}
+            {t("auth_email")}
           </label>
           <input
             id="auth-email"
@@ -217,12 +223,12 @@ export function AuthForm({
         </div>
         <div>
           <label className="ds-label" htmlFor="auth-password">
-            {t("password")}
+            {t("auth_password")}
           </label>
           <input
             id="auth-password"
             type="password"
-            minLength={8}
+            minLength={mode === "signup" ? 8 : undefined}
             required={mode === "signup"}
             data-testid="auth-password"
             value={password}
@@ -230,56 +236,13 @@ export function AuthForm({
             className="ds-input w-full"
           />
         </div>
-        {mode === "signup" ? (
-          <label className="ds-check text-sm">
-            <span className="t-check" aria-hidden="true" aria-checked={privacy ? "true" : "false"}>
-              <svg viewBox="0 0 10.1668 10.1668">
-                <path d="M1 5.52L3.92 9.17L9.17 1" />
-              </svg>
-            </span>
-            <input
-              type="checkbox"
-              data-testid="auth-privacy"
-              className="sr-check"
-              checked={privacy}
-              onChange={(event) => setPrivacy(event.target.checked)}
-            />
-            <span>
-              {locale === "fr" ? (
-                <>
-                  J’accepte les{" "}
-                  <Link href={`${prefix}/terms`} className="ds-link">
-                    conditions générales
-                  </Link>{" "}
-                  et la{" "}
-                  <Link href={`${prefix}/privacy`} className="ds-link">
-                    politique de confidentialité
-                  </Link>
-                  .
-                </>
-              ) : (
-                <>
-                  I accept the{" "}
-                  <Link href={`${prefix}/terms`} className="ds-link">
-                    terms
-                  </Link>{" "}
-                  and the{" "}
-                  <Link href={`${prefix}/privacy`} className="ds-link">
-                    privacy policy
-                  </Link>
-                  .
-                </>
-              )}
-            </span>
-          </label>
-        ) : null}
-        <button type="submit" disabled={busy} data-testid="auth-submit" className="ds-cta">
+        <Button as="button" variant="primary" type="submit" disabled={busy} data-testid="auth-submit" >
           {mode === "signup" ? t("nav_signup") : t("nav_login")}
-        </button>
-        <button type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" className="ds-text-btn">
-          {t("magic")}
-        </button>
-        {mode === "login" ? <Link href={`${prefix}/forgot-password`} className="ds-text-btn">{t("auth_forgot_password")}</Link> : null}
+        </Button>
+        <Button as="button" variant="text" type="button" onClick={onMagic} disabled={busy || !email} data-testid="auth-magic" >
+          {t("auth_magic")}
+        </Button>
+        {mode === "login" ? <Button as="link" variant="text" href={`${prefix}/forgot-password`} >{t("auth_forgot_password")}</Button> : null}
       </form>
       {message ? (
         <p className={messageOk ? "mt-4 text-sm" : "ds-warn"} data-testid="auth-message" role={messageOk ? "status" : "alert"}>

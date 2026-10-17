@@ -1,13 +1,12 @@
 import type { Locale } from "./specs";
-import { OUTER_PORTRAIT, INNER_PORTRAIT } from "./screenshot-copy";
 import { publicEnv } from "./env-public";
 
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
 export const SITE_PITCH_FR =
-  `Préparez vos captures iPhone Duo pour App Store Connect : ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px en portrait, export PNG/JPEG opaque.`;
+  "Créez vos captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit avec l’iPhone Dynamic Island (écran moyen, 6,3″) requis ; 6,9″ optionnel avec Pass, Indie et Studio.";
 export const SITE_PITCH_EN =
-  `Prepare iPhone Duo screenshots for App Store Connect: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px in portrait, with opaque PNG/JPEG export.`;
+  "Create iPhone Duo App Store screenshots as opaque PNG/JPEG. Free trial with iPhone with Dynamic Island (medium display, 6.3\") required; optional 6.9″ with Pass, Indie and Studio.";
 
 export function getSiteUrl(): string {
   const explicit = publicEnv.siteUrl;
@@ -42,7 +41,9 @@ export function localizedPath(locale: Locale, path: string): string {
 }
 
 export function absoluteUrl(pathname: string): string {
-  return `${getSiteUrl()}${pathname}`;
+  // Next's metadata resolver serializes the site root without a trailing slash.
+  // Use that exact form in the sitemap and JSON-LD as well.
+  return `${getSiteUrl()}${pathname === "/" ? "" : pathname}`;
 }
 
 export function localePrefix(locale: Locale): string {
@@ -65,6 +66,17 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/", en: "/en", priority: 1 },
   { fr: "/pricing", en: "/en/pricing", priority: 0.8 },
   { fr: "/specs", en: "/en/specs", priority: 1 },
+  { fr: "/tools/iphone-duo-screenshot-checker", en: "/en/tools/iphone-duo-screenshot-checker", priority: 0.8 },
+  { fr: "/guides/best-app-store-screenshot-generator", en: "/en/guides/best-app-store-screenshot-generator", priority: 0.7 },
+  { fr: "/guides/duoshot-vs-applaunchflow", en: "/en/guides/duoshot-vs-applaunchflow", priority: 0.7 },
+  { fr: "/guides/duoshot-vs-appscreens", en: "/en/guides/duoshot-vs-appscreens", priority: 0.7 },
+  { fr: "/guides/duoshot-vs-screenhance", en: "/en/guides/duoshot-vs-screenhance", priority: 0.7 },
+  { fr: "/guides/duoshot-vs-app-asset-kit", en: "/en/guides/duoshot-vs-app-asset-kit", priority: 0.7 },
+  { fr: "/guides/iphone-duo-app-store-connect", en: "/en/guides/iphone-duo-app-store-connect", priority: 0.7 },
+  { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
+  { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
+  { fr: "/1206x2622", en: "/en/1206x2622", priority: 0.8 },
+  { fr: "/1320x2868", en: "/en/1320x2868", priority: 0.8 },
   { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", priority: 0.7 },
   { fr: "/rejet", en: "/en/rejection", priority: 0.7 },
   { fr: "/privacy", en: "/en/privacy", priority: 0.4 },

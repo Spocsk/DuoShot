@@ -1,19 +1,31 @@
 import type { NextConfig } from "next";
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import { securityHeaders } from "./src/lib/security-headers";
 
 /** Browser navigations ask for HTML; image and RSC fetches do not. */
 const HTML_DOCUMENT = { type: "header", key: "accept", value: ".*text/html.*" } as const;
 
+// Compile the page tree into the proxy bundle; standalone servers do not have src/app.
+const localizedPageRoutes = readdirSync(path.join(__dirname, "src/app/[locale]"), { recursive: true })
+  .filter((file): file is string => typeof file === "string" && /(?:^|[/\\])page\.[jt]sx?$/.test(file))
+  .map((file) => `/${file.split(path.sep).slice(0, -1).filter((segment) => !/^\(.*\)$/.test(segment)).join("/")}`);
+
 const nextConfig: NextConfig = {
   output: "standalone",
+  env: {
+    DUOSHOT_LOCALIZED_PAGE_ROUTES: JSON.stringify(localizedPageRoutes),
+  },
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   serverExternalPackages: ["sharp"],
   outputFileTracingIncludes: {
+    "/[locale]/guides/best-app-store-screenshot-generator": ["./content/guides/best-app-store-screenshot-generator.*.md"],
+    "/[locale]/specs": ["./content/guides/best-app-store-screenshot-generator.*.md"],
     "/api/export": ["./src/lib/pipeline/fonts/**/*"],
     "/api/example-zip": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews": ["./src/lib/pipeline/fonts/**/*"],
     "/api/reviews/[id]/media": ["./src/lib/pipeline/fonts/**/*"],
-    "/[locale]/opengraph-image": ["./src/lib/pipeline/fonts/**/*"],
+    "/[locale]/**/opengraph-image/*": ["./src/lib/og/fonts/**/*"],
   },
   poweredByHeader: false,
   async headers() {
@@ -24,6 +36,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www\\.duoshot\\.site" }],
+        destination: "https://duoshot.site/:path*",
+        statusCode: 301,
+      },
       {
         source: "/:path*",
         has: [{ type: "host", value: "duoshot.vercel.app" }],
@@ -39,9 +57,12 @@ const nextConfig: NextConfig = {
       // images rather than documents, are served under /fr.
       { source: "/fr", has: [HTML_DOCUMENT], destination: "/", permanent: true },
       { source: "/fr/:path+", has: [HTML_DOCUMENT], destination: "/:path+", permanent: true },
-      // Social cards cached before the single [locale] tree (route groups added a hash).
-      { source: "/opengraph-image-:hash", destination: "/fr/opengraph-image", permanent: true },
-      { source: "/:page(specs|rejet)/opengraph-image-:hash", destination: "/fr/:page/opengraph-image", permanent: true },
+      // Social cards cached before the single [locale] tree (route groups added a hash), then
+      // before each card got an id for its localized alt text.
+      { source: "/opengraph-image-:hash", destination: "/fr/opengraph-image/card", permanent: true },
+      { source: "/:page(specs|rejet)/opengraph-image-:hash", destination: "/fr/:page/opengraph-image/card", permanent: true },
+      { source: "/:locale(fr|en)/opengraph-image", destination: "/:locale/opengraph-image/card", permanent: true },
+      { source: "/:locale(fr|en)/:page(specs|rejet|rejection)/opengraph-image", destination: "/:locale/:page/opengraph-image/card", permanent: true },
     ];
   },
   async rewrites() {

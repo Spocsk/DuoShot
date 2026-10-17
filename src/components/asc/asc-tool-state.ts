@@ -1,4 +1,4 @@
-import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE } from "@/lib/asc/config";
+import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, isAscDuoImage } from "@/lib/asc/config";
 import type { DeviceSlot, Orientation } from "@/lib/specs";
 import type { MessageKey } from "@/lib/i18n/types";
 
@@ -30,28 +30,28 @@ function fileName(image: ExportImage, orientation: Orientation): string {
   return `${image.slot}-${orientation}/${size}${String(image.index).padStart(2, "0")}.${image.format === "jpeg" ? "jpg" : "png"}`;
 }
 
-/**
- * Mirrors the worker's planAscFiles on the export's image list: the 6.9″ set at its
- * largest size only (one per slide, at most ten), every iPhone Duo file skipped.
- */
-export function ascFilePlan(images: ExportImage[], orientation: Orientation): { send: AscPlannedFile[]; skipped: AscPlannedFile[] } {
+/** Mirrors the ZIP upload plan: both Duo sizes share a combined cap of ten. */
+export function ascFilePlan(images: ExportImage[], orientation: Orientation): { send: AscPlannedFile[]; skipped: AscPlannedFile[]; error?: string } {
   const preferred = ASC_PREFERRED_69_SIZE[orientation];
+  const duo = images.filter((image) => DUO_SLOTS.has(image.slot));
+  if (duo.some((image) => !isAscDuoImage(image.width, image.height, image.format))) {
+    return { send: [], skipped: [], error: "ASC_INVALID" };
+  }
+  // The worker rejects old raw exports with more than ten; the UI must not offer them.
+  const overfull = duo.length > ASC_MAX_SCREENSHOTS_PER_SET;
   const toPlanned = (image: ExportImage): AscPlannedFile => ({
     slot: image.slot as DeviceSlot, index: image.index, width: image.width, height: image.height, name: fileName(image, orientation),
   });
-  const send = images
-    .filter((image) => image.slot === "iphone-69" && `${image.width}x${image.height}` === preferred)
-    .sort((a, b) => a.index - b.index)
-    .slice(0, ASC_MAX_SCREENSHOTS_PER_SET)
-    .map(toPlanned);
-  const skipped = images.filter((image) => DUO_SLOTS.has(image.slot))
-    .sort((a, b) => (a.slot === b.slot ? a.index - b.index : a.slot === "duo-outer" ? -1 : 1))
-    .map(toPlanned);
-  return { send, skipped };
+  const phone = images.filter((image) => image.slot === "iphone-69" && `${image.width}x${image.height}` === preferred).sort((a, b) => a.index - b.index).slice(0, ASC_MAX_SCREENSHOTS_PER_SET);
+  const send = overfull ? [] : [...duo, ...phone].map(toPlanned);
+  return { send, skipped: overfull ? duo.map(toPlanned) : [] };
 }
 
 /** Stable codes from /api/asc/*, the asc_upload job and the hook → user-facing message. */
 const ERROR_KEYS: Record<string, Key> = {
+  DUO_SLOT_LIMIT: "tool_duo_over_limit",
+  DUO_SELECTION_EMPTY: "tool_duo_empty",
+  INVALID_DUO_SELECTION: "tool_duo_empty",
   ASC_NOT_CONNECTED: "asct_err_not_connected",
   ASC_UNAUTHORIZED: "asct_err_credentials",
   ASC_FORBIDDEN: "asct_err_credentials",

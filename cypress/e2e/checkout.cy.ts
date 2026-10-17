@@ -5,6 +5,8 @@ describe("checkout", () => {
     cy.location("pathname").should("eq", "/tool");
     cy.location("search").should("include", "upgrade=1");
     cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('h2[data-testid="auth-form"]').should("contain", "Créez un compte pour continuer vers le paiement");
+    cy.get("h1").should("have.length", 1);
   });
 
   it("keeps the annual choice through guest signup", () => {
@@ -14,14 +16,13 @@ describe("checkout", () => {
     cy.location("pathname").should("eq", "/tool");
     cy.location("search").should("include", "plan=indie_yearly");
     cy.get('[data-testid="auth-form"]').should("be.visible");
+    cy.get('h2[data-testid="auth-form"]').should("contain", "Créez un compte pour continuer vers le paiement");
   });
 
   it("waits for a confirmed subscription before showing success", () => {
     cy.visitFr("/tool?checkout=success");
-    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-status"]').should("contain", "Vérification de l’activation en cours");
     cy.visitFr("/tool?checkout=cancel");
-    cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="tool-status"]').should("contain", "Paiement annulé");
   });
 

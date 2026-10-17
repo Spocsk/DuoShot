@@ -181,10 +181,24 @@ describe("pipeline", () => {
     }
   });
 
-  it("keeps generated inner portrait copy clear of the hinge", () => {
+  it("keeps generated inner portrait copy clear of the horizontal hinge", () => {
     const spec = SIZE_SPECS.find((item) => item.id === "inner-p") as SizeSpec;
+    const hinge = hingeBand(spec);
+    expect(hinge.width).toBe(spec.width);
+    for (const position of ["top", "bottom"] as const) {
+      const layout = textOverlayLayout(spec, position);
+      const titleBottom = layout.yTitle + layout.titleSize;
+      const subtitleTop = layout.ySubtitle - layout.subtitleSize;
+      const clear = (y: number) => y < hinge.y || y > hinge.y + hinge.height;
+      expect(clear(titleBottom) && clear(subtitleTop)).toBe(true);
+    }
+  });
+
+  it("keeps generated inner landscape copy clear of the vertical hinge", () => {
+    const spec = SIZE_SPECS.find((item) => item.id === "inner-l") as SizeSpec;
     const layout = textOverlayLayout(spec, "bottom");
     const hinge = hingeBand(spec);
+    expect(hinge.height).toBe(spec.height);
     expect(layout.x + layout.maxWidth / 2).toBeLessThan(hinge.x);
   });
 

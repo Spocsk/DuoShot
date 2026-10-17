@@ -1,9 +1,10 @@
 import JSZip from "jszip";
+import sharp from "sharp";
 import type { DbClient } from "@/lib/supabase/types";
 import type { DeviceSlot, Orientation } from "../specs";
 import { completeRender, type RenderJob } from "../render/jobs";
 import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
-import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor } from "./config";
+import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor, isAscDuoImage } from "./config";
 import { loadAscCredentials } from "./credentials";
 import { readWorkspaceBilling } from "../workspace-billing";
 import { isProPlan } from "../plans";
@@ -16,7 +17,7 @@ export type AscUploadPayload = {
   appId: string;
   versionId: string;
   localizationId: string;
-  /** Delete the screenshots already in each target set before uploading. */
+  /** Replace existing screenshots only after the new screenshots finish uploading. */
   replaceExisting: boolean;
   /** Display mapping snapshotted at enqueue time from ASC_DISPLAY_TYPES. */
   targets: AscTarget[];
@@ -70,14 +71,15 @@ export type PlannedFile = { slot: DeviceSlot; index: number; displayType: string
  * Picks the ZIP entries for each target, in slide order. Paths look like
  * `[client/]app/<slot>-<orientation>/[WxH/]NN.png`; 6.9" keeps only the largest size.
  */
-export function planAscFiles(paths: string[], targets: AscTarget[]): PlannedFile[] {
+export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: string[]): PlannedFile[] {
   const planned: PlannedFile[] = [];
   for (const target of targets) {
     const files: PlannedFile[] = [];
     for (const path of paths) {
       const parts = path.split("/");
-      const folder = parts.findIndex((part) => /^(duo-outer|duo-inner|iphone-69)-(portrait|landscape)$/.test(part));
-      if (folder < 0 || !parts[folder]!.startsWith(`${target.slot}-`)) continue;
+      // Read from the filename back: app/client slugs can also look like slots.
+      const folder = parts.length - (target.slot === "iphone-69" ? 3 : 2);
+      if (folder < 1 || !/^(duo-outer|duo-inner|iphone-69)-(portrait|landscape)$/.test(parts[folder]!) || !parts[folder]!.startsWith(`${target.slot}-`)) continue;
       const orientation = parts[folder]!.slice(target.slot.length + 1) as Orientation;
       const rest = parts.slice(folder + 1);
       if (target.slot === "iphone-69" ? rest.length !== 2 || rest[0] !== ASC_PREFERRED_69_SIZE[orientation] : rest.length !== 1) continue;
@@ -87,7 +89,16 @@ export function planAscFiles(paths: string[], targets: AscTarget[]): PlannedFile
       files.push({ slot: target.slot, index, displayType: target.displayType, path, fileName: `duoshot-${parts[folder]}-${match[1]}.${match[2]}` });
     }
     files.sort((a, b) => a.index - b.index);
-    planned.push(...files.slice(0, ASC_MAX_SCREENSHOTS_PER_SET));
+    planned.push(...(target.slot === "iphone-69" ? files.slice(0, ASC_MAX_SCREENSHOTS_PER_SET) : files));
+  }
+  const duo = planned.filter((file) => file.displayType === "APP_IPHONE_DUO");
+  if (duo.length > ASC_MAX_SCREENSHOTS_PER_SET) throw new Error("DUO_SLOT_LIMIT");
+  if (duoOrder) {
+    if (duoOrder.length !== duo.length || new Set(duoOrder).size !== duo.length || duoOrder.some((path) => !duo.some((file) => file.path === path))) throw new Error("INVALID_DUO_SELECTION");
+    planned.sort((a, b) => {
+      const position = (file: PlannedFile) => file.displayType === "APP_IPHONE_DUO" ? duoOrder.indexOf(file.path) : duo.length + file.index;
+      return position(a) - position(b);
+    });
   }
   return planned;
 }
@@ -122,8 +133,32 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
   const { data: blob, error: downloadError } = await admin.storage.from("exports").download(exported.storage_path);
   if (downloadError || !blob) return fail("EXPORT_EXPIRED");
   const zip = await JSZip.loadAsync(await blob.arrayBuffer());
-  const planned = planAscFiles(Object.keys(zip.files).filter((path) => !zip.files[path]!.dir), payload.targets);
+  let planned: PlannedFile[];
+  try {
+    const manifestFile = Object.keys(zip.files).find((path) => path.endsWith("/duo-slot.json"));
+    const manifest = manifestFile ? JSON.parse(await zip.file(manifestFile)!.async("string")) : undefined;
+    if (manifestFile && (!manifest || manifest.displayType !== "APP_IPHONE_DUO" || !Array.isArray(manifest.files) || manifest.files.some((path: unknown) => typeof path !== "string"))) {
+      throw new Error("INVALID_DUO_SELECTION");
+    }
+    // Legacy exports have no manifest. Reject overfull raw pairs; never trim them.
+    planned = planAscFiles(Object.keys(zip.files).filter((path) => !zip.files[path]!.dir), payload.targets, manifest?.files);
+  } catch (error) {
+    return fail(error instanceof Error && error.message === "DUO_SLOT_LIMIT" ? "DUO_SLOT_LIMIT" : "INVALID_DUO_SELECTION");
+  }
   if (!planned.length) return fail("NOTHING_TO_UPLOAD");
+
+  // Validate actual image bytes before any API request, including for legacy ZIPs.
+  // A filename alone cannot establish that an image belongs in the Duo slot.
+  try {
+    for (const file of planned) {
+      if (file.displayType !== "APP_IPHONE_DUO") continue;
+      const bytes = await zip.file(file.path)!.async("nodebuffer");
+      const metadata = await sharp(bytes).metadata();
+      if (!isAscDuoImage(metadata.width, metadata.height, metadata.format)) return fail("ASC_INVALID");
+    }
+  } catch {
+    return fail("ASC_INVALID");
+  }
 
   let credentials;
   try { credentials = await loadAscCredentials(admin, job.workspace_id); } catch (error) {
@@ -150,19 +185,20 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
     await report();
     // Capacity first, read-only: Apple holds at most ten screenshots per set and the
     // previous ones are only removed after the new ones are live, so both must fit.
-    const sets = new Map<DeviceSlot, { id: string | null; displayType: string; previous: string[]; uploaded: string[] }>();
+    const sets = new Map<string, { id: string | null; displayType: string; previous: string[]; uploaded: string[] }>();
     for (const target of payload.targets) {
-      const incoming = planned.filter((file) => file.slot === target.slot).length;
+      if (sets.has(target.displayType)) continue;
+      const incoming = planned.filter((file) => file.displayType === target.displayType).length;
       if (!incoming) continue;
       const id = await client.findScreenshotSet(payload.localizationId, target.displayType);
       const previous = id ? await client.listScreenshotIds(id) : [];
       if (previous.length + incoming > ASC_MAX_SCREENSHOTS_PER_SET) throw new AscError("ASC_CONFLICT", 409, "SET_FULL");
-      sets.set(target.slot, { id, displayType: target.displayType, previous, uploaded: [] });
+      sets.set(target.displayType, { id, displayType: target.displayType, previous, uploaded: [] });
     }
     for (const set of sets.values()) set.id ??= await client.ensureScreenshotSet(payload.localizationId, set.displayType);
 
     for (const [position, file] of planned.entries()) {
-      const set = sets.get(file.slot)!;
+      const set = sets.get(file.displayType)!;
       progress.files[position]!.state = "uploading";
       await report();
       const bytes = new Uint8Array(await zip.file(file.path)!.async("uint8array"));
@@ -207,7 +243,15 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
       uploaded: assetIds.length, replaced, reordered, files: progress.files,
       skipped: ascTargetsForExport(true).skipped,
     };
-    await completeRender(admin, job, result);
+    try {
+      await completeRender(admin, job, result);
+    } catch (error) {
+      if (error instanceof Error && error.message === "RENDER_LEASE_LOST") throw error;
+      // Apple has finalized the upload and previous screenshots may be gone.
+      // A database failure must never roll back these live replacements.
+      console.error("asc_result_commit_failed", { jobId: job.id });
+      return fail("ASC_RETRY_UNSAFE");
+    }
     return Response.json(result);
   } catch (error) {
     if (error instanceof Error && error.message === "RENDER_LEASE_LOST") return Response.json({ error: "RENDER_LEASE_LOST" }, { status: 409 });

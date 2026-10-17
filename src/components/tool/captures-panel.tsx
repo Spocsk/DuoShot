@@ -44,7 +44,7 @@ export function CapturesPanel({
 }) {
   const { t, tf } = useI18n();
   return <>
-          <div className="tool-panel-heading"><h2>{t("tool_screenshots")}</h2><p>{t("tool_import_app_screens_up")}</p></div>
+          <div className="tool-panel-heading"><h2>{t("tool_step_import")}</h2><p>{t("tool_import_app_screens_up")}</p></div>
           <div id="tool-import" className="tool-import-stack">
             <div className="mt-5 grid gap-4 md:grid-cols-2">
       <DropZone
@@ -126,7 +126,7 @@ export function CapturesPanel({
       <input
         id="tool-input-app"
         value={active?.appName ?? active?.name ?? ""}
-        placeholder="App"
+        placeholder={t("tool_app_placeholder")}
         onChange={(event) => { patchActive({ appName: event.target.value }); setZipUrl(null); }}
         className="ds-input w-full"
       />

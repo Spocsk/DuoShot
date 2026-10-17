@@ -1,11 +1,14 @@
-import { ogImage } from "@/lib/og-image";
-export { alt, size, contentType } from "../opengraph-image";
+import { ogImage, ogImageMetadata } from "@/lib/og";
+import { pageLocale, type LocaleParams } from "../params";
 
-// Pages that set their own Open Graph fields need their own image file to keep a card.
 export function generateStaticParams() {
   return [{ locale: "en" }];
 }
 
-export default function Image() {
-  return ogImage("en");
+export function generateImageMetadata({ params }: { params: { locale: string } }) {
+  return ogImageMetadata("rejection", params);
+}
+
+export default async function Image({ params }: LocaleParams) {
+  return ogImage("rejection", await pageLocale(params, "en"));
 }

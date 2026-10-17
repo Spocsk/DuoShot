@@ -1,4 +1,4 @@
-export const SPECS_VERSION_DATE = "2026-09-25";
+export const SPECS_VERSION_DATE = "2026-10-13";
 export const POLICY_VERSION = "2026-10-04";
 export const MAX_IMAGES = 10;
 export const WARN_MIN_IMAGES = 3;
@@ -14,7 +14,11 @@ export type BackgroundMode = "solid" | "gradient" | "blur";
 export type TitlePosition = "top" | "bottom";
 export type TitleFont = "sans" | "serif";
 export type OutputFormat = "png" | "jpeg";
-export type DeviceSlot = "duo-outer" | "duo-inner" | "iphone-69";
+export type DeviceSlot = "duo-outer" | "duo-inner" | "iphone-63" | "iphone-69";
+
+export function isDuoSlot(slot: string): slot is "duo-outer" | "duo-inner" {
+  return slot === "duo-outer" || slot === "duo-inner";
+}
 export type PlanId = "free" | "indie" | "studio";
 
 export type CropTransform = {
@@ -101,10 +105,21 @@ function pair(
 export const SIZE_SPECS: SizeSpec[] = [
   ...pair("outer", "duo-outer", "Duo outer", '5.4"', 1398, 2034),
   ...pair("inner", "duo-inner", "Duo inner", '7.6"', 2007, 2853),
+  ...pair("63a", "iphone-63", 'iPhone 6.3"', '6.3"', 1206, 2622),
   ...pair("69a", "iphone-69", 'iPhone 6.9"', '6.9"', 1320, 2868, "indie-studio"),
   ...pair("69b", "iphone-69", 'iPhone 6.9"', '6.9"', 1290, 2796, "indie-studio"),
   ...pair("69c", "iphone-69", 'iPhone 6.9"', '6.9"', 1260, 2736, "indie-studio"),
 ];
+
+/** Accepted 6.3-inch alternative for documentation; DuoShot exports 1206 × 2622. */
+export const IPHONE_63_ALTERNATIVE = {
+  portrait: { width: 1179, height: 2556 },
+  landscape: { width: 2556, height: 1179 },
+} as const;
+
+export function iphone63Spec(orientation: Orientation): SizeSpec {
+  return SIZE_SPECS.find((spec) => spec.slot === "iphone-63" && spec.orientation === orientation)!;
+}
 
 export function appStoreDisclaimer233(locale: Locale): string {
   return locale === "fr"
@@ -132,7 +147,10 @@ export const DUO_INNER_MM = { width: 164.6, height: 117.8 } as const;
 
 export function duoChassisAspect(slot: "outer" | "inner", orientation: Orientation): string {
   if (slot === "inner") {
-    return `${DUO_INNER_MM.width}/${DUO_INNER_MM.height}`;
+    // Natural open pose is landscape; a portrait screenshot shows the device turned a quarter turn.
+    return orientation === "landscape"
+      ? `${DUO_INNER_MM.width}/${DUO_INNER_MM.height}`
+      : `${DUO_INNER_MM.height}/${DUO_INNER_MM.width}`;
   }
   if (orientation === "landscape") {
     return `${DUO_OUTER_MM.height}/${DUO_OUTER_MM.width}`;
@@ -180,6 +198,7 @@ export function specPixels(spec: Pick<SizeSpec, "width" | "height">): string {
 
 export function targetsFor(options: {
   orientation: Orientation;
+  include63?: boolean;
   include69: boolean;
   plan: PlanId;
 }): SizeSpec[] {
@@ -188,6 +207,7 @@ export function targetsFor(options: {
   }
   return SIZE_SPECS.filter((spec) => {
     if (spec.orientation !== options.orientation) return false;
+    if (spec.slot === "iphone-63") return Boolean(options.include63);
     if (spec.slot === "iphone-69") return options.include69;
     return true;
   });
@@ -238,12 +258,16 @@ export type TextOverlayLayout = {
   maxWidth: number;
 };
 
-/** Keeps generated copy clear of the simulated bezel and, on the open portrait display, the fold. */
+/**
+ * Keeps generated copy clear of the simulated bezel and the fold. Titles sit at the top or bottom, so the
+ * horizontal fold of the open portrait display never crosses them; the open landscape display folds down
+ * the middle column, so copy there is kept in the left half.
+ */
 export function textOverlayLayout(
   spec: Pick<SizeSpec, "slot" | "orientation" | "width" | "height">,
   position: TitlePosition,
 ): TextOverlayLayout {
-  const avoidsVerticalHinge = spec.slot === "duo-inner" && spec.orientation === "portrait";
+  const avoidsVerticalHinge = spec.slot === "duo-inner" && spec.orientation === "landscape";
   return {
     x: Math.round(spec.width * (avoidsVerticalHinge ? 0.25 : 0.5)),
     yTitle: Math.round(spec.height * (position === "top" ? 0.08 : 0.88)),
@@ -254,13 +278,20 @@ export function textOverlayLayout(
   };
 }
 
+/**
+ * The fold of the open iPhone Duo. Apple's specs (apple.com/iphone-duo/specs) give 164.6 x 117.8 mm unfolded and
+ * 84.1 x 117.8 mm folded: the natural open pose is landscape and the fold halves the long side.
+ * - landscape slot (long side horizontal, natural pose): vertical band centred horizontally;
+ * - portrait slot (device turned a quarter turn, long side vertical): horizontal band centred vertically.
+ * The band thickness is a ratio of the long side, the dimension the fold cuts.
+ */
 export function hingeBand(spec: Pick<SizeSpec, "width" | "height" | "orientation">): {
   x: number;
   y: number;
   width: number;
   height: number;
 } {
-  if (spec.orientation === "portrait") {
+  if (spec.orientation === "landscape") {
     const width = Math.max(1, Math.round(spec.width * INNER_DIVISION_RATIO));
     return { x: Math.round((spec.width - width) / 2), y: 0, width, height: spec.height };
   }

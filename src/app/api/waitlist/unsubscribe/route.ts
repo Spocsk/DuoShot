@@ -25,9 +25,17 @@ export async function GET(request: Request) {
   });
 }
 
-/** Erasure, not a flag: the row (address, token, dates) is deleted. */
+/**
+ * Erasure, not a flag: the row (address, token, dates) is deleted. Accepts the
+ * page's form (token in the body) and RFC 8058 one-click requests from mailbox
+ * providers, which POST `List-Unsubscribe=One-Click` to the header's URL.
+ */
 export async function POST(request: Request) {
-  const token = await readFormToken(request);
+  const queryToken = new URL(request.url).searchParams.get("token");
+  const oneClick = request.headers.get("content-type")?.includes("application/x-www-form-urlencoded")
+    ? await request.clone().formData().then((form) => form.get("List-Unsubscribe") === "One-Click").catch(() => false)
+    : false;
+  const token = oneClick && isWaitlistToken(queryToken) ? queryToken : await readFormToken(request);
   if (!token) return invalidLinkPage("fr");
   const admin = createAdminSupabase();
   if (!admin) return unavailablePage("fr");

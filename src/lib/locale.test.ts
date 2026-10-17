@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import nextConfig from "../../next.config";
 import {
   cookieLocale,
   isCrawler,
@@ -7,6 +8,11 @@ import {
   parseAcceptLanguage,
   shouldSkipLocaleRewrite,
 } from "./locale";
+
+beforeEach(() => {
+  vi.stubEnv("DUOSHOT_LOCALIZED_PAGE_ROUTES", nextConfig.env!.DUOSHOT_LOCALIZED_PAGE_ROUTES!);
+});
+afterEach(() => vi.unstubAllEnvs());
 
 describe("locale", () => {
   it("reads the path locale", () => {
@@ -90,8 +96,48 @@ describe("locale", () => {
     expect(localeRedirectTarget({ pathname: "/en/why-not-ai", search: "", cookie: undefined, acceptLanguage: "fr" })).toBe("/pourquoi-pas-ia");
   });
 
+  it("recognizes every localized page from the app directory", () => {
+    const routes: string[] = JSON.parse(nextConfig.env!.DUOSHOT_LOCALIZED_PAGE_ROUTES!);
+    expect(routes).toContain("/tool");
+    expect(routes).toContain("/account");
+    expect(routes).toContain("/invite/[token]");
+    for (const route of routes) {
+      const pathname = route.replace(/\[[^\]]+\]/g, "example");
+      expect(localeRedirectTarget({ pathname, search: "?x=1", cookie: undefined, acceptLanguage: null })).not.toBeNull();
+    }
+  });
+
+  it("leaves unknown pages to Next's 404 handler in both locales", () => {
+    for (const path of ["/xyz-nope", "/tool/xyz-nope", "/account/xyz-nope", "/login/xyz-nope", "/invite", "/invite/token/xyz-nope"]) {
+      for (const pathname of [path, `/en${path}`]) {
+        for (const cookie of [undefined, "en", "fr"]) {
+          for (const acceptLanguage of [null, "en", "fr"]) {
+            expect(localeRedirectTarget({ pathname, search: "?x=1", cookie, acceptLanguage })).toBeNull();
+          }
+        }
+      }
+    }
+  });
+
+  it.each([
+    ["/docs/[...slug]", ["/docs/a", "/docs/a/b"], ["/docs", "/doc/a"]],
+    ["/docs/[[...slug]]", ["/docs", "/docs/a", "/docs/a/b"], ["/doc", "/doc/a"]],
+    ["/teams/[id]/docs/[...slug]", ["/teams/one/docs/a/b"], ["/teams/one/docs", "/teams/one/other/a"]],
+    ["/invite/[token]", ["/invite/abc"], ["/invite", "/invite/abc/extra"]],
+  ])("matches Next's dynamic segments in %s", (route, valid, invalid) => {
+    vi.stubEnv("DUOSHOT_LOCALIZED_PAGE_ROUTES", JSON.stringify([route]));
+    for (const pathname of valid) {
+      expect(localeRedirectTarget({ pathname, search: "?x=1", cookie: "en", acceptLanguage: null })).toBe(`/en${pathname}?x=1`);
+      expect(localeRedirectTarget({ pathname: `/en${pathname}`, search: "?x=1", cookie: "fr", acceptLanguage: null })).toBe(`${pathname}?x=1`);
+    }
+    for (const pathname of invalid) {
+      expect(localeRedirectTarget({ pathname, search: "", cookie: "en", acceptLanguage: null })).toBeNull();
+      expect(localeRedirectTarget({ pathname: `/en${pathname}`, search: "", cookie: "fr", acceptLanguage: null })).toBeNull();
+    }
+  });
+
   it("leaves static resources alone", () => {
-    for (const path of ["/sitemap.xml", "/robots.txt", "/font.woff2", "/_next/anything", "/api", "/auth", "/opengraph-image-35za9p", "/en/opengraph-image", "/en/specs/opengraph-image", "/specs/opengraph-image-vneuru", "/en/rejection/twitter-image"]) {
+    for (const path of ["/sitemap.xml", "/robots.txt", "/font.woff2", "/_next/anything", "/api", "/auth", "/opengraph-image-35za9p", "/en/opengraph-image", "/en/specs/opengraph-image", "/specs/opengraph-image-vneuru", "/en/rejection/twitter-image", "/fr/opengraph-image/card", "/en/pricing/opengraph-image/card"]) {
       expect(shouldSkipLocaleRewrite(path)).toBe(true);
     }
   });

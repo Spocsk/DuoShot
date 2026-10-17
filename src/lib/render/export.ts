@@ -1,3 +1,4 @@
+import { validateDuoSelection, type DuoPick } from "@/lib/duo-selection";
 import { admitRenderBody, admitRenderSlot } from "./admission";
 import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { mapLimit } from "@/lib/map-limit";
@@ -32,8 +33,11 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
   const innerPaths = sameSet ? outerPaths : (body.innerPaths ?? body.paths ?? []);
   const count = Math.max(outerPaths.length, innerPaths.length);
   let countWarning: string | undefined;
+  let selectedPicks: DuoPick[];
   try {
-    const checked = checkSourceCount(count);
+    if (count === 0) throw new Error("NO_IMAGES");
+    selectedPicks = validateDuoSelection(body.duoSelection, outerPaths.length, innerPaths.length);
+    const checked = checkSourceCount(selectedPicks.length);
     if (checked.warning === "TOO_FEW") countWarning = "TOO_FEW";
   } catch (error) {
     return Response.json(
@@ -41,16 +45,13 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
       { status: 400 },
     );
   }
-  if (outerPaths.length === 0 && innerPaths.length === 0) {
-    return Response.json({ error: "NO_IMAGES" }, { status: 400 });
-  }
-  const unpaired = outerPaths.length !== innerPaths.length && !sameSet;
 
   const context = await readWorkspaceBilling(supabase, user.id);
   if (!context.ok) return Response.json({ error: context.error }, { status: context.status });
   if (job && context.membership.workspace_id !== job.workspace_id) return Response.json({ error: "NO_WORKSPACE" }, { status: 409 });
   const { membership, workspace, entitlements } = context;
   const options: RenderOptions = { ...DEFAULT_RENDER_OPTIONS, ...body.options, burnHinge: Boolean(body.options?.burnHinge) };
+  const include63 = Boolean(body.include63);
   const include69 = Boolean(body.include69);
   const pro = isProPlan(entitlements.plan);
 
@@ -68,6 +69,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
   try {
     targetsFor({
       orientation: options.orientation,
+      include63,
       include69,
       plan: entitlements.plan,
     });
@@ -104,14 +106,17 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
       async (index) =>
         scorePair(await hashFromBuffer(outerBuffers[index]!), await hashFromBuffer(innerBuffers[index]!), index, sameSet),
     );
-    if (pro && worstCloneLabel(cloneScores) === "risk" && !body.assumeCloneRisk) {
+    const selectedCloneScores = cloneScores.filter((score) => selectedPicks.some((pick) => pick.side === "outer" && pick.index === score.index) && selectedPicks.some((pick) => pick.side === "inner" && pick.index === score.index));
+    if (pro && worstCloneLabel(selectedCloneScores) === "risk" && !body.assumeCloneRisk) {
       throw new Error("CLONE_RISK");
     }
 
     const { images, flattenAlpha, compositionWarnings } = await composeZipImages({
       outerBuffers,
       innerBuffers,
+      duoSelection: body.duoSelection ?? { mode: "outer" },
       options,
+      include63,
       include69,
       plan: entitlements.plan,
       transforms: body.transforms,
@@ -127,11 +132,11 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
       clientSlug,
       orientation: options.orientation,
       branded: !pro,
+      include63,
       include69,
       format: options.format,
       images,
-      cloneScores,
-      unpaired,
+      cloneScores: selectedCloneScores,
       flattenAlpha,
       compositionWarnings,
     });
@@ -158,7 +163,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
     });
     if (signError || !signed?.signedUrl) throw new Error("STORAGE_UNAVAILABLE");
     const filename = `${slugify(appName) || "app"}.zip`;
-    const warning = unpaired ? "UNPAIRED" : countWarning ?? "";
+    const warning = countWarning ?? "";
     const result = {
       exportId: reservation,
       expiresAt: new Date(Date.now() + 600_000).toISOString(),
@@ -175,7 +180,7 @@ export async function executeExport(request: Request, supabase: DbClient, user: 
     };
     const exported = {
         orientation: options.orientation, include_69: include69, fit_mode: options.fit,
-        background_mode: options.background, format: options.format, image_count: count,
+        background_mode: options.background, format: options.format, image_count: selectedPicks.length,
         storage_path: zipPath, filename,
       };
     if (job) await completeRender(admin, job, result, exported);

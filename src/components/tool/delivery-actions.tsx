@@ -1,16 +1,18 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import Link from "next/link";
-import { zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
+import { formatInches, zipFolderName, type DeviceSlot, type Locale, type Orientation } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
-import type { PurchaseKind } from "@/lib/plans";
+import { formatEurFromCents, FREE_EXPORTS, PLANS, type PurchaseKind } from "@/lib/plans";
 import { SwapLabel } from "@/components/tool/controls";
 import type { BillingStatus, SessionState } from "@/components/tool/use-billing";
 import type { useRenderJobs } from "@/components/tool/use-render-jobs";
 
 type Jobs = ReturnType<typeof useRenderJobs>;
 
-export const EXAMPLE_ZIP_URL = "/api/example-zip?v=2";
+export const EXAMPLE_ZIP_URL = "/api/example-zip?v=4";
 
 /** Secondary deliveries, folded away so "Prepare files" stays the one obvious action. */
 export function OtherActions({ hasExportable, jobs }: { hasExportable: boolean; jobs: Jobs }) {
@@ -20,28 +22,28 @@ export function OtherActions({ hasExportable, jobs }: { hasExportable: boolean; 
     <details className="tool-other-actions" data-testid="tool-other-actions">
       <summary>{t("tool_other_actions")}</summary>
       <div className="tool-other-actions-body">
-        <button
+        <Button as="button" variant="secondary"
           type="button"
           disabled={busyReview || !hasExportable}
           data-testid="tool-review"
           onClick={() => void onReview()}
-          className="ds-cta-ghost w-full"
-        >
+          className="w-full"
+       >
           <SwapLabel text={busyReview ? t("tool_review_preparing") : t("tool_review_share")} />
-        </button>
+        </Button>
         <p className="mt-2 text-xs text-[var(--muted)]" data-testid="tool-review-hint">
           {t("tool_review_hint")}
         </p>
-        <a href={EXAMPLE_ZIP_URL} data-testid="tool-example" className="ds-text-btn mt-3">
+        <Button as="a" variant="text" href={EXAMPLE_ZIP_URL} data-testid="tool-example" className="mt-3">
           {t("tool_example")}
-        </a>
+        </Button>
       </div>
     </details>
   );
 }
 
 /** Review-link outcome (Studio): the URL, its client status and the upgrade offer. */
-export function ReviewOutcome({ billing, checkoutBusy, onCheckout, jobs }: {
+export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs }: {
   locale: Locale;
   billing: BillingStatus | null;
   checkoutBusy: boolean;
@@ -53,31 +55,31 @@ export function ReviewOutcome({ billing, checkoutBusy, onCheckout, jobs }: {
   return <>
     {reviewSetStatus ? (
       <p className="mt-2 text-sm" data-testid="tool-review-set-status">
-        {tf("tool_review_status", { status: reviewSetStatus })}
+        {tf("tool_review_status", { status: t(reviewSetStatus === "pending" ? "tool_review_status_pending" : reviewSetStatus === "approved" ? "tool_review_status_approved" : reviewSetStatus === "changes_requested" ? "tool_review_status_changes_requested" : "tool_review_status_unknown") })}
       </p>
     ) : null}
     {reviewStatus ? <p className="mt-2 text-sm" data-testid="review-copied">{reviewStatus}</p> : null}
     {reviewUrl ? (
-      <a href={reviewUrl} data-testid="review-url" className="ds-text-btn mt-2 break-all">
+      <Button as="a" variant="text" href={reviewUrl} data-testid="review-url" className="mt-2 break-all">
         {reviewUrl}
-      </a>
+      </Button>
     ) : null}
     {reviewUpgrade ? (
-      <button
+      <Button as="button" variant="secondary"
         type="button"
         data-testid="tool-review-upgrade"
         disabled={checkoutBusy || billing?.checkoutAvailable !== true}
         onClick={() => void onCheckout("studio_monthly")}
-        className="ds-cta-ghost mt-3 w-full"
-      >
-        {t("pricing_studio_cta")}
-      </button>
+        className="mt-3 w-full"
+     >
+        {tf("pricing_studio_cta", { price: formatEurFromCents(PLANS.studio.monthlyEur * 100, locale) })}
+      </Button>
     ) : null}
   </>;
 }
 
 /** Export step: the delivered file list once the ZIP exists, otherwise what is still missing. */
-export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }: {
+export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo, jobs }: {
   locale: Locale;
   prefix: string;
   zipUrl: string | null;
@@ -86,7 +88,7 @@ export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }
   demo: boolean;
   jobs: Jobs;
 }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const { exportImages } = jobs;
   return <>
     <div className="tool-panel-heading"><h2>{t("tool_export_title")}</h2><p>{zipUrl ? t("tool_export_lead") : demo ? t("tool_demo_export_hint") : t("tool_export_empty")}</p></div>
@@ -97,20 +99,21 @@ export function ExportPanel({ prefix, zipUrl, session, orientation, demo, jobs }
         <ul className="mt-3 space-y-1 text-sm">
           {exportImages.map((image) => (
             <li key={`${image.slot}-${image.index}-${image.width}x${image.height}`} className="studio-delivered-file">
-              <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
-              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : "6.9"} · {image.width} × {image.height}</span>
+              <code>{zipFolderName(image.slot as DeviceSlot, orientation)}/{image.slot === "iphone-63" || image.slot === "iphone-69" ? `${image.width}x${image.height}/` : ""}{String(image.index).padStart(2, "0")}.{image.format === "jpeg" ? "jpg" : "png"}</code>
+              <span>{image.slot === "duo-outer" ? t("tool_closed") : image.slot === "duo-inner" ? t("tool_open") : formatInches(image.slot === "iphone-63" ? 6.3 : 6.9, locale)} · {image.width} × {image.height}</span>
             </li>
           ))}
         </ul>
         <p className="mt-3 text-sm text-[var(--muted)]">{t("tool_unzip_archive_get_both")}</p>
       </div>
     ) : null}
+    <p className="mt-3 text-sm text-[var(--muted)]" data-testid="tool-export-connect-hint">
+      {t("tool_export_connect_hint")}{" "}
+      <Link href={`${prefix}/specs`} className="ds-link">{t("tool_export_connect_specs")}</Link>
+    </p>
     {session === "out" && !demo ? (
       <p className="mt-3 text-xs text-[var(--muted)]">
-        {t("tool_need_account")}{" "}
-        <Link href={`${prefix}/signup`} className="ds-link">
-          {t("nav_signup")}
-        </Link>
+        {tf("tool_need_account", { exports: FREE_EXPORTS })}
       </p>
     ) : null}
   </>;

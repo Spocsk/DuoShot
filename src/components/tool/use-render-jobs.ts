@@ -1,8 +1,10 @@
+import { validateDuoSelection, type DuoSelection } from "@/lib/duo-selection";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { submitRender, resumeRender } from "@/lib/render-client";
 import { assertBatchSize } from "@/lib/pipeline/limits";
 import { normalizeCropTransform, type CropTransform, type FitMode, type Locale, type Orientation, type RenderOptions } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
+import { FREE_EXPORTS } from "@/lib/plans";
 import type { MessageKey } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { trackProduct } from "@/lib/analytics-client";
@@ -37,8 +39,10 @@ export type RenderJobsContext = {
   outerFiles: File[];
   innerFiles: File[];
   effectiveInner: File[];
+  duoSelection: DuoSelection;
   sameSet: boolean;
   cloneForced: boolean;
+  include63: boolean;
   include69: boolean;
   assumeClone: boolean;
   severeQualityCount: number;
@@ -61,7 +65,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
     setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
     zipUrl, setZipUrl, patchActive, outerFiles, innerFiles, effectiveInner, sameSet,
-    cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
+    cloneForced, include63, include69, assumeClone, severeQualityCount, qualityAcknowledged,
     orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
   } = ctx;
   const [zipName, setZipName] = useState("app.zip");
@@ -152,11 +156,12 @@ export function useRenderJobs(ctx: RenderJobsContext) {
     setZipUrl(null);
     setDownloadId(null);
     try {
+      validateDuoSelection(ctx.duoSelection, outerFiles.length, effectiveInner.length);
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
       if (!sessionData.user) {
         setShowAuth(true);
-        flashStatus(t("error_auth"), "err");
+        flashStatus(t("error_auth"), "info");
         return;
       }
       if (include69 && billing && billing.canUse69 === false) {
@@ -189,9 +194,11 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       const response = await submitRender(sessionData.user.id, "export", {
           outerPaths,
           innerPaths,
+          duoSelection: ctx.duoSelection,
           sameSet: cloneForced,
           appName: appNameOf(active),
           clientName: active?.clientName || "",
+          include63,
           include69,
           assumeCloneRisk: assumeClone,
           options: renderOptions,
@@ -214,7 +221,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         });
         if (payload.error === "TRIAL_EXHAUSTED") {
           setPaywall("trial");
-          flashStatus(t("error_trial"), "err");
+          flashStatus(tf("error_trial", { exports: FREE_EXPORTS }), "err");
           return;
         }
         if (payload.error === "IPHONE_69_GATED") {

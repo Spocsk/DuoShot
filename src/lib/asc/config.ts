@@ -1,5 +1,6 @@
-import type { DeviceSlot, Orientation } from "../specs";
+import { SIZE_SPECS, type DeviceSlot, type Orientation } from "../specs";
 import { serverEnv } from "../env";
+import { DUO_SLOT_MAX } from "../duo-selection";
 
 /** Every App Store Connect surface stays hidden until the operator opts in. */
 export function ascConnectorEnabled(): boolean {
@@ -11,7 +12,7 @@ export const ASC_AUDIENCE = "appstoreconnect-v1";
 /** Apple rejects tokens that expire more than 20 minutes after issue. */
 export const ASC_TOKEN_TTL_SECONDS = 15 * 60;
 /** Apple accepts at most ten screenshots per display type and localization. */
-export const ASC_MAX_SCREENSHOTS_PER_SET = 10;
+export const ASC_MAX_SCREENSHOTS_PER_SET = DUO_SLOT_MAX;
 
 /**
  * App Store version states in which screenshots can still be changed.
@@ -25,22 +26,22 @@ export const ASC_EDITABLE_VERSION_STATES = [
   "INVALID_BINARY",
 ] as const;
 
-/**
- * DuoShot output → App Store Connect `screenshotDisplayType`.
- *
- * Checked 2026-10-04 against Apple's ScreenshotDisplayType reference: the enum
- * has no iPhone Duo / foldable value, so both Duo slots stay `null` and are
- * skipped (and reported as such). Flip them here once Apple ships a value.
- *
- * The API has no `APP_IPHONE_69`: App Store Connect's 6.9" slot is the
- * `APP_IPHONE_67` set, which accepts 1320×2868, 1290×2796 and 1260×2736.
- * To be confirmed by the first end-to-end upload.
+/** Both Duo screen sizes share APP_IPHONE_DUO. Runtime evidence is documented
+ * in docs/app-store-connect.md; uploads have not yet been tested by DuoShot.
  */
 export const ASC_DISPLAY_TYPES: Record<DeviceSlot, string | null> = {
-  "duo-outer": null,
-  "duo-inner": null,
+  "duo-outer": "APP_IPHONE_DUO",
+  "duo-inner": "APP_IPHONE_DUO",
+  "iphone-63": null,
   "iphone-69": "APP_IPHONE_67",
 };
+
+/** Both screen sizes, in portrait and landscape, belong to the same Duo slot. */
+export function isAscDuoImage(width: number | undefined, height: number | undefined, format: string | undefined): boolean {
+  return (format === "png" || format === "jpeg") && SIZE_SPECS.some((spec) =>
+    (spec.slot === "duo-outer" || spec.slot === "duo-inner") && spec.width === width && spec.height === height,
+  );
+}
 
 /** The ZIP carries three 6.9" sizes; one set needs only one, the largest. */
 export const ASC_PREFERRED_69_SIZE: Record<Orientation, string> = {

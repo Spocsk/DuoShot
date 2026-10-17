@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { CLIENT_KEYS } from "./client-keys";
 import { fr } from "./fr";
+import { createTranslator, getClientMessages } from "./index";
 
 /*
  * Client code only receives the messages it renders:
@@ -15,7 +16,6 @@ import { fr } from "./fr";
 const SRC = path.resolve(__dirname, "../..");
 const FORBIDDEN = ["lib/i18n/index.ts", "lib/i18n/fr.ts", "lib/i18n/en.ts", "lib/i18n/faq.ts"].map((file) => path.join(SRC, file));
 const KEYS = Object.keys(fr);
-const KEY_SET = new Set(KEYS);
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -72,21 +72,21 @@ function graph(entries: string[]) {
 }
 
 /** Message keys a file can ask for: key literals, `prefix_${…}` templates, and `_one` variants. */
-function keysIn(file: string): Set<string> {
-  const source = read(file);
+function keysIn(source: string, dictionaryKeys: readonly string[] = KEYS): Set<string> {
+  const keySet = new Set(dictionaryKeys);
   const keys = new Set<string>();
-  for (const match of source.matchAll(/["'`]([a-z0-9]+(?:_[a-z0-9]+)+)["'`]/g)) if (KEY_SET.has(match[1]!)) keys.add(match[1]!);
+  for (const match of source.matchAll(/["'`]([a-z0-9]+(?:_[a-z0-9]+)*)["'`]/g)) if (keySet.has(match[1]!)) keys.add(match[1]!);
   for (const match of source.matchAll(/`([a-z0-9_]*_)\$\{[^}`]*\}([a-z0-9_]*)`/g)) {
     const [, head, tail] = match;
-    for (const key of KEYS) if (key.startsWith(head!) && key.endsWith(tail!) && key.length > head!.length + tail!.length) keys.add(key);
+    for (const key of dictionaryKeys) if (key.startsWith(head!) && key.endsWith(tail!) && key.length > head!.length + tail!.length) keys.add(key);
   }
-  for (const key of [...keys]) if (KEY_SET.has(`${key}_one`)) keys.add(`${key}_one`);
+  for (const key of [...keys]) if (keySet.has(`${key}_one`)) keys.add(`${key}_one`);
   return keys;
 }
 
 function clientKeys(entries: string[]): Set<string> {
   const keys = new Set<string>();
-  for (const file of graph(entries).client) for (const key of keysIn(file)) keys.add(key);
+  for (const file of graph(entries).client) for (const key of keysIn(read(file))) keys.add(key);
   return keys;
 }
 
@@ -108,6 +108,20 @@ function computeScopes() {
 }
 
 describe("client i18n boundary", () => {
+  it("detects client-rendered dictionary keys without underscores", () => {
+    const keys = ["google", "email", "password", "magic"];
+    const source = '<button>{t("google")}</button><label>{t(\'email\')}</label><label>{t(`password`)}</label><button>{t("magic")}</button><p>{t("unknown")}</p>';
+    expect([...keysIn(source, keys)]).toEqual(keys);
+  });
+
+  it.each(["site", "app"] as const)("ships translated auth labels in the %s scope", (scope) => {
+    const keys = ["auth_google", "auth_email", "auth_password", "auth_magic"] as const;
+    const french = createTranslator("fr", getClientMessages("fr", scope));
+    const english = createTranslator("en", getClientMessages("en", scope));
+    expect(keys.map((key) => french.t(key))).toEqual(["Continuer avec Google", "E-mail", "Mot de passe", "Lien magique"]);
+    expect(keys.map((key) => english.t(key))).toEqual(["Continue with Google", "Email", "Password", "Magic link"]);
+  });
+
   it("never bundles both dictionaries into client code", () => {
     const entries = sourceFiles(SRC).filter(isClient);
     expect(entries.length).toBeGreaterThan(10);

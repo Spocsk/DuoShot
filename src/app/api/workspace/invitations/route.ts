@@ -67,6 +67,7 @@ export async function POST(request: Request) {
       body.locale === "en"
         ? `You have been invited to a DuoShot Studio workspace. Accept within 7 days: ${origin}${path}`
         : `Vous êtes invité·e dans un espace DuoShot Studio. Acceptez sous 7 jours : ${origin}${path}`,
+    lang: body.locale === "en" ? "en" : "fr",
   }).catch(() => ({ sent: false, mocked: false }));
   return NextResponse.json({ invitation: data, acceptPath: path, emailSent: delivery.sent }, { status: 201 });
 }

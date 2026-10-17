@@ -66,6 +66,7 @@ export const serverEnv = {
   email: {
     get resendApiKey() { return read("RESEND_API_KEY"); },
     get from() { return read("RESEND_FROM") ?? "DuoShot <noreply@duoshot.site>"; },
+    get replyTo() { return read("RESEND_REPLY_TO"); },
   },
 
   analytics: {

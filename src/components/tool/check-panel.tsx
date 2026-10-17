@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import type { Dispatch, SetStateAction } from "react";
 import type { SizeSpec } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
@@ -42,15 +44,15 @@ export function ReviewAlerts({
           <p className="quality-gate-title">{tf("tool_quality_gate_title", { n: severeQualityCount })}</p>
           <p className="quality-gate-copy">{t("tool_quality_gate_copy")}</p>
         </div>
-        <button
+        <Button as="button" variant={qualityAcknowledged ? "pill" : "secondary"}
           type="button"
-          className={qualityAcknowledged ? "ds-pill ds-pill-ink" : "ds-cta-ghost"}
+          
           data-testid="quality-acknowledge"
           aria-pressed={qualityAcknowledged}
           onClick={() => setQualityAcknowledged((value) => !value)}
-        >
+       >
           {qualityAcknowledged ? t("tool_quality_acknowledged") : t("tool_quality_ack")}
-        </button>
+        </Button>
       </div>
     ) : null}
     {cloneAlert ? (
@@ -59,15 +61,15 @@ export function ReviewAlerts({
           <p className="quality-gate-title">{tf("tool_clone_gate_title", { n: Math.max(riskCount, 1) })}</p>
           <p className="quality-gate-copy">{t("tool_clone_gate_copy")}</p>
         </div>
-        <button
+        <Button as="button" variant={cloneAcknowledged ? "pill" : "secondary"}
           type="button"
-          className={cloneAcknowledged ? "ds-pill ds-pill-ink" : "ds-cta-ghost"}
+          
           data-testid="clone-acknowledge"
           aria-pressed={cloneAcknowledged}
           onClick={() => setCloneAcknowledged((value) => !value)}
-        >
+       >
           {cloneAcknowledged ? t("tool_quality_acknowledged") : t("tool_quality_ack")}
-        </button>
+        </Button>
       </div>
     ) : null}
     {clones.length > 0 ? (
@@ -77,14 +79,14 @@ export function ReviewAlerts({
             <CloneTip
               label={`${String(item.index + 1).padStart(2, "0")} · ${t(`clone_${item.label}`)} · ${cloneReasonText(t, item)}`}
               hint={`${cloneReasonText(t, item)} · ${t("tool_shared_structure")} ${Math.round((1 - item.distance / 64) * 100)} %`}
-            >
+           >
               <button
                 type="button"
                 className={`ds-pill ds-pill-ink t-avatar ${item.index === slideIndex ? "is-on" : ""}`}
                 data-testid={`clone-badge-${item.index}`}
                 data-clone={item.label}
                 onClick={() => setSlideIndex(item.index)}
-              >
+             >
                 {String(item.index + 1).padStart(2, "0")} · {t(`clone_${item.label}`)}
                 <span className="clone-reason"> · {cloneReasonText(t, item)}</span>
               </button>
@@ -134,8 +136,8 @@ export function ReadinessReport({
   const { t, tf } = useI18n();
   return (
     <section className="ds-readiness mb-6" aria-label={t("tool_readiness_report")} data-testid="readiness-report">
-      <h2 className="font-display text-2xl">{t("tool_set_report")}</h2>
-      <p className="ds-label mt-4">{t("home_technical_checks")}</p>
+      <h3 className="font-display text-2xl">{t("tool_set_report")}</h3>
+      <p className="ds-label mt-4">{t("tool_technical_checks")}</p>
       <ul className="mt-2 space-y-2 text-sm">
         {[
           [preparationChecks[0], t("tool_closed_open_screenshots_present")],
@@ -178,11 +180,13 @@ export function ReadinessReport({
           </li>
         ))}
       </ul>
-      <p className="ds-label mt-5">{t("tool_human_confirmation")}</p>
-      <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
-        <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1" data-testid="confirm-app-usage" />
-        <span>{demo ? t("tool_demo_confirm") : t("tool_i_checked_that_every")}</span>
-      </label>
+      {!demo ? <>
+        <p className="ds-label mt-5">{t("tool_human_confirmation")}</p>
+        <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
+          <input type="checkbox" checked={appUsageConfirmed} onChange={(event) => setAppUsageConfirmed(event.target.checked)} className="mt-1 size-6 shrink-0" data-testid="confirm-app-usage" />
+          <span>{t("tool_app_usage_consent")}</span>
+        </label>
+      </> : null}
       {cloneAlert || severeQualityCount > 0 || foldWarningCount > 0 ? <p className="mt-3 text-sm text-[var(--warn)]">{t("tool_warnings_still_need_review")}</p> : null}
     </section>
   );

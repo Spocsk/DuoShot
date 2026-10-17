@@ -77,7 +77,16 @@ export async function POST(request: Request) {
   const query = `token=${encodeURIComponent(token)}&lang=${locale}`;
   const message = confirmationEmail(locale, topic, `${origin}/api/waitlist/confirm?${query}`, `${origin}/api/waitlist/unsubscribe?${query}`);
   try {
-    await sendTransactionalEmail({ to: email, ...message });
+    await sendTransactionalEmail({
+      to: email,
+      ...message,
+      lang: locale,
+      // One-click unsubscribe (RFC 8058): mailbox providers trust senders that offer it.
+      headers: {
+        "List-Unsubscribe": `<${origin}/api/waitlist/unsubscribe?${query}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
+    });
   } catch {
     return NextResponse.json({ error: "EMAIL_FAILED" }, { status: 503 });
   }

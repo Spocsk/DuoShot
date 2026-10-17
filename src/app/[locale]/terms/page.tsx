@@ -1,22 +1,19 @@
 import { LegalPage, TermsContent } from "@/components/legal-pages";
+import { getTranslator } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
 import { pageLocale, type LocaleParams } from "../params";
 
-const COPY = {
-  fr: { title: "CGU", heading: "Conditions générales", description: "Conditions générales d’utilisation et de vente DuoShot." },
-  en: { title: "Terms", heading: "Terms", description: "DuoShot terms of use and sale." },
-};
-
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await pageLocale(params);
-  const { title, description } = COPY[locale];
-  return pageMetadata({ locale, path: "/terms", title, description });
+  const { t } = getTranslator(locale);
+  return pageMetadata({ locale, path: "/terms", title: t("legal_terms_title"), description: t("legal_terms_description") });
 }
 
 export default async function Page({ params }: LocaleParams) {
   const locale = await pageLocale(params);
+  const { t } = getTranslator(locale);
   return (
-    <LegalPage locale={locale} path="/terms" title={COPY[locale].heading}>
+    <LegalPage locale={locale} path="/terms" title={t("legal_terms_heading")}>
       <TermsContent locale={locale} />
     </LegalPage>
   );

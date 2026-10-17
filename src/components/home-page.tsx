@@ -1,10 +1,11 @@
+
+import { Button } from "@/components/ui/button";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { AppleAvailability } from "./apple-availability";
 import { FaqList } from "@/components/faq-list";
 import { getTranslator } from "@/lib/i18n";
-import { FAQ } from "@/lib/i18n";
-import { duoSpec, formatInches, type Locale } from "@/lib/specs";
+import { getFaq } from "@/lib/i18n";
+import { duoSpec, type Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { DuoDevice } from "@/components/duo-device";
@@ -14,7 +15,7 @@ import { TrustLine } from "@/components/trust-line";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
 import { DEMO_REVIEW_ID } from "@/lib/pipeline/harbor";
-import { HarborCover, HarborInnerMain, ShelfInnerShot } from "@/components/harbor-ui";
+import { HarborShot } from "@/components/harbor-ui";
 import { exampleDeliveredFiles, formatBytes } from "@/lib/landing-delivery";
 
 const OUTER = duoSpec("duo-outer", "portrait");
@@ -29,7 +30,7 @@ function RawCapture({ locale, kind }: { locale: Locale; kind: "outer" | "inner" 
   const outer = kind === "outer";
   return <figure className={`studio-raw is-${kind}`}>
     <div className="studio-raw-shot">
-      {outer ? <HarborCover locale={locale} /> : <ShelfInnerShot index={0} locale={locale} />}
+      <HarborShot locale={locale} side={kind} />
     </div>
     <figcaption>
       <code>{outer ? "Simulator Screenshot 09.14.12.png" : "IMG_0418.PNG"}</code>
@@ -47,7 +48,7 @@ function DeliveredFiles({ locale }: { locale: Locale }) {
   return <div className="studio-files">
     <div className="studio-files-head">
       <span>{t("home_file")}</span>
-      <span>Pixels</span>
+      <span>{t("home_pixels")}</span>
       <span>{t("home_file_weight")}</span>
     </div>
     <ol className="studio-files-list" data-testid="zip-tree">
@@ -86,18 +87,16 @@ function ProofSection({ locale }: { locale: Locale }) {
       <div className="studio-proof-after">
         <p className="studio-proof-label"><b>{t("home_after")}</b>{t("home_delivered_zip_harbor_3")}</p>
         <div className="studio-final-pair" aria-hidden="true">
-          <div className="studio-final is-outer"><div><HarborCover locale={locale} /></div><span>{screenshotDimensions(OUTER)}</span></div>
-          <div className="studio-final is-inner"><div><ShelfInnerShot index={0} locale={locale} /></div><span>{screenshotDimensions(INNER)}</span></div>
+          <div className="studio-final is-outer"><div><HarborShot locale={locale} side="outer" /></div><span>{screenshotDimensions(OUTER)}</span></div>
+          <div className="studio-final is-inner"><div><HarborShot locale={locale} side="inner" /></div><span>{screenshotDimensions(INNER)}</span></div>
         </div>
         <DeliveredFiles locale={locale} />
       </div>
     </div>
     <div className="studio-proof-actions">
-      {/* A file download from an API route, not a page: the rule reads app/[locale] as matching every path. */}
-      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-      <a href="/api/example-zip?v=2" data-testid="cta-example" className="ds-cta-ghost">{t("cta_example")}</a>
-      <Link href={`${prefix}/tool?demo=harbor`} className="studio-inline-link">
-        {t("home_open_example_in_tool")} <span aria-hidden="true">↗</span>
+      <Button as="a" variant="secondary" href="/api/example-zip?v=4" data-testid="cta-example" >{t("cta_example")}</Button>
+      <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo-proof" className="studio-inline-link">
+        {t("home_see_example")} <span aria-hidden="true">↗</span>
       </Link>
       <small>{t("home_before_example_files_after")}</small>
     </div>
@@ -117,8 +116,8 @@ function ImportVisual({ locale }: { locale: Locale }) {
     <ol className="studio-import-pairs">
       {([0, 1, 2] as const).map((index) => <li key={index} className="studio-import-pair">
         <b>{String(index + 1).padStart(2, "0")}</b>
-        <div className="studio-import-thumb is-outer"><HarborCover locale={locale} /></div>
-        <div className="studio-import-thumb is-inner"><ShelfInnerShot index={index} locale={locale} /></div>
+        <div className="studio-import-thumb is-outer"><HarborShot locale={locale} index={index} side="outer" /></div>
+        <div className="studio-import-thumb is-inner"><HarborShot locale={locale} index={index} side="inner" /></div>
         <span className="studio-import-meta"><code>{String(index + 1).padStart(2, "0")}.png</code>{t("home_closed_open")}</span>
       </li>)}
     </ol>
@@ -131,15 +130,15 @@ function InspectVisual({ locale }: { locale: Locale }) {
   return <div className="studio-sequence-analysis studio-panel">
     <div className="studio-panel-top"><span>{t("home_export_pixels_open_screen")}</span><strong>{screenshotDimensions(INNER)}</strong></div>
     <div className="studio-inspect-frame">
-      <ShelfInnerShot index={1} locale={locale} />
+      <HarborShot locale={locale} index={1} side="inner" />
       <div className="studio-frame-guide"><i /><i /><i /><i /></div>
       <span className="studio-hinge-band" />
     </div>
     <div className="studio-inspect-readout">
-      <span><i className="studio-check" />Dimensions</span>
-      <span><i className="studio-check" />{"Opaque, sRGB"}</span>
+      <span><i className="studio-check" />{t("home_dimensions")}</span>
+      <span><i className="studio-check" />{t("home_opaque_srgb")}</span>
       <span><i className="studio-review-dot" />{t("home_text_near_fold")}</span>
-      <span className="studio-sequence-score"><small>Score</small><strong>83 / 100</strong></span>
+      <span className="studio-sequence-score"><small>{t("home_score")}</small><strong>83 / 100</strong></span>
     </div>
   </div>;
 }
@@ -152,7 +151,7 @@ function ReportVisual({ locale }: { locale: Locale }) {
     { label: t("home_confirmations"), value: "0 / 2", fill: 0, tone: "human" },
   ];
   return <div className="studio-sequence-report studio-panel">
-    <div className="studio-panel-top"><span>{t("home_preparation_report")}</span><strong>Harbor · set 01</strong></div>
+    <div className="studio-panel-top"><span>{t("home_preparation_report")}</span><strong>{t("home_harbor_set")}</strong></div>
     <ul className="studio-report-rows">
       {rows.map((row) => <li key={row.label} className={`is-${row.tone}`}>
         <span>{row.label}</span><strong>{row.value}</strong>
@@ -207,13 +206,14 @@ function SequenceSection({ locale }: { locale: Locale }) {
 
 /* ------------------------------------------------------------------ */
 
-export function HomePage({ locale }: { locale: Locale }) {
+export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale: Locale; checkoutAvailable: boolean; passAvailable: boolean }) {
   const { t } = getTranslator(locale);
   const prefix = localePrefix(locale);
+  const faq = getFaq(locale, passAvailable);
 
   return (
-    <div className="flex min-h-full flex-col">
-      <JsonLd locale={locale} />
+    <div className="studio-home flex min-h-full flex-col">
+      <JsonLd locale={locale} path="/" faq={faq} />
       <SiteHeader locale={locale} path="/" />
       <LandingMotion>
         <main id="main">
@@ -225,37 +225,38 @@ export function HomePage({ locale }: { locale: Locale }) {
                 <span>{t("home_exact_app_store_sizes")}</span>
               </h1>
               <p className="studio-hero-lead">
-                {t("home_import_closed_open_captures")}
+                {t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass")}
               </p>
               <div className="studio-hero-actions">
-                <Link href={`${prefix}/tool`} data-testid="cta-tool" className="ds-cta">
+                <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool" >
                   {t("cta_tool")}
-                </Link>
-                <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo" className="ds-cta-ghost">
+                </Button>
+                <Button as="link" variant="secondary" href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo" >
                   {t("home_see_example")}
-                </Link>
+                </Button>
               </div>
             </div>
             <div className="studio-hero-object">
               <DuoDevice locale={locale} />
               <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
                 <div className="is-outer">
-                  <dt>{t("home_closed_screen")} · {formatInches(OUTER.inches, locale)}</dt>
-                  <dd>{screenshotDimensions(OUTER)}<small> px · portrait</small></dd>
+                  <dt>{t("specs_outer_display")}</dt>
+                  <dd><Link href={`${prefix}/1398x2034`} className="ds-link">{screenshotDimensions(OUTER)}</Link><small> {t("home_pixels_portrait")}</small></dd>
                 </div>
                 <div className="is-inner">
-                  <dt>{t("home_open_screen")} · {formatInches(INNER.inches, locale)}</dt>
-                  <dd>{screenshotDimensions(INNER)}<small> px · portrait</small></dd>
+                  <dt>{t("specs_inner_display")}</dt>
+                  <dd><Link href={`${prefix}/2007x2853`} className="ds-link">{screenshotDimensions(INNER)}</Link><small> {t("home_pixels_portrait")}</small></dd>
                 </div>
               </dl>
-              <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link studio-hero-specs">
-                {t("cta_specs")} <span aria-hidden="true">↗</span>
-              </Link>
-            </div>
-            <div className="studio-hero-meta">
-              <p className="studio-hero-footnote">{t("home_harbor_fictional_app")}</p>
-              <div className="studio-availability">
-                <AppleAvailability locale={locale} />
+              <div className="studio-hero-foot">
+                <Link href={`${prefix}/specs`} data-testid="cta-specs" className="studio-inline-link studio-hero-specs">
+                  {t("cta_specs")} <span aria-hidden="true">↗</span>
+                </Link>
+                <p className="studio-hero-footnote">
+                  <Link href={`${prefix}/1206x2622`} className="ds-link">{t("home_iphone_63_size_guide")}</Link>{" · "}
+                  <Link href={`${prefix}/1320x2868`} className="ds-link">{t("home_iphone_69_size_guide")}</Link>
+                </p>
+                <p className="studio-hero-footnote">{t("home_harbor_fictional_app")}</p>
               </div>
             </div>
           </section>
@@ -268,37 +269,49 @@ export function HomePage({ locale }: { locale: Locale }) {
             <div>
               <h2>{t("home_ready_client_eye")}</h2>
               <p>{t("home_studio_share_temporary_review")}</p>
+              <ol className="studio-review-steps">
+                {(["home_review_step_share", "home_review_step_look", "home_review_step_decide"] as const).map((key, index) => (
+                  <li key={key}><b>{index + 1}</b>{t(key)}</li>
+                ))}
+              </ol>
               <Link href={reviewPath(locale, DEMO_REVIEW_ID)} data-testid="cta-review-demo" className="studio-inline-link">
                 {t("cta_review_demo")} <span aria-hidden="true">↗</span>
               </Link>
             </div>
             <div className="studio-review-preview" aria-label={t("home_preview_harbor_client_review")}>
-              <div className="studio-review-preview-top">
-                <span>{t("home_review_preview")}</span>
-                <span className="studio-review-preview-status"><i />{t("home_awaiting_decision")}</span>
+              <div className="studio-review-preview-bar" aria-hidden="true">
+                <i /><i /><i />
+                <span>duoshot.site{reviewPath(locale, DEMO_REVIEW_ID)}</span>
               </div>
               <div className="studio-review-preview-heading">
-                <strong>Harbor</strong>
-                <span>{t("home_set_01_closed_open")}</span>
+                <div>
+                  <strong>Harbor</strong>
+                  <span>{t("home_set_01_closed_open")}</span>
+                </div>
+                <span className="studio-review-preview-status"><i />{t("home_awaiting_decision")}</span>
               </div>
               <div className="studio-review-preview-pair">
-                <div className="studio-review-preview-shot is-outer"><HarborCover locale={locale} /><span>{t("home_closed_screen")}</span></div>
-                <div className="studio-review-preview-shot is-inner"><HarborInnerMain locale={locale} /><span>{t("home_open_screen")}</span></div>
+                <figure><HarborShot locale={locale} side="outer" /><figcaption>{t("home_closed_screen")}</figcaption></figure>
+                <figure><HarborShot locale={locale} side="inner" /><figcaption>{t("home_open_screen")}</figcaption></figure>
               </div>
               <div className="studio-review-preview-decision">
                 <span>{t("home_decision")}</span>
                 <div><span>{t("home_approve")}</span><span>{t("home_needs_work")}</span></div>
               </div>
-              <p>{t("home_temporary_link_decision_on")}</p>
             </div>
           </section>
 
-          <PricingSection locale={locale} compact />
+          <PricingSection locale={locale} compact checkoutAvailable={checkoutAvailable} passAvailable={passAvailable} />
 
           <section className="studio-faq" data-reveal>
             <h2>{t("faq_title")}</h2>
-            <FaqList items={FAQ[locale]} />
+            <FaqList items={faq} />
             <TrustLine locale={locale} />
+            <div className="mt-8">
+              <Button as="link" variant="primary" href={`${prefix}/tool`} data-testid="cta-tool-closing" >
+                {t("cta_tool")}
+              </Button>
+            </div>
           </section>
         </main>
       </LandingMotion>

@@ -97,6 +97,11 @@ describe("POST /api/waitlist", () => {
     expect(mail.text).toContain(`https://duoshot.example/api/waitlist/confirm?token=${rows[0].token}&lang=en`);
     expect(mail.text).toContain(`https://duoshot.example/api/waitlist/unsubscribe?token=${rows[0].token}&lang=en`);
     expect(JSON.stringify(body)).not.toContain(rows[0].token);
+    expect(mail.lang).toBe("en");
+    expect(mail.headers).toEqual({
+      "List-Unsubscribe": `<https://duoshot.example/api/waitlist/unsubscribe?token=${rows[0].token}&lang=en>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    });
   });
 
   it("writes the French e-mail with « vous »", async () => {
@@ -186,6 +191,18 @@ describe("waitlist confirmation and unsubscribe links", () => {
     expect((await confirmPost(form("/api/waitlist/confirm", TOKEN))).status).toBe(404);
     expect((await confirmGet(new Request("http://localhost/api/waitlist/confirm?token=short"))).status).toBe(404);
     expect((await unsubscribePost(form("/api/waitlist/unsubscribe", "<script>"))).status).toBe(404);
+  });
+
+  it("honours RFC 8058 one-click unsubscribe with the token in the URL", async () => {
+    const rows = [pending()];
+    table(rows);
+    const response = await unsubscribePost(new Request(`http://localhost/api/waitlist/unsubscribe?token=${TOKEN}&lang=en`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "List-Unsubscribe=One-Click",
+    }));
+    expect(response.status).toBe(200);
+    expect(rows).toEqual([]);
   });
 
   it("erases the row on unsubscribe POST, never on GET", async () => {

@@ -95,7 +95,7 @@ export function quotaLabel({ t, tf }: Translator, billing: BillingStatus | null,
       : billing?.plan === "indie"
         ? t("tool_plan_indie")
         : remaining === 1
-          ? t("tool_remaining_one")
+          ? tf("tool_remaining", { n: remaining })
           : remaining === 0
             ? t("tool_remaining_none")
             : remaining != null

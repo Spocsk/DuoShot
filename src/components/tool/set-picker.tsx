@@ -1,8 +1,11 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { SetMeta } from "@/lib/sets-store";
 import { useI18n } from "@/components/i18n-provider";
+import { Overlay } from "@/components/overlay";
 
 /** Open/close state, outside-click dismissal and keyboard navigation of the app (set) listbox. */
 export function useSetsMenu() {
@@ -96,6 +99,7 @@ export function SetPicker({
   switchSet,
   addSet,
   removeSet,
+  renameSet,
 }: {
   hydrated: boolean;
   sets: SetMeta[];
@@ -104,16 +108,50 @@ export function SetPicker({
   switchSet: (id: string) => Promise<void>;
   addSet: () => void;
   removeSet: (id: string) => Promise<void>;
+  renameSet: (name: string) => void;
 }) {
   const { t, tf } = useI18n();
+  const [deleting, setDeleting] = useState<SetMeta | null>(null);
+  // The set name is shown once, in this field: Rename swaps the listbox for an input in place.
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const renameRef = useRef<HTMLButtonElement>(null);
+  const shownName = active?.name?.trim() ? active.name : t("tool_default_set_label");
+  function finishRename(save: boolean) {
+    if (renaming === null) return;
+    const next = renaming.trim().slice(0, 80);
+    if (save && next && next !== active?.name) renameSet(next);
+    setRenaming(null);
+    requestAnimationFrame(() => renameRef.current?.focus());
+  }
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
   const { setsRef, setsOpen, setSetsOpen, setsClosing, setSetsClosing, closeSets, onSetsTriggerKey, onSetsMenuKey } = menu;
   return (
+    <>
       <div className="ds-set-bar">
       <div className="ds-field !mt-0 min-w-0 flex-1 basis-64">
         <p className="ds-label" id="tool-sets-label">
           {t("tool_set_label")}
         </p>
-        <details
+        {renaming !== null ? (
+          <>
+            <label className="sr-only" htmlFor="tool-set-name">{t("tool_set_rename_label")}</label>
+            <input
+              id="tool-set-name"
+              data-testid="tool-set-name"
+              className="ds-input ds-set-rename"
+              value={renaming}
+              maxLength={80}
+              autoFocus
+              onChange={(event) => setRenaming(event.target.value)}
+              onBlur={() => finishRename(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") { event.preventDefault(); finishRename(true); }
+                if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finishRename(false); }
+              }}
+            />
+          </>
+        ) : <details
           className="ds-listbox"
           ref={setsRef}
           onToggle={(event) => {
@@ -122,7 +160,7 @@ export function SetPicker({
               setSetsClosing(false);
             }
           }}
-        >
+       >
           <summary
             id="tool-sets-trigger"
             className="ds-listbox-trigger"
@@ -131,7 +169,7 @@ export function SetPicker({
             aria-haspopup="listbox"
             aria-expanded={setsOpen}
             aria-controls="tool-sets-menu"
-            aria-labelledby="tool-sets-label"
+            aria-labelledby="tool-sets-label tool-sets-value"
             aria-describedby="tool-sets-description"
             onClick={(event) => {
               if (setsRef.current?.open) {
@@ -140,8 +178,8 @@ export function SetPicker({
               }
             }}
             onKeyDown={onSetsTriggerKey}
-          >
-            <span className="ds-listbox-value">{active?.name?.trim() ? active.name : "Composition"}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
+         >
+            <span id="tool-sets-value" className="ds-listbox-value">{shownName}</span>{active?.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
             <span className="ds-listbox-caret" aria-hidden="true" />
           </summary>
           <ul
@@ -152,7 +190,7 @@ export function SetPicker({
             aria-labelledby="tool-sets-label"
             data-testid="tool-sets-menu"
             onKeyDown={onSetsMenuKey}
-          >
+         >
             {sets.map((item) => (
               <li key={item.id}>
                 <button
@@ -164,31 +202,56 @@ export function SetPicker({
                     closeSets();
                     void switchSet(item.id);
                   }}
-                >
+               >
                   {item.name}
                   {item.demo ? <span className="tool-demo-badge">{t("tool_demo_badge")}</span> : null}
                 </button>
               </li>
             ))}
           </ul>
-        </details>
+        </details>}
       </div>
       <div className="ds-set-actions">
-        <button type="button" className="ds-cta-ghost" data-testid="tool-set-new" onClick={addSet}>
+        <Button as="button" variant="text"
+          type="button"
+          ref={renameRef}
+          data-testid="tool-set-rename"
+          aria-label={`${t("tool_set_rename")} ${shownName}`}
+          disabled={!active || renaming !== null}
+          onClick={() => setRenaming(active?.name ?? "")}
+        >
+          {t("tool_set_rename")}
+        </Button>
+        <Button as="button" variant="secondary" size="set" type="button"  data-testid="tool-set-new" onClick={addSet}>
           {t("tool_set_new")}
-        </button>
+        </Button>
         {sets.length > 1 ? (
-          <button
+          <Button as="button" variant="text"
             type="button"
-            className="ds-text-btn"
             data-testid="tool-set-delete"
-            aria-label={tf("tool_set_delete", { name: active?.name?.trim() || "Composition" })}
-            onClick={() => active && void removeSet(active.id)}
-          >
+            aria-label={tf("tool_set_delete", { name: active?.name?.trim() || t("tool_default_set_label") })}
+            onClick={() => { if (active) { setDeleteError(false); setDeleting(active); } }}
+         >
             {t("tool_set_delete_short")}
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>
+    {deleting ? <Overlay closeDisabled={deleteBusy} onClose={() => setDeleting(null)} labelledBy="tool-delete-title" closeLabel={t("tool_delete_cancel")}>
+      <h2 id="tool-delete-title" className="font-display text-2xl">{tf("tool_set_delete", { name: deleting.name })}</h2>
+      <p className="mt-3 text-sm">{t("tool_delete_description")}</p>
+      {deleteError ? <p className="ds-warn" role="alert">{t("tool_delete_error")}</p> : null}
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button as="button" variant="secondary" type="button"  disabled={deleteBusy} onClick={() => setDeleting(null)}>{t("tool_delete_cancel")}</Button>
+        <Button as="button" variant="primary" type="button"  data-testid="tool-set-delete-confirm" disabled={deleteBusy} aria-busy={deleteBusy} onClick={async () => {
+          setDeleteBusy(true);
+          setDeleteError(false);
+          try { await removeSet(deleting.id); setDeleting(null); }
+          catch { setDeleteError(true); }
+          finally { setDeleteBusy(false); }
+        }}>{t("tool_set_delete_short")}</Button>
+      </div>
+    </Overlay> : null}
+    </>
   );
 }

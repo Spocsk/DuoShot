@@ -1,33 +1,31 @@
 import { connection } from "next/server";
 import { getTranslator } from "@/lib/i18n";
-import { FAQ } from "@/lib/i18n";
+import { getFaq } from "@/lib/i18n";
 import { checkoutDisplayAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import type { Locale } from "@/lib/specs";
+import { pricingFaq } from "@/lib/pricing-faq";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { PricingSection } from "@/components/pricing-section";
-import { TrustLine } from "@/components/trust-line";
 import { FaqList } from "@/components/faq-list";
 
 export async function PricingPage({ locale }: { locale: Locale }) {
-  const { t } = getTranslator(locale);
+  const i18n = getTranslator(locale);
+  const { t } = i18n;
   // Checkout availability comes from runtime env (absent at image build time), so
   // render per request: the first HTML then shows the real buttons, not a disabled flash.
   await connection();
   const available = checkoutDisplayAvailable();
   const passAvailable = passCheckoutAvailable();
-  const faq = FAQ[locale];
+  const faq = [...pricingFaq(i18n), ...getFaq(locale, passAvailable)];
   return (
     <div className="flex min-h-full flex-col">
-      <JsonLd locale={locale} />
+      <JsonLd locale={locale} path="/pricing" faq={faq} />
       <SiteHeader locale={locale} path="/pricing" />
       <main id="main">
         <PricingSection locale={locale} heading="h1" checkoutAvailable={available} passAvailable={passAvailable} />
-        <div className="mx-auto max-w-6xl px-5 pb-10">
-          <TrustLine locale={locale} />
-        </div>
-        <section className="mx-auto max-w-6xl px-5 pb-16">
-          <h2 className="font-display text-4xl">{t("faq_title")}</h2>
+        <section className="mx-auto max-w-6xl px-5 pb-16" data-testid="pricing-faq">
+          <h2 className="font-display text-4xl">{t("pricing_faq_title")}</h2>
           <FaqList items={faq} />
         </section>
       </main>
