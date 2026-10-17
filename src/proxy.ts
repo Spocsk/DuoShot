@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import {
   LOCALE_COOKIE,
   isCrawler,
@@ -9,6 +9,7 @@ import { updateSession } from "@/lib/supabase/proxy";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { isInternalRequest } from "@/lib/internal-request";
 import { ATTRIBUTION_COOKIE, ATTRIBUTION_MAX_AGE, landingAttribution } from "@/lib/attribution";
+import { countPageView } from "@/lib/page-views";
 
 function withAttribution(request: NextRequest, response: NextResponse) {
   const pathname = request.nextUrl.pathname;
@@ -42,7 +43,7 @@ function needsSessionRefresh(pathname: string) {
   return /^\/(?:en\/)?(?:tool|account)(?:\/|$)/.test(pathname) || pathname.startsWith("/auth/") || pathname.startsWith("/api/");
 }
 
-export async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest, event?: NextFetchEvent) {
   const pathname = request.nextUrl.pathname;
 
   // Internal routes are only reachable from the container itself or the private Docker
@@ -84,6 +85,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = needsSessionRefresh(pathname) ? await updateSession(request) : NextResponse.next();
+  countPageView(request, event);
   return withAttribution(request, response);
 }
 

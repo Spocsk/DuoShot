@@ -244,6 +244,52 @@ describe("one-time pass and waitlist contracts", () => {
   });
 });
 
+describe("anonymous daily page views", () => {
+  const increment = (date = "2026-10-16", path = "/en/pricing", source = "", medium = "", campaign = "") =>
+    db.query("select increment_daily_page_view($1,$2,$3,$4,$5)", [date, path, source, medium, campaign]);
+
+  it("atomically increments one row per complete key, including absent UTMs", async () => {
+    await Promise.all(Array.from({ length: 12 }, () => increment()));
+    await increment("2026-10-17");
+    await increment("2026-10-16", "/en/tool");
+    await increment("2026-10-16", "/en/pricing", "google");
+    await increment("2026-10-16", "/en/pricing", "", "cpc");
+    await increment("2026-10-16", "/en/pricing", "", "", "launch");
+    const rows = (await db.query<{ count: number }>("select count::int from daily_page_views order by count desc")).rows;
+    expect(rows).toEqual([{ count: 12 }, ...Array.from({ length: 5 }, () => ({ count: 1 }))]);
+  });
+
+  it("has only aggregate columns, bounded values and no nullable key dimensions", async () => {
+    const columns = (await db.query<{ column_name: string; is_nullable: string }>("select column_name,is_nullable from information_schema.columns where table_schema='public' and table_name='daily_page_views' order by ordinal_position")).rows;
+    expect(columns.map((column) => column.column_name)).toEqual(["date", "path", "utm_source", "utm_medium", "utm_campaign", "count"]);
+    expect(columns.every((column) => column.is_nullable === "NO")).toBe(true);
+    await expect(increment("2026-10-16", "/" + "x".repeat(256))).rejects.toThrow();
+    for (const labels of [["x".repeat(65), "", ""], ["", "x".repeat(65), ""], ["", "", "x".repeat(65)]]) {
+      await expect(increment("2026-10-16", "/", ...labels as [string, string, string])).rejects.toThrow();
+    }
+    await expect(db.query("update daily_page_views set count=0")).rejects.toThrow();
+    await expect(db.query("update daily_page_views set utm_source=null")).rejects.toThrow();
+  });
+
+  it("enables RLS with no client policies and reserves the RPC for the service role", async () => {
+    expect((await db.query("select relrowsecurity from pg_class where oid='public.daily_page_views'::regclass")).rows).toEqual([{ relrowsecurity: true }]);
+    expect((await db.query("select policyname from pg_policies where tablename='daily_page_views'")).rows).toEqual([]);
+    for (const role of ["anon", "authenticated"]) {
+      for (const privilege of ["select", "insert", "update", "delete"]) {
+        expect((await db.query<{ granted: boolean }>("select has_table_privilege($1,'public.daily_page_views',$2) as granted", [role, privilege])).rows[0].granted).toBe(false);
+      }
+      expect((await db.query<{ granted: boolean }>("select has_function_privilege($1,'public.increment_daily_page_view(date,text,text,text,text)','execute') as granted", [role])).rows[0].granted).toBe(false);
+    }
+    await db.exec("set role service_role");
+    try {
+      await increment("2026-10-18");
+    } finally {
+      await db.exec("reset role");
+    }
+    expect((await db.query("select count::int from daily_page_views where date='2026-10-18'")).rows).toEqual([{ count: 1 }]);
+  });
+});
+
 describe("workspace roles", () => {
   const ROLE_MIGRATION = "20261005120000_drop_admin_workspace_role.sql";
   it("accepts only owner and member", async () => {
