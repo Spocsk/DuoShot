@@ -1,6 +1,13 @@
 import type { Messages } from "./types";
 
 export const en: Messages = {
+  guides_title: "iPhone Duo App Store screenshot guides",
+  guides_description: "All DuoShot guides: iPhone Duo screenshots in App Store Connect, comparisons, 1398 × 2034 and 2007 × 2853 sizes, and a free checker.",
+  guides_guides: "Guides",
+  guides_checker: "Free checker",
+  guides_sizes: "Screenshot sizes",
+  guides_comparisons: "Comparisons",
+  footer_guides: "Guides",
   checker_title: "Free iPhone Duo screenshot checker",
   checker_description: "Check iPhone Duo, 6.9″ and 6.3″ screenshot dimensions and transparency for free in your browser. No files are uploaded.",
   checker_intro: "Drop your images to check their dimensions, transparency and the number of iPhone Duo screenshots per device size.",

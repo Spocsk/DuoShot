@@ -9,6 +9,7 @@ import { HARBOR_SCREEN, OG } from "./theme";
 
 export type OgPage =
   | "home"
+  | "guides"
   | "specs"
   | "comparison-guide"
   | "competitor-comparison"
@@ -32,6 +33,10 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
+  guides: {
+    fr: { eyebrow: getTranslator("fr").t("guides_guides"), title: getTranslator("fr").t("guides_title"), alt: getTranslator("fr").t("guides_description") },
+    en: { eyebrow: getTranslator("en").t("guides_guides"), title: getTranslator("en").t("guides_title"), alt: getTranslator("en").t("guides_description") },
+  },
   "competitor-comparison": {
     fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens, Screenhance et App Asset Kit : sources officielles et fonctionnement DuoShot." },
     en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens, Screenhance and App Asset Kit: official sources and DuoShot workflow." },
@@ -390,6 +395,7 @@ function PairArt({ locale }: { locale: Locale }) {
 }
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
+  guides: PairArt,
   "competitor-comparison": PairArt,
   "asc-guide": PairArt,
   "screenshot-checker": PairArt,

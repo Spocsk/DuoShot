@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import type { Locale } from "./specs";
 
@@ -11,6 +11,17 @@ export function comparisonGuide(locale: Locale) {
 
 export function appStoreConnectGuide(locale: Locale) {
   return readGuide(locale, ASC_GUIDE_PATH);
+}
+
+export function listGuides(locale: Locale) {
+  const suffix = `.${locale}.md`;
+  return readdirSync(path.join(process.cwd(), "content/guides"))
+    .filter((file) => file.endsWith(suffix))
+    .map((file) => {
+      const { slug, title, description, dateModified } = readGuide(locale, `/guides/${file.slice(0, -suffix.length)}`);
+      return { path: `/guides/${slug}`, title, description, dateModified };
+    })
+    .sort((a, b) => a.title.localeCompare(b.title, locale));
 }
 
 /** The checked-in guides use flat string frontmatter; the body stays untouched. */
@@ -26,5 +37,5 @@ function readGuide(locale: Locale, guidePath: string) {
     if (!fields[field]) throw new Error(`Missing guide ${field}: ${locale}`);
   }
   if (fields.lang !== locale) throw new Error(`Incorrect guide language: ${locale}`);
-  return { title: fields.title, description: fields.description, dateModified: fields.updated, body: match[2] };
+  return { slug: fields.slug, title: fields.title, description: fields.description, dateModified: fields.updated, body: match[2] };
 }

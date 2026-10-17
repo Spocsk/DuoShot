@@ -16,7 +16,7 @@ function pageDirs(dir: string): string[] {
   );
 }
 
-const PAGES: OgPage[] = ["home", "specs", "comparison-guide", "competitor-comparison", "asc-guide", "screenshot-checker", "iphone-69", "rejection", "pricing", "why-not-ai", "tool", "review", "legal", "subprocessors", "terms", "privacy", "cookies"];
+const PAGES: OgPage[] = ["home", "guides", "specs", "comparison-guide", "competitor-comparison", "asc-guide", "screenshot-checker", "iphone-69", "rejection", "pricing", "why-not-ai", "tool", "review", "legal", "subprocessors", "terms", "privacy", "cookies"];
 
 describe("social cards", () => {
   // pageMetadata() sets openGraph, which drops the parent's image: each page needs its own file.
