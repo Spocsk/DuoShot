@@ -7,10 +7,13 @@ import { signAscToken, type AscCredentials } from "./jwt";
 export type AscErrorCode =
   | "ASC_BAD_REQUEST" | "ASC_UNAUTHORIZED" | "ASC_FORBIDDEN" | "ASC_NOT_FOUND" | "ASC_CONFLICT"
   | "ASC_INVALID" | "ASC_RATE_LIMITED" | "ASC_UNAVAILABLE" | "ASC_UNREACHABLE"
+  | "ASC_REFDATA_INVALID" | "ASC_REFDATA_GROUP_NOT_FOUND" | "ASC_REFDATA_SPEC_NOT_FOUND"
+  | "ASC_REFDATA_CATEGORY_INVALID" | "ASC_REFDATA_FEATURE_NOT_FOUND" | "ASC_SPEC_MISMATCH"
+  | "ASC_VERSION_NOT_EDITABLE" | "ASC_PLACEMENT_INVALID" | "ASC_ASSET_HAS_PLACEMENTS"
   | "ASC_UPLOAD_FAILED" | "ASC_UPLOAD_OPERATION_INVALID" | "ASC_PROCESSING_FAILED" | "ASC_PROCESSING_TIMEOUT" | "ASC_ABORTED";
 
 export class AscError extends Error {
-  constructor(public code: AscErrorCode, public status = 0, public appleCode?: string) { super(code); }
+  constructor(public code: AscErrorCode, public status = 0, public appleCode?: string, message: string = code, public details?: unknown) { super(message); }
 }
 
 export function ascErrorCode(status: number): AscErrorCode {
@@ -28,6 +31,7 @@ export function ascErrorCode(status: number): AscErrorCode {
 export function ascErrorStatus(code: string): number {
   if (code === "ASC_UNAUTHORIZED" || code === "ASC_FORBIDDEN") return 424;
   if (code === "ASC_NOT_FOUND") return 404;
+  if (["ASC_VERSION_NOT_EDITABLE", "ASC_PLACEMENT_INVALID", "ASC_ASSET_HAS_PLACEMENTS", "ASC_SPEC_MISMATCH"].includes(code)) return 409;
   if (code === "ASC_CONFLICT" || code === "ASC_INVALID" || code === "ASC_BAD_REQUEST") return 409;
   if (code === "ASC_RATE_LIMITED") return 429;
   return 502;
@@ -75,7 +79,10 @@ export function md5Hex(bytes: Uint8Array): string {
   return createHash("md5").update(bytes).digest("hex");
 }
 
-export function createAscClient(credentials: AscCredentials, options: AscClientOptions = {}) {
+/** Shared JWT, HTTP, pagination and multipart transport for both upload models. */
+export function createAscTransport(credentials: AscCredentials, options: AscClientOptions = {}, policy: {
+  rejectRedirects?: boolean; requireCompletePagination?: boolean; deadline?: number;
+} = {}) {
   const doFetch = options.fetch ?? fetch;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const now = options.now ?? Date.now;
@@ -90,14 +97,21 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
     return token.value;
   }
 
+  function checkDeadline() {
+    if (policy.deadline !== undefined && now() >= policy.deadline) throw new AscError("ASC_PROCESSING_TIMEOUT");
+  }
+
   function signal() {
-    const timeout = AbortSignal.timeout(options.requestTimeoutMs ?? 30_000);
+    const remaining = policy.deadline === undefined ? Infinity : Math.max(0, policy.deadline - now());
+    const timeout = AbortSignal.timeout(Math.floor(Math.min(options.requestTimeoutMs ?? 30_000, remaining)));
     return options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
   }
 
   async function send(url: string, init: RequestInit): Promise<Response> {
     if (options.signal?.aborted) throw new AscError("ASC_ABORTED");
-    try { return await doFetch(url, { ...init, signal: signal() }); } catch {
+    checkDeadline();
+    try { return await doFetch(url, { ...init, ...(policy.rejectRedirects ? { redirect: "error" as const } : {}), signal: signal() }); } catch {
+      if (!options.signal?.aborted) checkDeadline();
       throw new AscError(options.signal?.aborted ? "ASC_ABORTED" : "ASC_UNREACHABLE");
     }
   }
@@ -126,6 +140,9 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
       out.push(...(Array.isArray(document.data) ? document.data : [document.data]));
       next = document.links?.next;
     }
+    // Capacity and ordering need the entire group. Keep the legacy page cap's
+    // behavior, but let Asset Library fail closed instead of using a partial list.
+    if (next && policy.requireCompletePagination) throw new AscError("ASC_UNAVAILABLE");
     return out;
   }
 
@@ -134,6 +151,41 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
     if (!document || Array.isArray(document.data)) throw new AscError("ASC_UNAVAILABLE");
     return document.data;
   }
+
+  /** PUTs each part exactly as Apple describes it: method, URL, headers and byte range. No JWT. */
+  async function uploadParts(operations: UploadOperation[], bytes: Uint8Array) {
+    if (!operations.length) throw new AscError("ASC_UPLOAD_FAILED");
+    // Validate every operation before sending any byte.
+    if (!operations.every(isAllowedUploadOperation)) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
+    await mapLimit(operations, 3, async (operation) => {
+      const end = operation.offset + operation.length;
+      if (operation.offset < 0 || operation.length < 0 || end > bytes.byteLength) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
+      const headers = Object.fromEntries((operation.requestHeaders ?? []).map(({ name, value }) => [name, value]));
+      const body = bytes.subarray(operation.offset, end);
+      for (let attempt = 0; ; attempt++) {
+        let status = 0;
+        try {
+          const response = await send(operation.url, { method: "PUT", headers, body: body as BodyInit });
+          checkDeadline();
+          status = response.status;
+          if (response.ok) return;
+        } catch (error) {
+          if (error instanceof AscError && ["ASC_ABORTED", "ASC_PROCESSING_TIMEOUT"].includes(error.code)) throw error;
+        }
+        // Apple allows resending a part any time before commit; retry only transient failures.
+        if (attempt >= 2 || (status >= 400 && status < 500)) throw new AscError("ASC_UPLOAD_FAILED", status);
+        const delay = 500 * (attempt + 1);
+        if (policy.deadline !== undefined && now() + delay >= policy.deadline) throw new AscError("ASC_PROCESSING_TIMEOUT");
+        await sleep(delay);
+      }
+    });
+  }
+
+  return { request, list, single, uploadParts, now, sleep, checkDeadline };
+}
+
+export function createAscClient(credentials: AscCredentials, options: AscClientOptions = {}) {
+  const { request, list, single, uploadParts, now, sleep } = createAscTransport(credentials, options);
 
   const client = {
     /** Cheapest authenticated call: proves issuer, key id and private key together. */
@@ -216,31 +268,7 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
       return { id: reserved.id, operations };
     },
 
-    /** PUTs each part exactly as Apple describes it: method, URL, headers and byte range. No JWT. */
-    async uploadParts(operations: UploadOperation[], bytes: Uint8Array) {
-      if (!operations.length) throw new AscError("ASC_UPLOAD_FAILED");
-      // Validate every operation before sending any byte.
-      if (!operations.every(isAllowedUploadOperation)) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
-      await mapLimit(operations, 3, async (operation) => {
-        const end = operation.offset + operation.length;
-        if (operation.offset < 0 || operation.length < 0 || end > bytes.byteLength) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
-        const headers = Object.fromEntries((operation.requestHeaders ?? []).map(({ name, value }) => [name, value]));
-        const body = bytes.subarray(operation.offset, end);
-        for (let attempt = 0; ; attempt++) {
-          let status = 0;
-          try {
-            const response = await send(operation.url, { method: "PUT", headers, body: body as BodyInit });
-            status = response.status;
-            if (response.ok) return;
-          } catch (error) {
-            if (error instanceof AscError && error.code === "ASC_ABORTED") throw error;
-          }
-          // Apple allows resending a part any time before commit; retry only transient failures.
-          if (attempt >= 2 || (status >= 400 && status < 500)) throw new AscError("ASC_UPLOAD_FAILED", status);
-          await sleep(500 * (attempt + 1));
-        }
-      });
-    },
+    uploadParts,
 
     async commitScreenshot(id: string, checksum: string) {
       await single("PATCH", `/v1/appScreenshots/${encodeURIComponent(id)}`, {

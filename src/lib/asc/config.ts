@@ -7,6 +7,11 @@ export function ascConnectorEnabled(): boolean {
   return serverEnv.asc.enabled;
 }
 
+/** Server-only strategy switch; unknown values preserve the legacy flow. */
+export function ascUploadModel(): "asset-library" | "legacy" {
+  return serverEnv.asc.uploadModel;
+}
+
 export const ASC_API_BASE = "https://api.appstoreconnect.apple.com";
 export const ASC_AUDIENCE = "appstoreconnect-v1";
 /** Apple rejects tokens that expire more than 20 minutes after issue. */

@@ -4,6 +4,8 @@ import sharp from "sharp";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryBuilder } from "@/test/supabase-mock";
 import { fakeApple } from "@/test/asc-apple-mock";
+import { fakeAssetLibraryApple } from "@/test/asc-asset-library-mock";
+import { refDataFixture } from "@/test/fixtures/asc-asset-library/fixtures";
 import type { RenderJob } from "../render/jobs";
 import { sealSecret } from "./crypto";
 import { ascTargetsForExport, executeAscUpload, parseAscUploadPayload, planAscFiles, type AscUploadPayload } from "./upload-job";
@@ -110,6 +112,333 @@ describe("App Store Connect upload planning", () => {
     expect(() => parseAscUploadPayload({ ...PAYLOAD, targets: [{ slot: "duo-outer", displayType: "APP_IPHONE_67" }] })).toThrow("INVALID_REQUEST");
     expect(() => parseAscUploadPayload({ ...PAYLOAD, appId: "../x" })).toThrow("INVALID_REQUEST");
     expect(parseAscUploadPayload(PAYLOAD)).toEqual(PAYLOAD);
+  });
+});
+
+describe("asc_upload job with App Asset Library", () => {
+  beforeEach(() => vi.stubEnv("ASC_UPLOAD_MODEL", "asset-library"));
+  const duoPayload = { ...PAYLOAD, targets: ascTargetsForExport(false).targets };
+  const duoJob = (replaceExisting = false) => job({ payload: { ...duoPayload, replaceExisting } });
+  const paths = (apple: ReturnType<typeof fakeAssetLibraryApple>, method: string) =>
+    apple.calls.filter((call) => call.method === method).map((call) => new URL(call.url).pathname);
+
+  it.each([false, true])("follows a renamed Duo group and manifest order, reporting the same result shape (replace: %s)", async (replaceExisting) => {
+    const group = "RENAMED_DUO_GROUP";
+    const previous = ["old-a", "old-b"];
+    const apple = fakeAssetLibraryApple({ refData: refDataFixture(group), existing: { [group]: previous }, states: ["PREPARE_FOR_SUBMISSION"] });
+    const { client, rpc } = await admin({ duoOrder: ["harbor/duo-inner-portrait/01.png", "harbor/duo-outer-portrait/01.png"] });
+    const response = await executeAscUpload(client, duoJob(replaceExisting), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ appId: "app-1", versionId: "ver-1", localizationId: "loc-1", uploaded: 2, replaced: replaceExisting ? 2 : 0, reordered: true, skipped: [] });
+    expect([...apple.images.values()].map((image) => image.fileName)).toEqual(["duoshot-duo-inner-portrait-01.png", "duoshot-duo-outer-portrait-01.png"]);
+    const placements = [...apple.placements].filter(([, placement]) => placement.imageId).map(([id]) => id);
+    expect(apple.calls.filter((call) => new URL(call.url).pathname === "/v1/appAssetLibraryPlacements"))
+      .toHaveLength(2);
+    const orders = apple.calls.filter((call) => new URL(call.url).pathname === "/v1/appAssetLibraryPlacementOrderingRequests");
+    expect(orders).toHaveLength(1);
+    expect(orders[0]!.body).toEqual({ data: {
+      type: "appAssetLibraryPlacementOrderingRequests", attributes: { placementGroup: group }, relationships: {
+        orderedPlacements: { data: (replaceExisting ? [...placements, ...previous] : [...previous, ...placements]).map((id) => ({ type: "appAssetLibraryPlacements", id })) },
+        appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: "loc-1" } },
+      },
+    } });
+    expect(paths(apple, "DELETE")).toEqual(replaceExisting ? previous.map((id) => `/v1/appAssetLibraryPlacements/${id}`) : []);
+    if (replaceExisting) {
+      expect(apple.calls.findIndex((call) => call.method === "DELETE")).toBeGreaterThan(apple.calls.indexOf(orders[0]!));
+    }
+    expect(apple.calls.some((call) => /appScreenshot/.test(call.url))).toBe(false);
+    for (const call of apple.calls.filter((call) => call.method === "PATCH")) {
+      expect(call.body).toMatchObject({ data: { attributes: { uploaded: true } } });
+      expect(JSON.stringify(call.body)).not.toContain("sourceFileChecksum");
+    }
+    for (const call of apple.calls.filter((call) => call.method === "PUT")) {
+      expect(call.headers).toEqual({ "content-type": "image/png" });
+    }
+    expect(progressCalls(rpc)[0]).toMatchObject({ total: 2, done: 0, files: [{ state: "pending" }, { state: "pending" }] });
+    expect(progressCalls(rpc).at(-1)).toMatchObject({ total: 2, done: 2, files: [{ state: "complete" }, { state: "complete" }] });
+    expect(rpc.mock.calls.find(([name]) => name === "complete_render")![1]).toMatchObject({ p_result: { uploaded: 2, reordered: true } });
+  });
+
+  it.each(["APPROVED", "REJECTED", "DEVELOPER_REJECTED", "READY_FOR_REVIEW"])("refuses version state %s before any write", async (versionState) => {
+    const apple = fakeAssetLibraryApple({ versionState });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(true), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_VERSION_NOT_EDITABLE" });
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+    expect(apple.images.size).toBe(0);
+  });
+
+  it("refuses a selection above the refData limit without truncating it", async () => {
+    const apple = fakeAssetLibraryApple({ refData: refDataFixture("SMALL_DUO", 1) });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "DUO_SLOT_LIMIT" });
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+  });
+
+  it.each(["missing-limit", "unavailable-refdata"])("falls back to DUO_SLOT_MAX for %s", async (kind) => {
+    const apple = fakeAssetLibraryApple({ refData: refDataFixture("DUO_NO_LIMIT", null),
+      fail: (method, path) => kind === "unavailable-refdata" && method === "GET" && path === "/v1/appAssetLibraryRefData" ? { status: 503, code: "UNAVAILABLE" } : null });
+    const { client } = await admin({ rawDuoCount: 6 });
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "DUO_SLOT_LIMIT" });
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+  });
+
+  it("uses a refData limit above the local default without truncating a raw ZIP", async () => {
+    const apple = fakeAssetLibraryApple({ refData: refDataFixture("LARGER_DUO", 12), states: ["COMPLETE"] });
+    const { client } = await admin({ rawDuoCount: 6 });
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ uploaded: 12 });
+    expect(apple.images.size).toBe(12);
+  });
+
+  it.each([false, true])("checks existing plus new placements before writing (replace: %s)", async (replaceExisting) => {
+    const group = "LIMITED_DUO";
+    const apple = fakeAssetLibraryApple({ refData: refDataFixture(group, 3), existing: { [group]: ["old-a", "old-b"] }, pageSize: 1 });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(replaceExisting), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_SET_FULL" });
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+    expect([...apple.placements.values()].every((placement) => !placement.deleted)).toBe(true);
+  });
+
+  it("rolls back every reserved image on a later spec mismatch and keeps readable server diagnostics", async () => {
+    const refData = refDataFixture();
+    const apple = fakeAssetLibraryApple({ refData, states: ["PREPARE_FOR_SUBMISSION"],
+      processedSpecId: () => refData.imageSpecs![0]!.specId });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, duoJob(true), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_SPEC_MISMATCH" });
+    expect(log).toHaveBeenCalledWith("asc_asset_library_failed", expect.objectContaining({ code: "ASC_SPEC_MISMATCH",
+      message: expect.stringMatching(/attendue.*i2007x2853a0.*écran interne.*reçue.*i1398x2034a0.*écran externe/) }));
+    expect(apple.placements.size).toBe(0);
+    expect(apple.images.size).toBe(2);
+    expect([...apple.images.values()].every((image) => image.deleted)).toBe(true);
+    expect(progressCalls(rpc).at(-1)!.files).toEqual([
+      expect.objectContaining({ state: "failed", error: "ASC_ROLLED_BACK" }),
+      expect.objectContaining({ state: "failed", error: "ASC_SPEC_MISMATCH" }),
+    ]);
+    expect(rpc.mock.calls.some(([name]) => name === "complete_render")).toBe(false);
+  });
+
+  it.each([["STATE_ERROR.INVALID_STATE", "ASC_VERSION_NOT_EDITABLE"], ["ENTITY_ERROR.ATTRIBUTE.INVALID", "ASC_PLACEMENT_INVALID"]])("rolls back placements before images on a later placement 409 %s", async (appleCode, code) => {
+    let creates = 0;
+    const apple = fakeAssetLibraryApple({ existing: { IPHONE_DUO_PROFILE: ["old-a"] }, states: ["COMPLETE"],
+      fail: (method, path) => method === "POST" && path === "/v1/appAssetLibraryPlacements" && ++creates === 2 ? { status: 409, code: appleCode } : null });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(true), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: code });
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryPlacements/placement-1", "/v1/appAssetLibraryImages/image-1", "/v1/appAssetLibraryImages/image-2"]);
+    expect(apple.placements.get("old-a")!.deleted).toBe(false);
+    expect([...apple.images.values()].every((image) => image.deleted)).toBe(true);
+  });
+
+  it("keeps previous placements and rolls back the whole job if ordering fails", async () => {
+    const apple = fakeAssetLibraryApple({ existing: { IPHONE_DUO_PROFILE: ["old-a"] }, states: ["COMPLETE"],
+      fail: (method, path) => method === "POST" && path === "/v1/appAssetLibraryPlacementOrderingRequests" ? { status: 422, code: "ENTITY_ERROR" } : null });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(true), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_INVALID" });
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryPlacements/placement-1", "/v1/appAssetLibraryPlacements/placement-2", "/v1/appAssetLibraryImages/image-1", "/v1/appAssetLibraryImages/image-2"]);
+    expect(apple.placements.get("old-a")!.deleted).toBe(false);
+  });
+
+  it("discovers the 6.9-inch group from actual pixels and orders each group separately", async () => {
+    const zipFiles = { ...files, "harbor/iphone-69-portrait/1320x2868/01.png": await screenshot(1320, 2868),
+      "harbor/iphone-69-portrait/1320x2868/02.png": await screenshot(1320, 2868) };
+    const refData = refDataFixture();
+    const phoneGroup = "RENAMED_69_GROUP";
+    refData.placementProfileGroups![1]!.placementProfileGroupId = phoneGroup;
+    refData.placementTypes![0]!.specMappings![1]!.placementGroupId = phoneGroup;
+    refData.features![0]!.placementPolicies![0]!.groupLimits![1]!.groupIds = [phoneGroup];
+    const apple = fakeAssetLibraryApple({ refData, states: ["COMPLETE"] });
+    const { client } = await admin({ zipFiles });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(true).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ uploaded: 4 });
+    const orders = apple.calls.filter((call) => new URL(call.url).pathname === "/v1/appAssetLibraryPlacementOrderingRequests");
+    expect(orders.map((call) => call.body)).toEqual(["IPHONE_DUO_PROFILE", phoneGroup].map((group, index) => ({ data: {
+      type: "appAssetLibraryPlacementOrderingRequests", attributes: { placementGroup: group }, relationships: {
+        orderedPlacements: { data: [1, 2].map((n) => ({ type: "appAssetLibraryPlacements", id: `placement-${index * 2 + n}` })) },
+        appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: "loc-1" } },
+      },
+    } })));
+  });
+
+  it.each(["response", "exception", "lease-lost"])("keeps finalized replacements if recording the result fails (%s)", async (failure) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const apple = fakeAssetLibraryApple({ existing: { IPHONE_DUO_PROFILE: ["old-a"] }, states: ["COMPLETE"] });
+    const { client, rpc } = await admin();
+    rpc.mockImplementation(async (name) => {
+      if (name === "complete_render") {
+        if (failure === "exception") throw new Error("database unavailable");
+        return { data: false, error: { message: failure === "lease-lost" ? "RENDER_LEASE_LOST" : "database unavailable" } };
+      }
+      return { data: true, error: null };
+    });
+    const response = await executeAscUpload(client, duoJob(true), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: failure === "lease-lost" ? "RENDER_LEASE_LOST" : "ASC_RETRY_UNSAFE" });
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryPlacements/old-a"]);
+    expect([...apple.images.values()].every((image) => !image.deleted)).toBe(true);
+  });
+
+  it("preserves replacements if deleting an old placement fails", async () => {
+    const apple = fakeAssetLibraryApple({ existing: { IPHONE_DUO_PROFILE: ["old-a", "old-b"] }, states: ["COMPLETE"],
+      fail: (method, path) => method === "DELETE" && path.endsWith("/old-b") ? { status: 409, code: "STATE_ERROR.INVALID_STATE" } : null });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(true), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toMatchObject({ uploaded: 2, replaced: 1, reordered: false });
+    expect([...apple.images.values()].every((image) => !image.deleted)).toBe(true);
+    expect(apple.placements.get("old-a")!.deleted).toBe(true);
+    expect(apple.placements.get("old-b")!.deleted).toBe(false);
+  });
+
+  it("marks a rejected reservation as failed even though no image id was returned", async () => {
+    const apple = fakeAssetLibraryApple({ fail: (method, path) => method === "POST" && path === "/v1/appAssetLibraryImages" ? { status: 403, code: "FORBIDDEN" } : null });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_FORBIDDEN" });
+    expect(progressCalls(rpc).at(-1)!.files[0]).toMatchObject({ state: "failed", error: "ASC_FORBIDDEN" });
+    expect(apple.images.size).toBe(0);
+    expect(paths(apple, "DELETE")).toEqual([]);
+  });
+
+  it("rolls back timed out processing within the job budget", async () => {
+    let now = Date.now();
+    const apple = fakeAssetLibraryApple({ states: ["UPLOAD_COMPLETE"] });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, now: () => now, sleep: async (ms) => { now += ms; }, budgetMs: 5000 });
+    expect(await response.json()).toEqual({ error: "ASC_PROCESSING_TIMEOUT" });
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryImages/image-1"]);
+    expect(progressCalls(rpc).at(-1)!.files[0]).toMatchObject({ state: "failed", error: "ASC_PROCESSING_TIMEOUT" });
+  });
+
+  it.each(["PREPARE_FOR_SUBMISSION", "COMPLETE"])("rolls back all reservations without placements when the last %s GET crosses the deadline", async (state) => {
+    let now = Date.now();
+    const apple = fakeAssetLibraryApple({ states: [state] });
+    const { client, rpc } = await admin();
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    const response = await executeAscUpload(client, duoJob(), { budgetMs: 1000, now: () => now, sleep: instant,
+      fetch: async (input, init) => {
+        const response = await apple.fetch(input, init);
+        if (init?.method === "GET" && new URL(String(input)).pathname === "/v1/appAssetLibraryImages/image-2") now += 2000;
+        return response;
+      } });
+    expect(await response.json()).toEqual({ error: "ASC_PROCESSING_TIMEOUT" });
+    expect(apple.images.size).toBe(2);
+    expect([...apple.images.values()].every((image) => image.deleted)).toBe(true);
+    expect(apple.placements.size).toBe(0);
+    expect(paths(apple, "POST")).toEqual(["/v1/appAssetLibraryImages", "/v1/appAssetLibraryImages"]);
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryImages/image-1", "/v1/appAssetLibraryImages/image-2"]);
+    expect(progressCalls(rpc).at(-1)!.files).toEqual([
+      expect.objectContaining({ state: "failed", error: "ASC_ROLLED_BACK" }),
+      expect.objectContaining({ state: "failed", error: "ASC_PROCESSING_TIMEOUT" }),
+    ]);
+    expect(rpc.mock.calls.some(([name]) => name === "complete_render")).toBe(false);
+    // Cleanup has its own timeout even after the main deadline has expired.
+    expect(timeout.mock.calls.slice(-2).map(([ms]) => ms)).toEqual([10_000, 10_000]);
+    expect(timeout.mock.calls.slice(0, -2).every(([ms]) => ms <= 1000)).toBe(true);
+  });
+
+  it.each(["reservation", "transfer", "commit", "placement", "order"])("stops subsequent writes and cleans known ids after a late %s response", async (phase) => {
+    let now = Date.now();
+    let placements = 0;
+    const apple = fakeAssetLibraryApple({ states: ["COMPLETE"], parts: 1, existing: { IPHONE_DUO_PROFILE: ["old-a"] } });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, duoJob(true), { budgetMs: 1000, now: () => now, sleep: instant,
+      fetch: async (input, init) => {
+        const response = await apple.fetch(input, init);
+        const path = new URL(String(input)).pathname;
+        if ((phase === "reservation" && init?.method === "POST" && path === "/v1/appAssetLibraryImages") ||
+          (phase === "transfer" && init?.method === "PUT") ||
+          (phase === "commit" && init?.method === "PATCH") ||
+          (phase === "placement" && init?.method === "POST" && path === "/v1/appAssetLibraryPlacements" && ++placements === 1) ||
+          (phase === "order" && path === "/v1/appAssetLibraryPlacementOrderingRequests")) now += 2000;
+        return response;
+      } });
+    expect(await response.json()).toEqual({ error: "ASC_PROCESSING_TIMEOUT" });
+    const placementCount = phase === "placement" ? 1 : phase === "order" ? 2 : 0;
+    const imageCount = placementCount ? 2 : 1;
+    expect(apple.images.size).toBe(imageCount);
+    expect(paths(apple, "DELETE")).toEqual([
+      ...Array.from({ length: placementCount }, (_, i) => `/v1/appAssetLibraryPlacements/placement-${i + 1}`),
+      ...Array.from({ length: imageCount }, (_, i) => `/v1/appAssetLibraryImages/image-${i + 1}`),
+    ]);
+    expect(apple.placements.get("old-a")!.deleted).toBe(false);
+    const firstDelete = apple.calls.findIndex((call) => call.method === "DELETE");
+    expect(apple.calls.slice(firstDelete).every((call) => call.method === "DELETE")).toBe(true);
+    expect(paths(apple, "POST").filter((path) => path === "/v1/appAssetLibraryPlacementOrderingRequests")).toHaveLength(phase === "order" ? 1 : 0);
+    expect(rpc.mock.calls.some(([name]) => name === "complete_render")).toBe(false);
+  });
+
+  it("does not reserve an image after the job budget has expired", async () => {
+    const apple = fakeAssetLibraryApple();
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant, budgetMs: 0 });
+    expect(await response.json()).toEqual({ error: "ASC_PROCESSING_TIMEOUT" });
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+  });
+
+  it("keeps FAILED stateDetails on the server and deletes the failed image", async () => {
+    const apple = fakeAssetLibraryApple({ states: ["FAILED"] });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_PROCESSING_FAILED" });
+    expect(log).toHaveBeenCalledWith("asc_asset_library_failed", expect.objectContaining({ stateDetails: [{ code: "INVALID_IMAGE", message: "Processing failed in memory" }] }));
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryImages/image-1"]);
+  });
+
+  it("continues cleanup of other images when a placement cannot be deleted", async () => {
+    let creates = 0;
+    const apple = fakeAssetLibraryApple({ states: ["COMPLETE"], fail: (method, path) => {
+      if (method === "POST" && path === "/v1/appAssetLibraryPlacements" && ++creates === 2) return { status: 409, code: "STATE_ERROR.INVALID_STATE" };
+      if (method === "DELETE" && path === "/v1/appAssetLibraryPlacements/placement-1") return { status: 403, code: "FORBIDDEN" };
+      return null;
+    } });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_VERSION_NOT_EDITABLE" });
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryPlacements/placement-1", "/v1/appAssetLibraryImages/image-1", "/v1/appAssetLibraryImages/image-2"]);
+    expect(progressCalls(rpc).at(-1)!.files[0]).toMatchObject({ state: "failed", error: "ASC_CLEANUP_FAILED" });
+    expect(apple.images.get("image-1")!.deleted).toBe(false);
+    expect(apple.images.get("image-2")!.deleted).toBe(true);
+  });
+
+  it("rolls back all groups when ordering the last group fails", async () => {
+    const zipFiles = { ...files, "harbor/iphone-69-portrait/1320x2868/01.png": await screenshot(1320, 2868),
+      "harbor/iphone-69-portrait/1320x2868/02.png": await screenshot(1320, 2868) };
+    let orders = 0;
+    const apple = fakeAssetLibraryApple({ states: ["COMPLETE"], existing: { IPHONE_DUO_PROFILE: ["old-duo"], IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE: ["old-phone"] },
+      fail: (method, path) => method === "POST" && path === "/v1/appAssetLibraryPlacementOrderingRequests" && ++orders === 2 ? { status: 422, code: "INVALID_ORDER" } : null });
+    const { client } = await admin({ zipFiles });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting: true, targets: ascTargetsForExport(true).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_INVALID" });
+    expect(paths(apple, "DELETE")).toEqual([
+      ...[1, 2, 3, 4].map((id) => `/v1/appAssetLibraryPlacements/placement-${id}`),
+      ...[1, 2, 3, 4].map((id) => `/v1/appAssetLibraryImages/image-${id}`),
+    ]);
+    expect(apple.placements.get("old-duo")!.deleted).toBe(false);
+    expect(apple.placements.get("old-phone")!.deleted).toBe(false);
+    expect([...apple.images.values()].every((image) => image.deleted)).toBe(true);
+  });
+
+  it("rolls back with a separate signal after cancellation during placement creation", async () => {
+    const controller = new AbortController();
+    const apple = fakeAssetLibraryApple({ states: ["COMPLETE"] });
+    const aborting: typeof fetch = async (input, init) => {
+      const response = await apple.fetch(input, init);
+      if (init?.method === "POST" && new URL(String(input)).pathname === "/v1/appAssetLibraryPlacements") controller.abort();
+      return response;
+    };
+    const { client } = await admin();
+    const response = await executeAscUpload(client, duoJob(), { fetch: aborting, sleep: instant, signal: controller.signal });
+    expect(await response.json()).toEqual({ error: "ASC_ABORTED" });
+    expect(paths(apple, "DELETE")).toEqual(["/v1/appAssetLibraryPlacements/placement-1", "/v1/appAssetLibraryImages/image-1", "/v1/appAssetLibraryImages/image-2"]);
+    expect([...apple.images.values()].every((image) => image.deleted)).toBe(true);
   });
 });
 
