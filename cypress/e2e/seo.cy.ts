@@ -123,7 +123,7 @@ describe("SEO screenshot pages", () => {
         .and("contain", locale === "en" ? "DuoShot (duoshot.site) is not affiliated with DuoScreenshot (duoscreenshot.com)." : "DuoShot (duoshot.site) est distinct de DuoScreenshot (duoscreenshot.com).");
       cy.get("h1").should("contain", locale === "en"
         ? "iPhone Duo (Apple's foldable iPhone)" : "iPhone Duo (le téléphone pliable d'Apple)");
-      cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications"]').should("exist");
+      cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/"]').should("exist");
       cy.document().then((doc) => {
         checkSiteEntities(doc);
         expect(graphOf(doc).find((node) => node["@type"] === "TechArticle")?.dateModified).to.eq("2026-10-13");

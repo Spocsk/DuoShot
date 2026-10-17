@@ -33,10 +33,10 @@ describe("export guidance", () => {
         jobs: { exportImages: [] } as unknown as ComponentProps<typeof ExportPanel>["jobs"],
       }));
       expect(html).toContain("App Store Connect");
-      expect(html).toContain("APP_IPHONE_DUO");
-      expect(html).toContain(locale === "fr" ? "emplacement iPhone Duo unique" : "single iPhone Duo slot");
+      expect(html).not.toContain("APP_IPHONE_DUO");
+      expect(html).toContain(locale === "fr" ? "emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil" : "iPhone Duo slot, with up to 10 screenshots per device size");
       expect(html).toContain(locale === "fr" ? "captures sélectionnées dans l’ordre" : "selected screenshots in order");
-      expect(html).toContain(locale === "fr" ? "10 maximum" : "at most 10");
+      expect(html).toContain(locale === "fr" ? "10 captures Duo maximum" : "up to 10 Duo screenshots in your selection");
       expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/specs"`);
     }
   });
