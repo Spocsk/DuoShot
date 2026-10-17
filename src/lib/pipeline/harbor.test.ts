@@ -3,14 +3,14 @@ import sharp from "sharp";
 import {
   DEMO_REVIEW_ID,
   HARBOR_SLIDES,
-  harborInnerSvg,
-  harborOuterSvg,
-  harborSlides,
+  harborSvg,
   EXAMPLE_ZIP_TREE,
   harborReviewJpeg,
   harborReviewPayload,
   isDemoReview,
 } from "./harbor";
+import { foldSafetyBand } from "../fold-detection";
+import { FOLD_SAFE_PT, HARBOR_SCALE } from "./harbor-screens";
 
 describe("harbor demo review", () => {
   it("exposes the Connect ZIP tree used on the landing", () => {
@@ -46,13 +46,47 @@ describe("harbor demo review", () => {
     expect(await harborReviewJpeg(9, "outer")).toBeNull();
   });
 
-  it("writes the demo in French for the French tool", () => {
-    expect(harborSlides("fr").map((slide) => slide.place)).toEqual(["Nord", "2,1 m", "Nord"]);
-    expect(harborSlides("en")).toBe(HARBOR_SLIDES);
-    const svg = harborInnerSvg(2007, 2853, harborSlides("en")[0]!);
-    expect(svg).toContain("West reef");
-    const outer = harborOuterSvg(1398, 2034, harborSlides("fr")[0]!);
-    expect(outer).toContain("1,4 m");
-    expect(outer).not.toContain("1.4 m");
+  it("keeps every inner text and card out of the horizontal portrait fold", () => {
+    const band = foldSafetyBand(2007, 2853, "portrait");
+    expect(FOLD_SAFE_PT.top * HARBOR_SCALE).toBeLessThanOrEqual(band.top);
+    expect(FOLD_SAFE_PT.bottom * HARBOR_SCALE).toBeGreaterThanOrEqual(band.top + band.height);
+    for (const locale of ["en", "fr"] as const) {
+      for (const index of HARBOR_SLIDES.keys()) {
+        const { svg } = harborSvg(index, "inner", locale)!;
+        const texts = [...svg.matchAll(/<text x="[\d.]+" y="([\d.]+)" font-size="([\d.]+)"/g)];
+        expect(texts.length).toBeGreaterThan(20);
+        for (const [, y, size] of texts) {
+          const baseline = Number(y);
+          const top = baseline - Number(size);
+          expect(baseline + Number(size) * 0.3 < FOLD_SAFE_PT.top || top > FOLD_SAFE_PT.bottom).toBe(true);
+        }
+        for (const [, y, h] of svg.matchAll(/<rect x="[\d.-]+" y="([\d.]+)" width="[\d.]+" height="([\d.]+)" rx/g)) {
+          const top = Number(y);
+          expect(top + Number(h) < FOLD_SAFE_PT.top || top > FOLD_SAFE_PT.bottom).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("writes the demo in the page language", () => {
+    const en = harborSvg(0, "inner", "en")!.svg;
+    const fr = harborSvg(0, "inner", "fr")!.svg;
+    expect(en).toContain("North Beach");
+    expect(en).toContain("1.4 m");
+    expect(fr).toContain("Plage Nord");
+    expect(fr).toContain("1,4 m");
+    expect(fr).not.toContain("1.4 m");
+  });
+
+  it("names each spot once on every screen", () => {
+    for (const locale of ["en", "fr"] as const) {
+      for (const index of HARBOR_SLIDES.keys()) {
+        for (const side of ["outer", "inner"] as const) {
+          const { svg } = harborSvg(index, side, locale)!;
+          const names = [...svg.matchAll(/>([^<]+)<\/text>/g)].map(([, label]) => label!).filter((label) => /Reef|Récif/.test(label));
+          expect(new Set(names).size).toBe(names.length);
+        }
+      }
+    }
   });
 });

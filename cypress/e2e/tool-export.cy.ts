@@ -2,7 +2,7 @@ describe("tool export", () => {
   it("keeps the English canvas and contextual panels readable on a phone", () => {
     cy.viewport(390, 844);
     cy.visitEn("/en/tool");
-    cy.contains("Your composition").should("be.visible");
+    cy.get('[data-testid="tool-sets"]').should("be.visible").and("contain", "Set 01");
     cy.contains("Compare").should("be.visible");
     cy.get('[data-testid="tool-tab-review"]').click();
     cy.get('[data-testid="readiness-report"]').scrollIntoView().should("be.visible");
@@ -27,7 +27,7 @@ describe("tool export", () => {
     cy.get('[data-testid="tool-zip-link"]').should("have.attr", "href", "https://storage.example/app.zip");
     cy.get('[data-testid="tool-export-delivery"]').should("contain", "1398 × 2034");
     cy.get('[data-testid="tool-export-delivery"]').should("contain", "duo-outer-portrait/01.png");
-    cy.get('[data-testid="tool-export-delivery"]').should("contain", "duo-inner-portrait/01.png");
+    cy.get('[data-testid="tool-export-delivery"]').should("not.contain", "duo-inner-portrait/01.png").and("contain", "APP_IPHONE_DUO");
   });
 
   it("opens the trial paywall when free exports are exhausted", () => {
@@ -41,7 +41,7 @@ describe("tool export", () => {
     });
     cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
-    cy.get('[data-testid="paywall"]').should("contain", "2 sets gratuits");
+    cy.get('[data-testid="paywall"]').should("contain", "2 exports gratuits");
   });
 
   it("blocks clone risk then allows export after assume", () => {
@@ -52,6 +52,8 @@ describe("tool export", () => {
     cy.dropScreens();
     cy.get('[data-testid="same-set-details"] .t-acc-head').click();
     cy.get('[data-testid="toggle-same-set"]').click();
+    cy.get('[data-testid="duo-slot-choice"] select').select("mix");
+    cy.get('[data-testid="duo-slot-choice"] input[type="checkbox"]').check();
     cy.get('[data-testid="tool-tab-adjust"]').click();
     cy.contains("summary", "Réglages avancés").click();
     cy.get('[data-testid="toggle-assume-clone"]').click();
@@ -90,6 +92,14 @@ describe("tool export", () => {
       outer: "cypress/fixtures/outer.png",
       inner: "cypress/fixtures/inner.png",
     });
+    // Landscape open screen is the natural pose: the fold is a vertical band across the middle width.
+    cy.get('[data-testid="tool-tab-adjust"]').click();
+    cy.get("details.tool-advanced > summary").click();
+    cy.get('[data-testid="toggle-hinge"]').click();
+    cy.get('[data-testid="preview-inner"] .division').should("be.visible").then(($band) => {
+      const band = $band[0]!.getBoundingClientRect();
+      expect(band.height).to.be.greaterThan(band.width);
+    });
     cy.acknowledgeQuality();
     cy.get('[data-testid="tool-download"]').click();
     cy.wait("@export");
@@ -113,7 +123,7 @@ describe("tool export", () => {
     cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "2007/2853");
     cy.get('[data-testid="tool-device-view"]').click();
     cy.get('[data-testid="preview-outer-canvas"]').should("have.attr", "data-aspect", "84.1/117.8");
-    cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "164.6/117.8");
+    cy.get('[data-testid="preview-inner-canvas"]').should("have.attr", "data-aspect", "117.8/164.6");
     cy.get('[data-testid="preview-outer-crop-controls"]').should("contain", "164,6");
     cy.get('[data-testid="tool-pixel-view"]').click();
     cy.get('[data-testid="preview-outer-canvas"]').should("have.attr", "data-aspect", "1398/2034");

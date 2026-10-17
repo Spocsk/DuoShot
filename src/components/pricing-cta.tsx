@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, type ButtonVariant } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PurchaseKind } from "@/lib/plans";
@@ -8,17 +9,20 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { toolPath } from "@/lib/site";
 import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
+import { captureAttribution } from "@/lib/attribution-client";
 
 export function PricingCta({
   locale,
   kind,
   label,
-  className = "ds-cta",
+  variant = "primary",
+  className,
   initialAvailable,
 }: {
   locale: Locale;
   kind: PurchaseKind;
   label: string;
+  variant?: ButtonVariant;
   className?: string;
   /** Server-rendered checkout availability; when omitted the button asks the API after mount. */
   initialAvailable?: boolean;
@@ -36,6 +40,7 @@ export function PricingCta({
   const [error, setError] = useState<string | null>(null);
 
   async function onUpgrade() {
+    captureAttribution();
     setBusy(true);
     setError(null);
     try {
@@ -45,7 +50,7 @@ export function PricingCta({
         router.push(dest);
         return;
       }
-      await startCheckout(kind, toolPath(locale));
+      await startCheckout(kind, toolPath(locale), t);
     } catch {
       setError(
         t("pricing_checkout_temporarily_unavailable_please"),
@@ -57,9 +62,9 @@ export function PricingCta({
 
   return (
     <>
-      <button type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
-        {!available ? t("pricing_payments_opening_soon") : busy ? t("pricing_opening") : label}
-      </button>
+      <Button as="button" variant={variant} type="button" data-testid={`pricing-cta-${kind}`} onClick={() => void onUpgrade()} className={className} disabled={busy || !available}>
+        {!available ? t("pricing_payments_unavailable") : busy ? t("pricing_opening") : label}
+      </Button>
       {error ? (
         <p className="ds-warn mt-2 text-sm" role="alert" data-testid={`pricing-error-${kind}`}>{error}</p>
       ) : null}

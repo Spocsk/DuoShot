@@ -217,6 +217,33 @@ export type Database = {
           },
         ]
       }
+      daily_page_views: {
+        Row: {
+          count: number
+          date: string
+          path: string
+          utm_campaign: string
+          utm_medium: string
+          utm_source: string
+        }
+        Insert: {
+          count?: number
+          date: string
+          path: string
+          utm_campaign?: string
+          utm_medium?: string
+          utm_source?: string
+        }
+        Update: {
+          count?: number
+          date?: string
+          path?: string
+          utm_campaign?: string
+          utm_medium?: string
+          utm_source?: string
+        }
+        Relationships: []
+      }
       dsar_requests: {
         Row: {
           created_at: string
@@ -876,6 +903,16 @@ export type Database = {
           p_workspace_id: string
         }
         Returns: number
+      }
+      increment_daily_page_view: {
+        Args: {
+          p_date: string
+          p_path: string
+          p_utm_source: string
+          p_utm_medium: string
+          p_utm_campaign: string
+        }
+        Returns: undefined
       }
       refund_abandoned_exports: {
         Args: never

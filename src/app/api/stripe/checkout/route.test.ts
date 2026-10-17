@@ -11,8 +11,8 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: vi.fn() }));
 vi.mock("@/lib/site", () => ({ getSiteUrl: () => "https://duoshot.example" }));
 
 const user = { id: "user-1", email: "a@example.com" };
-const request = (kind: string) => new Request("http://localhost/api/stripe/checkout", {
-  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, next: "/tool" }),
+const request = (kind: string, cookie?: string) => new Request("http://localhost/api/stripe/checkout", {
+  method: "POST", headers: { "Content-Type": "application/json", ...(cookie ? { cookie } : {}) }, body: JSON.stringify({ kind, next: "/tool" }),
 });
 
 const attemptRpc = async (_name: string, args: unknown) => ({ data: { attempt_id: "attempt-1", kind: (args as {p_kind:string}).p_kind, return_path: "/tool", expires_at: new Date(Date.now()+86400000).toISOString() }, error: null });
@@ -53,6 +53,88 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("POST /api/stripe/checkout", () => {
+  it.each(["indie_monthly", "indie_yearly", "studio_monthly", "studio_yearly", "pass30"])("propagates sanitized first-touch metadata to the session and payment/subscription for %s", async (kind) => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+    const create = vi.fn().mockResolvedValue({ id: "cs_attr", url: "https://checkout.stripe.test/session" });
+    vi.mocked(getStripe).mockReturnValue({
+      subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
+      checkout: { sessions: { create } },
+    } as never);
+    const cookie = `ds_attr=${encodeURIComponent(JSON.stringify({
+      utm_source: "Google!", utm_medium: "CPC", utm_campaign: "A".repeat(90), utm_content: "Hero_1", referrer: "NEWS.EXAMPLE",
+      kind: "forged", workspace_id: "forged", email: "a@example.com",
+    }))}`;
+    expect((await POST(request(kind, cookie))).status).toBe(200);
+    const metadata = { kind, workspace_id: "ws-1", utm_source: "google", utm_medium: "cpc", utm_campaign: "a".repeat(64), utm_content: "hero_1", referrer: "news.example" };
+    const params = create.mock.calls[0][0];
+    expect(params.metadata).toEqual(metadata);
+    expect(params[kind === "pass30" ? "payment_intent_data" : "subscription_data"]).toEqual({ metadata });
+    expect(params.allow_promotion_codes).toBe(true);
+    expect(params.client_reference_id).toBe("ws-1");
+  });
+
+  it.each(["indie_monthly", "pass30"])("varies retry idempotency keys only when sanitized attribution changes for %s", async (kind) => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+    const create = vi.fn().mockResolvedValue({ id: "cs_retry", url: "https://checkout.stripe.test/session" });
+    vi.mocked(getStripe).mockReturnValue({
+      subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
+      checkout: { sessions: { create } },
+    } as never);
+    // The RPC keeps returning the same attempt without a saved session, as after a lost response.
+    const attributions = [
+      { utm_source: "google", utm_medium: "cpc" },
+      { utm_medium: "CPC", utm_source: "Google!", ignored: "value" },
+      { utm_source: "google", utm_medium: "organic" },
+      {},
+    ];
+    for (const attribution of attributions) {
+      const cookie = `ds_attr=${encodeURIComponent(JSON.stringify(attribution))}`;
+      expect((await POST(request(kind, cookie))).status).toBe(200);
+    }
+    const keys = create.mock.calls.map(([, options]) => options.idempotencyKey);
+    expect(keys[0]).toMatch(/^duoshot-checkout-attempt-1-[a-f0-9]{12}$/);
+    expect(keys[1]).toBe(keys[0]);
+    expect(keys[2]).toMatch(/^duoshot-checkout-attempt-1-[a-f0-9]{12}$/);
+    expect(keys[2]).not.toBe(keys[0]);
+    expect(keys[3]).toBe("duoshot-checkout-attempt-1");
+  });
+
+  it.each([
+    ["pass30", "studio_yearly"], ["indie_yearly", "pass30"],
+  ])("keeps attribution on the reused %s attempt when %s was requested", async (selectedKind, requestedKind) => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+    vi.mocked(createAdminSupabase).mockReturnValue(createSupabaseMock({
+      rpc: (name, args) => attemptRpc(name, { ...(args as object), p_kind: selectedKind }),
+    }) as never);
+    const create = vi.fn().mockResolvedValue({ id: "cs_reused", url: "https://checkout.stripe.test/session" });
+    vi.mocked(getStripe).mockReturnValue({
+      subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
+      checkout: { sessions: { create } },
+    } as never);
+    const cookie = `ds_attr=${encodeURIComponent(JSON.stringify({ utm_source: "first", referrer: "news.example" }))}`;
+    expect((await POST(request(requestedKind, cookie))).status).toBe(200);
+    const metadata = { kind: selectedKind, workspace_id: "ws-1", utm_source: "first", referrer: "news.example" };
+    const params = create.mock.calls[0][0];
+    expect(params.metadata).toEqual(metadata);
+    expect(params[selectedKind === "pass30" ? "payment_intent_data" : "subscription_data"]).toEqual({ metadata });
+  });
+
+  it.each([undefined, "ds_attr=%E0%A4%A", "ds_attr={broken", "ds_attr=null", "ds_attr=%5B%5D"])("keeps checkout working without usable attribution (%s)", async (cookie) => {
+    vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+    const create = vi.fn().mockResolvedValue({ id: "cs_no_attr", url: "https://checkout.stripe.test/session" });
+    vi.mocked(getStripe).mockReturnValue({
+      subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
+      checkout: { sessions: { create } },
+    } as never);
+    expect((await POST(request("indie_monthly", cookie))).status).toBe(200);
+    expect(create.mock.calls[0][0].metadata).toEqual({ kind: "indie_monthly", workspace_id: "ws-1" });
+    expect(create.mock.calls[0][0].subscription_data.metadata).toEqual({ kind: "indie_monthly", workspace_id: "ws-1" });
+    expect(create.mock.calls[0][1]).toEqual({ idempotencyKey: "duoshot-checkout-attempt-1" });
+  });
+
   it("requires a session and a known plan", async () => {
     vi.mocked(createServerSupabase).mockResolvedValue(createSupabaseMock({ user: null }) as never);
     expect((await POST(request("indie_monthly"))).status).toBe(401);
@@ -82,26 +164,31 @@ describe("POST /api/stripe/checkout", () => {
     expect(getStripe).not.toHaveBeenCalled();
   });
 
-  it("uses the stable Indie price and linked customer", async () => {
+  it.each([
+    ["indie_monthly", "price_indie"],
+    ["studio_monthly", "price_studio"],
+  ])("uses the stable monthly price and linked customer with promotion codes for %s", async (kind, price) => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
     const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     vi.mocked(getStripe).mockReturnValue({
       subscriptions: { list: vi.fn().mockResolvedValue({ data: [] }) },
       checkout: { sessions: { create } },
     } as never);
-    const { status, body } = await readJson(await POST(request("indie_monthly")));
+    const { status, body } = await readJson(await POST(request(kind)));
     expect(status).toBe(200);
     expect(body.url).toBe("https://checkout.stripe.test/session");
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
-      customer: "cus_1", line_items: [{ price: "price_indie", quantity: 1 }],
+      customer: "cus_1", line_items: [{ price, quantity: 1 }],
+      allow_promotion_codes: true,
       billing_address_collection: "required",
     }), expect.any(Object));
+    expect(create.mock.calls[0][0]).not.toHaveProperty("discounts");
   });
 
   it.each([
     ["indie_yearly", "price_indie_yearly"],
     ["studio_yearly", "price_studio_yearly"],
-  ])("uses the stable annual price for %s", async (kind, price) => {
+  ])("uses the stable annual price with promotion codes for %s", async (kind, price) => {
     vi.mocked(createServerSupabase).mockResolvedValue(workspace());
     const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     vi.mocked(getStripe).mockReturnValue({
@@ -111,8 +198,10 @@ describe("POST /api/stripe/checkout", () => {
     expect((await POST(request(kind))).status).toBe(200);
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
       line_items: [{ price, quantity: 1 }],
+      allow_promotion_codes: true,
       metadata: expect.objectContaining({ kind }),
     }), expect.any(Object));
+    expect(create.mock.calls[0][0]).not.toHaveProperty("discounts");
   });
 
   it("persists a new Stripe customer through the server-only client", async () => {
@@ -160,7 +249,7 @@ describe("POST /api/stripe/checkout", () => {
       expect(create).not.toHaveBeenCalled();
     });
 
-    it("opens a one-time payment Checkout without subscription data", async () => {
+    it("opens a one-time payment Checkout with promotion codes and without subscription data", async () => {
       vi.mocked(createServerSupabase).mockResolvedValue(workspace());
       vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
       const create = vi.fn().mockResolvedValue({ id: "cs_pass", url: "https://checkout.stripe.test/pass" });
@@ -171,6 +260,7 @@ describe("POST /api/stripe/checkout", () => {
       const params = create.mock.calls[0][0];
       expect(params).toEqual(expect.objectContaining({
         mode: "payment",
+        allow_promotion_codes: true,
         customer: "cus_1",
         client_reference_id: "ws-1",
         line_items: [{ price: "price_pass30", quantity: 1 }],
@@ -178,6 +268,7 @@ describe("POST /api/stripe/checkout", () => {
         payment_intent_data: { metadata: { kind: "pass30", workspace_id: "ws-1" } },
       }));
       expect(params).not.toHaveProperty("subscription_data");
+      expect(params).not.toHaveProperty("discounts");
     });
 
     it("keeps subscriptions in subscription mode when the pass is configured", async () => {

@@ -1,6 +1,7 @@
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import JSZip from "jszip";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import sharp from "sharp";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryBuilder } from "@/test/supabase-mock";
 import { fakeApple } from "@/test/asc-apple-mock";
 import type { RenderJob } from "../render/jobs";
@@ -28,12 +29,17 @@ const files = {
   "harbor/iphone-69-portrait/1320x2868/01.png": randomBytes(5000),
 };
 
-async function admin({ createdAt = new Date().toISOString(), connected = true, role = "owner", plan = "indie", workspaceId = "ws-1" } = {}) {
+async function admin({ createdAt = new Date().toISOString(), connected = true, role = "owner", plan = "indie", workspaceId = "ws-1", duoOrder = undefined as string[] | undefined, manifest = undefined as unknown, rawDuoCount = 1, zipFiles = files } = {}) {
   const zip = new JSZip();
-  for (const [path, content] of Object.entries(files)) zip.file(path, content);
+  for (const [path, content] of Object.entries(zipFiles)) zip.file(path, content);
+  for (let index = 2; index <= rawDuoCount; index++) {
+    for (const side of ["outer", "inner"]) zip.file(`harbor/duo-${side}-portrait/${String(index).padStart(2, "0")}.png`, files[`harbor/duo-${side}-portrait/01.png` as keyof typeof files]);
+  }
+  if (duoOrder) zip.file("harbor/duo-slot.json", JSON.stringify({ displayType: "APP_IPHONE_DUO", files: duoOrder }));
+  if (manifest !== undefined) zip.file("harbor/duo-slot.json", JSON.stringify(manifest));
   const archive = await zip.generateAsync({ type: "uint8array" });
   const sealed = sealSecret(pem, master, "ws-1");
-  const rpc = vi.fn<(name: string, args: unknown) => Promise<{ data: boolean; error: null }>>(async () => ({ data: true, error: null }));
+  const rpc = vi.fn<(name: string, args: unknown) => Promise<{ data: boolean; error: { message: string } | null }>>(async () => ({ data: true, error: null }));
   const client = {
     from: (table: string) => createQueryBuilder(
       table === "workspace_members" ? { data: { workspace_id: workspaceId, role }, error: null }
@@ -48,13 +54,47 @@ async function admin({ createdAt = new Date().toISOString(), connected = true, r
 const instant = async () => {};
 const progressCalls = (rpc: ReturnType<typeof vi.fn>) => rpc.mock.calls.filter(([name]) => name === "report_render_progress").map(([, args]) => (args as { p_progress: { files: { state: string }[] } }).p_progress);
 
+beforeAll(async () => {
+  files["harbor/duo-outer-portrait/01.png"] = await screenshot(1398, 2034);
+  files["harbor/duo-inner-portrait/01.png"] = await screenshot(2007, 2853);
+});
+
+function screenshot(width: number, height: number, format: "png" | "jpeg" | "webp" = "png") {
+  return sharp({ create: { width, height, channels: 3, background: "red" } }).toFormat(format).toBuffer();
+}
+
 beforeEach(() => vi.stubEnv("ASC_ENCRYPTION_KEY", master.toString("base64")));
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("App Store Connect upload planning", () => {
-  it("maps no Duo slot until Apple ships a display type, and 6.9\" to APP_IPHONE_67", () => {
-    expect(ascTargetsForExport(false)).toEqual({ targets: [], skipped: ["duo-outer", "duo-inner"] });
-    expect(ascTargetsForExport(true).targets).toEqual([{ slot: "iphone-69", displayType: "APP_IPHONE_67" }]);
+  it("maps both Duo screen sizes to one APP_IPHONE_DUO display type", () => {
+    expect(ascTargetsForExport(false)).toEqual({ targets: [
+      { slot: "duo-outer", displayType: "APP_IPHONE_DUO" },
+      { slot: "duo-inner", displayType: "APP_IPHONE_DUO" },
+    ], skipped: [] });
+    expect(ascTargetsForExport(true).targets.at(-1)).toEqual({ slot: "iphone-69", displayType: "APP_IPHONE_67" });
+  });
+
+  it("rejects legacy raw sets over ten rather than trimming each side", () => {
+    const paths = Array.from({ length: 6 }, (_, index) => String(index + 1).padStart(2, "0")).flatMap((index) => [
+      `app/duo-outer-portrait/${index}.png`, `app/duo-inner-portrait/${index}.png`,
+    ]);
+    expect(() => planAscFiles(paths, ascTargetsForExport(false).targets)).toThrow("DUO_SLOT_LIMIT");
+    expect(planAscFiles(paths.slice(0, 10), ascTargetsForExport(false).targets)).toHaveLength(10);
+  });
+
+  it("honors selected mix order from the ZIP manifest", () => {
+    const paths = ["app/duo-outer-landscape/03.jpg", "app/duo-inner-landscape/01.jpg"];
+    expect(planAscFiles(paths, ascTargetsForExport(false).targets, [...paths].reverse()).map((file) => file.path)).toEqual([...paths].reverse());
+  });
+
+  it("does not mistake app or client names for screenshot folders", () => {
+    const paths = [
+      "duo-outer-portrait/duo-inner-landscape/duo-outer-portrait/01.png",
+      "duo-outer-portrait/duo-inner-landscape/duo-inner-portrait/02.png",
+      "duo-outer-portrait/duo-inner-landscape/iphone-69-portrait/1320x2868/01.png",
+    ];
+    expect(planAscFiles(paths, ascTargetsForExport(true).targets, paths.slice(0, 2)).map((file) => file.path)).toEqual(paths);
   });
 
   it("keeps only the largest 6.9\" size, in slide order, with or without a client folder", () => {
@@ -74,6 +114,86 @@ describe("App Store Connect upload planning", () => {
 });
 
 describe("asc_upload job", () => {
+  it.each([
+    ["outer", "portrait", 1398, 2034], ["outer", "landscape", 2034, 1398],
+    ["inner", "portrait", 2007, 2853], ["inner", "landscape", 2853, 2007],
+  ] as const)("accepts PNG and JPEG for %s %s (%i x %i)", async (side, orientation, width, height) => {
+    const zipFiles = Object.fromEntries(await Promise.all((["png", "jpeg"] as const).map(async (format, index) => [
+      `harbor/duo-${side}-${orientation}/0${index + 1}.${format === "jpeg" ? "jpg" : "png"}`, await screenshot(width, height, format),
+    ]))) as typeof files;
+    const apple = fakeApple();
+    const { client } = await admin({ zipFiles });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect(apple.sets).toEqual([{ id: expect.any(String), displayType: "APP_IPHONE_DUO" }]);
+    expect(apple.shots.size).toBe(2);
+    const creation = apple.calls.find((call) => call.method === "POST" && new URL(call.url).pathname === "/v1/appScreenshotSets");
+    expect(creation?.body).toMatchObject({ data: { relationships: { appStoreVersionLocalization: { data: { id: "loc-1" } } } } });
+  });
+
+  it.each(["phone-size", "wrong-size", "wrong-format", "corrupt"])("rejects %s Duo bytes before any API request", async (kind) => {
+    const invalid = kind === "corrupt" ? Buffer.from("not an image")
+      : kind === "wrong-format" ? await screenshot(2007, 2853, "webp")
+      : kind === "phone-size" ? await screenshot(1320, 2868) : await screenshot(2853, 2008);
+    const apple = fakeApple();
+    const { client } = await admin({ zipFiles: { ...files, "harbor/duo-inner-portrait/01.png": invalid } });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(true).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_INVALID" });
+    expect(apple.calls).toHaveLength(0);
+  });
+
+  it.each([
+    null,
+    {},
+    { displayType: "APP_IPHONE_DUO" },
+    { displayType: "APP_IPHONE_DUO", files: null },
+    { displayType: "APP_IPHONE_DUO", files: [42] },
+    { displayType: "APP_IPHONE_67", files: [] },
+  ])("rejects malformed selection manifests before contacting Apple (%j)", async (manifest) => {
+    const apple = fakeApple();
+    const { client } = await admin({ manifest });
+    const response = await executeAscUpload(client, job(), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_DUO_SELECTION" });
+    expect(apple.calls).toHaveLength(0);
+  });
+
+  it("reads the ZIP manifest to upload a mix in selection order", async () => {
+    const apple = fakeApple();
+    const { client } = await admin({ duoOrder: ["harbor/duo-inner-portrait/01.png", "harbor/duo-outer-portrait/01.png"] });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect([...apple.shots.values()].map((shot) => shot.fileName)).toEqual(["duoshot-duo-inner-portrait-01.png", "duoshot-duo-outer-portrait-01.png"]);
+  });
+  it("rejects an overfull legacy ZIP before calling Apple", async () => {
+    const apple = fakeApple();
+    const { client } = await admin({ rawDuoCount: 6 });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "DUO_SLOT_LIMIT" });
+    expect(apple.calls).toHaveLength(0);
+  });
+
+  it("uploads both Duo sizes into exactly one screenshot set", async () => {
+    const apple = fakeApple();
+    const { client } = await admin();
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    expect(apple.sets).toEqual([{ id: expect.any(String), displayType: "APP_IPHONE_DUO" }]);
+    const shots = [...apple.shots.values()];
+    expect(shots.map((shot) => shot.fileName)).toEqual(["duoshot-duo-outer-portrait-01.png", "duoshot-duo-inner-portrait-01.png"]);
+    expect(apple.calls.filter((call) => call.method === "POST" && new URL(call.url).pathname === "/v1/appScreenshotSets")).toHaveLength(1);
+    expect(apple.calls.filter((call) => call.method === "PATCH" && call.url.includes("/relationships/appScreenshots"))).toHaveLength(1);
+  });
+
+  it.each([false, true])("counts both Duo sizes and existing shots together before writing (replace: %s)", async (replaceExisting) => {
+    const apple = fakeApple({ sets: [{ id: "duo", displayType: "APP_IPHONE_DUO" }], existing: { duo: Array.from({ length: 9 }, (_, i) => `old-${i}`) } });
+    const { client } = await admin();
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_SET_FULL" });
+    expect(apple.calls.every((call) => call.method === "GET")).toBe(true);
+  });
+
+
   it("uploads the export's 6.9\" files, reports per-file progress and commits the result", async () => {
     const apple = fakeApple({ parts: 2, states: ["UPLOAD_COMPLETE", "COMPLETE"] });
     const { client, rpc } = await admin();
@@ -87,7 +207,7 @@ describe("asc_upload job", () => {
     expect(reports[0]!.files.map((file) => file.state)).toEqual(["pending", "pending"]);
     expect(reports.at(-1)).toMatchObject({ total: 2, done: 2, files: [{ state: "complete" }, { state: "complete" }] });
     const complete = rpc.mock.calls.find(([name]) => name === "complete_render")!;
-    expect(complete[1]).toMatchObject({ p_job: "job-1", p_lease: "lease-1", p_error: undefined, p_result: { uploaded: 2, reordered: true, skipped: ["duo-outer", "duo-inner"] } });
+    expect(complete[1]).toMatchObject({ p_job: "job-1", p_lease: "lease-1", p_error: undefined, p_result: { uploaded: 2, reordered: true, skipped: [] } });
     expect(apple.calls.some((call) => call.url.includes("/relationships/appScreenshots"))).toBe(true);
   });
 
@@ -131,6 +251,38 @@ describe("asc_upload job", () => {
     ]);
   });
 
+  it("cleans up a reservation even when Apple returns no upload operations", async () => {
+    const apple = fakeApple({ parts: 0 });
+    const { client, rpc } = await admin();
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_UPLOAD_FAILED" });
+    const created = [...apple.shots.keys()];
+    expect(created).toHaveLength(1);
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname))
+      .toEqual(created.map((id) => `/v1/appScreenshots/${id}`));
+    expect(apple.calls.some((call) => call.method === "PUT" || call.method === "PATCH")).toBe(false);
+    expect(progressCalls(rpc).at(-1)!.files[0]).toMatchObject({ state: "failed", error: "ASC_UPLOAD_FAILED" });
+  });
+
+  it.each(["response", "exception"])("keeps live replacements when recording the completed job fails (%s)", async (failure) => {
+    const previous = ["old-1", "old-2"];
+    const apple = fakeApple({ sets: [{ id: "duo", displayType: "APP_IPHONE_DUO" }], existing: { duo: [...previous] } });
+    const { client, rpc } = await admin();
+    rpc.mockImplementation(async (name) => {
+      if (name === "complete_render") {
+        if (failure === "exception") throw new Error("database unavailable");
+        return { data: false, error: { message: "database unavailable" } };
+      }
+      return { data: true, error: null };
+    });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting: true, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(apple.existing.duo).toEqual([]);
+    expect(apple.calls.filter((call) => call.method === "DELETE").map((call) => new URL(call.url).pathname))
+      .toEqual(previous.map((id) => `/v1/appScreenshots/${id}`));
+    expect(await response.json()).toEqual({ error: "ASC_RETRY_UNSAFE" });
+    expect(progressCalls(rpc).at(-1)!.files.every((file) => file.state === "complete")).toBe(true);
+  });
+
   it.each([false, true])("checks set capacity before touching anything (replaceExisting: %s)", async (replaceExisting) => {
     const apple = fakeApple({ sets: [{ id: "set-67", displayType: "APP_IPHONE_67" }], existing: { "set-67": Array.from({ length: 9 }, (_, i) => `old-${i}`) } });
     const { client } = await admin();
@@ -155,6 +307,32 @@ describe("asc_upload job", () => {
     const uploaded = [...apple.shots.keys()];
     expect(apple.calls.at(-1)).toMatchObject({ method: "PATCH", body: { data: uploaded.map((id) => ({ type: "appScreenshots", id })) } });
     expect(rpc.mock.calls.find(([name]) => name === "complete_render")![1]).toMatchObject({ p_result: { uploaded: 2, replaced: 8 } });
+  });
+
+  it.each([false, true])("finalizes a mixed Duo selection once on the shared set (replace: %s)", async (replaceExisting) => {
+    const previous = ["old-1", "old-2"];
+    const apple = fakeApple({ sets: [{ id: "duo", displayType: "APP_IPHONE_DUO" }], existing: { duo: [...previous] } });
+    const { client, rpc } = await admin({ duoOrder: ["harbor/duo-inner-portrait/01.png", "harbor/duo-outer-portrait/01.png"] });
+    const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, replaceExisting, targets: ascTargetsForExport(false).targets } }), { fetch: apple.fetch, sleep: instant });
+    expect(response.status).toBe(200);
+    const uploaded = [...apple.shots.keys()];
+    expect([...apple.shots.values()].map((shot) => [shot.set, shot.fileName])).toEqual([
+      ["duo", "duoshot-duo-inner-portrait-01.png"], ["duo", "duoshot-duo-outer-portrait-01.png"],
+    ]);
+    expect(apple.calls.filter((call) => call.method === "POST" && new URL(call.url).pathname === "/v1/appScreenshotSets")).toHaveLength(0);
+    expect(apple.calls.filter((call) => call.method === "GET" && new URL(call.url).pathname === "/v1/appScreenshotSets/duo/appScreenshots")).toHaveLength(1);
+    const reorders = apple.calls.filter((call) => call.method === "PATCH" && call.url.includes("/relationships/appScreenshots"));
+    expect(reorders).toHaveLength(1);
+    expect(reorders[0]).toMatchObject({
+      url: "https://api.appstoreconnect.apple.com/v1/appScreenshotSets/duo/relationships/appScreenshots",
+      body: { data: (replaceExisting ? uploaded : [...previous, ...uploaded]).map((id) => ({ type: "appScreenshots", id })) },
+    });
+    const methods = apple.calls.map((call) => `${call.method} ${new URL(call.url).pathname}`);
+    expect(methods.filter((call) => call.startsWith("DELETE"))).toEqual(replaceExisting ? previous.map((id) => `DELETE /v1/appScreenshots/${id}`) : []);
+    if (replaceExisting) {
+      expect(methods.findIndex((call) => call.startsWith("DELETE"))).toBeGreaterThan(methods.findLastIndex((call) => /^GET \/v1\/appScreenshots\/shot-/.test(call)));
+    }
+    expect(rpc.mock.calls.find(([name]) => name === "complete_render")![1]).toMatchObject({ p_result: { uploaded: 2, replaced: replaceExisting ? 2 : 0, reordered: true, skipped: [] } });
   });
 
   it("keeps the previous screenshots when a replacing upload fails", async () => {

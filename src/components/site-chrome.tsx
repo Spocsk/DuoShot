@@ -1,18 +1,22 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Locale } from "@/lib/specs";
 import { getTranslator } from "@/lib/i18n";
 import { localePrefix, localizedPath, pricingPath, rejectionPath } from "@/lib/site";
 import { HeaderAuth } from "@/components/header-auth";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { SiteNav } from "@/components/site-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsSettingsButton } from "@/components/analytics-settings-button";
+import { SCREENSHOT_SIZES, sizePageCopy } from "@/lib/screenshot-pages";
 
 type Props = {
   locale: Locale;
   path: string;
+  variant?: "full" | "reduced";
 };
 
-export function SiteHeader({ locale, path }: Props) {
+export function SiteHeader({ locale, path, variant = "full" }: Props) {
   const { t } = getTranslator(locale);
   const otherHref = locale === "fr" ? localizedPath("en", path) : localizedPath("fr", path);
   const prefix = localePrefix(locale);
@@ -30,20 +34,30 @@ export function SiteHeader({ locale, path }: Props) {
         {t("skip_main")}
       </a>
       <div className="mx-auto flex min-h-[var(--header-h)] max-w-6xl items-center justify-between gap-x-4 px-5">
-        <Link href={home} className="site-wordmark relative z-[60] font-display text-xl tracking-tight">
-          DuoShot
+        <Link href={home} className="site-wordmark relative z-[60] inline-flex shrink-0 items-center gap-2 font-display text-xl tracking-tight">
+          <Image
+            src="/brand/duoshot-logo.png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 rounded-md"
+            loading="eager"
+            unoptimized
+          />
+          <span>DuoShot</span>
         </Link>
         <div className="flex min-w-0 items-center justify-end gap-x-2">
-          <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
+          {variant === "full" ? <nav className="hidden items-center justify-end gap-x-3 text-sm md:flex">
             {links.map((link) => (
               <Link key={link.testId} href={link.href} data-testid={link.testId} className="ds-nav-link" aria-current={current === link.href ? "page" : undefined}>
                 {link.label}
               </Link>
             ))}
-            <HeaderAuth locale={locale} />
-          </nav>
+            <HeaderAuth locale={locale} secondarySignup={path === "/"} />
+          </nav> : null}
           <LocaleSwitch locale={locale} href={otherHref} />
-          <SiteNav locale={locale} prefix={prefix} current={current} />
+          <div className={variant === "full" ? "hidden md:block" : undefined}><ThemeToggle /></div>
+          {variant === "full" ? <SiteNav locale={locale} prefix={prefix} current={current} /> : null}
         </div>
       </div>
     </header>
@@ -60,6 +74,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <span data-testid="footer-privacy-line">{t("trust_retention")}</span>
         <span>{t("footer_stripe")}</span>
         <Link href={`${prefix}/specs`}>{t("nav_specs")}</Link>
+        {SCREENSHOT_SIZES.map((size) => <Link key={size} href={localizedPath(locale, `/${size}`)} title={sizePageCopy(locale, size).title}>{size.replace("x", " × ")}</Link>)}
         <Link href={`${prefix}/legal`}>{t("footer_legal")}</Link>
         <Link href={`${prefix}/terms`}>{t("footer_terms")}</Link>
         <Link href={`${prefix}/privacy`}>{t("footer_privacy")}</Link>
@@ -69,6 +84,15 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t("footer_why")}</Link>
         <Link href={rejectionPath(locale)} data-testid="footer-reject">{t("footer_reject")}</Link>
         <Link href="/llms.txt">llms.txt</Link>
+        <a
+          href="https://fazier.com/launches/duoshot.site"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="footer-fazier"
+          className="ds-link inline-flex min-h-6 items-center gap-2 rounded-md border border-[var(--line)] px-3 py-2"
+        >
+          {t("footer_fazier")} <span aria-hidden="true">↗</span>
+        </a>
       </div>
     </footer>
   );

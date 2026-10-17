@@ -1,8 +1,10 @@
+
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
-import { localePrefix } from "@/lib/site";
+import { localePrefix, localizedPath } from "@/lib/site";
 
 const COLS = ["alpha", "clone", "hinge", "zip"] as const;
 
@@ -20,19 +22,20 @@ export function WhyNotAiPage({ locale }: { locale: Locale }) {
           <p>{t("why_p2")}</p>
           <p>{t("why_p3")}</p>
         </div>
-        <p className="ds-label mt-8">{t("example_listing")}</p>
+        <p className="ds-label mt-8">{t("why_comparison_label")}</p>
         <div className="mt-12 space-y-10">
           {COLS.map((key) => (
             <section key={key} className="border-t border-[var(--line)] pt-6">
               <h2 className="font-display text-3xl">{t(`ai_${key}_title`)}</h2>
               <p className="mt-3 text-[var(--muted)]">{t(`ai_${key}_ai`)}</p>
               <p className="mt-2">{t(`ai_${key}_us`)}</p>
+              {key === "hinge" && <Link href={localizedPath(locale, "/specs")} className="ds-link mt-4 inline-block">{t("why_specs_link")}</Link>}
             </section>
           ))}
         </div>
-        <Link href={`${prefix}/tool`} className="ds-cta mt-12 inline-flex">
+        <Button as="link" variant="primary" href={`${prefix}/tool`} className="mt-12 inline-flex">
           {t("cta_tool")}
-        </Link>
+        </Button>
       </main>
       <SiteFooter locale={locale} />
     </div>

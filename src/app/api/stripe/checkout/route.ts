@@ -9,6 +9,7 @@ import type { Tables } from "@/lib/supabase/types";
 import { getSiteUrl } from "@/lib/site";
 import { createHash } from "node:crypto";
 import { serverEnv } from "@/lib/env";
+import { readAttribution } from "@/lib/attribution";
 
 export const runtime = "nodejs";
 
@@ -103,7 +104,17 @@ async function checkout(request: Request) {
   if (oneTime && !passCheckoutAvailable(user.id)) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
   const selectedPrice = priceIdFor(selectedKind);
   if (!selectedPrice) return NextResponse.json({ error: "BILLING_UNCONFIGURED" }, { status: 503 });
-  const metadata = { kind: selectedKind, workspace_id: membership.workspace_id };
+  const attribution = readAttribution(request.headers.get("cookie"), new URL(request.url).hostname);
+  const attributionEntries = Object.entries(attribution).sort(([a], [b]) => a.localeCompare(b));
+  // Cookies can change while an attempt is reused; bind retries to the metadata sent to Stripe.
+  const attributionSuffix = attributionEntries.length
+    ? `-${createHash("sha256").update(JSON.stringify(attributionEntries)).digest("hex").slice(0, 12)}`
+    : "";
+  const metadata = {
+    ...attribution,
+    kind: selectedKind,
+    workspace_id: membership.workspace_id,
+  };
   const session = await stripe.checkout.sessions.create({
     ...(oneTime
       ? { mode: ONE_TIME_CATALOG[selectedKind].mode, payment_intent_data: { metadata } }
@@ -113,6 +124,7 @@ async function checkout(request: Request) {
     customer: customerId,
     client_reference_id: membership.workspace_id,
     line_items: [{ price: selectedPrice, quantity: 1 }],
+    allow_promotion_codes: true,
     billing_address_collection: "required",
     customer_update: { address: "auto", name: "auto" },
     tax_id_collection: { enabled: true },
@@ -120,7 +132,7 @@ async function checkout(request: Request) {
     success_url: `${origin}${nextPath}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}${nextPath}?checkout=cancel`,
     metadata,
-  }, { idempotencyKey: `duoshot-checkout-${attempt.attempt_id}` });
+  }, { idempotencyKey: `duoshot-checkout-${attempt.attempt_id}${attributionSuffix}` });
   const { error: saveError } = await admin.from("checkout_attempts").update({ session_id: session.id }).eq("workspace_id", membership.workspace_id).eq("attempt_id", attempt.attempt_id);
   if (saveError) return NextResponse.json({ error: "CHECKOUT_UNAVAILABLE" }, { status: 503 });
   return NextResponse.json({ url: session.url });

@@ -97,7 +97,7 @@ function mountSequence(gsap: Gsap, node: HTMLElement): (() => void) | null {
     const counter = { value: 0 };
     handOff(segment(1), 1, importPanel, inspectPanel)
       .fromTo(q(".studio-sequence-analysis .studio-frame-guide i"), { scale: 0 }, { scale: 1, duration: 0.3, stagger: 0.06, ease: "power3.out" }, 0.4)
-      .fromTo(q(".studio-sequence-analysis .studio-hinge-band"), { autoAlpha: 0, scaleY: 0.2 }, { autoAlpha: 1, scaleY: 1, duration: 0.35 }, 0.5)
+      .fromTo(q(".studio-sequence-analysis .studio-hinge-band"), { autoAlpha: 0, scaleX: 0.2 }, { autoAlpha: 1, scaleX: 1, duration: 0.35 }, 0.5)
       .fromTo(counter, { value: 0 }, {
         value: 83, duration: 0.4, ease: "power1.out",
         onUpdate: () => { score.textContent = `${Math.round(counter.value)} / 100`; },

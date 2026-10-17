@@ -211,12 +211,14 @@ export function createAscClient(credentials: AscCredentials, options: AscClientO
         },
       });
       const operations = reserved.attributes?.uploadOperations ?? [];
-      if (!operations.length) throw new AscError("ASC_UPLOAD_FAILED");
+      // Return the reservation id even when its operations are missing, so the
+      // worker can track and delete it if uploadParts rejects the response.
       return { id: reserved.id, operations };
     },
 
     /** PUTs each part exactly as Apple describes it: method, URL, headers and byte range. No JWT. */
     async uploadParts(operations: UploadOperation[], bytes: Uint8Array) {
+      if (!operations.length) throw new AscError("ASC_UPLOAD_FAILED");
       // Validate every operation before sending any byte.
       if (!operations.every(isAllowedUploadOperation)) throw new AscError("ASC_UPLOAD_OPERATION_INVALID");
       await mapLimit(operations, 3, async (operation) => {

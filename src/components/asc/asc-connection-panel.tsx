@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import type { MessageKey } from "@/lib/i18n/types";
@@ -127,9 +129,9 @@ export function AscConnectionPanel({ locale }: { locale: Locale }) {
             {tf("asc_connected_detail", { key: status.keyId ?? "", issuer: status.issuerId ?? "", date: verified })}
           </p>
           {status.owner ? (
-            <button type="button" className="ds-danger mt-5" disabled={busy} onClick={() => void revoke()} data-testid="asc-revoke">
+            <Button as="button" variant="danger" type="button" className="mt-5" disabled={busy} onClick={() => void revoke()} data-testid="asc-revoke">
               {t("asc_revoke")}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : (
@@ -173,9 +175,9 @@ export function AscConnectionPanel({ locale }: { locale: Locale }) {
               <span id={`${ids}-p8-hint`} className="text-xs text-[var(--muted)]">{t("asc_p8_hint")}</span>
             </label>
             <div>
-              <button type="submit" className="ds-cta" disabled={busy || !issuerId || !keyId || !privateKey} data-testid="asc-connect">
+              <Button as="button" variant="primary" type="submit"  disabled={busy || !issuerId || !keyId || !privateKey} data-testid="asc-connect">
                 {busy ? t("asc_connecting") : t("asc_connect")}
-              </button>
+              </Button>
             </div>
           </form>
         </>

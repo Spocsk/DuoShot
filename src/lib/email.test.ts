@@ -46,5 +46,9 @@ describe("textToHtml", () => {
     expect(html).toContain("Bonjour &lt;b&gt;vous&lt;/b&gt;");
     expect(html).toContain('<a href="https://duoshot.site/api/waitlist/confirm?token=a&amp;lang=fr"');
     expect(html.match(/<p /g)).toHaveLength(3);
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain("@media(prefers-color-scheme:dark)");
+    expect(html).toContain("background:#0f1619!important;color:#edf3f5!important");
+    expect(html).toContain("background:#f7f9fa;color:#172126");
   });
 });

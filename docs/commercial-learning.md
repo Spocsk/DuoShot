@@ -6,7 +6,7 @@ Statut : protocole prêt ; recrutement, publications et envois non réalisés. J
 
 ## Promesse et démonstration
 
-DuoShot — App Store Screenshot QA prépare et vérifie les fichiers de captures fermé/ouvert. Livrable : deux séries aux dimensions attendues dans un ZIP à décompresser, puis dépôt manuel quand App Store Connect ouvre les emplacements Duo. Les contrôles ne garantissent pas l’approbation Apple. Harbor est une app fictive de démonstration.
+DuoShot — App Store Screenshot QA prépare et vérifie les fichiers de captures fermé/ouvert. Livrable : sélection externe, interne ou mix dans un ZIP, 10 captures maximum par langue pour l’emplacement Duo unique ; dépôt pas encore testé par nous. Les contrôles ne garantissent pas l’approbation Apple. Harbor est une app fictive de démonstration.
 
 Démonstration de trois minutes : importer une paire, montrer les pixels exportés, corriger un cadrage, distinguer contrôles techniques et confirmation humaine, télécharger/décompresser, montrer les fichiers. Variante Studio : créer une revue, obtenir une décision, révoquer le lien. Dire explicitement que les projets restent sur l’appareil et ne sont pas synchronisés.
 

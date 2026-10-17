@@ -1,8 +1,11 @@
 import type { Translator } from "@/lib/i18n/types";
+import { FREE_EXPORTS } from "@/lib/plans";
 
-export function explainError({ t }: Translator, code: string) {
+export function explainError({ t, tf }: Translator, code: string) {
+  if (code === "DUO_SLOT_LIMIT") return t("tool_duo_over_limit");
+  if (code === "DUO_SELECTION_EMPTY" || code === "INVALID_DUO_SELECTION") return t("tool_duo_empty");
   if (code === "AUTH_REQUIRED") return t("error_auth");
-  if (code === "TRIAL_EXHAUSTED") return t("error_trial");
+  if (code === "TRIAL_EXHAUSTED") return tf("error_trial", { exports: FREE_EXPORTS });
   if (code === "DAILY_LIMIT") return t("error_daily");
   if (code === "IPHONE_69_GATED") return t("error_69");
   if (code === "CLONE_RISK") return t("error_clone");

@@ -40,7 +40,7 @@ La production tourne uniquement sur le VPS DuoShot : Docker Compose derrière Tr
 
 ## Connecteur App Store Connect
 
-Backend et connexion d’une clé d’API d’équipe App Store Connect livrés derrière le flag `ASC_CONNECTOR_ENABLED` (désactivé par défaut ; `ASC_ENCRYPTION_KEY` côté serveur). Le bouton d’envoi dans l’outil viendra dans une PR séparée ; aucun envoi réel n’a été validé de bout en bout, et Apple n’expose pas encore de type d’affichage iPhone Duo (seul le 6,9″ est envoyable). Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
+Le connecteur est protégé par `ASC_CONNECTOR_ENABLED` (désactivé par défaut ; `ASC_ENCRYPTION_KEY` côté serveur). Les captures externe et interne ciblent le même emplacement `APP_IPHONE_DUO`, 10 maximum par langue. Les deux tailles sont acceptées ; aucun envoi réel n’a encore été testé par DuoShot. Détails : [`docs/app-store-connect.md`](docs/app-store-connect.md).
 
 ## Auth
 
@@ -72,12 +72,12 @@ En local, pointer `NEXT_PUBLIC_SUPABASE_URL` vers une instance Supabase de déve
 
 | Offre | Prix | Notes |
 | --- | --- | --- |
-| Essai | 0 | Preview + ZIP exemple. 2 ZIP HD après compte |
-| Indie | 12 €/mo ou 120 €/an | 100 ZIP/jour UTC, 6,9″, multi-sets, préfixe Client/App |
+| Essai gratuit | 0 | Preview + ZIP exemple. 2 exports HD après inscription |
+| Indie | 12 €/mo ou 120 €/an | 100 exports/jour UTC, 6,9″, multi-sets, préfixe Client/App |
 | Studio | 49 €/mo ou 490 €/an | + 3 sièges et reviews client pendant 7 jours |
 | Pass 30 jours | 19 € une fois | Droits Indie pendant 30 jours, sans renouvellement ; masqué tant que `STRIPE_PRICE_PASS30` n’est pas renseigné |
 
-Stripe Checkout est ouvert en mode live depuis le 4 octobre 2026. Restent à faire : un achat réel suivi d’un remboursement par le propriétaire, puis la validation fiscale et la décision sur Stripe Tax. Voir [`docs/stripe-billing-setup.md`](docs/stripe-billing-setup.md).
+La disponibilité de Checkout dépend de la configuration d’exécution, évaluée par `src/lib/billing-availability.ts` et exposée par `/api/billing/availability`. Le dépôt seul ne permet pas d’établir si un déploiement accepte les paiements. L’historique d’activation et les vérifications de paiement restantes figurent dans [`docs/stripe-billing-setup.md`](docs/stripe-billing-setup.md).
 
 ## Specs
 
@@ -86,3 +86,11 @@ Voir la page publique `/specs` (date de version + disclaimer guideline 2.3.3) et
 ## Documentation
 
 Index des documents à jour : [`docs/README.md`](docs/README.md). Les comptes rendus datés (audits, recettes, bascule de production, configuration Stripe live) sont dans [`docs/journal/`](docs/journal/).
+
+## Contenu de l’emplacement Duo
+
+Choisissez externe uniquement (par défaut), interne uniquement ou un mix avec sélection individuelle. Le ZIP normal contient uniquement les captures choisies, au plus 10 par langue, avec `duo-slot.json` pour l’ordre de dépôt. Les dossiers externe/interne identifient les dimensions, pas deux emplacements ASC. Un dépassement renvoie HTTP 400 `DUO_SLOT_LIMIT` avant toute réservation de quota ; aucune capture n’est supprimée silencieusement. Une sélection vide renvoie `DUO_SELECTION_EMPTY`.
+
+Le ZIP d’exemple conserve les séries brutes externe + interne, explicitement étiquetées : choisissez au plus 10 captures pour l’emplacement Duo unique. Le connecteur refuse aussi les anciens ZIP de plus de 10 captures Duo, et vérifie les captures existantes dans le même emplacement avant toute écriture.
+
+Source du contrat : [ASC CLI — iPhone Duo](https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md). Les tailles 1398×2034 et 2007×2853 (et leurs dimensions en paysage) sont acceptées dans `APP_IPHONE_DUO` ; dépôt pas encore testé par nous.

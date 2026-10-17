@@ -6,16 +6,16 @@ import { duoSpec, type Locale, type SizeSpec } from "./specs";
 export const EXAMPLE_APP_NAME = "ExampleApp";
 
 /**
- * Byte sizes measured from /api/example-zip (Harbor demo, PNG, portrait) on 2026-10-04.
+ * Byte sizes measured from /api/example-zip (Harbor demo, PNG, portrait) on 2026-10-13.
  * Shown as an order of magnitude; a real export depends on your own captures.
  */
 const MEASURED_BYTES: Record<string, number> = {
-  "exampleapp/duo-outer-portrait/01.png": 402_653,
-  "exampleapp/duo-inner-portrait/01.png": 319_577,
-  "exampleapp/duo-outer-portrait/02.png": 402_651,
-  "exampleapp/duo-inner-portrait/02.png": 315_210,
-  "exampleapp/duo-outer-portrait/03.png": 404_194,
-  "exampleapp/duo-inner-portrait/03.png": 319_643,
+  "exampleapp/duo-outer-portrait/01.png": 262_938,
+  "exampleapp/duo-inner-portrait/01.png": 424_326,
+  "exampleapp/duo-outer-portrait/02.png": 273_132,
+  "exampleapp/duo-inner-portrait/02.png": 399_691,
+  "exampleapp/duo-outer-portrait/03.png": 118_478,
+  "exampleapp/duo-inner-portrait/03.png": 224_045,
 };
 
 export type DeliveredFile = {

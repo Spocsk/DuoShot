@@ -3,6 +3,21 @@ import { parseRenderBody } from "./request";
 import { assertBatchSize, MAX_SOURCE_BYTES } from "./limits";
 
 describe("render input boundary", () => {
+  it("accepts the 6.3-inch flag and rejects non-boolean values", () => {
+    expect(parseRenderBody({ include63: true }, "user")).toEqual({ include63: true });
+    for (const include63 of ["true", 1, null]) {
+      expect(() => parseRenderBody({ include63 }, "user")).toThrow("INVALID_REQUEST");
+    }
+  });
+  it.each([null, [], "outer", {}, { mode: "both" }, { mode: "mix" }, { mode: "mix", picks: [null] }, { mode: "mix", picks: [{ side: "inner", index: 1 }] }])("rejects malformed Duo selection %j", (duoSelection) => {
+    expect(() => parseRenderBody({ outerPaths: ["user/outer.png"], innerPaths: ["user/inner.png"], duoSelection }, "user")).toThrow("INVALID_DUO_SELECTION");
+  });
+
+  it("validates same-set selections against outer sources and keeps mixed order", () => {
+    const body = { outerPaths: ["user/outer.png"], sameSet: true, duoSelection: { mode: "mix", picks: [{ side: "inner", index: 0 }, { side: "outer", index: 0 }] } };
+    expect(parseRenderBody(body, "user")).toEqual(body);
+  });
+
   it.each([null, [], 1, { outerPaths: "user/a.png" }, { outerPaths: [null] }, { appName: 3 }, { sameSet: "false" }])("rejects malformed JSON payload %j", (body) => {
     expect(() => parseRenderBody(body, "user")).toThrow();
   });

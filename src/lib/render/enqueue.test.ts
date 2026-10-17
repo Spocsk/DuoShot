@@ -39,6 +39,15 @@ beforeEach(() => {
 });
 
 describe("enqueueRender", () => {
+  it("rejects eleven mixed screenshots before reserving quota", async () => {
+    const outerPaths = Array.from({ length: 6 }, (_, i) => `${USER_ID}/outer${i}.png`);
+    const innerPaths = Array.from({ length: 5 }, (_, i) => `${USER_ID}/inner${i}.png`);
+    const picks = [...outerPaths.map((_, index) => ({ side: "outer", index })), ...innerPaths.map((_, index) => ({ side: "inner", index }))];
+    const response = await enqueueRender(request({ outerPaths, innerPaths, duoSelection: { mode: "mix", picks } }), userClient(), USER_ID, "export");
+    expect(await readJson(response)).toEqual({ status: 400, body: { error: "DUO_SLOT_LIMIT" } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it.each([null, "", "not-a-uuid", `${KEY}x`])("requires a UUID idempotency key (%j)", async (key) => {
     const { status, body } = await readJson(await enqueueRender(request(PAIR, key), userClient(), USER_ID, "export"));
     expect(status).toBe(400);
@@ -109,6 +118,17 @@ describe("enqueueRender", () => {
     expect(body.error).toBe("IPHONE_69_GATED");
     const allowed = await enqueueRender(request({ ...PAIR, include69: true }), userClient(STUDIO_WS), USER_ID, "export");
     expect(allowed.status).toBe(202);
+  });
+
+  it("enqueues 6.3-inch exports on the free trial and preserves the worker payload", async () => {
+    const payload = { ...PAIR, include63: true, include69: false };
+    const response = await enqueueRender(request(payload), userClient(FREE_WS), USER_ID, "export");
+    expect(response.status).toBe(202);
+    expect(rpc).toHaveBeenCalledWith("enqueue_render", expect.objectContaining({ p_payload: payload }));
+    rpc.mockClear();
+    const gated = await enqueueRender(request({ ...payload, include69: true }), userClient(FREE_WS), USER_ID, "export");
+    expect(await readJson(gated)).toEqual({ status: 403, body: { error: "IPHONE_69_GATED" } });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("returns 503 without an admin client", async () => {

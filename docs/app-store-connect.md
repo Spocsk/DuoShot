@@ -1,6 +1,6 @@
 # Connecteur App Store Connect
 
-Statut au 2026-10-04 : backend et connexion du compte livrés derrière `ASC_CONNECTOR_ENABLED`. Le bouton « Envoyer vers App Store Connect » de l’outil fera l’objet d’une PR séparée. Aucun envoi réel n’a encore été testé de bout en bout. Le marketing (DESIGN.md) ne doit donc pas encore annoncer d’envoi vers ASC.
+Statut au 2026-10-13 : connecteur et bouton de l’outil derrière `ASC_CONNECTOR_ENABLED`. Aucun envoi réel n’a encore été testé par DuoShot.
 
 ## Ce que dit la documentation Apple (vérifiée le 2026-10-04)
 
@@ -11,7 +11,7 @@ Statut au 2026-10-04 : backend et connexion du compte livrés derrière `ASC_CON
 | Envoi d’un asset | 1) `POST /v1/appScreenshots` avec `fileName`, `fileSize` et la relation `appScreenshotSet`, qui renvoie `uploadOperations` ; 2) un PUT par opération (méthode, URL, `requestHeaders`, plage `offset`/`length`) vers des URL présignées, sans JWT ; 3) `PATCH /v1/appScreenshots/{id}` avec `uploaded=true` et `sourceFileChecksum` (MD5 du fichier entier) ; 4) relire `assetDeliveryState.state` : `AWAITING_UPLOAD` → `UPLOAD_COMPLETE` → `COMPLETE` ou `FAILED` (terminal). La réservation expire au bout d’une semaine environ. | [Uploading assets to App Store Connect](https://developer.apple.com/documentation/appstoreconnectapi/uploading-assets-to-app-store-connect) |
 | Versions modifiables | `appVersionState` remplace `appStoreState`, désormais déprécié. DuoShot filtre `filter[appVersionState]` sur `PREPARE_FOR_SUBMISSION`, `DEVELOPER_REJECTED`, `REJECTED`, `METADATA_REJECTED` et `INVALID_BINARY`. | [AppVersionState](https://developer.apple.com/documentation/appstoreconnectapi/appversionstate), [List App Store versions](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-apps-_id_-appstoreversions) |
 | Ordre des captures | `PATCH /v1/appScreenshotSets/{id}/relationships/appScreenshots` | [Replace screenshots in a set](https://developer.apple.com/documentation/appstoreconnectapi/patch-v1-appscreenshotsets-_id_-relationships-appscreenshots) |
-| **Type d’affichage iPhone Duo** | **Absent.** L’énumération `ScreenshotDisplayType` ne contient que `APP_IPHONE_67/65/61/58/55/47/40/35`, les iPad, Watch, `APP_DESKTOP`, `APP_APPLE_TV`, `APP_APPLE_VISION_PRO` et `IMESSAGE_*`. Aucune valeur Duo, pliable ou « fold ». La page d’aide indique des dépôts Duo « plus tard cette année ». | [ScreenshotDisplayType](https://developer.apple.com/documentation/appstoreconnectapi/screenshotdisplaytype), [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/) |
+| **Type d’affichage iPhone Duo** | Emplacement unique `APP_IPHONE_DUO`, 10 captures maximum par langue, tailles externe et interne acceptées. Pas encore testé par DuoShot. | [Contrat ASC CLI](https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md) |
 | iPhone 6,9″ | Il n’existe pas de valeur `APP_IPHONE_69`. Dans App Store Connect, l’emplacement 6,9″ est le set `APP_IPHONE_67`, qui accepte 1320×2868, 1290×2796 et 1260×2736. La documentation Apple ne le dit pas explicitement : des développeurs le signalent sur les [forums](https://developer.apple.com/forums/thread/763908). **À confirmer lors du premier envoi réel.** | — |
 
 ## Correspondance des sorties DuoShot
@@ -20,11 +20,11 @@ Tout est défini dans un seul module, `src/lib/asc/config.ts` (`ASC_DISPLAY_TYPE
 
 | Sortie DuoShot | `screenshotDisplayType` | Envoyé ? |
 | --- | --- | --- |
-| `duo-outer` 1398×2034 | `null` | Non : signalé dans `skipped` |
-| `duo-inner` 2007×2853 | `null` | Non : signalé dans `skipped` |
+| `duo-outer` 1398×2034 | `APP_IPHONE_DUO` | Oui, même emplacement pour externe et interne |
+| `duo-inner` 2007×2853 | `APP_IPHONE_DUO` | Oui, même emplacement pour externe et interne |
 | `iphone-69` | `APP_IPHONE_67` | Oui, une seule taille par set : 1320×2868 (2868×1320 en paysage) |
 
-Conséquence : aujourd’hui, seul un export qui inclut le 6,9″ (offres Indie et Studio) a quelque chose à envoyer. Pour un export Duo seul, `POST /api/asc/uploads` répond `409 NOTHING_TO_UPLOAD`. Quand Apple publiera une valeur Duo, il suffira de la renseigner dans `ASC_DISPLAY_TYPES`, puis de la tester de bout en bout.
+Les deux sorties Duo partagent le même set par localisation. Le worker regroupe capacité, création, remplacement et ordre par `displayType`, pas par écran. Le ZIP normal contient la sélection (externe, interne ou mix) ; `duo-slot.json` conserve l’ordre de sélection. Les anciens ZIP de séries brutes dépassant 10 captures Duo sont refusés (`DUO_SLOT_LIMIT`), sans troncature. Le ZIP d’exemple reste explicitement brut.
 
 ## Architecture
 
@@ -59,4 +59,4 @@ La suppression de l’espace ou du compte qui a fourni la clé efface `asc_conne
 2. Générer la clé maître avec `openssl rand -base64 32` et la placer dans `ASC_ENCRYPTION_KEY`. Si elle change, toutes les connexions deviennent illisibles (`ASC_KEY_UNREADABLE`) et doivent être recréées.
 3. Vérifier que `RENDER_QUEUE_ENABLED=true` et que le worker tourne.
 4. Définir `ASC_CONNECTOR_ENABLED=true`, puis lancer `node scripts/check-deployment-env.mjs`.
-5. Faire un essai de bout en bout avec une app de test : export avec 6,9″, envoi, contrôle dans App Store Connect. Ensuite seulement, mettre à jour le marketing.
+5. Faire un essai de bout en bout avec une app de test : exports externe uniquement, interne uniquement, mix et option 6,9″, envoi, contrôle dans App Store Connect. Ensuite seulement, mettre à jour le marketing.

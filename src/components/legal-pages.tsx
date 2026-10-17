@@ -5,6 +5,7 @@ import type { Locale } from "@/lib/specs";
 import { POLICY_VERSION } from "@/lib/specs";
 import { localePrefix } from "@/lib/site";
 import { getTranslator } from "@/lib/i18n";
+import { FREE_EXPORTS, PASS30, PLANS, STUDIO_SEATS } from "@/lib/plans";
 
 export function LegalPage({
   locale,
@@ -39,369 +40,105 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function MentionsContent({ locale }: { locale: Locale }) {
+// Only these inline tags are rendered; dictionary text never becomes raw HTML.
+function LegalText({ locale, text }: { locale: Locale; text: string }) {
   const prefix = localePrefix(locale);
-  if (locale === "en") {
-    return (
-      <>
-        <p>
-          Product notice, not legal advice. Last updated {POLICY_VERSION}. Required publisher information under the French LCEN.
-        </p>
-        <Block title="Publisher">
-          <p>
-            DuoShot is published by its operator, a natural person established in France. Publication director: the
-            operator of the service.
-          </p>
-          <p>
-            Company identifiers (SIRET, registered office) will be completed when the activity is registered. Until
-            then, requests go through the{" "}
-            <Link href={`${prefix}/account`} className="ds-link">
-              account
-            </Link>{" "}
-            page (data export and deletion).
-          </p>
-        </Block>
-        <Block title="Host">
-          <p>
-            Hetzner Online GmbH — Industriestr. 25, 91710 Gunzenhausen, Germany. Application server in Falkenstein, Germany.
-            Host contact: +49 9831 505-0. The app also uses
-            subprocessors listed in the{" "}
-            <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
-              sub-processors
-            </Link>{" "}
-            list.
-          </p>
-        </Block>
-      </>
-    );
-  }
+  const paths = { account: "/account", privacy: "/privacy", subprocessors: "/legal/subprocessors" };
+  return text.split(/(<(?:account|privacy|subprocessors|code)>.*?<\/(?:account|privacy|subprocessors|code)>)/g).map((part, index) => {
+    const match = part.match(/^<(account|privacy|subprocessors|code)>(.*?)<\/\1>$/);
+    if (!match) return part;
+    const [, tag, label] = match;
+    if (tag === "code") return <code key={index}>{label}</code>;
+    return <Link key={index} href={`${prefix}${paths[tag as keyof typeof paths]}`} className="ds-link">{label}</Link>;
+  });
+}
+
+export function MentionsContent({ locale }: { locale: Locale }) {
+  const { t, tf } = getTranslator(locale);
   return (
     <>
-      <p>
-        Notice produit, pas un avis d’avocat. Dernière mise à jour : {POLICY_VERSION}. Mentions prévues par l’art. 6 de
-        la LCEN.
-      </p>
-      <Block title="Éditeur">
-        <p>
-          Le site DuoShot est édité par l’exploitant du service, personne physique établie en France. Directeur de la
-          publication : l’exploitant.
-        </p>
-        <p>
-          Les identifiants d’entreprise (SIRET, siège) seront complétés à l’immatriculation de l’activité. En attendant,
-          les demandes passent par la page{" "}
-          <Link href={`${prefix}/account`} className="ds-link">
-            Compte
-          </Link>{" "}
-          (export et suppression des données).
-        </p>
+      <p>{tf("legal_notice_intro", { policyVersion: POLICY_VERSION })}</p>
+      <Block title={t("legal_notice_publisher_title")}>
+        <p>{t("legal_notice_publisher")}</p>
+        <p><LegalText locale={locale} text={t("legal_notice_publisher_details")} /></p>
       </Block>
-      <Block title="Hébergeur">
-        <p>
-          Hetzner Online GmbH — Industriestr. 25, 91710 Gunzenhausen, Allemagne. Serveur applicatif à Falkenstein, Allemagne.
-          Contact de l’hébergeur : +49 9831 505-0. Le service s’appuie aussi sur les
-          sous-traitants listés dans la{" "}
-          <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
-            liste des sous-traitants
-          </Link>
-          .
-        </p>
+      <Block title={t("legal_notice_host_title")}>
+        <p><LegalText locale={locale} text={t("legal_notice_host")} /></p>
       </Block>
     </>
   );
 }
 
 export function PrivacyContent({ locale }: { locale: Locale }) {
-  const prefix = localePrefix(locale);
-  if (locale === "en") {
-    return (
-      <>
-        <p>
-          Last updated {POLICY_VERSION}. Controller: the DuoShot operator (France / CNIL). This is a product notice, not
-          legal advice.
-        </p>
-        <Block title="Data we process">
-          <p>
-            Account data (email, auth identifiers), consent logs, workspace membership, export metadata, and the
-            screenshot files you upload. If you
-            agree, Datafast records pseudonymous product events, pages visited and visible time, without screenshots or email addresses.
-          </p>
-        </Block>
-        <Block title="Legal bases">
-          <p>
-            Contract (GDPR Art. 6.1.b) for the tool and ZIP. Legal obligation + contract for Stripe invoices. Contract
-            for magic-link email and receipts. Consent for optional Datafast product analytics; you can change this
-            choice at any time via Analytics preferences in the footer.
-          </p>
-        </Block>
-        <Block title="Transfers">
-          <p>
-            Captures and profile data are stored primarily in Falkenstein, Germany, on Hetzner infrastructure with self-hosted Supabase. Stripe, Resend and
-            Google OAuth may process data in the US under the Data Privacy Framework / SCCs. List:{" "}
-            <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
-              sub-processors
-            </Link>
-            .
-          </p>
-        </Block>
-        <Block title="Retention">
-          <p>
-            Sources and ZIP files expire after 24 hours; review media after 7 days or revocation. Physical deletion from active storage is scheduled every 15 minutes and retried after failures. Encrypted recovery backups retain the seven most recent successful copies; deleted data can remain in those isolated backups until rotation. Local browser drafts remain on your device until you remove them. Account rows remain until you delete the account. Analytics events can be deleted upon request.
-            Mixpanel no longer receives any data; pseudonymous events it received earlier stay in its EU
-            project only until erased, and deleting your account queues their erasure. Stripe keeps billing records as required by law.
-          </p>
-        </Block>
-        <Block title="Your rights">
-          <p>
-            Access, portability (JSON export), erasure (account delete, target 30 days), objection — from the{" "}
-            <Link href={`${prefix}/account`} className="ds-link">
-              account
-            </Link>{" "}
-            page. UK GDPR: same rights. CCPA/CPRA: we do not sell or share personal information for cross-context
-            advertising — Do Not Sell. LGPD: access, correction and deletion if you are in Brazil. Breach: CNIL notified
-            within 72 hours when required. No DPO appointed in v1 (Art. 37 to be reassessed).
-          </p>
-        </Block>
-      </>
-    );
-  }
+  const { t, tf } = getTranslator(locale);
   return (
     <>
-      <p>
-        Dernière mise à jour : {POLICY_VERSION}. Responsable de traitement : l’exploitant de DuoShot (France / CNIL).
-        Notice produit, pas un avis d’avocat.
-      </p>
-      <Block title="Données traitées">
-        <p>
-          E-mail et identifiants Auth, journaux de consentement, membership workspace, métadonnées d’export, fichiers de
-          captures que vous déposez. Avec
-          votre accord, Datafast mesure des événements produit pseudonymes, les pages et leur temps visible, sans captures ni e-mail.
-        </p>
+      <p>{tf("legal_privacy_intro", { policyVersion: POLICY_VERSION })}</p>
+      <Block title={t("legal_privacy_data_title")}>
+        <p>{t("legal_privacy_data")}</p>
       </Block>
-      <Block title="Bases légales">
-        <p>
-          Contrat (art. 6.1.b RGPD) pour l’outil et le ZIP. Obligation légale + contrat pour la facturation Stripe.
-          Contrat pour le magic link et les reçus. Consentement pour les statistiques produit facultatives Datafast,
-          modifiable à tout moment depuis les préférences statistiques en pied de page.
-        </p>
+      <Block title={t("legal_privacy_bases_title")}>
+        <p>{t("legal_privacy_bases")}</p>
       </Block>
-      <Block title="Transferts">
-        <p>
-          Captures et profils stockés en primaire à Falkenstein, en Allemagne, sur l’infrastructure Hetzner avec Supabase auto-hébergé. Stripe, Resend et Google OAuth peuvent
-          traiter aux États-Unis (DPF / CCT). Liste :{" "}
-          <Link href={`${prefix}/legal/subprocessors`} className="ds-link">
-            sous-traitants
-          </Link>
-          .
-        </p>
+      <Block title={t("legal_privacy_transfers_title")}>
+        <p><LegalText locale={locale} text={t("legal_privacy_transfers")} /></p>
       </Block>
-      <Block title="Durées">
-        <p>
-          Sources et ZIP expirent après 24 h ; médias de revue après 7 jours ou révocation. La suppression physique du stockage actif est prévue toutes les 15 minutes, avec reprise en cas d’échec. Les sauvegardes chiffrées de reprise conservent les sept dernières copies réussies ; des données supprimées peuvent subsister dans ces copies isolées jusqu’à leur rotation. Les brouillons locaux restent sur votre appareil jusqu’à leur suppression. Lignes de compte jusqu’à suppression. Les événements analytiques peuvent être effacés sur demande.
-          Mixpanel ne reçoit plus aucune donnée ; les événements pseudonymes reçus auparavant restent dans son
-          projet UE seulement jusqu’à leur effacement, déclenché par la suppression du compte. Stripe conserve la facturation selon la loi.
-        </p>
+      <Block title={t("legal_privacy_retention_title")}>
+        <p>{t("legal_privacy_retention")}</p>
       </Block>
-      <Block title="Vos droits">
-        <p>
-          Accès, portabilité (export JSON), effacement (compte, objectif 30 jours), opposition — depuis la page{" "}
-          <Link href={`${prefix}/account`} className="ds-link">
-            Compte
-          </Link>
-          . UK GDPR : mêmes droits. CCPA/CPRA : nous ne vendons pas les données — Do Not Sell. LGPD : accès, correction
-          et suppression si vous êtes au Brésil. Violation : CNIL sous 72 h si requis. Pas de DPO en v1 (art. 37 à
-          réévaluer).
-        </p>
+      <Block title={t("legal_privacy_rights_title")}>
+        <p><LegalText locale={locale} text={t("legal_privacy_rights")} /></p>
       </Block>
     </>
   );
 }
 
 export function TermsContent({ locale }: { locale: Locale }) {
-  const prefix = localePrefix(locale);
-  if (locale === "en") {
-    return (
-      <>
-        <p>
-          Last updated {POLICY_VERSION}. These terms cover use of DuoShot and paid subscriptions (terms of use and sale).
-          Product notice, not legal advice.
-        </p>
-        <Block title="Service">
-          <p>
-            DuoShot generates frameless App Store screenshots for iPhone Duo (outer 5.4″ and inner 7.6″, optional 6.9″).
-            You must own the rights to every file you upload. Outputs must still comply with App Store Review Guideline
-            2.3.3 — we do not invent features. We do not guarantee Apple will accept a set.
-          </p>
-        </Block>
-        <Block title="Eligibility">
-          <p>The service is for people aged 16 or older.</p>
-        </Block>
-        <Block title="Account">
-          <p>
-            An account is required to download a ZIP. You are responsible for access to your login. We may suspend abuse
-            (automation, quota circumvention, unlawful content).
-          </p>
-        </Block>
-        <Block title="Trial and plans">
-          <p>
-            Trial: 2 HD ZIPs (closed and open screens), no card, Duo sizes only. Indie: €12/month or €120/year billed annually, up to 100 ZIP exports per UTC day, 6.9″ sizes and Client/App prefix included. Studio: €49/month or €490/year billed annually, everything in Indie plus
-            three seats and client reviews retained for seven days. Prices include VAT where applicable.
-            Billing via Stripe, cancel from Stripe.
-          </p>
-        </Block>
-        <Block title="Withdrawal">
-          <p>
-            EU consumers have 14 days to withdraw from a distance contract. That right does not apply in the same way to
-            professionals. By creating an account and starting an export, you ask for immediate performance of a digital
-            service. After a ZIP has been generated, the trial/subscription corresponding to that use is not refunded
-            except where the law requires it.
-          </p>
-        </Block>
-        <Block title="Intellectual property">
-          <p>
-            You keep your rights in the files you upload. You grant DuoShot a licence limited to processing them to
-            produce the ZIP. DuoShot and its marks remain ours. We do not claim ownership of your screenshots.
-          </p>
-        </Block>
-        <Block title="Availability and liability">
-          <p>
-            The service may be interrupted (maintenance, third-party outage). To the extent permitted, DuoShot is not
-            liable for indirect loss, lost App Store ranking, or Apple rejection. Mandatory consumer rights remain.
-          </p>
-        </Block>
-        <Block title="Personal data">
-          <p>
-            Processing is described in the{" "}
-            <Link href={`${prefix}/privacy`} className="ds-link">
-              privacy policy
-            </Link>
-            .
-          </p>
-        </Block>
-        <Block title="Governing law">
-          <p>
-            French law. Courts of the operator’s seat, without prejudice to consumer rights on competent courts and
-            protective law.
-          </p>
-        </Block>
-      </>
-    );
-  }
+  const { t, tf } = getTranslator(locale);
   return (
     <>
-      <p>
-        Dernière mise à jour : {POLICY_VERSION}. Les présentes conditions régissent l’usage de DuoShot et les
-        abonnements payants (CGU et CGV). Notice produit, pas un avis d’avocat.
-      </p>
-      <Block title="Service">
-        <p>
-          DuoShot génère des captures App Store sans coque d’appareil pour iPhone Duo (écran fermé 5,4″ et écran ouvert 7,6″, 6,9″ en
-          option). Vous devez détenir les droits sur chaque fichier déposé. Les sorties restent soumises à la guideline
-          2.3.3 — nous n’inventons pas de fonctionnalités. Aucune garantie d’acceptation Apple.
-        </p>
+      <p>{tf("legal_terms_intro", { policyVersion: POLICY_VERSION })}</p>
+      <Block title={t("legal_terms_service_title")}>
+        <p>{t("legal_terms_service")}</p>
       </Block>
-      <Block title="Éligibilité">
-        <p>Service réservé aux personnes de 16 ans et plus.</p>
+      <Block title={t("legal_terms_eligibility_title")}>
+        <p>{t("legal_terms_eligibility")}</p>
       </Block>
-      <Block title="Compte">
-        <p>
-          Un compte est requis pour télécharger un ZIP. Vous êtes responsable de l’accès à votre identifiant. Nous
-          pouvons suspendre les abus (automatisation, contournement de quota, contenus illicites).
-        </p>
+      <Block title={t("legal_terms_account_title")}>
+        <p>{t("legal_terms_account")}</p>
       </Block>
-      <Block title="Essai et offres">
-        <p>
-          Essai : 2 ZIP HD (écrans fermé et ouvert), sans carte, tailles Duo seulement. Indie : 12 €/mois ou 120 €/an facturés annuellement, 100 exports ZIP par jour UTC, tailles 6,9″ et préfixe Client/App. Studio : 49 €/mois ou 490 €/an facturés annuellement, tout Indie plus trois
-          sièges et des reviews client conservées sept jours. Prix TTC le cas échéant. Paiement via Stripe, résiliation
-          depuis Stripe.
-        </p>
+      <Block title={t("legal_terms_plans_title")}>
+        <p>{tf("legal_terms_plans", { freeExports: FREE_EXPORTS, indieMonthly: PLANS.indie.monthlyEur, indieYearly: PLANS.indie.yearlyEur, dailyExports: PLANS.indie.dailyHdSets, studioMonthly: PLANS.studio.monthlyEur, studioYearly: PLANS.studio.yearlyEur, studioSeats: STUDIO_SEATS, passDays: PASS30.days, passPrice: PASS30.priceEur })}</p>
       </Block>
-      <Block title="Rétractation">
-        <p>
-          Le consommateur UE dispose de 14 jours pour se rétracter d’un contrat à distance. Ce droit ne s’applique pas
-          de la même façon au professionnel. En créant un compte et en lançant un export, vous demandez l’exécution
-          immédiate d’un service numérique. Une fois un ZIP généré, l’essai ou l’abonnement correspondant à cet usage
-          n’est pas remboursé, sauf obligation légale.
-        </p>
+      <Block title={t("legal_terms_withdrawal_title")}>
+        <p>{t("legal_terms_withdrawal")}</p>
       </Block>
-      <Block title="Propriété intellectuelle">
-        <p>
-          Vous conservez vos droits sur les fichiers déposés. Vous concédez à DuoShot une licence limitée à leur
-          traitement pour produire le ZIP. DuoShot et ses signes restent les nôtres. Nous ne revendiquons pas vos
-          captures.
-        </p>
+      <Block title={t("legal_terms_property_title")}>
+        <p>{t("legal_terms_property")}</p>
       </Block>
-      <Block title="Disponibilité et responsabilité">
-        <p>
-          Le service peut être interrompu (maintenance, panne d’un tiers). Dans la limite permise, DuoShot n’est pas
-          responsable d’un préjudice indirect, d’un classement App Store ou d’un refus Apple. Les droits impératifs des
-          consommateurs restent.
-        </p>
+      <Block title={t("legal_terms_liability_title")}>
+        <p>{t("legal_terms_liability")}</p>
       </Block>
-      <Block title="Données personnelles">
-        <p>
-          Les traitements sont décrits dans la{" "}
-          <Link href={`${prefix}/privacy`} className="ds-link">
-            politique de confidentialité
-          </Link>
-          .
-        </p>
+      <Block title={t("legal_terms_data_title")}>
+        <p><LegalText locale={locale} text={t("legal_terms_data")} /></p>
       </Block>
-      <Block title="Droit applicable">
-        <p>
-          Droit français. Tribunaux du siège de l’exploitant, sans préjudice des droits consommateurs sur le tribunal
-          compétent et la loi protectrice.
-        </p>
+      <Block title={t("legal_terms_law_title")}>
+        <p>{t("legal_terms_law")}</p>
       </Block>
     </>
   );
 }
 
 export function CookiesContent({ locale }: { locale: Locale }) {
-  const prefix = localePrefix(locale);
-  if (locale === "en") {
-    return (
-      <>
-        <p>Last updated {POLICY_VERSION}.</p>
-        <Block title="Strictly necessary">
-          <p>
-            Auth session cookies only (Supabase PKCE). They are required to keep you signed in and to download a ZIP. The
-            functional <code>duoshot_locale_manual</code> cookie is set only if you click FR/EN. Public pages use the language
-            in their URL; other pages may follow the browser <code>Accept-Language</code> header. Stripe may set its own cookies on Stripe Checkout, off this site.
-          </p>
-        </Block>
-        <Block title="Optional product analytics">
-          <p>
-            Datafast loads only after you accept product analytics. It uses visitor cookies with a maximum lifetime of 365 days and a session cookie renewed after 30 minutes. This storage supports pseudonymous journeys. You
-            can refuse or change your choice through Analytics preferences in the footer. Details on{" "}
-            <Link href={`${prefix}/privacy`} className="ds-link">
-              privacy
-            </Link>
-            .
-          </p>
-        </Block>
-      </>
-    );
-  }
+  const { t, tf } = getTranslator(locale);
   return (
     <>
-      <p>Dernière mise à jour : {POLICY_VERSION}.</p>
-      <Block title="Strictement nécessaires">
-        <p>
-          Cookies de session Auth seulement (Supabase PKCE). Ils servent à rester connecté et à télécharger un ZIP. Le
-          cookie fonctionnel <code>duoshot_locale_manual</code> n’est posé que si vous cliquez sur FR/EN. Les pages publiques utilisent
-          la langue de leur URL ; les autres pages peuvent suivre l’en-tête <code>Accept-Language</code> du navigateur.
-          Stripe peut déposer ses propres cookies sur Stripe Checkout, hors de ce site.
-        </p>
+      <p>{tf("legal_cookies_intro", { policyVersion: POLICY_VERSION })}</p>
+      <Block title={t("legal_cookies_necessary_title")}>
+        <p><LegalText locale={locale} text={t("legal_cookies_necessary")} /></p>
       </Block>
-      <Block title="Statistiques produit facultatives">
-        <p>
-          Datafast ne se charge qu’après votre acceptation. Il utilise des cookies visiteur pendant au maximum 365 jours et un cookie de session renouvelé après 30 minutes. Ce stockage permet de suivre des parcours pseudonymes.
-          Vous pouvez refuser ou modifier votre choix depuis les préférences statistiques en pied de page. Détail :{" "}
-          <Link href={`${prefix}/privacy`} className="ds-link">
-            confidentialité
-          </Link>
-          .
-        </p>
+      <Block title={t("legal_cookies_analytics_title")}>
+        <p><LegalText locale={locale} text={t("legal_cookies_analytics")} /></p>
       </Block>
     </>
   );
@@ -415,11 +152,11 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
       <ul className="list-disc pl-5">
         <li>{t("legal_hetzner_application_hosting_self")}</li>
         <li>{t("legal_vercel_domain_registration_dns")}</li>
-        <li>Datafast — optional traffic and product analytics</li>
+        <li>{t("legal_processor_datafast")}</li>
         <li>{t("legal_mixpanel_no_longer_collects")}</li>
-        <li>Stripe — payments — US/EU</li>
-        <li>Resend — transactional email — US</li>
-        <li>Google — OAuth sign-in — US</li>
+        <li>{t("legal_processor_stripe")}</li>
+        <li>{t("legal_processor_resend")}</li>
+        <li>{t("legal_processor_google")}</li>
       </ul>
       <p>
         {t("legal_dpas_should_in_place")}

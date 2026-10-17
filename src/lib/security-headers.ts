@@ -15,7 +15,7 @@ export function contentSecurityPolicy({ supabaseUrl, dev = false }: Options): st
     // React dev tooling needs eval; the OCR core compiles WebAssembly.
     `script-src ${list("'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", dev && "'unsafe-eval'")}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src ${list("'self'", "data:", "blob:", supabase)}`,
+    `img-src ${list("'self'", "data:", "blob:", supabase, "https://fazier.com")}`,
     `media-src ${list("'self'", "blob:", supabase)}`,
     "font-src 'self' data:",
     `connect-src ${list("'self'", supabase, supabaseSocket, dev && "ws:")}`,

@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { MAX_SOURCE_BYTES, MAX_SOURCE_PIXELS } from "@/lib/pipeline/limits";
 
 import {
@@ -32,12 +34,13 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { compositionMetrics } from "@/lib/pipeline/geometry";
 import { checkoutReturnPath, isPurchaseKind, startCheckout } from "@/lib/checkout";
 import { trackProduct } from "@/lib/analytics-client";
-import type { PurchaseKind } from "@/lib/plans";
+import { FREE_EXPORTS, type PurchaseKind } from "@/lib/plans";
 import {
   defaultSet,
   nextSetName,
   createSetStore,
   importLocalDrafts,
+  trackDraftChange,
   loadSetMetas as readDraftMetas,
   type SetMeta,
 } from "@/lib/sets-store";
@@ -52,6 +55,8 @@ import { SetPicker, useSetsMenu } from "@/components/tool/set-picker";
 import { CapturesPanel } from "@/components/tool/captures-panel";
 import { AdjustPanel, AdvancedSettings } from "@/components/tool/adjust-panel";
 import { CheckList, ReadinessReport, ReviewAlerts, type CheckItem } from "@/components/tool/check-panel";
+import { duoPicks, DUO_SLOT_MAX } from "@/lib/duo-selection";
+import { DuoSlotChoice } from "@/components/tool/duo-slot-choice";
 import { EXAMPLE_ZIP_URL, ExportPanel, OtherActions, ReviewOutcome } from "@/components/tool/delivery-actions";
 import { DemoStart, fetchHarborFiles, type DemoState } from "@/components/tool/demo";
 import { useAppSync } from "@/components/tool/use-app-sync";
@@ -62,7 +67,6 @@ import { isAllowedImage, takeFiles } from "@/components/tool/files";
 import { Seg, StatusLine, SwapLabel } from "@/components/tool/controls";
 import { PairStrip, ToolCanvas, ToolStepBar, type ToolPanel } from "@/components/tool/canvas";
 import { PreviewCard } from "@/components/tool/preview-card";
-import { SetTitle } from "@/components/tool/set-title";
 import { AscToolAction } from "@/components/asc/asc-tool-action";
 import { useAscUpload } from "@/components/asc/use-asc-upload";
 
@@ -72,7 +76,7 @@ const subscribeNever = () => () => {};
 
 const BOOT_SET: SetMeta = {
   id: "boot",
-  name: "Composition 01",
+  name: "",
   appName: "",
   clientName: "",
   orientation: "portrait",
@@ -94,7 +98,7 @@ export function ToolApp({ locale }: Props) {
   }, []);
   return (
     <main id="main" className="flex-1">
-      <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]">…</div>}>
+      <Suspense fallback={<p className="mx-auto max-w-6xl px-5 py-10 text-[var(--muted)]" role="status">{t("tool_loading_workspace")}</p>}>
         {owner ? <ToolAppInner key={owner} locale={locale} owner={owner} /> : <p role="status">{t("tool_loading_workspace")}</p>}
       </Suspense>
     </main>
@@ -106,10 +110,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const { t, tf } = i18n;
   const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [storageError, setStorageError] = useState(false);
-  const [draftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
+  const [draftsRecovered, setDraftsRecovered] = useState(false);
+  const [draftSource, setDraftSource] = useState<"guest" | "legacy" | null>(() => owner !== "guest" && readDraftMetas("guest").length ? "guest" : readDraftMetas("legacy").length ? "legacy" : null);
   const { loadSetMetas, saveSetMetas, loadActiveId, saveActiveId, loadSetFiles, saveSetFiles, deleteSetFiles } = useMemo(() => createSetStore(owner, () => setStorageError(true)), [owner]);
   const prefix = localePrefix(locale);
   const searchParams = useSearchParams();
+  const defaultNameTemplate = t("tool_default_set_name");
   const [sets, setSets] = useState<SetMeta[]>([BOOT_SET]);
   const [activeId, setActiveId] = useState<string>(BOOT_SET.id);
   const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
@@ -117,8 +123,10 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [outerFiles, setOuterFiles] = useState<File[]>([]);
   const [innerFiles, setInnerFiles] = useState<File[]>([]);
   const options = useMemo(() => ({ ...DEFAULT_RENDER_OPTIONS, ...active?.renderOptions }), [active?.renderOptions]);
+  const include63 = active?.include63 ?? false;
   const include69 = active?.include69 ?? false;
-  const [showHinge, setShowHinge] = useState(true);
+  // Off by default: the band hides part of the capture. Turn it on to check text near the fold.
+  const [showHinge, setShowHinge] = useState(false);
   const [previewMode, setPreviewMode] = useState<"device" | "pixels">("pixels");
   const [assumeClone, setAssumeClone] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -140,7 +148,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const [paywall, setPaywall] = useState<"trial" | "69" | null>(null);
   const [upgradeDismissed, setUpgradeDismissed] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const upgradeRequested = searchParams.get("upgrade") === "1" && !upgradeDismissed;
+  const upgradeReason = searchParams.get("reason") === "69" ? "69" : "trial";
   const requestedPlan = searchParams.get("plan") ?? undefined;
   const preferredUpgradeKind = isPurchaseKind(requestedPlan) ? requestedPlan : undefined;
   // The one-time pass has its own Stripe price; ask whether it is configured before offering it.
@@ -156,13 +166,18 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   const sameSet = active?.sameSet ?? false;
   const effectiveInner = sameSet ? outerFiles : innerFiles;
   const unpaired = !sameSet && outerFiles.length > 0 && innerFiles.length > 0 && outerFiles.length !== innerFiles.length;
+  const savedSelection = active?.duoSelection ?? { mode: "outer" as const };
+  const duoSelection = savedSelection.mode === "mix" ? { ...savedSelection,
+    picks: (savedSelection.picks ?? []).filter((pick) => pick.index < (pick.side === "outer" ? outerFiles.length : effectiveInner.length)),
+  } : savedSelection;
+  const selectedDuoCount = duoPicks(duoSelection, outerFiles.length, effectiveInner.length).length;
   const cloneForced = sameSet;
-  const hasExportable = outerFiles.length > 0 && (sameSet || innerFiles.length > 0);
+  const hasExportable = selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX;
   useEffect(() => {
-    if (!active || completedSetsRef.current.has(active.id) || !hasExportable) return;
+    if (!active || completedSetsRef.current.has(active.id) || !hasExportable || !outerFiles.length || !effectiveInner.length) return;
     completedSetsRef.current.add(active.id);
     setToolPanel("adjust");
-  }, [active, hasExportable]);
+  }, [active, hasExportable, outerFiles.length, effectiveInner.length]);
   const outerSlide = outerFiles[slideIndex];
   const innerSlide = effectiveInner[slideIndex];
   const orientation: Orientation = active?.orientation ?? "portrait";
@@ -205,9 +220,22 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      // Also runs after OAuth/email redirects, when the guest instance is no longer mounted.
+      if (owner !== "guest") {
+        try {
+          const recovered = await importLocalDrafts("guest", owner);
+          if (!cancelled) {
+            if (recovered > 0) setDraftsRecovered(true);
+            setDraftSource(readDraftMetas("legacy").length ? "legacy" : null);
+          }
+        } catch {
+          if (!cancelled) setStorageError(true);
+        }
+      }
+      if (cancelled) return;
       const existing = loadSetMetas();
       if (existing.length === 0) {
-        const first = defaultSet();
+        const first = defaultSet([], defaultNameTemplate);
         try {
           saveSetMetas([first]);
           saveActiveId(first.id);
@@ -232,11 +260,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setOuterFiles((prev) => (prev.length > 0 ? prev : outer));
       setInnerFiles((prev) => (prev.length > 0 ? prev : inner));
       setDraftsLoaded(true);
-    })();
+    })().catch(() => { if (!cancelled) setStorageError(true); });
     return () => {
       cancelled = true;
     };
-  }, [loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas]);
+  }, [owner, loadActiveId, loadSetFiles, loadSetMetas, saveActiveId, saveSetMetas, defaultNameTemplate]);
 
   const loadDemoRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => { loadDemoRef.current = loadDemo; });
@@ -312,7 +340,15 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     return [...outer, ...inner];
   }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, globalFit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
   const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
-  const cloneAlert = cloneForced || clones.some((item) => item.label === "risk");
+  const selectedPicks = duoPicks(duoSelection, outerFiles.length, effectiveInner.length);
+  const cloneAlert = clones.some((item) => item.label === "risk" && selectedPicks.some((pick) => pick.side === "outer" && pick.index === item.index) && selectedPicks.some((pick) => pick.side === "inner" && pick.index === item.index));
+
+  function resetPreparation() {
+    setQualityAcknowledged(false);
+    setAppUsageConfirmed(false);
+    setAssumeClone(false);
+    setZipUrl(null);
+  }
 
   function flashStatus(message: string, kind: "ok" | "err" | "busy" | "info") {
     setStatus(message);
@@ -323,19 +359,19 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     locale, owner, draftsLoaded, active, billing, setBilling, refreshBilling,
     setStatus, setStatusKind, flashStatus, setToolPanel, setShowAuth, setPaywall,
     zipUrl, setZipUrl, patchActive, outerFiles, innerFiles, effectiveInner, sameSet,
-    cloneForced, include69, assumeClone, severeQualityCount, qualityAcknowledged,
+    duoSelection, cloneForced, include63, include69, assumeClone, severeQualityCount, qualityAcknowledged,
     orientation, globalFit, renderOptions, outerTransforms, innerTransforms,
   });
+  const isDemo = Boolean(active?.demo);
   const preparationChecks = [
-    hasExportable,
-    hasExportable && !unpaired,
+    selectedDuoCount > 0,
+    selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX,
     hasExportable && !cloneAlert,
     hasExportable && severeQualityCount === 0,
-    appUsageConfirmed,
+    isDemo || appUsageConfirmed,
     Boolean(zipUrl && jobs.exportImages.length),
   ];
   const preparationScore = Math.round(preparationChecks.filter(Boolean).length / preparationChecks.length * 100);
-  const isDemo = Boolean(active?.demo);
   const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   /** Opens the panel holding a fix and moves focus to the control that resolves it. */
   function jumpTo(panel: ToolPanel, selector: string) {
@@ -347,14 +383,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     }, 60);
   }
   const missingSide: "outer" | "inner" = outerFiles.length === 0 || (!sameSet && outerFiles.length < innerFiles.length) ? "outer" : "inner";
-  const checklist: CheckItem[] = [
-    { id: "pairs", done: hasExportable && !unpaired, label: t("tool_check_pairs"), fix: () => jumpTo("captures", `[data-testid="drop-${missingSide}-input"]`) },
+  const checklist = ([
+    { id: "pairs", done: hasExportable, label: t("tool_check_pairs"), fix: () => jumpTo("captures", '[data-testid="duo-slot-choice"] select') },
     { id: "framing", done: severeQualityCount === 0 || qualityAcknowledged, label: t("tool_check_framing"), fix: () => jumpTo("review", '[data-testid="quality-acknowledge"]') },
     { id: "similarity", done: !cloneAlert || assumeClone, label: t("tool_check_similarity"), fix: () => jumpTo("review", '[data-testid="clone-acknowledge"]') },
     { id: "confirm", done: appUsageConfirmed, label: t("tool_check_confirm"), fix: () => jumpTo("review", '[data-testid="confirm-app-usage"]') },
-  ];
-  const readyToPrepare = checklist.every((item) => item.done);
-  const importDone = hasExportable && !unpaired;
+  ] satisfies CheckItem[]).filter((item) => !isDemo || item.id !== "confirm");
+  const readyToPrepare = checklist.every((item) => item.done) && selectedDuoCount > 0 && selectedDuoCount <= DUO_SLOT_MAX;
+  const importDone = hasExportable;
   const stepsDone: Record<ToolPanel, boolean> = {
     captures: importDone,
     adjust: importDone && (adjustSeen || toolPanel === "review" || toolPanel === "export" || Boolean(zipUrl)),
@@ -365,17 +401,20 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     if (panel === "adjust") setAdjustSeen(true);
     setToolPanel(panel);
   }
-  /** From the App Store Connect dialog: Adjust, advanced settings open, focus on the 6.9″ toggle. */
+  /** Return from the upload dialog to the Duo selection control. */
   function showSetting69() {
     goToPanel("adjust");
     window.setTimeout(() => {
-      const details = document.querySelector<HTMLDetailsElement>("details.tool-advanced");
-      if (details) details.open = true;
-      document.querySelector<HTMLElement>('[data-testid="toggle-69"]')?.focus();
+      document.querySelector<HTMLElement>('[data-testid="duo-slot-choice"] select')?.focus();
     }, 60);
   }
-  async function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+  function onSideFiles(side: "outer" | "inner", list: FileList | File[] | DataTransfer | null) {
+    // File inputs are cleared by the caller and drag data expires after the event.
     const selected = takeFiles(list);
+    return trackDraftChange(owner, () => importSideFiles(side, selected));
+  }
+
+  async function importSideFiles(side: "outer" | "inner", selected: File[]) {
     const checked = await Promise.all(selected.slice(0, MAX_IMAGES).map(async (file) => {
       if (!isAllowedImage(file) || file.size > MAX_SOURCE_BYTES) return null;
       try { const metadata = await inspectFile(file); if (metadata.width * metadata.height > MAX_SOURCE_PIXELS) return null; const bitmap = await createImageBitmap(file); const allowed = bitmap.width * bitmap.height <= MAX_SOURCE_PIXELS; bitmap.close(); return allowed ? file : null; } catch { return null; }
@@ -390,7 +429,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       const other = side === "outer" ? "inner" : "outer";
       (other === "outer" ? setOuterFiles : setInnerFiles)([]);
       void saveSetFiles(active.id, other, []).catch(() => {});
-      patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id)), appName: "", transforms: { outer: [], inner: [] } });
+      patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id), defaultNameTemplate), appName: "", transforms: { outer: [], inner: [] } });
     }
     if (next.length > current.length) {
       void trackProduct("captures_added", { side, count: next.length - current.length });
@@ -400,10 +439,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setInnerFiles(next);
       if (outerFiles.length === 0) { setMobileView("inner"); setAdjustSide("inner"); }
     }
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
@@ -422,23 +458,22 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           ? currentTransforms.inner.filter((_, transformIndex) => transformIndex !== index)
           : currentTransforms.inner,
       };
-      const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms: nextTransforms } : item);
+      const duoSelection = active.duoSelection?.mode === "mix" ? {
+        ...active.duoSelection,
+        picks: (active.duoSelection.picks ?? []).filter((pick) => !((pick.side === side || (sameSet && side === "outer")) && pick.index === index))
+          .map((pick) => (pick.side === side || (sameSet && side === "outer")) && pick.index > index ? { ...pick, index: pick.index - 1 } : pick),
+      } : active.duoSelection;
+      const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms: nextTransforms, duoSelection } : item);
       setSets(nextSets);
       saveSetMetas(nextSets);
     }
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
     if (active) void saveSetFiles(active.id, side, next).catch(() => {});
   }
 
   function updateOptions(patch: Partial<RenderOptions>) {
     patchActive({ renderOptions: { ...options, ...patch } });
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
   }
 
   function updateGlobalFit(fit: FitMode) {
@@ -451,10 +486,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     const nextSets = sets.map((item) => item.id === active.id ? { ...item, fitMode: fit, transforms } : item);
     setSets(nextSets);
     saveSetMetas(nextSets);
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
   }
 
   function updateCropTransform(side: "outer" | "inner", index: number, patch: Partial<CropTransform>) {
@@ -469,24 +501,46 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     const nextSets = sets.map((item) => item.id === active.id ? { ...item, transforms } : item);
     setSets(nextSets);
     saveSetMetas(nextSets);
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
+  }
+
+  function openUpgrade(reason: "trial" | "69", kind?: PurchaseKind) {
+    setCheckoutError(null);
+    if (owner === "guest") {
+      // Keep the intent through the owner remount and external auth redirects.
+      const url = new URL(window.location.href);
+      url.searchParams.set("upgrade", "1");
+      url.searchParams.set("reason", reason);
+      if (kind) url.searchParams.set("plan", kind);
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      setUpgradeDismissed(false);
+      setAuthMode("signup");
+    } else {
+      setPaywall(reason);
+    }
+  }
+
+  function dismissUpgrade() {
+    setUpgradeDismissed(true);
+    const url = new URL(window.location.href);
+    for (const key of ["upgrade", "plan", "reason"]) url.searchParams.delete(key);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
   async function onCheckout(kind: PurchaseKind) {
-    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { flashStatus(t("account_payments_not_open_yet"), "info"); return; }
-    if (!signedIn) {
-      setPaywall(null);
-      setShowAuth(true);
+    setCheckoutError(null);
+    if (owner === "guest") {
+      openUpgrade(paywall ?? upgradeReason, kind);
       return;
     }
+    if (kind === "pass30" ? !passAvailable : !billing?.checkoutAvailable) { setCheckoutError(t("billing_error_unavailable")); flashStatus(t("billing_error_unavailable"), "info"); return; }
     setCheckoutBusy(true);
     try {
-      await startCheckout(kind, checkoutReturnPath(locale));
+      await startCheckout(kind, checkoutReturnPath(locale), t);
     } catch (error) {
-      flashStatus(error instanceof Error ? error.message : t("error_export"), "err");
+      const message = error instanceof Error ? error.message : t("error_export");
+      setCheckoutError(message);
+      flashStatus(message, "err");
       setCheckoutBusy(false);
     }
   }
@@ -501,17 +555,14 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setSlideIndex(0);
     setToolPanel("captures");
     setMobileView("outer");
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
+    resetPreparation();
     setOuterFiles(await loadSetFiles(id, "outer"));
     setInnerFiles(await loadSetFiles(id, "inner"));
-    setZipUrl(null);
   }
 
   function addSet() {
     setsMenu.closeSets();
-    const next = defaultSet(sets);
+    const next = defaultSet(sets, defaultNameTemplate);
     const list = [...sets, next];
     setSets(list);
     saveSetMetas(list);
@@ -520,22 +571,35 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
 
   async function removeSet(id: string) {
     const list = sets.filter((item) => item.id !== id);
-    const fallback = list[0] ?? defaultSet();
+    const fallback = list[0] ?? defaultSet([], defaultNameTemplate);
     const nextList = list.length ? list : [fallback];
-    setSets(nextList);
-    saveSetMetas(nextList);
+    const nextId = nextList[0]!.id;
+    const [outer, inner] = await Promise.all([loadSetFiles(nextId, "outer"), loadSetFiles(nextId, "inner")]);
     await deleteSetFiles(id);
-    await switchSet(nextList[0]!.id);
+    saveSetMetas(nextList);
+    saveActiveId(nextId);
+    setSets(nextList);
+    setActiveId(nextId);
+    setOuterFiles(outer);
+    setInnerFiles(inner);
+    setSlideIndex(0);
+    setToolPanel("captures");
+    setMobileView("outer");
+    resetPreparation();
   }
 
-  async function loadDemo() {
+  function loadDemo() {
+    return trackDraftChange(owner, importDemo);
+  }
+
+  async function importDemo() {
     if (demoState === "loading") return;
     setDemoState("loading");
     try {
-      const files = await fetchHarborFiles(locale);
+      const files = await fetchHarborFiles(locale, { outer: t("tool_demo_file_closed"), inner: t("tool_demo_file_open") });
       const existing = sets.find((item) => item.demo);
       const reusable = active && !active.demo && outerFiles.length === 0 && innerFiles.length === 0 ? active : null;
-      const base = existing ?? reusable ?? defaultSet(sets);
+      const base = existing ?? reusable ?? defaultSet(sets, defaultNameTemplate);
       const demoSet: SetMeta = {
         ...base,
         name: t("tool_demo_set_name"),
@@ -564,10 +628,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       setSlideIndex(0);
       setMobileView("outer");
       setAdjustSide("outer");
-      setQualityAcknowledged(false);
-      setAppUsageConfirmed(false);
-      setAssumeClone(false);
-      setZipUrl(null);
+      resetPreparation();
       setStatus(null);
       setToolPanel("adjust");
       setDemoState("idle");
@@ -582,12 +643,9 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
     setInnerFiles([]);
     void saveSetFiles(active.id, "outer", []).catch(() => {});
     void saveSetFiles(active.id, "inner", []).catch(() => {});
-    patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id)), appName: "", transforms: { outer: [], inner: [] } });
+    patchActive({ demo: false, name: nextSetName(sets.filter((item) => item.id !== active.id), defaultNameTemplate), appName: "", transforms: { outer: [], inner: [] } });
     completedSetsRef.current.delete(active.id);
-    setQualityAcknowledged(false);
-    setAppUsageConfirmed(false);
-    setAssumeClone(false);
-    setZipUrl(null);
+    resetPreparation();
     setToolPanel("captures");
     requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="drop-outer-input"]')?.focus());
   }
@@ -609,6 +667,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   if (toolPanel === "captures" || (toolPanel === "adjust" && !importDone)) {
     primary = importDone
       ? { label: t("tool_action_to_adjust"), testId: "tool-primary", onClick: () => goToPanel("adjust") }
+      : hasAny && (duoSelection.mode === "mix" || selectedDuoCount > DUO_SLOT_MAX)
+      ? { label: t("tool_duo_content"), testId: "tool-primary", onClick: () => jumpTo("captures", '[data-testid="duo-slot-choice"] select') }
       : { label: t(!hasAny ? "tool_action_import" : missingSide === "outer" ? "tool_action_import_closed" : "tool_action_import_open"), testId: "tool-primary", onClick: () => openPicker(missingSide) };
   } else if (toolPanel === "adjust") {
     primary = { label: t("tool_action_to_review"), testId: "tool-primary", onClick: () => goToPanel("review") };
@@ -618,28 +678,38 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
       onClick: (event) => { event.preventDefault(); void jobs.onDownload(); },
     };
   } else if (isDemo) {
-    // Harbor is fictional: its files come from the example ZIP, so no export trial is spent on it.
-    primary = { label: t("tool_action_demo_zip"), testId: "tool-demo-zip", disabled: !readyToPrepare, onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
+    // This fixed example ZIP is independent of workspace edits and consumes no export.
+    primary = { label: t("tool_action_demo_zip"), testId: "tool-demo-zip", onClick: () => window.location.assign(EXAMPLE_ZIP_URL) };
   } else {
     primary = {
       label: jobs.busyExport ? t("tool_preparing") : t("tool_action_prepare"), testId: "tool-download",
       disabled: jobs.busyExport || !readyToPrepare, onClick: () => void jobs.onExport(),
     };
   }
-  const showMissing = (toolPanel === "review" || toolPanel === "export") && !zipUrl && !readyToPrepare;
+  const showMissing = (toolPanel === "review" || toolPanel === "export") && !isDemo && !zipUrl && !readyToPrepare;
+
+  // Editing the boot placeholder during a migration could overwrite the account's saved sets.
+  if (!draftsLoaded) return <div className="mx-auto max-w-6xl px-5 py-10">
+    <p role="status">{t("tool_loading_workspace")}</p>
+    {storageError ? <>
+      <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p>
+      <Button as="button" variant="text" type="button"  onClick={() => window.location.reload()}>{t("tool_import_anonymous_older_drafts")}</Button>
+    </> : null}
+  </div>;
 
   return (
     <div className="studio-tool-shell mx-auto max-w-[92rem] px-5 pb-24 pt-5" data-tool-panel={toolPanel}>
       <header className="tool-command-bar" id="tool-create">
         <div className="tool-command-brand"><span className="tool-command-dot" aria-hidden="true" /><span>{t("tool_workspace")}</span></div>
         <div className="tool-command-set">
-          <SetPicker hydrated={hydrated} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} />
+          <SetPicker hydrated={hydrated && draftsLoaded} sets={sets} active={active} menu={setsMenu} switchSet={switchSet} addSet={addSet} removeSet={removeSet} renameSet={(name) => patchActive({ name })} />
           <div className="tool-command-notes">
             <p id="tool-sets-description" className="text-xs text-[var(--muted)]">{t("tool_drafts_on_device_no")}</p>
+            {draftsRecovered ? <p role="status" data-testid="tool-drafts-recovered" className="text-sm">{t("tool_drafts_recovered")}</p> : null}
             {storageError ? <p role="alert" className="ds-warn text-sm">{t("tool_local_save_failed_keep")}</p> : null}
-            {draftSource ? <button className="ds-text-btn" onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{t("tool_import_anonymous_older_drafts")}</button> : null}
-            {billingError ? <button className="ds-text-btn" onClick={() => void refreshBilling()}>{t("tool_retry_status")}</button> : null}
-            {activationTimedOut ? <button className="ds-text-btn" onClick={() => retryActivation()}>{t("tool_check_activation_again")}</button> : null}
+            {draftSource ? <Button as="button" variant="text"  onClick={() => void importLocalDrafts(draftSource, owner).then(() => window.location.reload()).catch(() => setStorageError(true))}>{t("tool_import_anonymous_older_drafts")}</Button> : null}
+            {billingError ? <Button as="button" variant="text"  onClick={() => void refreshBilling()}>{t("tool_retry_status")}</Button> : null}
+            {activationTimedOut ? <Button as="button" variant="text"  onClick={() => retryActivation()}>{t("tool_check_activation_again")}</Button> : null}
           </div>
         </div>
         <div className="tool-command-orientation">
@@ -652,10 +722,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           ]}
           onChange={(value) => {
             patchActive({ orientation: value as Orientation });
-            setQualityAcknowledged(false);
-            setAppUsageConfirmed(false);
-            setAssumeClone(false);
-            setZipUrl(null);
+            resetPreparation();
           }}
         />
 </div>
@@ -663,24 +730,23 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           {session === "loading" ? <span className="ds-pill ds-pill-mute" role="status" data-testid="tool-quota-loading">{t("tool_loading")}</span> : !signedIn ? <button type="button" className="ds-pill ds-pill-ink" data-testid="tool-quota" onClick={() => setShowAuth(true)}>{t("tool_guest")}</button> : <span className={`ds-pill ${pillMute ? "ds-pill-mute" : "ds-pill-ink"}`} data-testid="tool-quota">{remainingLabel}</span>}
         </div>
       </header>
-      {urlStatus && toolPanel !== "review" && toolPanel !== "export" ? <div className="tool-return-status"><StatusLine text={urlStatus} kind="info" testId="tool-status" /></div> : null}
       <div className="tool-workspace">
         <section className="studio-tool-main min-w-0" aria-label={t("tool_screenshot_preview")}>
           <div className="tool-canvas-heading" id="tool-inspect">
-            <div><p className="tool-eyebrow">{t("tool_composition")}</p><SetTitle name={active?.name ?? ""} onRename={(name) => patchActive({ name })} /></div>
-            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? `${String(slideIndex + 1).padStart(2, "0")} / ${String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0")}` : t("tool_no_pairs")}</span>
+            <h1 className="sr-only">{active?.name?.trim() || t("tool_default_set_label")}</h1>
+            <span className="tool-canvas-count">{Math.max(outerFiles.length, effectiveInner.length) ? tf("tool_pair_position", { n: String(slideIndex + 1).padStart(2, "0"), total: String(Math.max(outerFiles.length, effectiveInner.length)).padStart(2, "0") }) : t("tool_no_pairs")}</span>
           </div>
           {isDemo ? <div className="tool-demo-banner" role="note" data-testid="tool-demo-banner">
             <span className="tool-demo-badge">{t("tool_demo_badge")}</span>
             <p>{t("tool_demo_banner")}</p>
-            <button type="button" className="ds-text-btn" data-testid="tool-demo-replace" onClick={replaceDemo}>{t("tool_demo_replace")}</button>
+            <Button as="button" variant="text" type="button"  data-testid="tool-demo-replace" onClick={replaceDemo}>{t("tool_demo_replace")}</Button>
           </div> : null}
           {!hasAny && draftsLoaded ? <DemoStart state={demoState} onLoad={() => void loadDemo()} /> : null}
           <ToolCanvas mobileView={mobileView} slideIndex={slideIndex} onMobileView={setMobileView}>
         <div
           className={`preview-duo mt-5${orientation === "landscape" ? " is-landscape" : ""}${previewMode === "pixels" ? " is-pixels" : ""}`}
           style={previewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
-        >
+       >
           <PreviewCard
             testId="preview-outer"
             label={t("tool_preview_outer")}
@@ -716,6 +782,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           {cloneAlert || unpaired || severeQualityCount > 0 || foldWarningCount > 0 ? <div className="tool-alert-summary" role="status"><span aria-hidden="true">◇</span><span>{t("tool_some_items_need_attention")}</span><button type="button" onClick={() => goToPanel("review")}>{t("tool_view_report")}</button></div> : null}
         </section>
         <aside id="tool-deliver" className="studio-tool-inspector min-w-0" aria-label={t("tool_workspace_controls")}>
+          <DuoSlotChoice value={duoSelection} outerFiles={outerFiles} innerFiles={effectiveInner}
+            onChange={(duoSelection) => {
+              patchActive({ duoSelection });
+              resetPreparation();
+            }} />
           <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} />
           <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
             {toolPanel === "captures" ? <CapturesPanel active={active} outerSpec={outerSpec} innerSpec={innerSpec} outerFiles={outerFiles} innerFiles={innerFiles}
@@ -730,8 +801,8 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
                 innerSlide={innerSlide} currentFoldCheck={currentFoldCheck}
               />
               <AdvancedSettings globalFit={globalFit} updateGlobalFit={updateGlobalFit} options={options} updateOptions={updateOptions}
-                showHinge={showHinge} setShowHinge={setShowHinge} include69={include69} patchActive={patchActive} setZipUrl={setZipUrl}
-                billing={billing} setPaywall={setPaywall} cloneLabel={cloneLabel} assumeClone={assumeClone} setAssumeClone={setAssumeClone}
+                showHinge={showHinge} setShowHinge={setShowHinge} include63={include63} include69={include69} patchActive={patchActive} setZipUrl={setZipUrl}
+                billing={billing} setPaywall={openUpgrade} cloneLabel={cloneLabel} assumeClone={assumeClone} setAssumeClone={setAssumeClone}
               />
             </> : null}
             {toolPanel === "review" ? <>
@@ -746,12 +817,12 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
                 effectiveInner={effectiveInner} foldChecks={foldChecks} clones={clones} appUsageConfirmed={appUsageConfirmed}
                 setAppUsageConfirmed={setAppUsageConfirmed} cloneAlert={cloneAlert} severeQualityCount={severeQualityCount} foldWarningCount={foldWarningCount}
               />
-              <OtherActions hasExportable={hasExportable} jobs={jobs} />
+              <OtherActions hasExportable={outerFiles.length > 0 && outerFiles.length === effectiveInner.length} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
             {toolPanel === "export" ? <>
               <ExportPanel locale={locale} prefix={prefix} zipUrl={zipUrl} session={session} orientation={orientation} demo={isDemo} jobs={jobs} />
-              <OtherActions hasExportable={hasExportable} jobs={jobs} />
+              <OtherActions hasExportable={outerFiles.length > 0 && outerFiles.length === effectiveInner.length} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
           </div>
@@ -760,13 +831,13 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               <span>{t("tool_action_missing")}</span>{" "}
               {checklist.filter((item) => !item.done).map((item, index) => <span key={item.id}>{index ? <span aria-hidden="true"> · </span> : null}<button type="button" onClick={item.fix}>{item.label}</button></span>)}
             </p> : null}
-            {(toolPanel === "review" || toolPanel === "export") && (status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
+            {(status ?? urlStatus) ? <StatusLine text={status ?? urlStatus} kind={status ? statusKind : "info"} testId="tool-status" /> : null}
             {primary.href ? (
-              <a href={primary.href} download={primary.download} data-testid={primary.testId} className="ds-cta w-full" onClick={primary.onClick}>{primary.label}</a>
+              <Button as="a" variant="primary" href={primary.href} download={primary.download} data-testid={primary.testId} className="w-full" onClick={primary.onClick}>{primary.label}</Button>
             ) : (
-              <button type="button" className="ds-cta w-full" data-testid={primary.testId} disabled={primary.disabled} onClick={primary.onClick}>
+              <Button as="button" variant="primary" type="button" className="w-full" data-testid={primary.testId} disabled={primary.disabled} onClick={primary.onClick}>
                 <SwapLabel text={primary.label} />
-              </button>
+              </Button>
             )}
             {toolPanel === "export" && zipUrl && jobs.downloadId && signedIn && !isDemo ? (
               <AscToolAction
@@ -775,49 +846,53 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               />
             ) : null}
             {session === "out" && hasExportable && !isDemo && !zipUrl && (toolPanel === "review" || toolPanel === "export") ? (
-              <button type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="ds-text-btn tool-dock-secondary">
-                {t("tool_create_account")}
-              </button>
+              <Button as="button" variant="text" type="button" data-testid="tool-create-account" onClick={() => setShowAuth(true)} className="tool-dock-secondary">
+                {tf("tool_create_account", { exports: FREE_EXPORTS })}
+              </Button>
             ) : null}
             {toolPanel === "review" || toolPanel === "export" ? <p className="tool-dock-score" data-testid="readiness-score">{tf("tool_score_line", { score: preparationScore })}</p> : null}
           </div>
         </aside>
       </div>
-      {showAuth || (upgradeRequested && session === "out") ? (
+      {showAuth || (upgradeRequested && owner === "guest") ? (
         <Overlay
           onClose={() => {
             setShowAuth(false);
-            setUpgradeDismissed(true);
+            dismissUpgrade();
           }}
           labelledBy="auth-modal-title"
-          closeLabel={t("asct_close")}
-        >
+          closeLabel={t("tool_auth_close")}
+       >
           <AuthForm
             locale={locale}
             mode={authMode}
             variant="modal"
-            nextPath={upgradeRequested && preferredUpgradeKind ? `${prefix}/tool?upgrade=1&plan=${preferredUpgradeKind}` : `${prefix}/tool`}
+            title={upgradeRequested ? t("auth_upgrade_title") : undefined}
+            lead={upgradeRequested ? t("auth_upgrade_lead") : undefined}
+            nextPath={upgradeRequested ? `${prefix}/tool?upgrade=1&reason=${upgradeReason}${preferredUpgradeKind ? `&plan=${preferredUpgradeKind}` : ""}` : `${prefix}/tool`}
             onSuccess={() => {
               setShowAuth(false);
               void refreshBilling();
             }}
           />
-          <button type="button" className="ds-text-btn mt-4" onClick={() => setAuthMode((mode) => mode === "signup" ? "login" : "signup")}>
+          <Button as="button" variant="text" type="button" className="mt-4" onClick={() => setAuthMode((mode) => mode === "signup" ? "login" : "signup")}>
             {authMode === "signup" ? t("tool_already_have_account_sign") : t("signup_title")}
-          </button>
+          </Button>
         </Overlay>
       ) : null}
-      {paywall || (upgradeRequested && session === "in") ? (
+      {signedIn && billing && (paywall || upgradeRequested) ? (
         <PaywallModal
           available={billing?.checkoutAvailable === true}
           passAvailable={passAvailable}
           locale={locale}
-          reason={paywall ?? "trial"}
+          reason={paywall ?? upgradeReason}
           busy={checkoutBusy}
+          error={checkoutError}
           preferredKind={upgradeRequested ? preferredUpgradeKind : undefined}
           onClose={() => {
+            setCheckoutError(null);
             setPaywall(null);
-            setUpgradeDismissed(true);
+            dismissUpgrade();
           }}
           onCheckout={(kind) => void onCheckout(kind)}
         />

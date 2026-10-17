@@ -141,7 +141,6 @@ function zipReply() {
       warning: "",
       images: [
         { slot: "duo-outer", index: 1, width: 1398, height: 2034, format: "png" },
-        { slot: "duo-inner", index: 1, width: 2007, height: 2853, format: "png" },
       ],
     },
   };

@@ -1,12 +1,16 @@
 import { MAX_IMAGES, isTextColor, type CropTransforms, type Locale, type RenderOptions } from "../specs";
 
+import { duoPicks, type DuoSelection } from "../duo-selection";
+
 export type RenderBody = {
+  duoSelection?: DuoSelection;
   paths?: string[];
   outerPaths?: string[];
   innerPaths?: string[];
   appName?: string;
   clientName?: string;
   sameSet?: boolean;
+  include63?: boolean;
   include69?: boolean;
   assumeCloneRisk?: boolean;
   orientation?: "portrait" | "landscape";
@@ -31,7 +35,7 @@ export function parseRenderBody(value: unknown, userId: string): RenderBody {
       throw new Error("PATH_FORBIDDEN");
     }
   }
-  for (const key of ["sameSet", "include69", "assumeCloneRisk"] as const) {
+  for (const key of ["sameSet", "include63", "include69", "assumeCloneRisk"] as const) {
     if (value[key] !== undefined && typeof value[key] !== "boolean") throw new Error("INVALID_REQUEST");
   }
   for (const key of ["appName", "clientName"] as const) {
@@ -72,6 +76,12 @@ export function parseRenderBody(value: unknown, userId: string): RenderBody {
         }
       }
     }
+  }
+  if (value.duoSelection !== undefined) {
+    if (!record(value.duoSelection)) throw new Error("INVALID_DUO_SELECTION");
+    const outer = (value.outerPaths ?? value.paths ?? []) as string[];
+    const inner = value.sameSet ? outer : (value.innerPaths ?? value.paths ?? []) as string[];
+    duoPicks(value.duoSelection as DuoSelection, outer.length, inner.length);
   }
   return value as RenderBody;
 }

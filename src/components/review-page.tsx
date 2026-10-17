@@ -1,6 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 import { DeviceCamera } from "@/components/device-camera";
+import { DsToggle } from "@/components/tool/controls";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { connectPreviewStyle, duoSpec, type Locale, type Orientation } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
@@ -27,7 +30,7 @@ const STATUS_KEYS: Record<string, MessageKey> = {
 
 function reviewStatusLabel(status: string, t: Translator["t"]) {
   const key = STATUS_KEYS[status];
-  return key ? t(key) : status;
+  return key ? t(key) : t("review_status_unknown");
 }
 
 /** Header and footer are server components, passed in so this client page does not pull them into its bundle. */
@@ -36,8 +39,8 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
-  const [hinge, setHinge] = useState(true);
-  const [viewMode, setViewMode] = useState<"device" | "pixels">("device");
+  const [hinge, setHinge] = useState(false);
+  const [viewMode, setViewMode] = useState<"device" | "pixels">("pixels");
   const [busy, setBusy] = useState(false);
   const [decisionFeedback, setDecisionFeedback] = useState<{ text: string; error: boolean } | null>(null);
 
@@ -87,7 +90,10 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
       {header}
       <main id="main" className="studio-review-main mx-auto w-full max-w-6xl px-5 py-12">
         {error ? (
-          <p className="text-[var(--muted)]" data-testid="review-missing">{t("review_missing")}</p>
+          <section className="max-w-2xl py-12" data-testid="review-missing">
+            <h1 className="font-display text-5xl">{t("review_missing_title")}</h1>
+            <p className="mt-5 text-[var(--muted)]">{t("review_missing")}</p>
+          </section>
         ) : !data ? (
           <div className="t-skel max-w-md" aria-busy="true">
             <div className="t-skel-skeleton is-pulsing">
@@ -119,7 +125,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
             ) : null}
             <p className="mt-3 text-[var(--muted)]" data-testid="review-status" role="status">
               {data.client_name ? `${data.client_name} · ` : ""}
-              {data.orientation === "landscape" ? t("tool_orient_landscape") : ("Portrait")} · {reviewStatusLabel(data.status, t)}
+              {data.orientation === "landscape" ? t("review_orientation_landscape") : t("review_orientation_portrait")} · {reviewStatusLabel(data.status, t)}
             </p>
             {data.expiresAt ? (
               <p className="mt-2 text-sm text-[var(--muted)]" data-testid="review-expiry">
@@ -135,7 +141,7 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   aria-pressed={viewMode === "device"}
                   data-testid="review-device-view"
                   onClick={() => setViewMode("device")}
-                >
+               >
                   {t("review_device_view")}
                 </button>
                 <button
@@ -144,24 +150,17 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   aria-pressed={viewMode === "pixels"}
                   data-testid="review-pixel-view"
                   onClick={() => setViewMode("pixels")}
-                >
+               >
                   {t("review_pixel_view")}
                 </button>
               </div>
-              {viewMode === "device" ? (
-                <button
-                  type="button"
-                  className="ds-toggle"
-                  aria-pressed={hinge}
-                  onClick={() => setHinge((value) => !value)}
-                >
-                  <span className="text-sm">{t("tool_hinge_toggle")}</span>
-                  <span className="ds-toggle-track t-toggle" data-on={hinge ? "true" : "false"}>
-                    <span className="ds-toggle-thumb t-toggle-thumb" />
-                  </span>
-                </button>
-              ) : null}
+              <DsToggle testId="review-hinge" pressed={hinge} onToggle={() => setHinge((value) => !value)}>
+                {t("review_hinge_toggle")}
+              </DsToggle>
             </div>
+            {viewMode === "device" || hinge ? (
+              <p className="mt-3 text-sm text-[var(--muted)]" data-testid="review-preview-hint">{t("review_preview_hint")}</p>
+            ) : null}
             <div className="mt-10 space-y-12">
               {data.slides.map((slide) => {
                 const orientation: Orientation = data.orientation === "landscape" ? "landscape" : "portrait";
@@ -176,21 +175,21 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
                   <div
                     className={`review-pair t-skel is-revealed${landscape ? " is-landscape" : ""}${viewMode === "pixels" ? " is-pixels" : ""}`}
                     style={viewMode === "pixels" ? connectPreviewStyle(outerSpec, innerSpec) as CSSProperties : undefined}
-                  >
-                    <p className="studio-review-label studio-review-label-outer">{t("home_closed_screen")}</p>
+                 >
+                    <p className="studio-review-label studio-review-label-outer">{t("review_closed_screen")}</p>
                     <div
                       className={`preview-glass preview-outer t-resize${viewMode === "device" ? " device-bezel" : ""}`}
                       data-aspect={viewMode === "pixels" ? `${outerSpec.width}/${outerSpec.height}` : undefined}
-                    >
+                   >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.outer} alt={tf("review_alt_numbered_outer", { n: slide.index + 1, total: data.slides.length })} />
                       {viewMode === "device" ? <DeviceCamera /> : null}
                     </div>
-                    <p className="studio-review-label studio-review-label-inner">{t("home_open_screen")}</p>
+                    <p className="studio-review-label studio-review-label-inner">{t("review_open_screen")}</p>
                     <div
-                      className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${viewMode === "device" && hinge ? "is-hinge" : "hinge-off"}`}
+                      className={`preview-glass preview-inner t-resize ${viewMode === "device" ? "device-bezel" : ""} ${hinge ? "is-hinge" : "hinge-off"}`}
                       data-aspect={viewMode === "pixels" ? `${innerSpec.width}/${innerSpec.height}` : undefined}
-                    >
+                   >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={slide.inner} alt={tf("review_alt_numbered_inner", { n: slide.index + 1, total: data.slides.length })} />
                       <span className="division" aria-hidden="true" />
@@ -215,12 +214,12 @@ export function ReviewPage({ id, locale, demo = false, header, footer }: { id: s
               />
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" className="ds-cta" data-testid="review-approve" disabled={busy} onClick={() => void decide("approve")}>
-                {t("home_approve")}
-              </button>
-              <button type="button" className="ds-cta-ghost" data-testid="review-redo" disabled={busy} onClick={() => void decide("redo")}>
-                {t("home_needs_work")}
-              </button>
+              <Button as="button" variant="primary" type="button"  data-testid="review-approve" disabled={busy} onClick={() => void decide("approve")}>
+                {t("review_approve")}
+              </Button>
+              <Button as="button" variant="secondary" type="button"  data-testid="review-redo" disabled={busy} onClick={() => void decide("redo")}>
+                {t("review_needs_work")}
+              </Button>
             </div>
             {decisionFeedback ? <p className={decisionFeedback.error ? "ds-warn mt-3" : "mt-3 text-sm text-[var(--studio-sea)]"} role={decisionFeedback.error ? "alert" : "status"} data-testid="review-decision-feedback">{decisionFeedback.text}</p> : null}
             {data.comment ? <p className="mt-4 text-sm text-[var(--muted)]">{data.comment}</p> : null}

@@ -2,47 +2,55 @@ import { PRO_CHECKOUT_KIND, isOneTimeKind, type CheckoutKind, type PurchaseKind 
 import { localePrefix } from "./site";
 import type { Locale } from "./specs";
 import { trackProduct } from "./analytics-client";
+import type { MessageKey, Translator } from "./i18n/types";
+import { captureAttribution } from "./attribution-client";
 
 export { PRO_CHECKOUT_KIND };
 
-function checkoutMessage(code: string | undefined, english: boolean): string {
-  const messages: Record<string, [string, string]> = {
-    AUTH_REQUIRED: ["Reconnectez-vous avant de choisir une offre.", "Sign in again before choosing a plan."],
-    BILLING_OWNER_REQUIRED: ["Le propriétaire de l’espace doit gérer l’abonnement.", "The workspace owner must manage the subscription."],
-    BILLING_UNCONFIGURED: ["Les paiements ne sont pas encore ouverts. Vos droits actuels restent disponibles.", "Payments are not open yet. Your current access remains available."],
-    ACTIVATION_PENDING: ["L’activation est en cours. Vérifiez votre compte avant de réessayer un paiement.", "Activation is pending. Check your account before attempting another payment."],
-    CHECKOUT_EXPIRED: ["La session de paiement a expiré. Sélectionnez à nouveau votre offre.", "The checkout session expired. Select your plan again."],
+export function billingErrorKey(code?: string): MessageKey {
+  const messages: Record<string, MessageKey> = {
+    AUTH_REQUIRED: "billing_error_auth",
+    BILLING_OWNER_REQUIRED: "billing_error_owner",
+    BILLING_UNCONFIGURED: "billing_error_unconfigured",
+    ACTIVATION_PENDING: "billing_error_activation",
+    CHECKOUT_EXPIRED: "billing_error_expired",
+    NO_BILLING_CUSTOMER: "billing_error_no_customer",
   };
-  return messages[code ?? ""]?.[english ? 1 : 0] ?? (english ? "Billing is temporarily unavailable. Please retry in a moment." : "La facturation est temporairement indisponible. Réessayez dans un instant.");
+  return messages[code ?? ""] ?? "billing_error_unavailable";
 }
 
-export async function startCheckout(kind: PurchaseKind, nextPath: string): Promise<void> {
-  const response = await fetch("/api/stripe/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kind, next: nextPath }),
-  });
-  const payload = (await response.json()) as { url?: string; error?: string };
-  if (response.status === 409 && payload.error === "SUBSCRIPTION_EXISTS") {
-    const portalResponse = await fetch("/api/stripe/portal", {
+class CheckoutError extends Error {}
+
+export async function startCheckout(kind: PurchaseKind, nextPath: string, t: Translator["t"]): Promise<void> {
+  try {
+    captureAttribution();
+    const response = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locale: nextPath.startsWith("/en/") ? "en" : "fr" }),
+      body: JSON.stringify({ kind, next: nextPath }),
     });
-    const portal = (await portalResponse.json()) as { url?: string; error?: string };
-    if (!portalResponse.ok || !portal.url) throw new Error(checkoutMessage(portal.error, nextPath.startsWith("/en/")));
-    window.location.assign(portal.url);
-    return;
+    const payload = (await response.json()) as { url?: string; error?: string };
+    if (response.status === 409 && payload.error === "SUBSCRIPTION_EXISTS") {
+      const portalResponse = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: nextPath.startsWith("/en/") ? "en" : "fr" }),
+      });
+      const portal = (await portalResponse.json()) as { url?: string; error?: string };
+      if (!portalResponse.ok || !portal.url) throw new CheckoutError(t(billingErrorKey(portal.error)));
+      window.location.assign(portal.url);
+      return;
+    }
+    if (!response.ok || !payload.url) throw new CheckoutError(t(billingErrorKey(payload.error)));
+    await trackProduct("checkout_started", { plan: kind });
+    window.location.assign(payload.url);
+  } catch (error) {
+    throw error instanceof CheckoutError ? error : new CheckoutError(t("billing_error_unavailable"));
   }
-  if (!payload.url) {
-    throw new Error(checkoutMessage(payload.error, nextPath.startsWith("/en/")));
-  }
-  await trackProduct("checkout_started", { plan: kind });
-  window.location.assign(payload.url);
 }
 
-export async function startProCheckout(nextPath: string): Promise<void> {
-  return startCheckout(PRO_CHECKOUT_KIND, nextPath);
+export async function startProCheckout(nextPath: string, t: Translator["t"]): Promise<void> {
+  return startCheckout(PRO_CHECKOUT_KIND, nextPath, t);
 }
 
 export function checkoutReturnPath(locale: Locale): string {

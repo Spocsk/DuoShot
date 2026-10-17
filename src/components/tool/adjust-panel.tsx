@@ -64,7 +64,7 @@ export function AdjustPanel({
           data-testid="tool-device-view"
           onClick={() => setPreviewMode("device")}
         >
-          {t("review_device_view")}
+          {t("tool_device_view")}
         </button>
         <button
           type="button"
@@ -73,7 +73,7 @@ export function AdjustPanel({
           data-testid="tool-pixel-view"
           onClick={() => setPreviewMode("pixels")}
         >
-          {t("review_pixel_view")}
+          {t("tool_pixel_view")}
         </button>
       </div>
     </div>
@@ -88,6 +88,7 @@ export function AdvancedSettings({
   updateOptions,
   showHinge,
   setShowHinge,
+  include63,
   include69,
   patchActive,
   setZipUrl,
@@ -103,11 +104,12 @@ export function AdvancedSettings({
   updateOptions: (patch: Partial<RenderOptions>) => void;
   showHinge: boolean;
   setShowHinge: Dispatch<SetStateAction<boolean>>;
+  include63: boolean;
   include69: boolean;
   patchActive: (patch: Partial<SetMeta>) => void;
   setZipUrl: Dispatch<SetStateAction<string | null>>;
   billing: BillingStatus | null;
-  setPaywall: Dispatch<SetStateAction<"trial" | "69" | null>>;
+  setPaywall: (reason: "69") => void;
   cloneLabel: string | null;
   assumeClone: boolean;
   setAssumeClone: Dispatch<SetStateAction<boolean>>;
@@ -211,6 +213,19 @@ export function AdvancedSettings({
         {t("tool_burn_hinge")}
       </DsToggle>
       <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t("tool_burn_hinge_hint")}</p>
+    </div>
+    <div className="ds-field">
+      <DsToggle
+        testId="toggle-63"
+        pressed={include63}
+        onToggle={() => {
+          patchActive({ include63: !include63 });
+          setZipUrl(null);
+        }}
+      >
+        {t("tool_label_63")}
+      </DsToggle>
+      <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t("tool_63_hint")}</p>
     </div>
     <div className="ds-field">
       <DsToggle

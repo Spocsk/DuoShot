@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, IBM_Plex_Mono } from "next/font/google";
+import { AttributionCapture } from "@/components/attribution-capture";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getClientMessages } from "@/lib/i18n";
 import { LANDING_MOTION_QUERY } from "@/lib/motion";
+import { SiteJsonLd } from "@/lib/json-ld";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "@/app/transitions-root.css";
 import "@/app/transitions-dev.css";
 import "@/app/globals.css";
@@ -37,13 +41,19 @@ const MOTION_FLAG = `try{if(matchMedia(${JSON.stringify(LANDING_MOTION_QUERY)}).
 
 export function DocumentLayout({ children, locale }: { children: React.ReactNode; locale: "fr" | "en" }) {
   return (
+    // The pre-paint scripts own data-theme and add the motion class before hydration.
     <html
       lang={locale}
       className={`${sans.variable} ${mono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        <script id="duoshot-theme" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
+        <SiteJsonLd locale={locale} />
+        <Suspense fallback={null}>
+          <AttributionCapture />
+        </Suspense>
         <I18nProvider locale={locale} messages={getClientMessages(locale, "site")}>
           {children}
           <AnalyticsProvider />

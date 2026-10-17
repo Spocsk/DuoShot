@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { getTranslator } from "@/lib/i18n";
 import { PLANS } from "@/lib/plans";
 import { INNER_PORTRAIT, OUTER_PORTRAIT } from "@/lib/screenshot-copy";
-import { duoSpec, type Locale } from "@/lib/specs";
+import { duoSpec, SIZE_SPECS, type Locale } from "@/lib/specs";
 import { DuoPair, duoWidth } from "./duo";
 import { OgFrame } from "./frame";
 import { HARBOR_SCREEN, OG } from "./theme";
@@ -10,6 +10,11 @@ import { HARBOR_SCREEN, OG } from "./theme";
 export type OgPage =
   | "home"
   | "specs"
+  | "comparison-guide"
+  | "competitor-comparison"
+  | "asc-guide"
+  | "screenshot-checker"
+  | "iphone-69"
   | "rejection"
   | "pricing"
   | "why-not-ai"
@@ -27,21 +32,41 @@ const LEGAL = { fr: "Informations légales", en: "Legal" } as const;
 
 /** Text of each card. Titles follow the page headings; `alt` describes the picture for screen readers. */
 const COPY: Record<OgPage, Record<Locale, Copy>> = {
+  "competitor-comparison": {
+    fr: { eyebrow: "Comparatifs", title: "DuoShot et les générateurs de captures", lead: "Présentation sourcée, dimensions et tarifs DuoShot.", alt: "Comparatifs DuoShot avec AppLaunchFlow, AppScreens, Screenhance et App Asset Kit : sources officielles et fonctionnement DuoShot." },
+    en: { eyebrow: "Comparisons", title: "DuoShot and screenshot generators", lead: "Sourced overview, DuoShot sizes and pricing.", alt: "DuoShot comparisons with AppLaunchFlow, AppScreens, Screenhance and App Asset Kit: official sources and DuoShot workflow." },
+  },
+  "asc-guide": {
+    fr: { eyebrow: "Guide · App Store Connect", title: "Déposer vos captures iPhone Duo", lead: "Dimensions, emplacement dédié et dépôt manuel.", alt: "Guide de dépôt manuel des captures iPhone Duo dans App Store Connect : tailles des écrans externe et interne et emplacement dédié par langue." },
+    en: { eyebrow: "Guide · App Store Connect", title: "Upload your iPhone Duo screenshots", lead: "Sizes, dedicated slot and manual upload.", alt: "Manual iPhone Duo screenshot upload guide for App Store Connect: outer and inner display sizes and the dedicated slot per localization." },
+  },
+  "screenshot-checker": {
+    fr: { eyebrow: "Outil gratuit", title: "Vérifiez vos captures iPhone Duo.", lead: "Dimensions et transparence.\nAucune image envoyée.", alt: "Vérificateur gratuit de captures iPhone Duo : dimensions, transparence et limite de 10 images, dans votre navigateur." },
+    en: { eyebrow: "Free tool", title: "Check your iPhone Duo screenshots.", lead: "Dimensions and transparency.\nNo images uploaded.", alt: "Free iPhone Duo screenshot checker: dimensions, transparency and the 10-image limit, in your browser." },
+  },
+  "comparison-guide": {
+    fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },
+    en: { eyebrow: "Guide · 2026 comparison", title: "App Store screenshot generators", lead: "Five tools compared: prices, sizes and export.", alt: "2026 App Store screenshot generator comparison: AppScreens, AppLaunchFlow, SnapMonk, Screenpane and DuoShot." },
+  },
   home: {
     fr: { eyebrow: "iPhone Duo · App Store Connect", title: "Captures iPhone Duo.\nAux dimensions App Store.", alt: `DuoShot : captures iPhone Duo aux dimensions App Store, ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px.` },
     en: { eyebrow: "iPhone Duo · App Store Connect", title: "iPhone Duo screenshots.\nExact App Store sizes.", alt: `DuoShot: iPhone Duo screenshots at exact App Store sizes, ${OUTER_PORTRAIT} and ${INNER_PORTRAIT} px.` },
   },
   specs: {
-    fr: { eyebrow: "Dimensions", title: "Tailles des captures iPhone Duo", lead: "Portrait, PNG ou JPEG opaque.", alt: `Tailles des captures iPhone Duo : écran fermé ${OUTER_PORTRAIT} px, écran ouvert ${INNER_PORTRAIT} px.` },
-    en: { eyebrow: "Dimensions", title: "iPhone Duo screenshot sizes", lead: "Portrait, opaque PNG or JPEG.", alt: `iPhone Duo screenshot sizes: closed display ${OUTER_PORTRAIT} px, open display ${INNER_PORTRAIT} px.` },
+    fr: { eyebrow: "Dimensions", title: "Captures iPhone Duo et 6,3 pouces", lead: "iPhone Dynamic Island (écran moyen, 6,3″) requis, inclus dans l’essai gratuit.", alt: `Tailles des captures iPhone Duo : écran fermé ${OUTER_PORTRAIT} px, écran ouvert ${INNER_PORTRAIT} px. iPhone Dynamic Island (écran moyen, 6,3″) requis : 1206 × 2622 px ; alternative 1179 × 2556 px.` },
+    en: { eyebrow: "Dimensions", title: "iPhone Duo and 6.3-inch screenshots", lead: "iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial.", alt: `iPhone Duo screenshot sizes: closed display ${OUTER_PORTRAIT} px, open display ${INNER_PORTRAIT} px. iPhone with Dynamic Island (medium display, 6.3") required: 1206 × 2622 px; alternative 1179 × 2556 px.` },
   },
   rejection: {
     fr: { eyebrow: "Points à vérifier", title: "Captures refusées ? Dimensions et canal alpha.", alt: "Bilan de préparation DuoShot : dimensions vérifiées, canal alpha aplati, PNG opaque." },
     en: { eyebrow: "Checks", title: "Screenshots rejected? Dimensions and alpha.", alt: "DuoShot preparation report: dimensions checked, alpha channel flattened, opaque PNG." },
   },
+  "iphone-69": {
+    fr: { eyebrow: "Dimensions · iPhone 6,9″", title: "Captures iPhone\n1320 × 2868", lead: "Optionnel dans App Store Connect.\nExport avec Pass, Indie et Studio.", alt: "Captures iPhone 6,9 pouces : 1320 × 2868 px en portrait, 2868 × 1320 px en paysage. Optionnelles dans App Store Connect, export DuoShot avec Pass, Indie et Studio." },
+    en: { eyebrow: "Dimensions · iPhone 6.9″", title: "iPhone screenshots\n1320 × 2868", lead: "Optional in App Store Connect.\nExport with Pass, Indie and Studio.", alt: "6.9-inch iPhone screenshots: 1320 × 2868 px portrait, 2868 × 1320 px landscape. Optional in App Store Connect, DuoShot export with Pass, Indie and Studio." },
+  },
   pricing: {
-    fr: { eyebrow: "Tarifs", title: "Essai, Indie, Studio.", lead: "Commencez sans carte. Deux exports HD offerts.", alt: `Tarifs DuoShot : essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },
-    en: { eyebrow: "Pricing", title: "Trial, Indie, Studio.", lead: "Start without a card. Two HD exports included.", alt: `DuoShot pricing: free trial, Indie €${PLANS.indie.monthlyEur} per month, Studio €${PLANS.studio.monthlyEur} per month.` },
+    fr: { eyebrow: "Tarifs", title: "Essai gratuit, Indie, Studio.", lead: `Commencez sans carte. ${PLANS.free.freeExports} exports HD offerts.`, alt: `Tarifs DuoShot : Essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },
+    en: { eyebrow: "Pricing", title: "Free trial, Indie, Studio.", lead: `Start without a card. ${PLANS.free.freeExports} HD exports included.`, alt: `DuoShot pricing: Free trial, Indie €${PLANS.indie.monthlyEur} per month, Studio €${PLANS.studio.monthlyEur} per month.` },
   },
   "why-not-ai": {
     fr: { eyebrow: "Pourquoi DuoShot", title: "Votre IA redimensionne. Connect veut plus.", alt: "Comparaison : une IA redimensionne, DuoShot aplatit l’alpha, masque la charnière, évalue le risque 2.3.3 et prépare le ZIP." },
@@ -125,11 +150,11 @@ function HomeArt({ locale }: { locale: Locale }) {
 }
 
 /** Both exported files drawn to scale, with blueprint-style dimension lines. */
-function SpecsArt({ locale }: { locale: Locale }) {
+function SpecsArt({ locale, iphone69 = false }: { locale: Locale; iphone69?: boolean }) {
   const { t } = getTranslator(locale);
-  const outer = duoSpec("duo-outer", "portrait");
-  const inner = duoSpec("duo-inner", "portrait");
-  const scale = 372 / inner.height;
+  const outer = iphone69 ? SIZE_SPECS.find((spec) => spec.id === "69a-p")! : duoSpec("duo-outer", "portrait");
+  const inner = iphone69 ? SIZE_SPECS.find((spec) => spec.id === "69a-l")! : duoSpec("duo-inner", "portrait");
+  const scale = (iphone69 ? 270 : 372) / Math.max(outer.height, inner.height);
   const file = (spec: { width: number; height: number }, caption: string) => {
     const w = Math.round(spec.width * scale);
     const h = Math.round(spec.height * scale);
@@ -165,10 +190,14 @@ function SpecsArt({ locale }: { locale: Locale }) {
   };
   return (
     <div style={{ position: "absolute", right: 72, bottom: 64, display: "flex", alignItems: "flex-end", gap: 34 }}>
-      {file(outer, t("closed_caption"))}
-      {file(inner, t("open_caption"))}
+      {file(outer, t(iphone69 ? "specs_portrait" : "closed_caption"))}
+      {file(inner, t(iphone69 ? "specs_landscape" : "open_caption"))}
     </div>
   );
+}
+
+function Iphone69Art({ locale }: { locale: Locale }) {
+  return <SpecsArt locale={locale} iphone69 />;
 }
 
 /** The preparation report the tool shows before an upload. */
@@ -231,8 +260,8 @@ function PricingArt({ locale }: { locale: Locale }) {
   const per = fr ? "/ mois" : "/ month";
   const price = (eur: number) => (fr ? `${eur} €` : `€${eur}`);
   const plans = [
-    { name: fr ? "Essai" : "Trial", price: price(0), note: fr ? "2 ZIP HD, sans carte" : "2 HD ZIPs, no card", period: "" },
-    { name: "Indie", price: price(PLANS.indie.monthlyEur), note: fr ? `${PLANS.indie.dailyHdSets} sets HD par jour` : `${PLANS.indie.dailyHdSets} HD sets a day`, period: per, featured: true },
+    { name: fr ? "Essai gratuit" : "Free trial", price: price(0), note: fr ? `${PLANS.free.freeExports} exports HD, sans carte` : `${PLANS.free.freeExports} HD exports, no card`, period: "" },
+    { name: "Indie", price: price(PLANS.indie.monthlyEur), note: fr ? `${PLANS.indie.dailyHdSets} exports HD par jour` : `${PLANS.indie.dailyHdSets} HD exports a day`, period: per, featured: true },
     { name: "Studio", price: price(PLANS.studio.monthlyEur), note: fr ? `${PLANS.studio.seats} sièges, validation client` : `${PLANS.studio.seats} seats, client review`, period: per },
   ];
   return (
@@ -361,8 +390,13 @@ function PairArt({ locale }: { locale: Locale }) {
 }
 
 const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
+  "competitor-comparison": PairArt,
+  "asc-guide": PairArt,
+  "screenshot-checker": PairArt,
+  "comparison-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,
+  "iphone-69": Iphone69Art,
   rejection: RejectionArt,
   pricing: PricingArt,
   "why-not-ai": WhyNotAiArt,
@@ -378,7 +412,7 @@ const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
 export function OgCard({ page, locale }: { page: OgPage; locale: Locale }) {
   const copy = COPY[page][locale];
   const Art = ART[page];
-  const narrow = ART[page] === PairArt || page === "specs" || page === "review";
+  const narrow = ART[page] === PairArt || page === "specs" || page === "iphone-69" || page === "review";
   return (
     <OgFrame
       eyebrow={copy.eyebrow}
