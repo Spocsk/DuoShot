@@ -70,9 +70,9 @@ ${sizes}
 ${passOffer}
 ## Upload status
 - ${DUO_SLOT_COPY.en}
-- Duo slot source: ${DUO_SLOT_SOURCE}
+- Third-party reference (ASC CLI): ${DUO_SLOT_SOURCE}
 - Apple upload status checked 2026-10-13: since 2026-10-05, App Store Connect accepts iPhone Duo optimized apps; from April 2027, every app submission must include iPhone Duo screenshots (for apps built with the iOS 27.1 SDK or later). Upload files manually.
-- Apple source: ${APPLE_SCREENSHOT_SOURCE}
+- Primary source (Apple screenshot specifications): ${APPLE_SCREENSHOT_SOURCE}
 - Harbor is a fictional demonstration. No approval guarantee.
 - Projects are saved locally on the device, not synchronized.
 - Studio ${PLANS.studio.monthlyEur} EUR/month includes ${STUDIO_SEATS} seats and client reviews retained for 7 days

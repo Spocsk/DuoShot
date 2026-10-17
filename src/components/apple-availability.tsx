@@ -1,5 +1,5 @@
 import type { Locale } from "@/lib/specs";
-import { APPLE_UPLOAD_NEWS_SOURCE, DUO_SLOT_SOURCE, APPLE_UPLOAD_STATE, appleUploadStatus, type AppleUploadState } from "@/lib/apple-screenshot-status";
+import { APPLE_UPLOAD_NEWS_SOURCE, APPLE_SCREENSHOT_SOURCE, APPLE_UPLOAD_STATE, appleUploadStatus, type AppleUploadState } from "@/lib/apple-screenshot-status";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { getTranslator } from "@/lib/i18n";
 
@@ -9,7 +9,7 @@ export function AppleAvailability({ locale, state = APPLE_UPLOAD_STATE }: { loca
     <p>
       {appleUploadStatus(locale, state)}{" "}
       <a className="ds-link" href={APPLE_UPLOAD_NEWS_SOURCE}>{t("apple_upload_news_source")}</a>{" · "}
-      <a className="ds-link" href={DUO_SLOT_SOURCE}>{t("specs_duo_slot_source")}</a>
+      <a className="ds-link" href={APPLE_SCREENSHOT_SOURCE}>{t("specs_duo_slot_source")}</a>
     </p>
     {state === "pending" ? (
       // inline-block follows the parent's text alignment: centered in the hero, start-aligned elsewhere.

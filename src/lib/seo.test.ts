@@ -307,7 +307,8 @@ describe("page-specific structured data", () => {
       const metadata = await pricingMetadata({ params: Promise.resolve({ locale }) });
       expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
       expect(metadata.description!.length).toBeLessThanOrEqual(155);
-      expect(metadata.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
+      expect(metadata.description).toContain(locale === "fr" ? "6,3″ requis" : "6.3″ iPhone required");
+      expect(metadata.description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
       const app = siteJsonLdGraph(locale)["@graph"].find((node) => "offers" in node);
       expect(app?.offers?.some((offer) => offer.price === "19")).toBe(Boolean(priceId));
     }

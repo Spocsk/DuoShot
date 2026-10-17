@@ -3,7 +3,7 @@ import { GET } from "@/app/llms.txt/route";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppleAvailability } from "@/components/apple-availability";
-import { APPLE_UPLOAD_NEWS_SOURCE, DUO_SLOT_SOURCE, APPLE_UPLOAD_STATE, APPLE_UPLOAD_STATUS_CHECKED_AT, appleUploadStatus } from "./apple-screenshot-status";
+import { APPLE_UPLOAD_NEWS_SOURCE, APPLE_SCREENSHOT_SOURCE, APPLE_UPLOAD_STATE, APPLE_UPLOAD_STATUS_CHECKED_AT, appleUploadStatus } from "./apple-screenshot-status";
 import { getTranslator } from "./i18n";
 
 describe("Apple upload status", () => {
@@ -52,10 +52,12 @@ describe("Apple upload status", () => {
     }
   });
 
-  it.each(["fr", "en"] as const)("renders both sources with the merged status (%s)", (locale) => {
+  it.each(["fr", "en"] as const)("renders official Apple sources with the merged status (%s)", (locale) => {
     const html = renderToStaticMarkup(createElement(AppleAvailability, { locale }));
     expect(html).toContain(`href="${APPLE_UPLOAD_NEWS_SOURCE}"`);
-    expect(html).toContain(`href="${DUO_SLOT_SOURCE}"`);
+    expect(html).toContain(`href="${APPLE_SCREENSHOT_SOURCE}"`);
+    expect(html).toContain(locale === "fr" ? "Spécifications des captures d’Apple" : "Apple screenshot specifications");
+    expect(html).not.toContain("github.com/rorkai");
     expect(html).toContain(locale === "fr"
       ? "un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil."
       : "an iPhone Duo slot, with up to 10 screenshots per device size.");

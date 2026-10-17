@@ -1,11 +1,12 @@
 import { createElement, type ComponentProps, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { connection } from "next/server";
 import HomeRoute from "@/app/[locale]/page";
 import { generateMetadata } from "@/app/[locale]/pricing/page";
 import { checkoutDisplayAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import { getMessages, getTranslator, FAQ } from "@/lib/i18n";
+import { PASS30 } from "@/lib/plans";
 import type { Locale } from "@/lib/specs";
 import { I18nProvider } from "./i18n-provider";
 import { PricingSection } from "./pricing-section";
@@ -50,6 +51,7 @@ beforeEach(() => {
   vi.mocked(checkoutDisplayAvailable).mockReturnValue(true);
   vi.mocked(passCheckoutAvailable).mockReturnValue(true);
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering", (locale) => {
   it("renders home checkout buttons from request-time availability, without a billing toggle", async () => {
@@ -98,11 +100,19 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(row69!.match(/>Yes<|>Oui</g)).toHaveLength(3);
   });
 
-  it("keeps configured prices and the shared Studio benefits in the FAQ and metadata", async () => {
+  it.each(["", "price_pass30"])("keeps configured prices and the shared Studio benefits in the FAQ and metadata (%s)", async (priceId) => {
+    vi.stubEnv("STRIPE_PRICE_PASS30", priceId);
     const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
     expect(metadata.description).toContain(locale === "fr" ? "Essai gratuit : 5 exports" : "Free trial: 5 exports");
     expect(metadata.description).toContain(locale === "fr" ? "18 €/mois" : "€18/month");
     expect(metadata.description).toContain(locale === "fr" ? "69 €/mois" : "€69/month");
+    expect(metadata.description!.length).toBeLessThanOrEqual(155);
+    expect(metadata.description).toContain(locale === "fr" ? "6,3″ requis" : "6.3″ iPhone required");
+    expect(metadata.description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
+    expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
+    if (priceId) expect(metadata.description).toContain(locale === "fr"
+      ? `Pass ${PASS30.priceEur} €/${PASS30.days} j`
+      : `Pass €${PASS30.priceEur}/${PASS30.days} days`);
     const payment = FAQ[locale].find(({ q }) => q === (locale === "fr" ? "Comment ça se paie ?" : "How does payment work?"))!;
     expect(payment.a).toContain("5 exports");
     for (const price of [18, 180, 69, 690]) {

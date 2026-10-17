@@ -34,7 +34,7 @@ describe("export guidance", () => {
       }));
       expect(html).toContain("App Store Connect");
       expect(html).not.toContain("APP_IPHONE_DUO");
-      expect(html).toContain(locale === "fr" ? "emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil" : "iPhone Duo slot, with up to 10 screenshots per device size");
+      expect(html).toContain(locale === "fr" ? "l’emplacement iPhone Duo d’App Store Connect (jusqu’à 10 captures par taille d’appareil)" : "the iPhone Duo slot in App Store Connect (up to 10 screenshots per device size)");
       expect(html).toContain(locale === "fr" ? "captures sélectionnées dans l’ordre" : "selected screenshots in order");
       expect(html).toContain(locale === "fr" ? "10 captures Duo maximum" : "up to 10 Duo screenshots in your selection");
       expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/specs"`);
