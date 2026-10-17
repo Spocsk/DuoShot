@@ -45,7 +45,8 @@ describe("Apple upload status", () => {
     expect(status).toContain(locale === "fr" ? "pas encore été testé" : "not yet been tested");
     const { t } = getTranslator(locale);
     for (const key of ["specs_png_jpeg_without_alpha", "tool_unzip_archive_get_both", "asc_duo_note"] as const) {
-      expect(t(key)).toContain("APP_IPHONE_DUO");
+      expect(t(key)).not.toContain("APP_IPHONE_DUO");
+      expect(t(key)).toContain(locale === "fr" ? "10 captures par taille d’appareil" : "10 screenshots per device size");
       expect(t(key)).toContain("10");
       expect(t(key)).not.toMatch(/April 2027|avril 2027|two.*sets|deux séries/);
     }

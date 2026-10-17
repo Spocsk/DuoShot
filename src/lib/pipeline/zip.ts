@@ -81,15 +81,15 @@ export function buildReadme(options: {
     "",
     "PNG (default) or JPEG q90. RGB, no alpha. Review these files before manual upload.",
     options.rawDuoSets
-      ? "Raw outer + inner sets: pick up to 10 screenshots in total for the single Duo slot. These are example assets."
+      ? "Raw outer + inner sets: pick up to 10 Duo screenshots in your selection. These are example assets."
       : "Selected Duo slot content only; folder names identify screen dimensions, not separate App Store Connect slots. duo-slot.json lists upload order (selection order for a mix).",
-    "App Store Connect: single iPhone Duo slot (APP_IPHONE_DUO), maximum 10 screenshots per locale, shared by outer and inner sizes.",
+    "App Store Connect has an iPhone Duo slot, with up to 10 screenshots per device size.",
     "Both sizes are accepted: outer 1398x2034 and inner 2007x2853, or their landscape dimensions. Not yet tested by DuoShot.",
-    "Emplacement Duo unique (APP_IPHONE_DUO) : 10 captures maximum par langue, externe et interne confondus. Les deux tailles sont acceptées ; dépôt pas encore testé par DuoShot.",
+    "App Store Connect propose un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil. DuoShot limite la sélection à 10 captures Duo maximum, externe et interne confondus. Les deux tailles sont acceptées ; dépôt pas encore testé par DuoShot.",
     "Exports exceeding 10 selected Duo screenshots are rejected with DUO_SLOT_LIMIT (HTTP 400); nothing is silently trimmed.",
     "Source: https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md",
     "Apple status checked 2026-10-13: App Store Connect accepts iPhone Duo optimized apps since 2026-10-05; Duo screenshots are required for every submission from April 2027 for apps built with the iOS 27.1 SDK or later.",
-    "Source: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications",
+    "Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/",
     "Visual checks are advisory; this report does not predict App Store approval.",
     "Sources and ZIP expire after 24 hours. Server cleanup runs every 15 minutes; failed cleanup is retried. Local drafts stay on your device.",
   );

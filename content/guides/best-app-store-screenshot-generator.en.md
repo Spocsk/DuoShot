@@ -1,5 +1,5 @@
 ---
-title: "Best App Store screenshot generator (2026): honest comparison"
+title: "Best App Store screenshot generator: comparison (2026)"
 description: "AppScreens, AppLaunchFlow, SnapMonk, Screenpane and DuoShot compared: prices, free tiers, iPhone Duo sizes, AI and export. Checked October 15, 2026."
 lang: en
 slug: best-app-store-screenshot-generator
@@ -16,7 +16,7 @@ There is no single "best" App Store screenshot generator. The right tool depends
 Apple's [screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/) are the reference:
 
 - **Required iPhone size:** at least one screenshot for iPhone with Dynamic Island (medium display), i.e. **6.3″, 1206 × 2622** (1179 × 2556 is also accepted). The 6.9″ sizes (1320 × 2868, 1290 × 2796, 1260 × 2736) are optional. See [/en/1206x2622](/en/1206x2622).
-- **iPhone Duo:** App Store Connect has **one iPhone Duo slot per language**, with 1 to 10 screenshots. It accepts the outer (closed) screen at **1398 × 2034** and the inner (open) screen at **2007 × 2853**, plus their landscape versions. You choose which mix of outer and inner images fills those 10 places. See [/en/1398x2034](/en/1398x2034) and [/en/2007x2853](/en/2007x2853).
+- **iPhone Duo:** App Store Connect has an iPhone Duo slot, with up to 10 screenshots per device size. It accepts the outer (closed) screen at **1398 × 2034** and the inner (open) screen at **2007 × 2853**, plus their landscape versions. You can use outer only, inner only, or a mix. See [/en/1398x2034](/en/1398x2034) and [/en/2007x2853](/en/2007x2853).
 - **Format:** JPEG or PNG, no transparency.
 - **Deadline:** Duo screenshots become required from April 2027 for apps built with the iOS 27.1 SDK or later ([Apple Developer News, Oct 5, 2026](https://developer.apple.com/news/?id=kkphp5qo)).
 
@@ -74,7 +74,7 @@ Combining tools is fine: design in one, then run the files through DuoShot's che
 ## FAQ
 
 **Do I need separate screenshot sets for the outer and inner screens?**
-No. App Store Connect has a single iPhone Duo slot per language, up to 10 images. You can use outer only, inner only, or a mix.
+No. App Store Connect has an iPhone Duo slot, with up to 10 screenshots per device size. You can use outer only, inner only, or a mix.
 
 **Are Duo screenshots mandatory now?**
 Not yet for every app. Apple requires them from April 2027 for apps built with the iOS 27.1 SDK or later. Uploads are already open.

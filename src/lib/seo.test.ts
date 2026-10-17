@@ -5,7 +5,7 @@ import { getTranslator } from "./i18n";
 import { FAQ } from "./i18n";
 import sitemap from "@/app/sitemap";
 import robots from "@/app/robots";
-import { localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
+import { absoluteUrl, localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
 import { pageMetadata } from "./seo";
 import { JsonLd, SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
 import { SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "./screenshot-pages";
@@ -17,6 +17,7 @@ import { generateImageMetadata as iphone63ImageMetadata, generateStaticParams as
 import { generateMetadata as iphone69Metadata } from "@/app/[locale]/1320x2868/page";
 import { generateMetadata as homeMetadata } from "@/app/[locale]/page";
 import { generateMetadata as pricingMetadata } from "@/app/[locale]/pricing/page";
+import { generateMetadata as comparisonMetadata } from "@/app/[locale]/guides/best-app-store-screenshot-generator/page";
 import { generateMetadata as toolMetadata } from "@/app/[locale]/tool/page";
 import { generateMetadata as whyFrMetadata } from "@/app/[locale]/pourquoi-pas-ia/page";
 import { generateMetadata as whyEnMetadata } from "@/app/[locale]/why-not-ai/page";
@@ -84,6 +85,24 @@ describe("public routes and crawler metadata", () => {
   });
 
   for (const locale of ["fr", "en"] as const) {
+    it(`limits rendered size and comparison titles to 65 characters in ${locale}`, async () => {
+      for (const generateMetadata of [iphone63Metadata, comparisonMetadata]) {
+        const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
+        const title = `${metadata.title} · DuoShot`;
+        expect(title.length, title).toBeLessThanOrEqual(65);
+        expect(metadata.openGraph?.title).toBe(title);
+        expect(metadata.twitter?.title).toBe(title);
+      }
+    });
+
+    it(`limits home, pricing and required size descriptions to 155 characters in ${locale}`, async () => {
+      for (const generateMetadata of [homeMetadata, pricingMetadata, iphone63Metadata]) {
+        const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
+        expect(metadata.description).toBeTruthy();
+        expect(metadata.description!.length, metadata.description!).toBeLessThanOrEqual(155);
+      }
+    });
+
     it(`gives specs the general size and fold intent in ${locale}`, async () => {
       const metadata = await specsMetadata({ params: Promise.resolve({ locale }) });
       const title = `${metadata.title} · DuoShot`;
@@ -206,7 +225,7 @@ describe("page-specific structured data", () => {
     const size69 = locale === "fr" ? "6,9″" : "6.9″";
     const graph = siteJsonLdGraph(locale)["@graph"];
     const app = graph.find((node) => "offers" in node)!;
-    expect(app.description).toContain(size63);
+    expect(app.description).toContain(locale === "fr" ? "Dynamic Island 6,3″ requis" : "Dynamic Island 6.3″ required");
     expect(app.description).toContain(size69);
     expect(app.description).toContain(locale === "fr" ? "optionnel" : "optional");
     expect(app.offers?.[0]).toMatchObject({ price: "0", description: expect.stringContaining(size63) });
@@ -235,7 +254,11 @@ describe("page-specific structured data", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
     const graph = siteJsonLdGraph(locale)["@graph"];
     expect(graph.map((node) => node["@type"])).toEqual(["Organization", "SoftwareApplication"]);
-    expect(graph[0]).toMatchObject({ "@id": "https://duoshot.site#organization", url: "https://duoshot.site" });
+    expect(graph[0]).toMatchObject({
+      "@id": "https://duoshot.site#organization", url: "https://duoshot.site",
+      name: "DuoShot", logo: absoluteUrl("/brand/duoshot-logo.png"),
+    });
+    expect(graph[0]).not.toHaveProperty("sameAs");
     expect(graph[1]).toMatchObject({
       "@id": "https://duoshot.site#software",
       name: "DuoShot — iPhone Duo App Store Screenshots",
@@ -283,7 +306,7 @@ describe("page-specific structured data", () => {
     for (const locale of ["fr", "en"] as const) {
       const metadata = await pricingMetadata({ params: Promise.resolve({ locale }) });
       expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
-      expect(metadata.description!.length).toBeLessThanOrEqual(metadataCopyBudget(metadata.description!, locale, 155));
+      expect(metadata.description!.length).toBeLessThanOrEqual(155);
       expect(metadata.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
       const app = siteJsonLdGraph(locale)["@graph"].find((node) => "offers" in node);
       expect(app?.offers?.some((offer) => offer.price === "19")).toBe(Boolean(priceId));
