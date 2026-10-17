@@ -32,7 +32,7 @@ Apple says Duo screenshots will be **required from April 2027 for apps built wit
 
 ## Before manual upload
 
-Start from real app captures and check every composition against App Store Review Guideline 2.3.3: screenshots must represent your app accurately. Keep important text and controls clear of the fold in inner-screen captures. DuoShot’s fold guide is a simulated composition aid, not an Apple safe-area specification.
+Start from real app captures and check every composition against App Store Review Guideline 2.3.3: screenshots must represent your app accurately. Check that important text and controls stay legible near the fold in inner-screen captures. DuoShot’s fold guide is a simulated composition aid, not an Apple safe-area specification.
 
 Review the [outer-screen dimensions](/en/1398x2034), [inner-screen dimensions](/en/2007x2853), [required 6.3″ format](/en/1206x2622) and [optional 6.9″ format](/en/1320x2868). [Prepare your screenshots](/en/tool), or read the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator).
 

@@ -520,7 +520,6 @@ export const fr = {
   specs_png_jpeg_without_alpha: "DuoShot exporte du PNG ou JPEG RGB opaque. Choisissez externe uniquement, interne uniquement ou un mix : 10 captures Duo maximum dans la sélection. App Store Connect propose un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil. Les deux tailles sont acceptées ; dépôt pas encore testé par DuoShot.",
   specs_read_connect_specifications: "Consulter les spécifications Connect",
   specs_panel_resolution_vs_app: "Résolution de la dalle et dimensions Connect",
-  specs_physical_inner_panel_has: "La dalle interne affiche 1878 × 2670 pixels. Pour une capture de fiche App Store en portrait, Apple publie {innerPortrait} pixels. Utilisez cette seconde valeur pour vos fichiers Connect.",
   specs_outer_display_panel_portrait: "Pour l’écran externe, la dalle et la capture en portrait partagent les mêmes dimensions : {outerPortrait} pixels. Un redimensionnement ne crée pas une interface adaptée : vos captures doivent montrer votre app telle qu’elle s’affiche sur chaque écran.",
   specs_apple_tech_specs_displays: "Fiche technique Apple : écran externe et écran interne",
   specs_apple_connect_screenshot_dimensions: "Apple : dimensions des captures Connect",

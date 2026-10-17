@@ -9,7 +9,7 @@ export type PageSchema = {
   path: string;
   faq?: readonly FaqItem[];
   software?: boolean | { name: string; description: string };
-  article?: { title: string; description: string; dateModified: string };
+  article?: { title: string; description: string; dateModified: string; abstract?: string };
   howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
 };
 
@@ -83,6 +83,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
         mainEntityOfPage: url,
         headline: article.title,
         description: article.description,
+        ...(article.abstract !== undefined ? { abstract: article.abstract } : {}),
         inLanguage: locale,
         dateModified: article.dateModified,
         author: { "@id": `${absoluteUrl("/")}#organization` },

@@ -273,7 +273,7 @@ describe("screenshot dimensions and search intent", () => {
         cy.get('section[aria-labelledby="duo-sizes"] table').should("contain", size);
       }
       cy.get('section[aria-labelledby="duo-sizes"] table').should("not.contain", "Indie").and("not.contain", "6.9");
-      cy.get("#panel-vs-connect").parent().should("contain", "1878 × 2670").and("contain", "2007 × 2853");
+      cy.get("#panel-vs-connect").parent().should("contain", "1398 × 2034").and("not.contain", "1878");
       cy.get('[data-testid="specs-cta-tool"]').should("have.attr", "href", `${prefix}/tool`);
       cy.document().then((doc) => {
         expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
