@@ -2,7 +2,7 @@ describe("locale", () => {
   it("keeps French when the locale cookie is set", () => {
     cy.visitFr("/");
     cy.location("pathname").should("eq", "/");
-    cy.contains("h1", "Générateur de captures App Store.").should("be.visible");
+    cy.get("h1").should("have.length", 1).and("have.text", "Vos captures App Store, prêtes pour l’iPhone Duo.").and("be.visible");
     cy.getCookie("duoshot_locale_manual").should("have.property", "value", "fr");
   });
 
@@ -10,7 +10,7 @@ describe("locale", () => {
     cy.visitFr("/");
     cy.get("header [data-testid=\"locale-switch\"]").click();
     cy.location("pathname").should("eq", "/en");
-    cy.contains("h1", "App Store screenshot generator.").should("be.visible");
+    cy.get("h1").should("have.length", 1).and("have.text", "Your App Store screenshots, ready for iPhone Duo.").and("be.visible");
     cy.getCookie("duoshot_locale_manual").should("have.property", "value", "en");
     cy.get("header [data-testid=\"locale-switch\"]").click();
     cy.location("pathname").should("eq", "/");

@@ -1,10 +1,9 @@
 import { PASS30, PLANS, pass30PriceId } from "./plans";
-import { SITE_PITCH_EN, SITE_PITCH_FR } from "./site";
 import type { Locale } from "./specs";
 
 export const HOME_PAGE_COPY = {
-  fr: { title: "Générateur de captures App Store pour iPhone Duo", description: SITE_PITCH_FR },
-  en: { title: "App Store screenshot generator for iPhone Duo", description: SITE_PITCH_EN },
+  fr: { title: "Générateur de captures App Store pour iPhone Duo | DuoShot", description: "Générateur de captures App Store pour iPhone Duo à partir de vos vraies captures : cadrage aux formats Apple, vérifications et export PNG/JPEG en ZIP." },
+  en: { title: "iPhone Duo App Store Screenshot Generator | DuoShot", description: "App Store screenshot generator for iPhone Duo, built from your real screenshots: framed to Apple's sizes, checked, and exported as PNG/JPEG in a ZIP." },
 };
 
 export const PRICING_PAGE_COPY = {

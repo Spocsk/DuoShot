@@ -9,13 +9,16 @@ import RejectionPage from "@/app/[locale]/rejection/page";
 import CheckerPage from "@/app/[locale]/tools/iphone-duo-screenshot-checker/page";
 import GuidePage from "@/app/[locale]/guides/best-app-store-screenshot-generator/page";
 import { I18nProvider } from "@/components/i18n-provider";
+import { HomePage } from "@/components/home-page";
 import { DuoSlotChoice } from "@/components/tool/duo-slot-choice";
 import { ExportPanel } from "@/components/tool/delivery-actions";
 import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_COPY } from "./apple-screenshot-status";
 import { en } from "./i18n/en";
 import { fr } from "./i18n/fr";
+import { HOME_PAGE_COPY } from "./marketing-copy";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 // Assemble this so the repository scan also covers this test without matching itself.
 const oldAppleUrl = ["reference", "screenshot-specifications"].join("/");
@@ -29,6 +32,7 @@ function expectPublicCopy(text: string, context: string) {
   expect(plain, context).not.toContain("APP_IPHONE_DUO");
   expect(plain, context).not.toMatch(unsupportedSlotClaim);
   expect(plain, context).not.toMatch(duoDiagonals);
+  expect(plain, context).not.toMatch(/prêts? pour App Store Connect|ready for App Store Connect|en 2 minutes/i);
   expect(text, context).not.toContain(oldAppleUrl);
   if (/Duo|slot|emplacement/i.test(`${context} ${plain}`)) expect(plain, context).not.toMatch(localeLimit);
 }
@@ -36,6 +40,34 @@ function expectPublicCopy(text: string, context: string) {
 describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
   const messages = locale === "fr" ? fr : en;
   const limit = locale === "fr" ? "jusqu’à 10 captures par taille d’appareil" : "up to 10 screenshots per device size";
+
+  it.each([true, false])("renders the approved home hero and first H2 with preserved details below the buttons (pass: %s)", (passAvailable) => {
+    const heading = locale === "fr"
+      ? "Vos captures App Store, prêtes pour l’iPhone Duo."
+      : "Your App Store screenshots, ready for iPhone Duo.";
+    const subtitle = locale === "fr"
+      ? "Importez les captures de votre app : DuoShot les met aux formats Duo acceptés par Apple (1398×2034 et 2007×2853) et vous les exporte en un ZIP."
+      : "Upload your app's screenshots: DuoShot fits them to the Duo sizes Apple accepts (1398×2034 and 2007×2853) and exports them as a ZIP.";
+    const h2 = locale === "fr"
+      ? "Un générateur de captures App Store qui part de votre vraie app"
+      : "An App Store screenshot generator that starts from your real app";
+    const html = renderToStaticMarkup(createElement(I18nProvider,
+      { locale, messages } as ComponentProps<typeof I18nProvider>,
+      createElement(HomePage, { locale, checkoutAvailable: true, passAvailable }),
+    ));
+    const headings = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)];
+    expect(headings).toHaveLength(1);
+    expect(headings[0][1].replace(/<[^>]*>/g, "")).toBe(renderToStaticMarkup(heading));
+    expect(html.match(/class="studio-hero-lead">([\s\S]*?)<\/p>/)?.[1]).toBe(renderToStaticMarkup(subtitle));
+    expect(html.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/)?.[1]).toBe(h2);
+    expect(h2).toContain(locale === "fr" ? "générateur" : "generator");
+    const previousLead = messages[passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass"];
+    const details = previousLead.slice(previousLead.indexOf(". ") + 2);
+    expect(html.match(/class="studio-hero-footnote mt-4">([\s\S]*?)<\/p>/)?.[1]).toBe(renderToStaticMarkup(details));
+    expect(html).toMatch(/class="studio-hero-actions"[\s\S]*?<\/div><p class="studio-hero-footnote mt-4">/);
+    expectPublicCopy(html, `${locale}/home`);
+    expectPublicCopy(JSON.stringify(HOME_PAGE_COPY[locale]), `${locale}/home metadata`);
+  });
 
   it("keeps every message free of unsupported slot claims and Duo diagonals", () => {
     for (const [key, value] of Object.entries(messages)) expectPublicCopy(value, `${locale}.${key}`);

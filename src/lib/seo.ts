@@ -12,7 +12,7 @@ export function pageMetadata(options: {
   const fr = localizedPath("fr", options.path);
   const en = localizedPath("en", options.path);
   const isHome = canonicalPath === "/" || canonicalPath === "/en";
-  const socialTitle = isHome ? `${SITE_NAME} — ${options.title}` : `${options.title} · ${SITE_NAME}`;
+  const socialTitle = isHome ? options.title : `${options.title} · ${SITE_NAME}`;
   return {
     robots: /^(?:\/en)?\/(tool|account|login|signup|forgot-password|reset-password|invite|r)(?:\/|$)/.test(canonicalPath) ?{ index: false, follow: false } : undefined,
     title: isHome ? { absolute: socialTitle } : options.title,
