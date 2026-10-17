@@ -83,6 +83,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <Link href={`${prefix}/legal/subprocessors`}>{t("footer_subprocessors")}</Link>
         <Link href={locale === "en" ? "/en/why-not-ai" : "/pourquoi-pas-ia"} data-testid="footer-why">{t("footer_why")}</Link>
         <Link href={rejectionPath(locale)} data-testid="footer-reject">{t("footer_reject")}</Link>
+        <Link href={localizedPath(locale, "/guides")} data-testid="footer-guides">{t("footer_guides")}</Link>
         <Link href="/llms.txt">llms.txt</Link>
         <a
           href="https://fazier.com/launches/duoshot.site"
