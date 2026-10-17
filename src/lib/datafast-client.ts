@@ -2,6 +2,7 @@
 
 import type { DataFastWeb } from "datafast";
 import { analyticsChoice, syncAnalyticsConsentCookie } from "./analytics-consent";
+import { sanitizedCampaignQuery } from "./analytics-campaign";
 import { analyticsPath } from "./analytics-path";
 import { DATAFAST_DOMAIN, DATAFAST_WEBSITE_ID } from "./datafast-config";
 
@@ -15,6 +16,18 @@ let dispatch: Promise<unknown> = Promise.resolve();
 let choiceChanges: Promise<void> = Promise.resolve();
 let audience = "anonymous";
 const pendingConversions = new Set<string>();
+let landingCampaign: string | null = null;
+let firstPageview = true;
+
+function captureLandingCampaign() {
+  if (landingCampaign === null && typeof window !== "undefined") {
+    landingCampaign = sanitizedCampaignQuery(window.location.search);
+  }
+}
+
+// This module is loaded by AnalyticsProvider before SPA navigation, even without
+// consent. Keep only sanitized labels in memory; never load the SDK or persist here.
+captureLandingCampaign();
 
 async function getSdk() {
   if (analyticsChoice() !== "accepted") return null;
@@ -70,10 +83,18 @@ async function sendEvent(event: string, properties: Properties): Promise<boolean
     const page = analyticsPath(window.location.pathname);
     if (!page) return false;
     const prefix = window.location.pathname === "/en" || window.location.pathname.startsWith("/en/") ? "/en" : "";
-    // An explicit path keeps private IDs and URL query strings out of payloads.
+    // An explicit path keeps private IDs and arbitrary query strings out of payloads.
     const path = `${prefix}${page}`;
     if (event === "page_viewed" || lastPage !== path) {
-      await client.trackPageview(path);
+      if (firstPageview && landingCampaign) {
+        // A href override leaves the SDK's screen name query-free for custom
+        // events and subsequent referrers (trackPageview(path?...) would not).
+        await client.trackScreen(path, { href: `https://${DATAFAST_DOMAIN}${path}?${landingCampaign}` });
+      } else {
+        await client.trackPageview(path);
+      }
+      firstPageview = false;
+      landingCampaign = "";
       lastPage = path;
     }
     if (analyticsChoice() !== "accepted") return false;
@@ -86,6 +107,7 @@ async function sendEvent(event: string, properties: Properties): Promise<boolean
 }
 
 export function trackDatafast(event: string, properties: Properties = {}): Promise<boolean> {
+  captureLandingCampaign();
   const next = dispatch.catch(() => {}).then(() => sendEvent(event, properties));
   dispatch = next;
   return next;

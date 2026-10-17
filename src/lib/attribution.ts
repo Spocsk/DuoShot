@@ -4,7 +4,7 @@ export const ATTRIBUTION_MAX_AGE = 30 * 24 * 60 * 60;
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content"] as const;
 type Attribution = Partial<Record<(typeof UTM_KEYS)[number] | "referrer", string>>;
 
-function sanitizeValue(value: unknown): string | undefined {
+export function sanitizeValue(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   // Do not turn email addresses or full URLs into campaign labels. Only the
   // allowlisted campaign fields are collected, never arbitrary query params.
