@@ -40,7 +40,7 @@ export default async function Page({ params }: LocaleParams) {
               <th scope="col" className="py-3">{t("specs_landscape")}</th>
             </tr></thead>
             <tbody>{CHECKER_SPECS.filter((spec) => spec.orientation === "portrait").map((spec) => <tr key={spec.id} className="border-t border-[var(--line)]">
-              <th scope="row" className="py-3 pr-4 font-normal">{spec.slot === "duo-outer" ? `iPhone Duo — ${copy.labels.outer}` : spec.slot === "duo-inner" ? `iPhone Duo — ${copy.labels.inner}` : "iPhone"} {formatInches(spec.inches, locale)}</th>
+              <th scope="row" className="py-3 pr-4 font-normal">{spec.slot === "duo-outer" ? `iPhone Duo — ${copy.labels.outer}` : spec.slot === "duo-inner" ? `iPhone Duo — ${copy.labels.inner}` : `iPhone ${formatInches(spec.inches, locale)}`}</th>
               <td className="py-3 pr-4 whitespace-nowrap">{spec.width} × {spec.height}</td>
               <td className="py-3 whitespace-nowrap">{spec.height} × {spec.width}</td>
             </tr>)}</tbody>

@@ -1,6 +1,6 @@
 import type { Locale } from "./specs";
 
-export const APPLE_SCREENSHOT_SOURCE = "https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications";
+export const APPLE_SCREENSHOT_SOURCE = "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/";
 export const DUO_SLOT_SOURCE = "https://github.com/rorkai/App-Store-Connect-CLI/blob/main/docs/design/iphone-duo-screenshots.md";
 export const APPLE_DEVICE_SOURCE = "https://www.apple.com/iphone-duo/specs/";
 export const APPLE_UPLOAD_NEWS_SOURCE = "https://developer.apple.com/news/?id=kkphp5qo";
