@@ -4,6 +4,7 @@ import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_COPY, DUO_SLOT_SOURCE } from "@/lib/a
 import { passCheckoutAvailable } from "@/lib/billing-availability";
 import { getTranslator } from "@/lib/i18n";
 import { COMPARISON_GUIDE_PATH } from "@/lib/guides";
+import { COMPARISONS, comparisonPath } from "@/lib/comparisons";
 import { FREE_EXPORTS, PASS30, PLANS, STUDIO_SEATS } from "@/lib/plans";
 
 export function GET() {
@@ -13,6 +14,9 @@ export function GET() {
       : `${spec.label}${spec.label.includes(spec.inches) ? "" : ` ${spec.inches}`}`;
     return `- ${label} ${spec.orientation}: ${spec.width}x${spec.height}`;
   }).join("\n");
+  const comparisonLinks = COMPARISONS.map(({ slug, name }) =>
+    `- DuoShot vs ${name}: ${getSiteUrl()}${comparisonPath(slug)} (EN: ${getSiteUrl()}/en${comparisonPath(slug)})`,
+  ).join("\n");
   const { t, tf } = getTranslator("fr");
   const passAvailable = passCheckoutAvailable();
   const passOffer = passAvailable
@@ -33,6 +37,7 @@ ${getTranslator("en").t("specs_duoshot_identity")}
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia (EN: ${getSiteUrl()}/en/why-not-ai)
 - Rejection decoder: ${getSiteUrl()}/rejet (EN: ${getSiteUrl()}/en/rejection)
 - Screenshot generator comparison: ${getSiteUrl()}${COMPARISON_GUIDE_PATH} (EN: ${getSiteUrl()}/en${COMPARISON_GUIDE_PATH})
+${comparisonLinks}
 - Manual iPhone Duo (Apple's foldable iPhone) upload guide: ${getSiteUrl()}/guides/iphone-duo-app-store-connect (EN: ${getSiteUrl()}/en/guides/iphone-duo-app-store-connect)
 - Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): ${getSiteUrl()}/tools/iphone-duo-screenshot-checker (EN: ${getSiteUrl()}/en/tools/iphone-duo-screenshot-checker)
 - Tool (noindex): ${getSiteUrl()}/tool
