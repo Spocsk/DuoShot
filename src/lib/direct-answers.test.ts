@@ -9,7 +9,7 @@ import RejectionEnPage from "@/app/[locale]/rejection/page";
 import { I18nProvider } from "@/components/i18n-provider";
 import { PricingPage } from "@/components/pricing-page";
 import { SizePage } from "@/components/size-page";
-import { APPLE_SCREENSHOT_SOURCE } from "./apple-screenshot-status";
+import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "./apple-screenshot-status";
 import { directAnswer } from "./direct-answers";
 import { getMessages, getTranslator } from "./i18n";
 import { SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
@@ -92,12 +92,16 @@ describe.each(["fr", "en"] as const)("%s direct answers", (locale) => {
     const faqs = nodes.filter((node) => node["@type"] === "FAQPage");
     expect(faqs).toHaveLength(page === "specs" || page === "rejection" ? 1 : 0);
     const visible = visibleText(html);
+    if (page === "2007x2853" || page === "specs") {
+      expect(visible).toContain("1878 × 2670");
+      expect(html).toContain(`href="${APPLE_DEVICE_SOURCE}"`);
+    }
     for (const faq of faqs) {
       expect(faq.mainEntity!.length).toBeGreaterThan(0);
       for (const question of faq.mainEntity!) expect(visible).toContain(question.acceptedAnswer.text);
     }
     const oldApplePath = ["app-store-connect", "reference", "screenshot-specifications"].join("/");
-    for (const removed of ["1878", "clear of the fold", "APP_IPHONE_DUO", "emplacement unique", "single slot", "5,4″", "7,6″", '5.4"', '7.6"', oldApplePath]) {
+    for (const removed of ["clear of the fold", "APP_IPHONE_DUO", "emplacement unique", "single slot", "5,4″", "7,6″", '5.4"', '7.6"', oldApplePath]) {
       expect(unescapeHtml(html)).not.toContain(removed);
     }
   });

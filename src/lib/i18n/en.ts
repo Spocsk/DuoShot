@@ -517,6 +517,7 @@ export const en: Messages = {
   specs_png_jpeg_without_alpha: "DuoShot exports opaque RGB PNG or JPEG. Choose outer only, inner only, or a mix: up to 10 Duo screenshots in your selection. App Store Connect has an iPhone Duo slot, with up to 10 screenshots per device size. Both screen sizes are accepted; uploads have not yet been tested by DuoShot.",
   specs_read_connect_specifications: "Read the Connect specifications",
   specs_panel_resolution_vs_app: "Panel resolution vs App Store Connect dimensions",
+  specs_physical_inner_panel_has: "The physical inner panel has a resolution of 1878 × 2670 pixels. For a portrait App Store listing screenshot, Apple specifies {innerPortrait} pixels. Use the latter for your Connect files.",
   specs_outer_display_panel_portrait: "For the outer display, the panel and portrait screenshot share the same dimensions: {outerPortrait} pixels. Resizing does not create an adapted layout: your screenshots should show how your app actually looks on each display.",
   specs_apple_tech_specs_displays: "Apple tech specs: outer display and inner display",
   specs_apple_connect_screenshot_dimensions: "Apple: Connect screenshot dimensions",

@@ -10,7 +10,7 @@ describe("Apple upload status", () => {
   it("qualifies the deadline in the crawler reference", async () => {
     const body = await GET().text();
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
-    expect(body).toContain("iPhone Duo slot, with up to 10 screenshots per device size");
+    expect(body).toContain("- App Store Connect accepts up to 10 iPhone Duo screenshots per device size; outer (1398x2034) and inner (2007x2853) sizes are both accepted.");
   });
   it("defaults to the configured open state and check date", () => {
     expect(appleUploadStatus("fr")).toBe(appleUploadStatus("fr", APPLE_UPLOAD_STATE));

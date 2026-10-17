@@ -82,7 +82,8 @@ export function SpecsPage({ locale }: { locale: Locale }) {
         </section>
         <section className="mt-12" aria-labelledby="panel-vs-connect">
           <h2 id="panel-vs-connect" className="font-display text-3xl">{t("specs_panel_resolution_vs_app")}</h2>
-          <p className="mt-4 text-[var(--muted)]">{tf("specs_outer_display_panel_portrait", { outerPortrait: OUTER_PORTRAIT })}</p>
+          <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: INNER_PORTRAIT })}</p>
+          <p className="mt-3 text-[var(--muted)]">{tf("specs_outer_display_panel_portrait", { outerPortrait: OUTER_PORTRAIT })}</p>
           <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm"><a className="ds-link" href={APPLE_DEVICE_SOURCE}>{t("specs_apple_tech_specs_displays")}</a><a className="ds-link" href={APPLE_SCREENSHOT_SOURCE}>{t("specs_apple_connect_screenshot_dimensions")}</a></p>
         </section>
         <section className="mt-12" aria-labelledby="safe-area-fold">

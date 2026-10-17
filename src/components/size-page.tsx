@@ -7,7 +7,7 @@ import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { SCREENSHOT_VERIFIED_ON, sizePageCopy, type ScreenshotSize } from "@/lib/screenshot-pages";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
-import { APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { localizedPath, toolPath } from "@/lib/site";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
@@ -32,6 +32,10 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t("size_file_heading")}</h2>
         <p className="mt-4">{t("size_file_body")}</p>
+        {size === "2007x2853" && <>
+          <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: screenshotDimensions(copy.portrait) })}</p>
+          <a href={APPLE_DEVICE_SOURCE} className="ds-link mt-2 inline-block">{t("specs_apple_tech_specs_displays")}</a>
+        </>}
       </section>
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t(size === "1320x2868" ? "specs_optional_iphone_sizes" : size === "1206x2622" ? "specs_required_iphone_sizes" : "size_slot_heading")}</h2>

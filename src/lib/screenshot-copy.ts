@@ -20,6 +20,7 @@ export const SPECS_FAQ: Record<Locale, FaqItem[]> = {
     { q: "What dimensions should landscape screenshots use?", a: `Outer display: ${OUTER_LANDSCAPE} pixels. Inner display: ${INNER_LANDSCAPE} pixels. DuoShot exports one orientation per set; prepare a separate set if you also need the other orientation.` },
     { q: "Can I upload iPhone Duo screenshots to App Store Connect now?", a: appleUploadStatus("en") },
     { q: "Does App Store Connect accept PNG, JPEG, or an alpha channel?", a: "Apple accepts PNG and JPEG screenshots, with no alpha channel or transparency. DuoShot exports opaque RGB PNG by default, with JPEG available as an option. Apple allows one to ten screenshots; DuoShot’s suggestion to use at least three is editorial advice." },
+    { q: "Why is the inner panel resolution different from the screenshot size?", a: `Apple lists 1878 × 2670 pixels for the physical inner display and ${INNER_PORTRAIT} pixels for a portrait App Store Connect screenshot. These describe different things: use the Connect dimensions when preparing listing assets. Resizing a file does not create an adapted inner-display layout.` },
   ],
   fr: [
     { q: "Quelle taille de captures iPhone est requise pour App Store Connect ?", a: "iPhone Dynamic Island (écran moyen, 6,3″) requis : 1206 × 2622 pixels en portrait ou 2622 × 1206 en paysage. App Store Connect accepte aussi 1179 × 2556 ou 2556 × 1179. DuoShot exporte en 1206 × 2622 (ou son paysage), inclus dans l’essai gratuit. La taille 6,9″ est optionnelle, disponible avec Pass, Indie et Studio." },
@@ -28,5 +29,6 @@ export const SPECS_FAQ: Record<Locale, FaqItem[]> = {
     { q: "Quelles dimensions utiliser en paysage ?", a: `Écran externe : ${OUTER_LANDSCAPE} pixels. Écran interne : ${INNER_LANDSCAPE} pixels. DuoShot exporte une orientation par set ; préparez un autre set si vous avez aussi besoin de l’autre orientation.` },
     { q: "Peut-on déjà déposer les captures iPhone Duo dans App Store Connect ?", a: appleUploadStatus("fr") },
     { q: "App Store Connect accepte-t-il le PNG, le JPEG ou un canal alpha ?", a: "Apple accepte les captures PNG et JPEG, sans canal alpha ni transparence. DuoShot exporte du PNG RGB opaque par défaut et propose le JPEG en option. Apple autorise une à dix captures ; le conseil de DuoShot d’en utiliser au moins trois est éditorial." },
+    { q: "Pourquoi la résolution de la dalle interne diffère-t-elle de la taille des captures ?", a: `Apple indique 1878 × 2670 pixels pour la dalle interne et ${INNER_PORTRAIT} pixels pour une capture App Store Connect en portrait. Ces valeurs décrivent des choses différentes : utilisez les dimensions Connect pour préparer votre fiche. Redimensionner un fichier ne crée pas une interface adaptée à l’écran interne.` },
   ],
 };

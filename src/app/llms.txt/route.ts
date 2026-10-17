@@ -1,6 +1,7 @@
-import { IPHONE_63_ALTERNATIVE, SIZE_SPECS, SPECS_VERSION_DATE, specPixels } from "@/lib/specs";
+import { IPHONE_63_ALTERNATIVE, SIZE_SPECS, SPECS_VERSION_DATE, duoSpec, specPixels } from "@/lib/specs";
 import { getSiteUrl } from "@/lib/site";
-import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_COPY, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { INNER_PORTRAIT, OUTER_PORTRAIT } from "@/lib/screenshot-copy";
 import { passCheckoutAvailable } from "@/lib/billing-availability";
 import { getTranslator } from "@/lib/i18n";
 import { COMPARISON_GUIDE_PATH } from "@/lib/guides";
@@ -19,11 +20,15 @@ export function GET() {
   ).join("\n");
   const { t, tf } = getTranslator("fr");
   const passAvailable = passCheckoutAvailable();
+  const tagline = t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass").replace(
+    "Choisissez externe uniquement, interne uniquement ou un mix de 10 fichiers PNG/JPEG opaques maximum pour l’emplacement Duo.",
+    "Choisissez externe uniquement, interne uniquement ou un mix : 10 fichiers PNG/JPEG opaques maximum au total, une règle de DuoShot (Apple accepte jusqu’à 10 captures par taille d’appareil).",
+  );
   const passOffer = passAvailable
     ? `- ${tf("pricing_pass_title", { days: PASS30.days })}: ${tf("pricing_pass_price", { price: `${PASS30.priceEur} €` })}. ${tf("pricing_pass_body", { days: PASS30.days })}\n`
     : "";
   const body = `# DuoShot — App Store Screenshot QA
-> ${t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass")}
+> ${tagline}
 
 ${getTranslator("en").t("specs_duoshot_identity")}
 
@@ -54,11 +59,11 @@ ${sizes}
 - iPhone 6.3" landscape alternative accepted by App Store Connect: ${specPixels(IPHONE_63_ALTERNATIVE.landscape)}
 
 ## Notes
-- App Store Connect uses an iPhone Duo slot, with up to 10 screenshots per device size; both outer and inner sizes are accepted.
-- Duo slot content: outer only, inner only, or a user-selected mix; normal ZIPs contain the selection only
-- Screen folders identify dimensions, not separate ASC slots; duo-slot.json records upload order
-- Example ZIP: raw outer + inner sets; pick up to 10 for the Duo slot
-- Exports over the combined cap return HTTP 400 DUO_SLOT_LIMIT; no silent trimming
+- App Store Connect accepts up to 10 iPhone Duo screenshots per device size; outer (${specPixels(duoSpec("duo-outer", "portrait"))}) and inner (${specPixels(duoSpec("duo-inner", "portrait"))}) sizes are both accepted.
+- DuoShot selection: outer only, inner only, or a user-selected mix; normal ZIPs contain the selection only
+- Screen folders identify dimensions; duo-slot.json records upload order
+- Example ZIP: raw outer + inner sets; pick up to 10 in total for your selection
+- The limit of 10 screenshots total across both screens is DuoShot's rule, not Apple's; exports above it are refused with HTTP 400, no silent trimming. Whether Apple's capacity is shared across both screens remains to be confirmed in a real App Store Connect upload.
 - Guideline 2.3.3: screenshots must accurately represent the app
 - Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
 - iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
@@ -69,7 +74,7 @@ ${sizes}
 - Indie: ${PLANS.indie.monthlyEur} EUR/month or ${PLANS.indie.yearlyEur} EUR/year; Studio: ${PLANS.studio.monthlyEur} EUR/month or ${PLANS.studio.yearlyEur} EUR/year. Annual billing upfront; paid limit ${PLANS.indie.dailyHdSets} exports per UTC day.
 ${passOffer}
 ## Upload status
-- ${DUO_SLOT_COPY.en}
+- Apple: up to 10 screenshots per device size; both sizes are accepted: ${OUTER_PORTRAIT} and ${INNER_PORTRAIT}, or their landscape dimensions. Uploads have not yet been tested by DuoShot.
 - Third-party reference (ASC CLI): ${DUO_SLOT_SOURCE}
 - Apple upload status checked 2026-10-13: since 2026-10-05, App Store Connect accepts iPhone Duo optimized apps; from April 2027, every app submission must include iPhone Duo screenshots (for apps built with the iOS 27.1 SDK or later). Upload files manually.
 - Primary source (Apple screenshot specifications): ${APPLE_SCREENSHOT_SOURCE}
