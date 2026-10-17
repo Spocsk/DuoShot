@@ -511,7 +511,7 @@ export const en: Messages = {
   reject_faq_alpha: "How do I fix an alpha-channel error?",
   reject_faq_slot: "How many iPhone Duo screenshots can I upload?",
   specs_fold_heading: "iPhone Duo safe area and fold",
-  specs_fold_body: "Keep important text and controls clear of the fold when reviewing the inner-screen layout. DuoShot’s preview guide is a simulated band: horizontal in portrait, vertical in landscape. It is a composition aid, not an Apple safe-area specification or a guarantee of approval. Check your app’s real captures before export.",
+  specs_fold_body: "Check that important text and controls stay legible near the fold in the inner-screen layout. DuoShot’s preview guide is a simulated band: horizontal in portrait, vertical in landscape. It is a composition aid, not an Apple safe-area specification or a guarantee of approval. Check your app’s real captures before export.",
   why_specs_link: "Read the screenshot size and fold guide",
   specs_display: "Display",
   specs_outer_display: "Outer display",
