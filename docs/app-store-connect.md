@@ -2,6 +2,8 @@
 
 Statut au 2026-10-13 : connecteur et bouton de l’outil derrière `ASC_CONNECTOR_ENABLED`. Aucun envoi réel n’a encore été testé par DuoShot.
 
+Voir [les deux modèles d’envoi et le flag ASC_UPLOAD_MODEL](asc.md) pour la migration vers l’App Asset Library.
+
 ## Ce que dit la documentation Apple (vérifiée le 2026-10-04)
 
 | Sujet | Constat | Source |

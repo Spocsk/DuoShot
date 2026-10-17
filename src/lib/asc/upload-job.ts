@@ -4,7 +4,8 @@ import type { DbClient } from "@/lib/supabase/types";
 import type { DeviceSlot, Orientation } from "../specs";
 import { completeRender, type RenderJob } from "../render/jobs";
 import { AscError, createAscClient, isAscId, md5Hex, type AscClientOptions } from "./client";
-import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, displayTypeFor, isAscDuoImage } from "./config";
+import { executeAssetLibraryUpload } from "./asset-library-job";
+import { ASC_MAX_SCREENSHOTS_PER_SET, ASC_PREFERRED_69_SIZE, ascUploadModel, displayTypeFor, isAscDuoImage } from "./config";
 import { loadAscCredentials } from "./credentials";
 import { readWorkspaceBilling } from "../workspace-billing";
 import { isProPlan } from "../plans";
@@ -71,7 +72,7 @@ export type PlannedFile = { slot: DeviceSlot; index: number; displayType: string
  * Picks the ZIP entries for each target, in slide order. Paths look like
  * `[client/]app/<slot>-<orientation>/[WxH/]NN.png`; 6.9" keeps only the largest size.
  */
-export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: string[]): PlannedFile[] {
+export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: string[], duoLimit = ASC_MAX_SCREENSHOTS_PER_SET): PlannedFile[] {
   const planned: PlannedFile[] = [];
   for (const target of targets) {
     const files: PlannedFile[] = [];
@@ -92,7 +93,7 @@ export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: s
     planned.push(...(target.slot === "iphone-69" ? files.slice(0, ASC_MAX_SCREENSHOTS_PER_SET) : files));
   }
   const duo = planned.filter((file) => file.displayType === "APP_IPHONE_DUO");
-  if (duo.length > ASC_MAX_SCREENSHOTS_PER_SET) throw new Error("DUO_SLOT_LIMIT");
+  if (duo.length > duoLimit) throw new Error("DUO_SLOT_LIMIT");
   if (duoOrder) {
     if (duoOrder.length !== duo.length || new Set(duoOrder).size !== duo.length || duoOrder.some((path) => !duo.some((file) => file.path === path))) throw new Error("INVALID_DUO_SELECTION");
     planned.sort((a, b) => {
@@ -103,19 +104,20 @@ export function planAscFiles(paths: string[], targets: AscTarget[], duoOrder?: s
   return planned;
 }
 
-type Options = AscClientOptions & { budgetMs?: number };
+export type UploadJobOptions = AscClientOptions & { budgetMs?: number };
 const fail = (code: string) => Response.json({ error: code }, { status: 400 });
 
 /**
  * Worker entry for `asc_upload`. Returns a Response like the other executors:
  * success commits the job; an error response is committed by the worker.
  */
-export async function executeAscUpload(admin: DbClient, job: RenderJob, options: Options = {}): Promise<Response> {
+export async function executeAscUpload(admin: DbClient, job: RenderJob, options: UploadJobOptions = {}): Promise<Response> {
   // A reclaimed attempt cannot know which screenshots Apple already accepted;
   // retrying would duplicate them in the user's listing.
   if ((job.attempts ?? 1) > 1) return fail("ASC_RETRY_UNSAFE");
   let payload: AscUploadPayload;
   try { payload = parseAscUploadPayload(job.payload); } catch { return fail("INVALID_REQUEST"); }
+  const uploadModel = ascUploadModel();
   const now = options.now ?? Date.now;
   const started = now();
 
@@ -141,7 +143,7 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
       throw new Error("INVALID_DUO_SELECTION");
     }
     // Legacy exports have no manifest. Reject overfull raw pairs; never trim them.
-    planned = planAscFiles(Object.keys(zip.files).filter((path) => !zip.files[path]!.dir), payload.targets, manifest?.files);
+    planned = planAscFiles(Object.keys(zip.files).filter((path) => !zip.files[path]!.dir), payload.targets, manifest?.files, uploadModel === "asset-library" ? Infinity : ASC_MAX_SCREENSHOTS_PER_SET);
   } catch (error) {
     return fail(error instanceof Error && error.message === "DUO_SLOT_LIMIT" ? "DUO_SLOT_LIMIT" : "INVALID_DUO_SELECTION");
   }
@@ -165,6 +167,7 @@ export async function executeAscUpload(admin: DbClient, job: RenderJob, options:
     return fail(error instanceof Error && error.message === "ASC_KEY_UNREADABLE" ? "ASC_KEY_UNREADABLE" : "ASC_UNAVAILABLE");
   }
   if (!credentials) return fail("ASC_NOT_CONNECTED");
+  if (uploadModel === "asset-library") return executeAssetLibraryUpload({ admin, job, payload, zip, planned, credentials, options, started });
   const client = createAscClient(credentials, options);
   // Rollback must still reach Apple after the heartbeat aborted the job: no abort
   // signal, short per-request timeout.

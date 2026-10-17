@@ -59,6 +59,7 @@ export const serverEnv = {
   get cronSecret() { return read("CRON_SECRET"); },
 
   asc: {
+    get uploadModel(): "asset-library" | "legacy" { return process.env.ASC_UPLOAD_MODEL === "asset-library" ? "asset-library" : "legacy"; },
     get enabled() { return flag("ASC_CONNECTOR_ENABLED"); },
     get encryptionKey() { return read("ASC_ENCRYPTION_KEY"); },
   },
