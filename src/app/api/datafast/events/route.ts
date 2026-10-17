@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ANALYTICS_CHOICE_KEY } from "@/lib/analytics-consent";
 import { sanitizedAnalyticsUrl } from "@/lib/analytics-path";
+import { sanitizedCampaignQuery } from "@/lib/analytics-campaign";
 import { DATAFAST_DOMAIN, DATAFAST_WEBSITE_ID } from "@/lib/datafast-config";
 
 export const runtime = "nodejs";
@@ -24,11 +25,12 @@ export async function POST(request: Request) {
     }
     const href = typeof payload.href === "string" ? sanitizedAnalyticsUrl(payload.href) : null;
     if (!href || new URL(href).hostname !== DATAFAST_DOMAIN) return NextResponse.json({ ignored: true });
-    payload.href = href;
+    const campaign = payload.type === "pageview" ? sanitizedCampaignQuery(new URL(payload.href).search) : "";
+    payload.href = campaign ? `${href}?${campaign}` : href;
     if (payload.referrer) {
       try {
         const referrer = new URL(payload.referrer);
-        payload.referrer = referrer.hostname === DATAFAST_DOMAIN ? sanitizedAnalyticsUrl(referrer.href) : referrer.origin;
+        payload.referrer = referrer.origin;
       } catch { payload.referrer = null; }
     }
     delete payload.adClickIds;

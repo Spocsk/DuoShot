@@ -38,6 +38,10 @@ describe.each(["fr", "en"] as const)("%s screenshot checker page", (locale) => {
     expect(html).toContain(copy.privacy);
     expect(html).toContain(copy.scope);
     expect(copy.labels.duoRule).toContain(locale === "fr" ? "10 captures par taille d’appareil" : "10 screenshots per device size");
+    expect(copy.labels.duoRule).not.toMatch(/scaled|redimension/i);
+    expect(copy.labels.duoRule).toContain("1398 × 2034");
+    expect(copy.labels.duoRule).toContain("2007 × 2853");
+    expect(copy.faq[1].a).toBe(copy.labels.duoRule);
     expect(copy.labels.appleOnly).toBe(locale === "fr" ? "Taille valide pour Apple, non produite par DuoShot :" : "Valid Apple size, not produced by DuoShot:");
     expect(html).not.toMatch(/single.*slot|seul emplacement|5[.,]4\s*(?:″|&quot;)|7[.,]6\s*(?:″|&quot;)/);
     expect(html).toContain(locale === "fr" ? "iPhone 6,3″" : "iPhone 6.3&quot;");

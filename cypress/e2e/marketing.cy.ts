@@ -135,6 +135,9 @@ describe("marketing", () => {
       if (locale === "fr") cy.visitFr("/pricing");
       else cy.visitEn("/en/pricing");
       cy.get("h1").should("have.length", 1);
+      cy.get('meta[name="description"]').invoke("attr", "content").should("contain", locale === "fr" ? "6,3″ requis" : "6.3″ iPhone required")
+        .and("contain", locale === "fr" ? "6,9″ optionnel" : "optional 6.9″")
+        .its("length").should("be.at.most", 155);
       cy.get(".studio-plan-title").each(($title) => {
         expect($title.find("h2")).to.have.length(1);
         expect($title.find("h3")).to.have.length(0);
@@ -260,6 +263,9 @@ describe("screenshot dimensions and search intent", () => {
         .and("contain", locale === "fr" ? "pas encore été testé" : "not yet been tested")
         .and("contain", locale === "fr" ? "avril 2027" : "April 2027")
         .and("contain", locale === "fr" ? "SDK iOS 27.1 ou ultérieur" : "for apps built with the iOS 27.1 SDK or later");
+      cy.get('[data-testid="apple-availability"] a[href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/"]')
+        .should("have.text", locale === "fr" ? "Spécifications des captures d’Apple" : "Apple screenshot specifications");
+      cy.get('[data-testid="apple-availability"] a[href*="github.com/rorkai"]').should("not.exist");
       cy.get('section[aria-labelledby="iphone-63-sizes"] table').find("tbody tr").should("have.length", 2);
       cy.get('section[aria-labelledby="iphone-63-sizes"] table').should("contain", "1206 × 2622").and("contain", "2622 × 1206");
       cy.get('section[aria-labelledby="duo-sizes"] table').find("tbody tr").should("have.length", 4);
