@@ -4,8 +4,8 @@
  * A key ending in `_one` is the singular variant of the key without it (see tf).
  */
 export const fr = {
-  guides_title: "Guides captures App Store iPhone Duo",
-  guides_description: "Tous les guides DuoShot : captures iPhone Duo dans App Store Connect, comparatifs, tailles 1398×2034 et 2007×2853, et vérificateur gratuit.",
+  guides_title: "Guides des captures App Store pour iPhone Duo",
+  guides_description: "Tous les guides DuoShot : captures iPhone Duo dans App Store Connect, comparatifs, tailles 1398 × 2034 et 2007 × 2853, et vérificateur gratuit.",
   guides_guides: "Guides",
   guides_checker: "Vérificateur gratuit",
   guides_sizes: "Tailles des captures",
