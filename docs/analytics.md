@@ -4,6 +4,8 @@ Umami est l'unique outil d'analytics produit. Il ne se charge qu'après consente
 
 Mixpanel ne collecte plus rien depuis le 4 octobre 2026 : plus de SDK navigateur, plus d'événements serveur (`export_succeeded`, `review_created`, `subscription_activated` étaient aussi envoyés à Mixpanel par l'API et le webhook Stripe), plus d'autorisation CSP, plus de `NEXT_PUBLIC_MIXPANEL_TOKEN` au build. Seul l'effacement des données déjà envoyées au projet Mixpanel UE est conservé (voir plus bas).
 
+Les données de mesure d’audience Umami ne sont rattachées à aucun compte ni à aucune personne identifiée ; elles sont conservées 25 mois, puis supprimées automatiquement.
+
 ## Événements et propriétés
 
 | Événement | Déclenchement | Propriétés transmises |

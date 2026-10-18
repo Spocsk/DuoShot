@@ -2,6 +2,10 @@
 
 Umami v3.0.3, auto-hébergé chez Hetzner en Allemagne, est l’outil d’analytics produit. Site : `duoshot.site`, identifiant public `182b11a4-f44b-4dcf-8f07-448e8ef493c4`.
 
+Les données de mesure d’audience Umami ne sont rattachées à aucun compte ni à aucune personne identifiée ; elles sont conservées 25 mois, puis supprimées automatiquement.
+
+Note opérationnelle : Umami auto-hébergé conserve tout indéfiniment par défaut ; la suppression automatique à 25 mois exige une tâche planifiée sur l’hôte Umami, supprimant les lignes de plus de 25 mois dans `event_data`, `website_event`, `session_data`, `revenue`, puis `session`, dans cet ordre, à mettre en place côté infra avec l’accord de Dylan.
+
 ## Consentement et transport
 
 Le bandeau, les choix et la clé `duoshot_analytics_choice_v2` restent inchangés. Aucun script ni envoi navigateur avant acceptation. Les anciens refus sont conservés ; une ancienne acceptation v1 demande un nouveau choix. Le choix est conservé en stockage local ; le cookie de consentement a une durée d’un an. Umami ne pose aucun cookie. Au refus, `umami.disabled=1` est enregistré localement et tous nos appels cessent ; une acceptation supprime cette clé.
