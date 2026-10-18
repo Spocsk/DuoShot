@@ -24,7 +24,7 @@ Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store
 
 Si les captures 6,9″ optionnelles ne sont pas fournies, App Store Connect utilise des versions mises à l’échelle de captures d’une autre taille : iPhone avec Face ID (grand écran), selon les [spécifications d’Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
 
-Apple accepte aussi les captures Duo en paysage : **2034 × 1398** pour l’écran externe et **2853 × 2007** pour l’écran interne. Placez les fichiers Duo dans l’emplacement Duo, les captures 6,3″ requises dans leur propre emplacement et les fichiers 6,9″ optionnels dans le leur. L’essai gratuit comprend **2 ZIP HD** après inscription, avec les captures Duo sélectionnées et le format 6,3″ requis.
+Apple accepte aussi les captures Duo en paysage : **2034 × 1398** pour l’écran externe et **2853 × 2007** pour l’écran interne. Dans App Store Connect, choisissez l’écran iPhone Duo pour les fichiers Duo, le 6,3″ pour les captures 6,3″ requises et le 6,9″ pour les fichiers 6,9″ optionnels. L’essai gratuit comprend **2 ZIP HD** après inscription, avec les captures Duo sélectionnées et le format 6,3″ requis.
 
 ## Quand les captures Duo seront-elles obligatoires ?
 

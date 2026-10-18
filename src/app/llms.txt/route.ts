@@ -20,10 +20,7 @@ export function GET() {
   ).join("\n");
   const { t, tf } = getTranslator("fr");
   const passAvailable = passCheckoutAvailable();
-  const tagline = t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass").replace(
-    "Choisissez externe uniquement, interne uniquement ou un mix de 10 fichiers PNG/JPEG opaques maximum pour l’emplacement Duo.",
-    "Choisissez externe uniquement, interne uniquement ou un mix : 10 fichiers PNG/JPEG opaques maximum au total, une règle de DuoShot (Apple accepte jusqu’à 10 captures par taille d’appareil).",
-  );
+  const tagline = t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass");
   const passOffer = passAvailable
     ? `- ${tf("pricing_pass_title", { days: PASS30.days })}: ${tf("pricing_pass_price", { price: `${PASS30.priceEur} €` })}. ${tf("pricing_pass_body", { days: PASS30.days })}\n`
     : "";

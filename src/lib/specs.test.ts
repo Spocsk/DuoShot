@@ -24,7 +24,7 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
     expect(html).toContain(locale === "fr" ? "dépôt pas encore testé par DuoShot" : "uploads have not yet been tested by DuoShot");
   });
 
-  it("uses the correct slot copy and links every guide to specs and the other sizes", () => {
+  it("uses the correct Duo copy and links every guide to specs and the other sizes", () => {
     for (const size of SCREENSHOT_SIZES) {
       const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
       if (size === "1206x2622") {
@@ -40,8 +40,10 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
         const slotSection = html.match(/<section[^>]*>\s*<h2[^>]*>[^<]*6[,.]9[^<]*<\/h2>([\s\S]*?)<\/section>/)![1];
         expect(slotSection).not.toContain(locale === "fr" ? "emplacement iPhone Duo" : "iPhone Duo slot");
       } else {
-        expect(html).toContain(locale === "fr" ? "un emplacement iPhone Duo" : "an iPhone Duo slot");
+        expect(html).toContain(locale === "fr" ? "Les captures iPhone Duo dans App Store Connect" : "iPhone Duo screenshots in App Store Connect");
+        expect(html).toContain(locale === "fr" ? "App Store Connect accepte jusqu’à 10 captures par taille d’appareil." : "App Store Connect accepts up to 10 screenshots per device size.");
       }
+      expect(html).not.toMatch(/emplacement Duo|emplacement iPhone Duo|Duo slot/i);
       const prefix = locale === "en" ? "/en" : "";
       expect(html).toContain(`href="${prefix}/specs"`);
       for (const related of SCREENSHOT_SIZES.filter((related) => related !== size)) {

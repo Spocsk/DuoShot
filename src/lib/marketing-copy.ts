@@ -54,10 +54,10 @@ export const WHY_NOT_AI_PAGE_COPY = {
 export const REJECTION_PAGE_COPY = {
   fr: {
     title: "App Store Connect : erreurs de captures iPhone Duo",
-    description: "Captures iPhone Duo dans App Store Connect : vérifiez dimensions, canal alpha et emplacement. Dépôt manuel ; pas encore testé par DuoShot.",
+    description: "Captures iPhone Duo dans App Store Connect : vérifiez dimensions, canal alpha et nombre de captures. Dépôt manuel ; pas encore testé par DuoShot.",
   },
   en: {
     title: "App Store Connect iPhone Duo screenshot errors",
-    description: "Troubleshoot foldable iPhone screenshots in App Store Connect: dimensions, alpha and the Duo slot. Manual upload; not yet tested by DuoShot.",
+    description: "Troubleshoot foldable iPhone screenshots in App Store Connect: dimensions, alpha and screenshot count. Manual upload; not yet tested by DuoShot.",
   },
 };
