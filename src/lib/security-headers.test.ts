@@ -8,6 +8,7 @@ describe("security headers", () => {
     const policy = contentSecurityPolicy({ supabaseUrl: "https://api.duoshot.site/" });
     expect(directive(policy, "connect-src")).toBe("connect-src 'self' https://api.duoshot.site wss://api.duoshot.site");
     expect(policy).not.toMatch(/mixpanel/i);
+    expect(policy).not.toContain("analytics.dylan-cdo.fr");
     expect(directive(policy, "img-src")).toContain("https://api.duoshot.site");
     expect(directive(policy, "script-src")).toBe("script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'");
     expect(policy).toContain("frame-ancestors 'none'");

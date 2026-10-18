@@ -27,7 +27,7 @@ Outillage TypeScript : `tsc` utilise TS 7 ; le paquet `typescript` fournit l’A
 
 Renseigne uniquement les **noms** de variables dans `.env.example`. Les secrets vont dans `.env.local` en local et dans `/data/duoshot/app.env` (root uniquement) sur le VPS — jamais dans git.
 
-Analytics : Datafast, seul outil d’analytics, mesure les pages et parcours uniquement après accord. Configuration : [`docs/datafast.md`](docs/datafast.md). Événements, rapports et effacement des données Mixpanel historiques : [`docs/analytics.md`](docs/analytics.md).
+Analytics : Umami, seul outil d’analytics, mesure les pages et parcours uniquement après accord. Configuration : [`docs/umami.md`](docs/umami.md). Événements, rapports et effacement des données Mixpanel historiques : [`docs/analytics.md`](docs/analytics.md).
 
 Le lien review Studio (`POST /api/reviews`) exige `SUPABASE_SERVICE_ROLE_KEY` (ou `SUPABASE_SECRET_KEY`) en local **et** sur le VPS — sans ça l’API répond 503.
 

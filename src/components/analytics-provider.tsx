@@ -136,7 +136,7 @@ export function AnalyticsProvider() {
       {configured && ready && (choice === null || settingsOpen) ? (
         <div className="fixed inset-x-3 bottom-3 z-[100] mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 shadow-xl sm:flex-row sm:items-center sm:gap-5" role="dialog" aria-label={t("footer_analytics_preferences")}>
           <div className="min-w-0 flex-1">
-            <p className="text-xs leading-snug text-[var(--muted)] sm:text-sm"><strong className="font-semibold text-[var(--foreground)]">{t("consent_product_analytics")}</strong>{t("consent_permission_datafast_measures_pages")}</p>
+            <p className="text-xs leading-snug text-[var(--muted)] sm:text-sm"><strong className="font-semibold text-[var(--foreground)]">{t("consent_product_analytics")}</strong>{t("consent_permission_umami_measures_pages")}</p>
             {choiceError ? <p className="mt-1 text-xs text-[var(--warn)] sm:text-sm" role="alert">{t("consent_preference_not_saved_please")}</p> : null}
           </div>
           <div className="flex shrink-0 gap-2">

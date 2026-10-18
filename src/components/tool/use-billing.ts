@@ -4,7 +4,7 @@ import type { Locale } from "@/lib/specs";
 import { useI18n } from "@/components/i18n-provider";
 import type { Translator } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { trackDatafastConversion } from "@/lib/datafast-client";
+import { trackUmamiConversion } from "@/lib/umami-client";
 
 export type BillingStatus = {
   plan?: string;
@@ -61,7 +61,7 @@ export function useBilling(locale: Locale, searchParams: ReturnType<typeof useSe
     const sessionId = searchParams.get("session_id");
     const plan = billing?.plan;
     if (checkoutFlag === "success" && sessionId?.startsWith("cs_") && billing?.source === "stripe" && (plan === "indie" || plan === "studio")) {
-      const report = () => { void trackDatafastConversion("subscription_activated", sessionId, { plan }); };
+      const report = () => { void trackUmamiConversion("subscription_activated", sessionId, { plan }); };
       report();
       window.addEventListener("duoshot:analytics-choice", report);
       return () => window.removeEventListener("duoshot:analytics-choice", report);

@@ -10,6 +10,11 @@ const hit = (times: number, method: string, path: string, ip = "203.0.113.1", no
 beforeEach(() => resetRateLimits());
 
 describe("API rate limits", () => {
+  it("limits the analytics relay to 120 sends per minute", () => {
+    expect(hit(120, "POST", "/api/umami/api/send").limited).toBe(false);
+    expect(hit(1, "POST", "/api/umami/api/send")).toMatchObject({ limited: true, rule: "analytics" });
+  });
+
   it("limits checkout per address and reports when to retry", () => {
     expect(hit(20, "POST", "/api/stripe/checkout").limited).toBe(false);
     const blocked = checkRateLimit("POST", "/api/stripe/checkout", "203.0.113.1", 60_000);
