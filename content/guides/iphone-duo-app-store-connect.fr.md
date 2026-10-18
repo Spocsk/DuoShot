@@ -11,9 +11,9 @@ updated: 2026-10-16
 
 Préparez de vraies captures de votre app, exportez des fichiers PNG ou JPEG opaques, puis déposez-les manuellement depuis la fiche de votre app dans App Store Connect. **DuoShot (duoshot.site) n’a pas encore testé le dépôt Duo, y compris via son connecteur automatique expérimental.** La préparation des fichiers ne garantit pas l’approbation d’Apple.
 
-## Quels emplacements utiliser ?
+## Quelles tailles utiliser ?
 
-Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store Connect. Choisissez l’externe seul, l’interne seul ou un mélange sélectionné. Les dossiers du ZIP indiquent les dimensions. Consultez [toutes les spécifications des captures](/specs).
+Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store Connect. Dans DuoShot, choisissez l’externe seul, l’interne seul ou un mélange sélectionné. Les dossiers du ZIP indiquent les dimensions. Consultez [toutes les spécifications des captures](/specs).
 
 | Écran | Pixels en portrait | Emplacement App Store Connect | Accès DuoShot |
 | --- | --- | --- | --- |

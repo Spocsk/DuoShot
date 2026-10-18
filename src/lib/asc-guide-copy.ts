@@ -6,7 +6,7 @@ export function ascGuideCopy(locale: Locale) {
     howToHeading: "Déposer manuellement les captures iPhone Duo",
     faqHeading: "Questions sur le dépôt des captures",
     steps: [
-      { id: "prepare", name: "Préparer la sélection Duo", text: "Dans DuoShot, importez vos captures réelles. Choisissez l’externe, l’interne ou un mélange, avec jusqu’à 10 captures par taille d’appareil. Vérifiez le cadrage, la lisibilité près du pli et l’absence de transparence." },
+      { id: "prepare", name: "Préparer la sélection Duo", text: "Dans DuoShot, importez vos captures réelles. Choisissez l’externe, l’interne ou un mélange, jusqu’à 10 captures au total (limite DuoShot). Apple autorise jusqu’à 10 captures par taille d’appareil. Vérifiez le cadrage, la lisibilité près du pli et l’absence de transparence." },
       { id: "unzip", name: "Exporter et décompresser le ZIP", text: "Téléchargez le ZIP HD et décompressez-le. Vérifiez les fichiers PNG/JPEG opaques et leur ordre : 1398 × 2034 pour l’externe, 2007 × 2853 pour l’interne en portrait. Inversez les dimensions en paysage. duo-slot.json indique l’ordre de dépôt." },
       { id: "listing", name: "Choisir l’app, la version et la langue", text: "Dans App Store Connect, ouvrez Apps et sélectionnez votre app, puis une version iOS modifiable dans la barre latérale. Choisissez la langue de la fiche dans le menu en haut à droite." },
       { id: "duo-slot", name: "Déposer les captures iPhone Duo", text: "Dans les informations de la page produit, ouvrez la section des aperçus et captures d’écran, puis toutes les tailles dans le gestionnaire de médias (View All Sizes in Media Manager). Choisissez iPhone, puis iPhone Duo. Déposez les images décompressées dans l’ordre souhaité. Comptez les captures déjà présentes : Apple autorise jusqu’à 10 captures par taille d’appareil." },
@@ -18,13 +18,13 @@ export function ascGuideCopy(locale: Locale) {
       { q: "Quand les captures iPhone Duo seront-elles obligatoires ?", a: "Apple les exige à partir d’avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur. Apple autorise jusqu’à 10 captures par taille d’appareil, avec les variantes paysage." },
       { q: "Les captures Duo remplacent-elles les captures 6,3″ requises ?", a: "Non. Les captures 6,3″ requises utilisent leur propre emplacement : 1206 × 2622 en portrait, dimensions inversées en paysage. DuoShot les inclut dans l’essai gratuit de 2 ZIP HD. Le format 6,9″ 1320 × 2868 est optionnel et disponible avec Pass, Indie et Studio." },
       { q: "Le dépôt automatique DuoShot a-t-il été testé ?", a: "Non. Le connecteur App Store Connect est expérimental ; DuoShot n’a pas encore vérifié de bout en bout le dépôt Duo. Utilisez le ZIP pour un dépôt manuel et vérifiez les fichiers dans la fiche de votre app." },
-      { q: "Pourquoi App Store Connect refuse-t-il un fichier ?", a: "Vérifiez les dimensions, l’orientation et l’emplacement choisi. Les captures doivent être des fichiers PNG ou JPEG opaques, sans canal alpha. Apple autorise jusqu’à 10 captures par taille d’appareil, captures déjà présentes comprises." },
+      { q: "Pourquoi App Store Connect refuse-t-il un fichier ?", a: "Vérifiez les dimensions, l’orientation et la taille d’appareil choisie. Les captures doivent être des fichiers PNG ou JPEG opaques, sans canal alpha. Apple autorise jusqu’à 10 captures par taille d’appareil, captures déjà présentes comprises." },
     ],
   } : {
     howToHeading: "Upload iPhone Duo screenshots manually",
     faqHeading: "Screenshot upload questions",
     steps: [
-      { id: "prepare", name: "Prepare the Duo selection", text: "Import your real captures into DuoShot. Choose outer, inner or a mix, with up to 10 screenshots per device size. Check cropping, readability near the fold and the absence of transparency." },
+      { id: "prepare", name: "Prepare the Duo selection", text: "Import your real captures into DuoShot. Choose outer, inner, or a mix, up to 10 screenshots in total (DuoShot limit). Apple allows up to 10 screenshots per device size. Check cropping, readability near the fold and the absence of transparency." },
       { id: "unzip", name: "Export and unzip the archive", text: "Download the HD ZIP and unzip it. Check the opaque PNG/JPEG files and their order: 1398 × 2034 for outer, 2007 × 2853 for inner in portrait. Swap dimensions for landscape. duo-slot.json records upload order." },
       { id: "listing", name: "Choose the app, version and language", text: "In App Store Connect, open Apps and select your app, then an editable iOS version in the sidebar. Choose the listing language from the menu at the top right." },
       { id: "duo-slot", name: "Upload iPhone Duo screenshots", text: "Under Product Page Information, open App Previews and Screenshots, then View All Sizes in Media Manager. Choose iPhone, then iPhone Duo. Drop the unzipped images in your chosen order. Count existing screenshots: Apple allows up to 10 screenshots per device size." },
@@ -36,7 +36,7 @@ export function ascGuideCopy(locale: Locale) {
       { q: "When do iPhone Duo screenshots become mandatory?", a: "Apple requires them from April 2027 for apps built with the iOS 27.1 SDK or later. Apple allows up to 10 screenshots per device size, including landscape variants." },
       { q: "Do Duo screenshots replace the required 6.3\" screenshots?", a: "No. The required 6.3\" screenshots use their own slot: 1206 × 2622 in portrait, with dimensions swapped for landscape. DuoShot includes them in the free trial of 2 HD ZIPs. The 6.9″ 1320 × 2868 format is optional and available with Pass, Indie and Studio." },
       { q: "Has DuoShot’s automatic upload been tested?", a: "No. The App Store Connect connector is experimental; DuoShot has not yet verified Duo uploads end to end. Use the ZIP for manual upload and check the files in your app’s listing." },
-      { q: "Why does App Store Connect reject a file?", a: "Check dimensions, orientation and the chosen slot. Screenshots must be opaque PNG or JPEG files without an alpha channel. Apple allows up to 10 screenshots per device size, including existing screenshots." },
+      { q: "Why does App Store Connect reject a file?", a: "Check dimensions, orientation and the chosen device size. Screenshots must be opaque PNG or JPEG files without an alpha channel. Apple allows up to 10 screenshots per device size, including existing screenshots." },
     ],
   };
 }
