@@ -1,6 +1,13 @@
 import type { Messages } from "./types";
 
 export const en: Messages = {
+  guides_title: "iPhone Duo App Store screenshot guides",
+  guides_description: "All DuoShot guides: iPhone Duo screenshots in App Store Connect, comparisons, 1398 × 2034 and 2007 × 2853 sizes, and a free checker.",
+  guides_guides: "Guides",
+  guides_checker: "Free checker",
+  guides_sizes: "Screenshot sizes",
+  guides_comparisons: "Comparisons",
+  footer_guides: "Guides",
   checker_title: "Free iPhone Duo screenshot checker",
   checker_description: "Check iPhone Duo, 6.9″ and 6.3″ screenshot dimensions and transparency for free in your browser. No files are uploaded.",
   checker_intro: "Drop your images to check their dimensions, transparency and the number of iPhone Duo screenshots per device size.",
@@ -504,7 +511,7 @@ export const en: Messages = {
   reject_faq_alpha: "How do I fix an alpha-channel error?",
   reject_faq_slot: "How many iPhone Duo screenshots can I upload?",
   specs_fold_heading: "iPhone Duo safe area and fold",
-  specs_fold_body: "Keep important text and controls clear of the fold when reviewing the inner-screen layout. DuoShot’s preview guide is a simulated band: horizontal in portrait, vertical in landscape. It is a composition aid, not an Apple safe-area specification or a guarantee of approval. Check your app’s real captures before export.",
+  specs_fold_body: "Check that important text and controls stay legible near the fold in the inner-screen layout. DuoShot’s preview guide is a simulated band: horizontal in portrait, vertical in landscape. It is a composition aid, not an Apple safe-area specification or a guarantee of approval. Check your app’s real captures before export.",
   why_specs_link: "Read the screenshot size and fold guide",
   specs_display: "Display",
   specs_outer_display: "Outer display",

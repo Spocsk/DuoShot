@@ -50,14 +50,19 @@ describe("GET /llms.txt", () => {
     expect(body).toContain('Optional 6.9" sizes are included with paid access');
   });
 
-  it("preserves the Duo slot copy and untested uploads alongside the qualified deadline", async () => {
+  it.each([true, false])("distinguishes Apple's capacity from DuoShot's rule and preserves upload qualifications (pass: %s)", async (passAvailable) => {
+    vi.stubEnv("STRIPE_PRICE_PASS30", passAvailable ? "price_pass30" : "");
     const body = await GET().text();
-    expect(body).toContain("iPhone Duo slot, with up to 10 screenshots per device size.");
-    expect(body).toContain("Both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions");
+    expect(body).toContain("Choisissez externe uniquement, interne uniquement ou un mix : 10 fichiers PNG/JPEG opaques maximum au total, une règle de DuoShot (Apple accepte jusqu’à 10 captures par taille d’appareil).");
+    expect(body).toContain("- App Store Connect accepts up to 10 iPhone Duo screenshots per device size; outer (1398x2034) and inner (2007x2853) sizes are both accepted.");
+    expect(body).toContain("DuoShot's rule, not Apple's");
+    expect(body).toContain("remains to be confirmed");
+    expect(body).toContain("both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions");
     expect(body).toContain("Uploads have not yet been tested by DuoShot");
     expect(body).toContain(`Third-party reference (ASC CLI): ${DUO_SLOT_SOURCE}`);
     expect(body).toContain(`Primary source (Apple screenshot specifications): ${APPLE_SCREENSHOT_SOURCE}`);
-    expect(body).toContain("DUO_SLOT_LIMIT");
+    expect(body).toContain("exports above it are refused with HTTP 400, no silent trimming");
+    expect(body).not.toMatch(/emplacement Duo|Duo slot|DUO_SLOT_LIMIT|combined cap|emplacement unique|single slot/i);
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
   });
 

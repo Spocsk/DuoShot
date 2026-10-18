@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   serverExternalPackages: ["sharp"],
   outputFileTracingIncludes: {
+    "/[locale]/guides": ["./content/guides/*.md"],
     "/[locale]/guides/best-app-store-screenshot-generator": ["./content/guides/best-app-store-screenshot-generator.*.md"],
     "/[locale]/specs": ["./content/guides/best-app-store-screenshot-generator.*.md"],
     "/api/export": ["./src/lib/pipeline/fonts/**/*"],

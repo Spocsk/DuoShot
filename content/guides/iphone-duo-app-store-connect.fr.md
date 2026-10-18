@@ -32,7 +32,7 @@ Apple indique que les captures Duo seront **exigées à partir d’avril 2027 po
 
 ## Avant le dépôt manuel
 
-Partez de vraies captures de l’app et vérifiez chaque composition selon la règle App Store Review 2.3.3 : les captures doivent représenter fidèlement votre app. Gardez les textes et commandes importants à distance du pli sur les captures internes. Le guide de pli de DuoShot est une aide de composition simulée, pas une zone sûre spécifiée par Apple.
+Partez de vraies captures de l’app et vérifiez chaque composition selon la règle App Store Review 2.3.3 : les captures doivent représenter fidèlement votre app. Vérifiez que les textes et commandes importants restent lisibles près du pli sur les captures internes. Le guide de pli de DuoShot est une aide de composition simulée, pas une zone sûre spécifiée par Apple.
 
 Consultez les [dimensions externes](/1398x2034), les [dimensions internes](/2007x2853), le [format 6,3″ requis](/1206x2622) et le [format 6,9″ optionnel](/1320x2868). [Préparez vos captures](/tool), ou lisez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator).
 

@@ -13,6 +13,8 @@ import { SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy
 import { getTranslator } from "@/lib/i18n";
 import { appStoreConnectGuide, ASC_GUIDE_PATH, comparisonGuide, COMPARISON_GUIDE_PATH } from "@/lib/guides";
 import { SCREENSHOT_CHECKER_PATH } from "@/lib/screenshot-checker";
+import { directAnswer } from "@/lib/direct-answers";
+import { DirectAnswer } from "./direct-answer";
 
 function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpec[]; caption: string }) {
   const { t } = getTranslator(locale);
@@ -43,14 +45,16 @@ function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpe
 export function SpecsPage({ locale }: { locale: Locale }) {
   const { t, tf } = getTranslator(locale);
   const faq = SPECS_FAQ[locale];
+  const answer = directAnswer(locale, "specs");
   const size69 = formatInches(SIZE_SPECS.find((spec) => spec.slot === "iphone-69")!.inches, locale);
   return (
     <div className="flex min-h-full flex-col">
-      <JsonLd locale={locale} path="/specs" faq={faq} article={{ ...SPECS_PAGE_COPY[locale], dateModified: SCREENSHOT_VERIFIED_ON }} />
+      <JsonLd locale={locale} path="/specs" faq={faq} article={{ ...SPECS_PAGE_COPY[locale], dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer.text }} />
       <SiteHeader locale={locale} path="/specs" />
       <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
         <p className="ds-label">{tf("specs_verified_on", { date: SCREENSHOT_VERIFIED_ON })}</p>
         <h1 className="font-display mt-3 text-4xl sm:text-5xl">{t("specs_iphone_duo_screenshot_sizes")}</h1>
+        <DirectAnswer answer={answer} />
         <p className="mt-4 max-w-3xl text-lg">
           {tf("specs_app_store_connect_prepare", { outerPortrait: OUTER_PORTRAIT, innerPortrait: INNER_PORTRAIT })}
         </p>

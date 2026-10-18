@@ -7,19 +7,23 @@ import { getTranslator } from "@/lib/i18n";
 import type { Locale } from "@/lib/specs";
 import { SCREENSHOT_VERIFIED_ON, sizePageCopy, type ScreenshotSize } from "@/lib/screenshot-pages";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
-import { APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { localizedPath, toolPath } from "@/lib/site";
+import { directAnswer } from "@/lib/direct-answers";
+import { DirectAnswer } from "./direct-answer";
 
 export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSize }) {
   const { t, tf } = getTranslator(locale);
   const copy = sizePageCopy(locale, size);
   const path = `/${size}`;
+  const answer = size === "1398x2034" || size === "2007x2853" ? directAnswer(locale, size) : undefined;
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path={path} article={{ ...copy, dateModified: SCREENSHOT_VERIFIED_ON }} />
+    <JsonLd locale={locale} path={path} article={{ ...copy, dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer?.text }} />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
       <p className="ds-label">{tf("specs_verified_on", { date: SCREENSHOT_VERIFIED_ON })}</p>
       <h1 className="font-display mt-3 text-4xl sm:text-5xl">{copy.title}</h1>
+      {answer && <DirectAnswer answer={answer} />}
       <p className="mt-4 text-lg">{copy.intro}</p>
       <dl className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div><dt className="ds-label">Portrait</dt><dd className="mt-2 font-mono text-xl">{screenshotDimensions(copy.portrait)} px</dd></div>
@@ -28,7 +32,10 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t("size_file_heading")}</h2>
         <p className="mt-4">{t("size_file_body")}</p>
-        {size === "2007x2853" && <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: screenshotDimensions(copy.portrait) })}</p>}
+        {size === "2007x2853" && <>
+          <p className="mt-4">{tf("specs_physical_inner_panel_has", { innerPortrait: screenshotDimensions(copy.portrait) })}</p>
+          <a href={APPLE_DEVICE_SOURCE} className="ds-link mt-2 inline-block">{t("specs_apple_tech_specs_displays")}</a>
+        </>}
       </section>
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t(size === "1320x2868" ? "specs_optional_iphone_sizes" : size === "1206x2622" ? "specs_required_iphone_sizes" : "size_slot_heading")}</h2>
