@@ -145,7 +145,8 @@ describe("SEO screenshot pages", () => {
         cy.get(`main a[href="${prefix}/${size}"]`).should("exist");
       }
       cy.get("main").should("contain", locale === "en" ? "Verified on 2026-10-13" : "Vérifié le 2026-10-13")
-        .and("contain", locale === "en" ? "iPhone Duo slot" : "un emplacement iPhone Duo")
+        .and("contain", locale === "en" ? "Both outer and inner sizes are accepted" : "Les tailles externe et interne sont acceptées")
+        .and("not.contain", locale === "en" ? "iPhone Duo slot" : "un emplacement iPhone Duo")
         .and("contain", locale === "en" ? "10 screenshots per device size" : "10 captures par taille d’appareil")
         .and("contain", "DuoShot (duoshot.site)")
         .and("contain", "DuoScreenshot (duoscreenshot.com)")
