@@ -31,6 +31,6 @@ export function Text({ children, width, height, min = 52, max = 84, color = "inh
   // Both hooks read the nearest Sequence, including each ZIP file group.
   const page = textPage(frame, durationInFrames, fitted.pages.length);
   return <div style={{ width, height, display: "flex", flexDirection: "column", justifyContent: "center", color, fontFamily: data ? mono : sans, fontWeight: data ? 500 : 700, fontSize: fitted.size, lineHeight: 1.08, letterSpacing: data ? 0 : "-0.045em", textAlign: align }}>
-    {fitted.pages[page].map((line, i) => <div key={i} style={{ whiteSpace: "pre-wrap" }}>{line || "\u00a0"}</div>)}
+    {fitted.pages[page].map((line, i) => <div key={i} style={{ whiteSpace: "pre" }}>{line || "\u00a0"}</div>)}
   </div>;
 }
