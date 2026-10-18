@@ -1,17 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const datafast = vi.hoisted(() => ({
-  trackDatafast: vi.fn(),
-  setDatafastChoice: vi.fn(),
-  setDatafastAudience: vi.fn(),
+const umami = vi.hoisted(() => ({
+  trackUmami: vi.fn(),
+  setUmamiChoice: vi.fn(),
+  setUmamiAudience: vi.fn(),
 }));
-vi.mock("./datafast-client", () => datafast);
+vi.mock("./umami-client", () => umami);
 
 beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
-  datafast.trackDatafast.mockResolvedValue(true);
-  datafast.setDatafastChoice.mockResolvedValue(undefined);
+  umami.trackUmami.mockResolvedValue(true);
+  umami.setUmamiChoice.mockResolvedValue(undefined);
   const values = new Map<string, string>();
   vi.stubGlobal("window", {
     localStorage: { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => values.set(k, v) },
@@ -23,19 +23,19 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("analytics client", () => {
-  it("is configured by DataFast alone", async () => {
+  it("is configured by Umami alone", async () => {
     const a = await import("./analytics-client");
     expect(a.analyticsConfigured()).toBe(true);
   });
 
-  it("routes product events and consent changes to DataFast only", async () => {
+  it("routes product events and consent changes to Umami only", async () => {
     const a = await import("./analytics-client");
     expect(await a.setAnalyticsChoice("accepted")).toBe(true);
-    expect(datafast.setDatafastChoice).toHaveBeenCalledWith("accepted");
+    expect(umami.setUmamiChoice).toHaveBeenCalledWith("accepted");
     await a.trackProduct("captures_added", { count: 2 });
-    expect(datafast.trackDatafast).toHaveBeenCalledExactlyOnceWith("captures_added", { count: 2, audience: "anonymous" });
+    expect(umami.trackUmami).toHaveBeenCalledExactlyOnceWith("captures_added", { count: 2, audience: "anonymous" });
     expect(await a.setAnalyticsChoice("rejected")).toBe(true);
-    expect(datafast.setDatafastChoice).toHaveBeenLastCalledWith("rejected");
+    expect(umami.setUmamiChoice).toHaveBeenLastCalledWith("rejected");
   });
 
   it("tags the signed-in audience only after consent", async () => {
@@ -46,8 +46,8 @@ describe("analytics client", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     await a.setAnalyticsChoice("accepted");
     await a.refreshAnalyticsAudience();
-    expect(datafast.setDatafastAudience).toHaveBeenCalledWith("internal");
+    expect(umami.setUmamiAudience).toHaveBeenCalledWith("internal");
     await a.trackProduct("page_viewed");
-    expect(datafast.trackDatafast).toHaveBeenLastCalledWith("page_viewed", { audience: "internal" });
+    expect(umami.trackUmami).toHaveBeenLastCalledWith("page_viewed", { audience: "internal" });
   });
 });

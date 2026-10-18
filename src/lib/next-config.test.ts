@@ -22,3 +22,13 @@ describe("www canonical redirect", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 });
+
+
+describe("Umami first-party script", () => {
+  it("rewrites before the locale routes", async () => {
+    const response = await unstable_getResponseFromNextConfig({
+      nextConfig, url: "https://duoshot.site/u/script.js", headers: { host: "duoshot.site" },
+    });
+    expect(response.headers.get("x-middleware-rewrite")).toBe("https://analytics.dylan-cdo.fr/script.js");
+  });
+});

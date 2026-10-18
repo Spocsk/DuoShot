@@ -10,8 +10,7 @@ export async function GET(request: Request) {
   if (!verifyBearer(request, serverEnv.cronSecret)) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
-  // Mixpanel no longer collects anything; this job only erases data sent before DataFast became
-  // the single analytics tool. The GDPR API still needs the project token, now a runtime-only secret.
+  // Mixpanel no longer collects anything; this job only erases data sent before October 2026. The GDPR API still needs the project token, now a runtime-only secret.
   const token = serverEnv.analytics.mixpanelProjectToken;
   const oauthToken = serverEnv.analytics.mixpanelGdprOAuthToken;
   const admin = createAdminSupabase();

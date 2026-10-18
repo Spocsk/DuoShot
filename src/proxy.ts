@@ -39,7 +39,7 @@ function withAttribution(request: NextRequest, response: NextResponse) {
 function needsSessionRefresh(pathname: string) {
   // Status handlers authenticate and refresh their own cookies. Repeating that
   // round-trip here doubles Auth/DB work for every client polling the queue.
-  if (pathname === "/api/health" || pathname === "/api/datafast/events" || pathname.startsWith("/api/render-jobs/") || pathname === "/api/internal/render-worker") return false;
+  if (pathname === "/api/health" || pathname === "/api/umami/api/send" || pathname.startsWith("/api/render-jobs/") || pathname === "/api/internal/render-worker") return false;
   return /^\/(?:en\/)?(?:tool|account)(?:\/|$)/.test(pathname) || pathname.startsWith("/auth/") || pathname.startsWith("/api/");
 }
 
