@@ -102,6 +102,8 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
     const markdown = readFileSync(path.resolve(file), "utf8");
     expectPublicCopy(markdown, file);
     expect(markdown.match(new RegExp(limit, "g"))).toHaveLength(2);
+    expect(messages.specs_single_slot).toContain(locale === "fr" ? "Dans DuoShot :" : "In DuoShot:");
+    expect(markdown).not.toContain(locale === "fr" ? "Vous pouvez mettre seulement" : "You can use outer only");
   });
 
   it("renders specs, rejection, checker and comparison pages with consistent public copy", async () => {

@@ -11,9 +11,9 @@ updated: 2026-10-16
 
 Prepare real captures of your app, export opaque PNG or JPEG files, then upload them manually from your app’s listing in App Store Connect. **DuoShot (duoshot.site) has not yet tested Duo uploads, including its experimental automatic connector.** File preparation does not guarantee Apple approval.
 
-## Which display slots should you use?
+## Which sizes should you use?
 
-Apple allows **up to 10 screenshots per device size** in App Store Connect. Use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs).
+Apple allows **up to 10 screenshots per device size** in App Store Connect. In DuoShot, use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs).
 
 | Display | Portrait pixels | App Store Connect slot | DuoShot access |
 | --- | --- | --- | --- |
