@@ -1,0 +1,32 @@
+{
+  "name": "@duoshot/social-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare-assets": "tsx scripts/prepare-assets.ts",
+    "render": "tsx src/cli/render.ts",
+    "convert": "tsx src/cli/convert-md.ts",
+    "studio": "remotion studio",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "remotion": "4.0.536",
+    "@remotion/cli": "4.0.536",
+    "@remotion/bundler": "4.0.536",
+    "@remotion/renderer": "4.0.536",
+    "@remotion/fonts": "4.0.536",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "@types/react": "^19.3.0",
+    "@types/node": "^26",
+    "vitest": "^5.0.5",
+    "tsx": "^4.23.15",
+    "esbuild": "^0.28.2",
+    "sharp": "^0.35.5"
+  }
+}

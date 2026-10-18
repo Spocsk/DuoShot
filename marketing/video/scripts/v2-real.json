@@ -1,0 +1,19 @@
+{
+  "id": "v2-real",
+  "title": "From your real screenshots",
+  "lang": "en",
+  "durationSec": 20,
+  "endUrl": "https://duoshot.site/en?utm_source={platform}&utm_medium=social&utm_campaign=duo-launch-oct23&utm_content=v2-real",
+  "scenes": [
+    { "type": "title", "durationSec": 3, "theme": "dark", "text": "No AI. Your real app." },
+    { "type": "classic", "durationSec": 5, "capture": "harbor:en:1:classic", "text": "Start from your screenshot" },
+    { "type": "reframe", "durationSec": 5, "classic": "harbor:en:1:classic", "outer": "harbor:en:1:outer", "inner": "harbor:en:1:inner", "text": "Fitted to the Duo sizes" },
+    { "type": "zip", "durationSec": 4, "text": "Checked. Exported as one ZIP.", "files": [
+      { "name": "01-outer.png", "format": "png", "dims": "1398×2034" },
+      { "name": "01-inner.png", "format": "png", "dims": "2007×2853" },
+      { "name": "02-outer.jpg", "format": "jpeg", "dims": "1398×2034" },
+      { "name": "02-inner.jpg", "format": "jpeg", "dims": "2007×2853" }
+    ] },
+    { "type": "end", "durationSec": 3, "text": "DuoShot by @Spocsk · duoshot.site" }
+  ]
+}
