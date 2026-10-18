@@ -16,7 +16,7 @@ describe("Duo slot choice UI", () => {
     expect(html).toContain('role="alert"');
     expect(html).toContain(locale === "fr" ? "Plus de 10" : "More than 10");
     expect(html).not.toContain("APP_IPHONE_DUO");
-    expect(html).toContain(locale === "fr" ? "10 captures par taille d’appareil" : "10 screenshots per device size");
+    expect(html).toContain(locale === "fr" ? "10 captures iPhone Duo par taille d’appareil" : "10 iPhone Duo screenshots per device size");
     expect(html.match(/type="checkbox"/g)).toHaveLength(12);
   });
 });

@@ -22,8 +22,8 @@ const COPY: Record<AppleUploadState, Record<Locale, (date: string) => string>> =
 };
 
 export const DUO_SLOT_COPY: Record<Locale, string> = {
-  "en": "App Store Connect has an iPhone Duo slot, with up to 10 screenshots per device size. Both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions. Uploads have not yet been tested by DuoShot.",
-  "fr": "App Store Connect propose un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil. Les deux tailles sont acceptées : 1398 × 2034 et 2007 × 2853, ou leurs dimensions en paysage. Le dépôt n’a pas encore été testé par DuoShot."
+  "en": "App Store Connect accepts up to 10 iPhone Duo screenshots per device size. Both sizes are accepted: 1398 × 2034 and 2007 × 2853, or their landscape dimensions. Uploads have not yet been tested by DuoShot.",
+  "fr": "App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil. Les deux tailles sont acceptées : 1398 × 2034 et 2007 × 2853, ou leurs dimensions en paysage. Le dépôt n’a pas encore été testé par DuoShot."
 };
 
 export function appleUploadStatus(locale: Locale, state: AppleUploadState = APPLE_UPLOAD_STATE): string {
