@@ -254,6 +254,47 @@ describe("screenshot dimensions and search intent", () => {
       // The App Store Connect status lives on the dimensions page, not in the hero.
       cy.get('[data-testid="apple-availability"]').should("not.exist");
       cy.get('[data-testid="cta-tool"]').should("be.visible").and("have.attr", "href", `${prefix}/tool`);
+      cy.get(".studio-hero-footnote.mt-4").should("be.visible").invoke("text").should((text) => {
+        expect(text.replace(/\u00a0/g, " ")).to.eq(locale === "fr"
+          ? "Écran externe, écran interne ou les deux : vous choisissez. Essai gratuit, sans carte."
+          : "Outer display, inner display, or both: your choice. Free trial, no card required.");
+        expect(text.length).to.be.lessThan(120);
+        expect(text).not.to.match(/10|générateur|generator/i);
+      });
+      cy.get("#studio-proof-title").should("have.text", locale === "fr"
+        ? "Des captures brutes aux fichiers Duo vérifiés"
+        : "From raw captures to checked Duo files")
+        .invoke("text").should("not.match", /générateur|generator/i);
+      cy.get("#studio-proof-title + p").should("have.text", locale === "fr"
+        ? "Importez les vraies captures de votre app, prises sur simulateur ou appareil, et ajustez le cadrage au format Duo choisi. DuoShot vérifie les dimensions et le format des fichiers exportés, puis les range par écran dans un ZIP."
+        : "Upload real captures of your app from a simulator or device and adjust the framing for your chosen Duo size. DuoShot checks the exported files’ dimensions and format, then sorts them by screen in a ZIP.");
+      cy.get(".studio-faq .t-acc").should("have.length", 10);
+      cy.contains(".studio-faq button", locale === "fr" ? "Combien d’images dans un set ?" : "How many images in a set?")
+        .click().closest(".t-acc").find("p").should("be.visible")
+        .and("contain", locale === "fr" ? "l’écran externe uniquement, l’écran interne uniquement ou un mix" : "outer only, inner only, or a mix")
+        .and("contain", locale === "fr" ? "de 1 à 10 fichiers PNG/JPEG opaques au total, externe et interne confondus" : "1 to 10 opaque PNG/JPEG files in total across the outer and inner displays")
+        .and("contain", locale === "fr" ? "Cette limite est une règle de DuoShot" : "This is a DuoShot limit")
+        .and("contain", locale === "fr" ? "Apple accepte jusqu’à 10 captures par taille d’appareil" : "Apple accepts up to 10 screenshots per device size")
+        .and("contain", locale === "fr" ? "Un avertissement s’affiche sous 3 visuels" : "A warning appears below 3 visuals")
+        .and("contain", locale === "fr" ? "Une seule orientation par set" : "One orientation per set");
+      cy.get('[data-testid="pricing"]').then(($pricing) => {
+        const passAvailable = $pricing.find('[data-testid="pricing-pass30"]').length > 0;
+        cy.contains(".studio-faq button", locale === "fr" ? "Quelles tailles pour l’iPhone Duo ?" : "What sizes for iPhone Duo?")
+          .click().closest(".t-acc").find("p").should("be.visible")
+          .and("contain", locale === "fr"
+            ? "iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect ; taille incluse dans l’essai gratuit"
+            : 'iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect, included in the free trial')
+          .and("contain", locale === "fr"
+            ? `Option 6,9″ (${passAvailable ? "Pass / Indie / Studio" : "offres payantes"})`
+            : `Optional 6.9″ (${passAvailable ? "Pass / Indie / Studio" : "paid access"})`);
+        cy.contains(".studio-faq button", locale === "fr" ? "Comment ça se paie ?" : "How does payment work?")
+          .click().closest(".t-acc").find("p").should("be.visible")
+          .and("contain", locale === "fr" ? "Essai gratuit" : "Free trial")
+          .and("contain", locale === "fr" ? "sans carte" : "no card")
+          .and("contain", locale === "fr"
+            ? `Le 6,9″ est optionnel avec ${passAvailable ? "Pass, Indie et Studio" : "les offres payantes"}`
+            : `The 6.9″ size is optional with ${passAvailable ? "Pass, Indie and Studio" : "paid access"}`);
+      });
       cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
       cy.location("pathname").should("eq", `${prefix}/specs`);
       cy.get('[data-testid="apple-availability"]').should("be.visible")

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { SPECS_FAQ } from "./screenshot-copy";
 import { pricingFaq } from "./pricing-faq";
 import { getTranslator } from "./i18n";
-import { FAQ } from "./i18n";
+import { FAQ, getFaq } from "./i18n";
 import sitemap from "@/app/sitemap";
 import robots from "@/app/robots";
 import { absoluteUrl, localizedPath, MARKETING_ROUTE_PAIRS, SITE_PITCH_FR, SITE_PITCH_EN } from "./site";
@@ -204,12 +204,18 @@ describe("public routes and crawler metadata", () => {
 });
 
 describe("page-specific structured data", () => {
-  it("emits FAQPage only when explicit, nonempty questions are supplied", () => {
+  it.each([true, false])("emits the complete FAQPage only when explicit, nonempty questions are supplied (pass: %s)", (passAvailable) => {
     for (const faq of [undefined, []]) {
       expect(jsonLdGraph("en", { path: "/1398x2034", faq })["@graph"].some((node) => node["@type"] === "FAQPage")).toBe(false);
     }
     for (const locale of ["fr", "en"] as const) {
-      for (const [path, faq] of [["/", FAQ[locale]], ["/pricing", [...pricingFaq(getTranslator(locale)), ...FAQ[locale]]], ["/specs", SPECS_FAQ[locale]]] as const) {
+      const homeFaq = getFaq(locale, passAvailable);
+      expect(homeFaq).toHaveLength(10);
+      const countAnswer = homeFaq.find(({ q }) => q === (locale === "fr" ? "Combien d’images dans un set ?" : "How many images in a set?"))?.a;
+      expect(countAnswer).toBe(locale === "fr"
+        ? "Dans DuoShot, choisissez l’écran externe uniquement, l’écran interne uniquement ou un mix : de 1 à 10 fichiers PNG/JPEG opaques au total, externe et interne confondus. Cette limite est une règle de DuoShot ; Apple accepte jusqu’à 10 captures par taille d’appareil. Un avertissement s’affiche sous 3 visuels. Une seule orientation par set."
+        : "In DuoShot, choose outer only, inner only, or a mix: 1 to 10 opaque PNG/JPEG files in total across the outer and inner displays. This is a DuoShot limit; Apple accepts up to 10 screenshots per device size. A warning appears below 3 visuals. One orientation per set.");
+      for (const [path, faq] of [["/", homeFaq], ["/pricing", [...pricingFaq(getTranslator(locale)), ...homeFaq]], ["/specs", SPECS_FAQ[locale]]] as const) {
         const node = jsonLdGraph(locale, { path, faq })["@graph"].find((item) => "mainEntity" in item);
         expect(node?.mainEntity).toEqual(faq.map(({ q, a }) => ({
           "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a },
