@@ -68,8 +68,9 @@ describe("SEO screenshot pages", () => {
         : "App Store screenshot generator for iPhone Duo, built from your real screenshots: framed to Apple's sizes, checked, and exported as PNG/JPEG in a ZIP.";
       visit(prefix || "/");
       cy.get("main h2").first().should("have.text", locale === "fr"
-        ? "Un générateur de captures App Store qui part de votre vraie app"
-        : "An App Store screenshot generator that starts from your real app");
+        ? "Des captures brutes aux fichiers Duo vérifiés"
+        : "From raw captures to checked Duo files")
+        .invoke("text").should("not.match", /générateur|generator/i);
       cy.document().then((doc) => {
         expect(doc.querySelectorAll("title")).to.have.length(1);
         expect(doc.title).to.eq(title);
