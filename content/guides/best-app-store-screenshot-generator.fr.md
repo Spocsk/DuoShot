@@ -74,7 +74,7 @@ Rien n'empêche de combiner : concevoir dans un outil, puis passer les fichiers 
 ## FAQ
 
 **Faut-il des séries séparées pour l'écran extérieur et l'écran intérieur ?**
-Non. App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil. Dans DuoShot : externe uniquement, interne uniquement ou un mix.
+Apple ne le précise pas : App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil. Dans DuoShot : externe uniquement, interne uniquement ou un mix.
 
 **Les captures Duo sont-elles déjà obligatoires ?**
 Pas encore pour toutes les apps. Apple les exige à partir d'avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur. Le dépôt est déjà ouvert.

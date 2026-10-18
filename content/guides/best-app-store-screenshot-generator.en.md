@@ -74,7 +74,7 @@ Combining tools is fine: design in one, then run the files through DuoShot's che
 ## FAQ
 
 **Do I need separate screenshot sets for the outer and inner screens?**
-No. App Store Connect accepts up to 10 iPhone Duo screenshots per device size. In DuoShot: outer only, inner only, or a mix.
+Apple doesn't say: App Store Connect accepts up to 10 iPhone Duo screenshots per device size. In DuoShot: outer only, inner only, or a mix.
 
 **Are Duo screenshots mandatory now?**
 Not yet for every app. Apple requires them from April 2027 for apps built with the iOS 27.1 SDK or later. Uploads are already open.
