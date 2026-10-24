@@ -10,7 +10,6 @@ const LIMIT = 160;
 
 function expectWithinBudget(label: string, description: string) {
   const length = [...description].length;
-  console.log(`${length}\t${label}\t${description}`);
   expect(length, `${label}: ${description}`).toBeLessThanOrEqual(LIMIT);
 }
 
