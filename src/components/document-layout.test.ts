@@ -38,7 +38,7 @@ describe.each(["fr", "en"] as const)("%s root document with specs", (locale) => 
       .flatMap((match) => JSON.parse(match[1])["@graph"]);
     expect(nodes.map((node) => node["@type"])).toEqual(["Organization", "SoftwareApplication", "TechArticle", "FAQPage"]);
     expect(nodes[0].logo).toBe(absoluteUrl("/brand/duoshot-logo.png"));
-    expect(nodes[0].sameAs).toEqual(["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/"]);
+    expect(nodes[0].sameAs).toEqual(["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/", "https://www.youtube.com/@duoshot-u4k"]);
     for (const node of nodes.slice(0, 2)) expect(node.description).toContain(qualifiedDevice);
     expect(nodes[2].author["@id"]).toBe(nodes[0]["@id"]);
     expect(nodes[1].offers.map((offer: { price: string; priceCurrency: string }) => [offer.price, offer.priceCurrency])).toEqual([
