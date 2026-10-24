@@ -3,7 +3,7 @@ import { publicEnv } from "./env-public";
 
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
-export const SITE_SAME_AS = ["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/"] as const;
+export const SITE_SAME_AS = ["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/", "https://www.youtube.com/@duoshot-u4k"] as const;
 export const SITE_PITCH_FR =
   "Créez des captures App Store iPhone Duo en PNG/JPEG opaque. Essai gratuit : iPhone Dynamic Island 6,3″ requis ; 6,9″ optionnel avec Pass, Indie et Studio.";
 export const SITE_PITCH_EN =
