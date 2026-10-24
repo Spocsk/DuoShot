@@ -53,8 +53,12 @@ describe("public routes and crawler metadata", () => {
     }
   });
 
-  it("lets crawlers read private page noindex and uses one bot policy", () => {
-    expect(robots().rules).toEqual([{ userAgent: "*", allow: "/", disallow: ["/api/", "/auth/"] }]);
+  it("lets crawlers read private page noindex and holds AI crawlers to the same policy", () => {
+    const disallow = ["/api/", "/auth/"];
+    expect(robots().rules).toEqual([
+      { userAgent: "*", allow: "/", disallow },
+      { userAgent: ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"], allow: "/", disallow },
+    ]);
   });
 
   it.each(["https://duoshot.site", "https://duoshot.site/"])("aligns both home canonicals and sitemap URLs exactly with base %s", (base) => {

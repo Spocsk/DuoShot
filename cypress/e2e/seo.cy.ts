@@ -182,6 +182,21 @@ describe("SEO screenshot pages", () => {
         visit(`${prefix}/${size}`);
         cy.get("h1").should("contain", size);
         cy.get("main").should("contain", portrait).and("contain", landscape);
+        cy.get('section[aria-labelledby="size-summary"]').should("exist")
+          .and("contain", locale === "en" ? "At a glance" : "En bref")
+          .and("contain", locale === "en" ? "Aspect ratio" : "Rapport d’affichage")
+          .and("contain", locale === "en" ? "Verified on" : "Vérifié le")
+          .and("contain", "2026-10-13");
+        cy.get('section[aria-labelledby="size-faq"] .t-acc').its("length").should("be.greaterThan", 1);
+        if (size === "1398x2034" || size === "2007x2853") {
+          cy.get("main").should("contain", locale === "en"
+            ? "April 2027 for apps built with the iOS 27.1 SDK or later"
+            : "avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur");
+        }
+        if (size === "2007x2853") {
+          cy.get('section[aria-labelledby="size-faq"]').should("contain", "1878 × 2670").and("contain", "2007 × 2853");
+          cy.get('section[aria-labelledby="size-faq"] a[href="https://www.apple.com/iphone-duo/specs/"]').should("exist");
+        }
         if (size === "1320x2868") {
           cy.get("main").should("contain", locale === "en" ? "optional in App Store Connect" : "optionnelles dans App Store Connect")
             .and("contain", locale === "en" ? "with Pass, Indie and Studio" : "avec Pass, Indie et Studio");
@@ -204,7 +219,8 @@ describe("SEO screenshot pages", () => {
           expect(doc.querySelector('meta[property="og:image"]')!.getAttribute("content")).to.contain(`/${size}/opengraph-image/`);
           const graph = graphOf(doc);
           checkSiteEntities(doc);
-          expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "SoftwareApplication", "TechArticle"]);
+          expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "SoftwareApplication", "TechArticle", "FAQPage"]);
+          checkFaq(doc);
           const article = graph.find((node) => node["@type"] === "TechArticle")!;
           expect(article.url).to.eq(canonical);
           expect(article.headline).to.eq(doc.querySelector("h1")!.textContent);
