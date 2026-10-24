@@ -281,8 +281,8 @@ describe("page-specific structured data", () => {
     expect(graph[0]).toMatchObject({
       "@id": "https://duoshot.site#organization", url: "https://duoshot.site",
       name: "DuoShot", logo: absoluteUrl("/brand/duoshot-logo.png"),
+      sameAs: ["https://www.threads.com/@duoshot.app"],
     });
-    expect(graph[0]).not.toHaveProperty("sameAs");
     expect(graph[1]).toMatchObject({
       "@id": "https://duoshot.site#software",
       name: "DuoShot — iPhone Duo App Store Screenshots",

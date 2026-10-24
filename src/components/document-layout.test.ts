@@ -2,6 +2,7 @@ import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getTranslator } from "@/lib/i18n";
+import { absoluteUrl } from "@/lib/site";
 import { DocumentLayout } from "./document-layout";
 import { SpecsPage } from "./specs-page";
 
@@ -36,6 +37,8 @@ describe.each(["fr", "en"] as const)("%s root document with specs", (locale) => 
     const nodes = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)]
       .flatMap((match) => JSON.parse(match[1])["@graph"]);
     expect(nodes.map((node) => node["@type"])).toEqual(["Organization", "SoftwareApplication", "TechArticle", "FAQPage"]);
+    expect(nodes[0].logo).toBe(absoluteUrl("/brand/duoshot-logo.png"));
+    expect(nodes[0].sameAs).toEqual(["https://www.threads.com/@duoshot.app"]);
     for (const node of nodes.slice(0, 2)) expect(node.description).toContain(qualifiedDevice);
     expect(nodes[2].author["@id"]).toBe(nodes[0]["@id"]);
     expect(nodes[1].offers.map((offer: { price: string; priceCurrency: string }) => [offer.price, offer.priceCurrency])).toEqual([
