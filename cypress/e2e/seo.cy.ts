@@ -29,7 +29,7 @@ function checkSiteEntities(doc: Document) {
   expect(applications).to.have.length(1);
   expect(organizations[0].name).to.eq("DuoShot");
   expect(organizations[0].logo).to.eq(`${organizations[0].url}/brand/duoshot-logo.png`);
-  expect(organizations[0].sameAs).to.deep.eq(["https://www.threads.com/@duoshot.app"]);
+  expect(organizations[0].sameAs).to.deep.eq(["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/"]);
   expect(applications[0].publisher?.["@id"]).to.eq(organizations[0]["@id"]);
   for (const node of [organizations[0], applications[0]]) {
     expect(node.description).to.contain(doc.documentElement.lang === "fr"
