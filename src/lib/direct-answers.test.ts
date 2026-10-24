@@ -16,6 +16,7 @@ import { SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
 import { REJECTION_PAGE_COPY } from "./marketing-copy";
 import { CHECKOUT_CATALOG, FREE_EXPORTS, PASS30 } from "./plans";
 import { SCREENSHOT_VERIFIED_ON, sizePageCopy } from "./screenshot-pages";
+import { sizeFaq } from "./size-faq";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
 vi.mock("next/server", () => ({ connection: vi.fn().mockResolvedValue(undefined) }));
@@ -90,7 +91,8 @@ describe.each(["fr", "en"] as const)("%s direct answers", (locale) => {
       });
     }
     const faqs = nodes.filter((node) => node["@type"] === "FAQPage");
-    expect(faqs).toHaveLength(page === "specs" || page === "rejection" ? 1 : 0);
+    // Every one of these pages now carries a visible FAQ with matching FAQPage JSON-LD.
+    expect(faqs).toHaveLength(1);
     const visible = visibleText(html);
     if (page === "2007x2853" || page === "specs") {
       expect(visible).toContain("1878 × 2670");
@@ -110,7 +112,7 @@ describe.each(["fr", "en"] as const)("%s direct answers", (locale) => {
     const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
     expect(html).not.toContain('data-testid="direct-answer"');
     expect(schemaNodes(html)).toEqual(jsonLdGraph(locale, {
-      path: `/${size}`, article: { ...sizePageCopy(locale, size), dateModified: SCREENSHOT_VERIFIED_ON },
+      path: `/${size}`, faq: sizeFaq(locale, size), article: { ...sizePageCopy(locale, size), dateModified: SCREENSHOT_VERIFIED_ON },
     })["@graph"]);
     expect(schemaNodes(html)[0]).not.toHaveProperty("abstract");
   });
