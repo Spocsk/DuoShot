@@ -248,6 +248,7 @@ describe("SEO screenshot pages", () => {
         cy.get("main").should("contain", "1398 × 2034").and("contain", "2007 × 2853")
           .and("contain", "1206 × 2622").and("contain", "1320 × 2868")
           .and("contain", locale === "fr" ? "n’a pas été testé par DuoShot" : "has not tested iPhone Duo uploads");
+        cy.get(`link[rel="canonical"]`).should("have.attr", "href").and("match", new RegExp(`${prefix}${path}$`));
         cy.document().then((doc) => {
           const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
           const origin = new URL(canonical).origin;
