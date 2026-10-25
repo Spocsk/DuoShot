@@ -8,6 +8,7 @@ import { LocaleSwitch } from "@/components/locale-switch";
 import { SiteNav } from "@/components/site-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnalyticsSettingsButton } from "@/components/analytics-settings-button";
+import { FeaturedOn } from "@/components/featured-on";
 import { SCREENSHOT_SIZES, sizePageCopy } from "@/lib/screenshot-pages";
 
 type Props = {
@@ -94,6 +95,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         >
           {t("footer_fazier")} <span aria-hidden="true">↗</span>
         </a>
+        <FeaturedOn locale={locale} />
       </div>
     </footer>
   );
