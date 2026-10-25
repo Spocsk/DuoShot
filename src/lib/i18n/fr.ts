@@ -140,6 +140,7 @@ export const fr = {
   footer_reject: "Points à vérifier",
   footer_analytics_preferences: "Préférences statistiques",
   footer_fazier: "DuoShot sur Fazier",
+  footer_featured_on: "Vu sur",
   consent_product_analytics: "Mesure des parcours. ",
   consent_permission_umami_measures_pages: "Avec votre accord, Umami mesure les pages consultées, le temps visible et les étapes de création, sans recevoir vos captures ni votre adresse e-mail.",
   consent_preference_not_saved_please: "Choix non enregistré. Réessayez.",
