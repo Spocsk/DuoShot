@@ -1,0 +1,14 @@
+{
+  "id": "v1-accepts",
+  "title": "What iPhone Duo accepts",
+  "lang": "en",
+  "durationSec": 18,
+  "endUrl": "https://duoshot.site/en/specs?utm_source={platform}&utm_medium=social&utm_campaign=duo-launch-oct23&utm_content=v1-accepts",
+  "scenes": [
+    { "type": "title", "durationSec": 3, "theme": "dark", "text": "iPhone Duo ships Oct 23" },
+    { "type": "outer", "durationSec": 4, "capture": "harbor:en:1:outer", "text": "Outer: 1398×2034" },
+    { "type": "outer-to-inner", "durationSec": 4, "outer": "harbor:en:1:outer", "inner": "harbor:en:1:inner", "text": "Inner: 2007×2853" },
+    { "type": "side-by-side", "durationSec": 4, "outer": "harbor:en:2:outer", "inner": "harbor:en:2:inner", "text": "One size or a mix · up to 10 per size" },
+    { "type": "end", "durationSec": 3, "text": "DuoShot by @Spocsk · duoshot.site" }
+  ]
+}
