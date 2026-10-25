@@ -1,6 +1,6 @@
 import { CHECKOUT_CATALOG, FREE_EXPORTS, PASS30, pass30PriceId } from "./plans";
 import { getTranslator } from "./i18n";
-import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, absoluteUrl, localizedPath, pricingPath } from "./site";
+import { SITE_DESCRIPTOR, SITE_NAME, SITE_PITCH_EN, SITE_PITCH_FR, SITE_SAME_AS, absoluteUrl, localizedPath, pricingPath } from "./site";
 import type { Locale } from "./specs";
 import type { FaqItem } from "./screenshot-copy";
 import { APPLE_SCREENSHOT_SOURCE } from "./apple-screenshot-status";
@@ -25,6 +25,7 @@ export function siteJsonLdGraph(locale: Locale) {
         "@id": `${absoluteUrl("/")}#organization`,
         name: SITE_NAME,
         logo: absoluteUrl("/brand/duoshot-logo.png"),
+        sameAs: SITE_SAME_AS,
         url: absoluteUrl("/"),
         description,
       },

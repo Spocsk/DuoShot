@@ -53,8 +53,12 @@ describe("public routes and crawler metadata", () => {
     }
   });
 
-  it("lets crawlers read private page noindex and uses one bot policy", () => {
-    expect(robots().rules).toEqual([{ userAgent: "*", allow: "/", disallow: ["/api/", "/auth/"] }]);
+  it("lets crawlers read private page noindex and holds AI crawlers to the same policy", () => {
+    const disallow = ["/api/", "/auth/"];
+    expect(robots().rules).toEqual([
+      { userAgent: "*", allow: "/", disallow },
+      { userAgent: ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"], allow: "/", disallow },
+    ]);
   });
 
   it.each(["https://duoshot.site", "https://duoshot.site/"])("aligns both home canonicals and sitemap URLs exactly with base %s", (base) => {
@@ -281,8 +285,8 @@ describe("page-specific structured data", () => {
     expect(graph[0]).toMatchObject({
       "@id": "https://duoshot.site#organization", url: "https://duoshot.site",
       name: "DuoShot", logo: absoluteUrl("/brand/duoshot-logo.png"),
+      sameAs: ["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/", "https://www.youtube.com/@duoshot-u4k"],
     });
-    expect(graph[0]).not.toHaveProperty("sameAs");
     expect(graph[1]).toMatchObject({
       "@id": "https://duoshot.site#software",
       name: "DuoShot — iPhone Duo App Store Screenshots",

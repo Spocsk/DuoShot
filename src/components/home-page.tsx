@@ -14,6 +14,7 @@ import { PricingSection } from "@/components/pricing-section";
 import { TrustLine } from "@/components/trust-line";
 import { localePrefix, reviewPath } from "@/lib/site";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
+import { APPLE_DEVICE_SOURCE } from "@/lib/apple-screenshot-status";
 import { DEMO_REVIEW_ID } from "@/lib/pipeline/harbor";
 import { HarborShot } from "@/components/harbor-ui";
 import { exampleDeliveredFiles, formatBytes } from "@/lib/landing-delivery";
@@ -207,7 +208,7 @@ function SequenceSection({ locale }: { locale: Locale }) {
 /* ------------------------------------------------------------------ */
 
 export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale: Locale; checkoutAvailable: boolean; passAvailable: boolean }) {
-  const { t } = getTranslator(locale);
+  const { t, tf } = getTranslator(locale);
   const prefix = localePrefix(locale);
   const faq = getFaq(locale, passAvailable);
 
@@ -260,6 +261,10 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
                   <Link href={`${prefix}/1320x2868`} className="ds-link">{t("home_iphone_69_size_guide")}</Link>
                 </p>
                 <p className="studio-hero-footnote">{t("home_harbor_fictional_app")}</p>
+                <p className="studio-hero-footnote">
+                  {tf("home_inner_panel_note", { inner: screenshotDimensions(INNER) })}{" "}
+                  <a href={APPLE_DEVICE_SOURCE} className="ds-link">{t("specs_apple_tech_specs_displays")}</a>
+                </p>
               </div>
             </div>
           </section>
