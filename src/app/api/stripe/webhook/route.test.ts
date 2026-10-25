@@ -3,6 +3,9 @@ import { getStripe } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createQueryBuilder, readJson } from "@/test/supabase-mock";
 import { POST } from "./route";
+import { sendUmamiServerEvent } from "@/lib/umami-server";
+
+vi.mock("@/lib/umami-server", () => ({ sendUmamiServerEvent: vi.fn() }));
 
 vi.mock("@/lib/stripe", () => ({ getStripe: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: vi.fn() }));
@@ -36,6 +39,7 @@ function setup(status: string, eventType = "checkout.session.completed", duplica
 }
 
 beforeEach(() => {
+  vi.mocked(sendUmamiServerEvent).mockReset().mockResolvedValue(undefined);
   vi.mocked(getStripe).mockReset();
   vi.mocked(createAdminSupabase).mockReset();
   vi.stubEnv("APP_ENV", "test");
@@ -220,5 +224,84 @@ describe("POST /api/stripe/webhook", () => {
       expect(body.error).toBe("CUSTOMER_MISMATCH");
       expect(insert).not.toHaveBeenCalled();
     });
+  });
+});
+
+
+describe("Stripe revenue analytics", () => {
+  function revenueEvent({ live = true, type = "invoice.paid", amount = 1200, linked = true, paid = true, markerError = null as { code: string } | null } = {}) {
+    let marked = false;
+    const insert = vi.fn(async () => { marked = !markerError; return { error: markerError }; });
+    const update = vi.fn(() => createQueryBuilder({ data: { id: "ws-1" }, error: null }));
+    const from = vi.fn((table: string) => {
+      if (table === "stripe_events") return { ...createQueryBuilder({ data: marked ? { id: "evt_revenue" } : null, error: null }), insert };
+      if (table === "workspace_members") return createQueryBuilder({ data: { user_id: "owner-1" }, error: null });
+      return { ...createQueryBuilder({ data: { stripe_customer_id: "cus_1", stripe_subscription_id: null, stripe_sync_version: 0 }, error: null }), update };
+    });
+    vi.mocked(createAdminSupabase).mockReturnValue({ from, rpc: vi.fn().mockResolvedValue({ data: { granted: true }, error: null }) } as never);
+    const object = type === "invoice.paid" ? {
+      amount_paid: amount, currency: "eur", billing_reason: "subscription_create",
+      parent: { subscription_details: { subscription: "sub_1" } },
+    } : {
+      id: "cs_private", mode: "payment", payment_status: paid ? "paid" : "unpaid", amount_total: amount, currency: "eur",
+      customer: "cus_1", client_reference_id: "ws-1", metadata: linked ? { workspace_id: "ws-1", kind: "pass30" } : {},
+    };
+    vi.mocked(getStripe).mockReturnValue({
+      webhooks: { constructEvent: () => ({ id: "evt_revenue", type, livemode: live, data: { object } }) },
+      subscriptions: { retrieve: vi.fn().mockResolvedValue({ id: "sub_1", status: "active", customer: "cus_1", metadata: linked ? { workspace_id: "ws-1" } : {}, items: { data: [{ price: { id: "price_indie", recurring: { interval: "month" } } }] } }) },
+    } as never);
+    if (live) { vi.stubEnv("APP_ENV", "production"); vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_example"); vi.stubEnv("ANALYTICS_INTERNAL_USER_IDS", ""); }
+    return { insert, from, object };
+  }
+
+  it("sends 1200 cents as revenue 12 once, after inserting the idempotence marker", async () => {
+    const { insert } = revenueEvent();
+    vi.mocked(sendUmamiServerEvent).mockImplementation(async () => { expect(insert).toHaveBeenCalledOnce(); });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).toHaveBeenCalledExactlyOnceWith("payment_succeeded", {
+      revenue: 12, currency: "EUR", plan: "indie", interval: "month", billing_reason: "subscription_create", audience: "external",
+    });
+    expect((await readJson(await POST(request("valid")))).body.duplicate).toBe(true);
+    expect(sendUmamiServerEvent).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(sendUmamiServerEvent).mock.calls)).not.toMatch(/cus_|cs_|sub_|ws-|owner-/);
+  });
+  it("never sends test mode revenue", async () => {
+    revenueEvent({ live: false });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
+  });
+  it("keeps webhook 200 when Umami throws", async () => {
+    revenueEvent(); vi.mocked(sendUmamiServerEvent).mockRejectedValue(new Error("offline"));
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).toHaveBeenCalledOnce();
+  });
+  it.each(["23505", "XX000"])("does not send after marker insertion failure %s", async (code) => {
+    revenueEvent({ markerError: { code } });
+    expect((await POST(request("valid"))).status).toBe(code === "23505" ? 200 : 500);
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
+  });
+  it.each([0, -100])("ignores invoices without positive payment (%s)", async (amount) => {
+    revenueEvent({ amount });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
+  });
+  it.each(["checkout.session.completed", "checkout.session.async_payment_succeeded"])("reports paid and synced Pass revenue for %s", async (type) => {
+    revenueEvent({ type, amount: 1900 });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).toHaveBeenCalledExactlyOnceWith("payment_succeeded", { revenue: 19, currency: "EUR", plan: "pass30", audience: "external" });
+  });
+  it.each([{ linked: false }, { paid: false }])("ignores an unlinked or unpaid Pass: %j", async (options) => {
+    revenueEvent({ type: "checkout.session.completed", ...options });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
+  });
+  it("does not count subscription Checkout revenue or unlinked invoices", async () => {
+    const { object } = revenueEvent({ type: "checkout.session.completed" });
+    Object.assign(object, { mode: "subscription", subscription: "sub_1" });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
+    revenueEvent({ linked: false });
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
   });
 });

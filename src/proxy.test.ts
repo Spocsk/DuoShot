@@ -120,3 +120,17 @@ describe("proxy first-touch attribution", () => {
     expect(response.cookies.has(ATTRIBUTION_COOKIE)).toBe(false);
   });
 });
+
+
+describe("analytics proxy paths", () => {
+  it.each(["/u/script.js", "/api/umami/api/send"])("passes %s without locale redirects or session refresh", async (path) => {
+    vi.mocked(updateSession).mockClear();
+    const response = await proxy(new NextRequest(`https://duoshot.site${path}`, {
+      method: path.startsWith("/api/") ? "POST" : "GET", headers: { "accept-language": "en" },
+    }));
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(updateSession).not.toHaveBeenCalled();
+    expect(response.cookies.has(ATTRIBUTION_COOKIE)).toBe(false);
+  });
+});

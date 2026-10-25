@@ -71,12 +71,17 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    // Plain rewrites run after filesystem routes (API, auth, metadata files, public assets)
+    // Serve the tracker before locale rewrites.
+    // Locale rewrites run after filesystem routes (API, auth, metadata files, public assets)
     // and before dynamic ones: unprefixed paths reach app/[locale] as French, /en/… as is.
-    return [
-      { source: "/", destination: "/fr" },
-      { source: "/:first((?!(?:en|fr|api|auth|_next)(?![^/]))[^/]+)/:rest*", destination: "/fr/:first/:rest*" },
-    ];
+    return {
+      beforeFiles: [{ source: "/u/script.js", destination: "https://analytics.dylan-cdo.fr/script.js" }],
+      afterFiles: [
+        { source: "/", destination: "/fr" },
+        { source: "/:first((?!(?:en|fr|api|auth|_next)(?![^/]))[^/]+)/:rest*", destination: "/fr/:first/:rest*" },
+      ],
+      fallback: [],
+    };
   },
 };
 

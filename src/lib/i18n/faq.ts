@@ -45,7 +45,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "Combien d’images dans un set ?",
-        a: "1 à 10. Un avertissement sous 3 visuels. Une seule orientation par set.",
+        a: "Dans DuoShot, choisissez l’écran externe uniquement, l’écran interne uniquement ou un mix : de 1 à 10 fichiers PNG/JPEG opaques au total, externe et interne confondus. Cette limite est une règle de DuoShot ; Apple accepte jusqu’à 10 captures par taille d’appareil. Un avertissement s’affiche sous 3 visuels. Une seule orientation par set.",
       },
       {
         q: "Conservez-vous mes fichiers ?",
@@ -87,7 +87,7 @@ function buildFaq(passAvailable: boolean): Record<Locale, { q: string; a: string
       },
       {
         q: "How many images in a set?",
-        a: "1 to 10. A warning under 3 visuals. One orientation per set.",
+        a: "In DuoShot, choose outer only, inner only, or a mix: 1 to 10 opaque PNG/JPEG files in total across the outer and inner displays. This is a DuoShot limit; Apple accepts up to 10 screenshots per device size. A warning appears below 3 visuals. One orientation per set.",
       },
       {
         q: "Do you keep our files?",

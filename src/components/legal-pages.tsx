@@ -152,7 +152,7 @@ export function SubprocessorsContent({ locale }: { locale: Locale }) {
       <ul className="list-disc pl-5">
         <li>{t("legal_hetzner_application_hosting_self")}</li>
         <li>{t("legal_vercel_domain_registration_dns")}</li>
-        <li>{t("legal_processor_datafast")}</li>
+        <li>{t("legal_processor_umami")}</li>
         <li>{t("legal_mixpanel_no_longer_collects")}</li>
         <li>{t("legal_processor_stripe")}</li>
         <li>{t("legal_processor_resend")}</li>

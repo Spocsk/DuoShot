@@ -38,15 +38,15 @@ describe("Apple upload status", () => {
   it.each(["fr", "en"] as const)("describes the Duo slot without claiming tested uploads (%s)", (locale) => {
     const status = appleUploadStatus(locale);
     expect(status).toContain(locale === "fr"
-      ? "un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil."
-      : "an iPhone Duo slot, with up to 10 screenshots per device size.");
+      ? "App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil."
+      : "App Store Connect accepts up to 10 iPhone Duo screenshots per device size.");
     expect(status).toContain("1398 × 2034");
     expect(status).toContain("2007 × 2853");
     expect(status).toContain(locale === "fr" ? "pas encore été testé" : "not yet been tested");
     const { t } = getTranslator(locale);
     for (const key of ["specs_png_jpeg_without_alpha", "tool_unzip_archive_get_both", "asc_duo_note"] as const) {
       expect(t(key)).not.toContain("APP_IPHONE_DUO");
-      expect(t(key)).toContain(locale === "fr" ? "10 captures par taille d’appareil" : "10 screenshots per device size");
+      expect(t(key)).toContain(locale === "fr" ? "10 captures iPhone Duo par taille d’appareil" : "10 iPhone Duo screenshots per device size");
       expect(t(key)).toContain("10");
       expect(t(key)).not.toMatch(/April 2027|avril 2027|two.*sets|deux séries/);
     }
@@ -59,8 +59,8 @@ describe("Apple upload status", () => {
     expect(html).toContain(locale === "fr" ? "Spécifications des captures d’Apple" : "Apple screenshot specifications");
     expect(html).not.toContain("github.com/rorkai");
     expect(html).toContain(locale === "fr"
-      ? "un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil."
-      : "an iPhone Duo slot, with up to 10 screenshots per device size.");
+      ? "App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil."
+      : "App Store Connect accepts up to 10 iPhone Duo screenshots per device size.");
     expect(html).toContain('data-state="open"');
     expect(html).not.toContain("<form");
   });

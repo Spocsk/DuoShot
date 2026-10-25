@@ -5,6 +5,7 @@ type SchemaNode = {
   logo?: string;
   description?: string;
   url?: string;
+  sameAs?: string[];
   publisher?: { "@id": string };
   headline?: string;
   dateModified?: string;
@@ -28,7 +29,7 @@ function checkSiteEntities(doc: Document) {
   expect(applications).to.have.length(1);
   expect(organizations[0].name).to.eq("DuoShot");
   expect(organizations[0].logo).to.eq(`${organizations[0].url}/brand/duoshot-logo.png`);
-  expect(organizations[0]).not.to.have.property("sameAs");
+  expect(organizations[0].sameAs).to.deep.eq(["https://www.threads.com/@duoshot.app", "https://www.instagram.com/duoshot.app/", "https://www.youtube.com/@duoshot-u4k"]);
   expect(applications[0].publisher?.["@id"]).to.eq(organizations[0]["@id"]);
   for (const node of [organizations[0], applications[0]]) {
     expect(node.description).to.contain(doc.documentElement.lang === "fr"
@@ -68,8 +69,9 @@ describe("SEO screenshot pages", () => {
         : "App Store screenshot generator for iPhone Duo, built from your real screenshots: framed to Apple's sizes, checked, and exported as PNG/JPEG in a ZIP.";
       visit(prefix || "/");
       cy.get("main h2").first().should("have.text", locale === "fr"
-        ? "Un générateur de captures App Store qui part de votre vraie app"
-        : "An App Store screenshot generator that starts from your real app");
+        ? "Des captures brutes aux fichiers Duo vérifiés"
+        : "From raw captures to checked Duo files")
+        .invoke("text").should("not.match", /générateur|generator/i);
       cy.document().then((doc) => {
         expect(doc.querySelectorAll("title")).to.have.length(1);
         expect(doc.title).to.eq(title);
@@ -145,7 +147,8 @@ describe("SEO screenshot pages", () => {
         cy.get(`main a[href="${prefix}/${size}"]`).should("exist");
       }
       cy.get("main").should("contain", locale === "en" ? "Verified on 2026-10-13" : "Vérifié le 2026-10-13")
-        .and("contain", locale === "en" ? "iPhone Duo slot" : "un emplacement iPhone Duo")
+        .and("contain", locale === "en" ? "In DuoShot: outer only, inner only, or a mix." : "Dans DuoShot : externe uniquement, interne uniquement ou un mix.")
+        .and("not.contain", locale === "en" ? "iPhone Duo slot" : "un emplacement iPhone Duo")
         .and("contain", locale === "en" ? "10 screenshots per device size" : "10 captures par taille d’appareil")
         .and("contain", "DuoShot (duoshot.site)")
         .and("contain", "DuoScreenshot (duoscreenshot.com)")
@@ -179,6 +182,21 @@ describe("SEO screenshot pages", () => {
         visit(`${prefix}/${size}`);
         cy.get("h1").should("contain", size);
         cy.get("main").should("contain", portrait).and("contain", landscape);
+        cy.get('section[aria-labelledby="size-summary"]').should("exist")
+          .and("contain", locale === "en" ? "At a glance" : "En bref")
+          .and("contain", locale === "en" ? "Aspect ratio" : "Rapport d’affichage")
+          .and("contain", locale === "en" ? "Verified on" : "Vérifié le")
+          .and("contain", "2026-10-13");
+        cy.get('section[aria-labelledby="size-faq"] .t-acc').its("length").should("be.greaterThan", 1);
+        if (size === "1398x2034" || size === "2007x2853") {
+          cy.get("main").should("contain", locale === "en"
+            ? "April 2027 for apps built with the iOS 27.1 SDK or later"
+            : "avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur");
+        }
+        if (size === "2007x2853") {
+          cy.get('section[aria-labelledby="size-faq"]').should("contain", "1878 × 2670").and("contain", "2007 × 2853");
+          cy.get('section[aria-labelledby="size-faq"] a[href="https://www.apple.com/iphone-duo/specs/"]').should("exist");
+        }
         if (size === "1320x2868") {
           cy.get("main").should("contain", locale === "en" ? "optional in App Store Connect" : "optionnelles dans App Store Connect")
             .and("contain", locale === "en" ? "with Pass, Indie and Studio" : "avec Pass, Indie et Studio");
@@ -201,7 +219,8 @@ describe("SEO screenshot pages", () => {
           expect(doc.querySelector('meta[property="og:image"]')!.getAttribute("content")).to.contain(`/${size}/opengraph-image/`);
           const graph = graphOf(doc);
           checkSiteEntities(doc);
-          expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "SoftwareApplication", "TechArticle"]);
+          expect(graph.map((node) => node["@type"])).to.deep.eq(["Organization", "SoftwareApplication", "TechArticle", "FAQPage"]);
+          checkFaq(doc);
           const article = graph.find((node) => node["@type"] === "TechArticle")!;
           expect(article.url).to.eq(canonical);
           expect(article.headline).to.eq(doc.querySelector("h1")!.textContent);
@@ -229,6 +248,7 @@ describe("SEO screenshot pages", () => {
         cy.get("main").should("contain", "1398 × 2034").and("contain", "2007 × 2853")
           .and("contain", "1206 × 2622").and("contain", "1320 × 2868")
           .and("contain", locale === "fr" ? "n’a pas été testé par DuoShot" : "has not tested iPhone Duo uploads");
+        cy.get(`link[rel="canonical"]`).should("have.attr", "href").and("match", new RegExp(`${prefix}${path}$`));
         cy.document().then((doc) => {
           const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
           const origin = new URL(canonical).origin;

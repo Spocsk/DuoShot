@@ -4,8 +4,8 @@ Documents tenus à jour. Le déploiement et l’exploitation du VPS sont décrit
 
 | Document | Contenu |
 | --- | --- |
-| [`analytics.md`](analytics.md) | Politique analytics : DataFast seul outil, retrait de Mixpanel et effacement des données historiques. |
-| [`datafast.md`](datafast.md) | Configuration DataFast : consentement, relais `/api/datafast/events`, événements et validation. |
+| [`analytics.md`](analytics.md) | Politique analytics : Umami seul outil, retrait de Mixpanel et effacement des données historiques. |
+| [`umami.md`](umami.md) | Configuration Umami : consentement, relais `/api/umami/api/send`, événements et validation. |
 | [`stripe-billing-setup.md`](stripe-billing-setup.md) | Facturation Stripe : tarifs, webhooks, conditions d’ouverture de Checkout, Pass 30 jours. |
 | [`app-store-connect.md`](app-store-connect.md) | Connecteur App Store Connect (derrière `ASC_CONNECTOR_ENABLED`) : API Apple, correspondance des tailles, architecture. |
 | [`ropa.md`](ropa.md) | Registre des traitements RGPD (art. 30). |

@@ -15,7 +15,7 @@ import { ExportPanel } from "@/components/tool/delivery-actions";
 import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_COPY } from "./apple-screenshot-status";
 import { en } from "./i18n/en";
 import { fr } from "./i18n/fr";
-import { HOME_PAGE_COPY } from "./marketing-copy";
+import { HOME_PAGE_COPY, REJECTION_PAGE_COPY } from "./marketing-copy";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -39,9 +39,9 @@ function expectPublicCopy(text: string, context: string) {
 
 describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
   const messages = locale === "fr" ? fr : en;
-  const limit = locale === "fr" ? "jusqu’à 10 captures par taille d’appareil" : "up to 10 screenshots per device size";
+  const limit = locale === "fr" ? /jusqu’à 10 captures (?:iPhone Duo )?par taille d’appareil/ : /up to 10 (?:iPhone Duo )?screenshots per device size/;
 
-  it.each([true, false])("renders the approved home hero and first H2 with preserved details below the buttons (pass: %s)", (passAvailable) => {
+  it.each([true, false])("renders the short home hero, first H2 and factual FAQ (pass: %s)", (passAvailable) => {
     const heading = locale === "fr"
       ? "Vos captures App Store, prêtes pour l’iPhone Duo."
       : "Your App Store screenshots, ready for iPhone Duo.";
@@ -49,8 +49,14 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
       ? "Importez les captures de votre app : DuoShot les met aux formats Duo acceptés par Apple (1398×2034 et 2007×2853) et vous les exporte en un ZIP."
       : "Upload your app's screenshots: DuoShot fits them to the Duo sizes Apple accepts (1398×2034 and 2007×2853) and exports them as a ZIP.";
     const h2 = locale === "fr"
-      ? "Un générateur de captures App Store qui part de votre vraie app"
-      : "An App Store screenshot generator that starts from your real app";
+      ? "Des captures brutes aux fichiers Duo vérifiés"
+      : "From raw captures to checked Duo files";
+    const proofIntro = locale === "fr"
+      ? "Importez les vraies captures de votre app, prises sur simulateur ou appareil, et ajustez le cadrage au format Duo choisi. DuoShot vérifie les dimensions et le format des fichiers exportés, puis les range par écran dans un ZIP."
+      : "Upload real captures of your app from a simulator or device and adjust the framing for your chosen Duo size. DuoShot checks the exported files’ dimensions and format, then sorts them by screen in a ZIP.";
+    const details = locale === "fr"
+      ? "Écran externe, écran interne ou les deux : vous choisissez. Essai gratuit, sans carte."
+      : "Outer display, inner display, or both: your choice. Free trial, no card required.";
     const html = renderToStaticMarkup(createElement(I18nProvider,
       { locale, messages } as ComponentProps<typeof I18nProvider>,
       createElement(HomePage, { locale, checkoutAvailable: true, passAvailable }),
@@ -59,12 +65,37 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
     expect(headings).toHaveLength(1);
     expect(headings[0][1].replace(/<[^>]*>/g, "")).toBe(renderToStaticMarkup(heading));
     expect(html.match(/class="studio-hero-lead">([\s\S]*?)<\/p>/)?.[1]).toBe(renderToStaticMarkup(subtitle));
-    expect(html.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/)?.[1]).toBe(h2);
-    expect(h2).toContain(locale === "fr" ? "générateur" : "generator");
-    const previousLead = messages[passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass"];
-    const details = previousLead.slice(previousLead.indexOf(". ") + 2);
-    expect(html.match(/class="studio-hero-footnote mt-4">([\s\S]*?)<\/p>/)?.[1]).toBe(renderToStaticMarkup(details));
+    const renderedH2 = html.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/)?.[1];
+    expect(renderedH2).toBe(h2);
+    expect(renderedH2).not.toMatch(/générateur|generator/i);
+    expect(html).toContain(`<p>${renderToStaticMarkup(proofIntro)}</p>`);
+    const renderedDetails = html.match(/class="studio-hero-footnote mt-4">([\s\S]*?)<\/p>/)?.[1];
+    expect(renderedDetails).toBe(renderToStaticMarkup(details));
+    expect(renderedDetails!.length).toBeLessThan(120);
+    expect(renderedDetails).not.toMatch(/10|générateur|generator/i);
     expect(html).toMatch(/class="studio-hero-actions"[\s\S]*?<\/div><p class="studio-hero-footnote mt-4">/);
+    const faqHtml = html.match(/<section class="studio-faq"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
+    expect(faqHtml.match(/class="t-acc /g)).toHaveLength(10);
+    const faqFacts = locale === "fr" ? [
+      "Dans DuoShot, choisissez l’écran externe uniquement, l’écran interne uniquement ou un mix",
+      "de 1 à 10 fichiers PNG/JPEG opaques au total, externe et interne confondus.",
+      "Cette limite est une règle de DuoShot",
+      "Apple accepte jusqu’à 10 captures par taille d’appareil.",
+      "iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect ; taille incluse dans l’essai gratuit",
+      `Option 6,9″ (${passAvailable ? "Pass / Indie / Studio" : "offres payantes"})`,
+      `Le 6,9″ est optionnel avec ${passAvailable ? "Pass, Indie et Studio" : "les offres payantes"}.`,
+    ] : [
+      "In DuoShot, choose outer only, inner only, or a mix",
+      "1 to 10 opaque PNG/JPEG files in total across the outer and inner displays.",
+      "This is a DuoShot limit",
+      "Apple accepts up to 10 screenshots per device size.",
+      'iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect, included in the free trial',
+      `Optional 6.9″ (${passAvailable ? "Pass / Indie / Studio" : "paid access"})`,
+      `The 6.9″ size is optional with ${passAvailable ? "Pass, Indie and Studio" : "paid access"}.`,
+    ];
+    for (const fact of faqFacts) expect(faqHtml).toContain(renderToStaticMarkup(fact));
+    if (!passAvailable) expect(faqHtml).not.toContain("Pass");
+    expect(faqHtml).not.toMatch(/emplacement (?:iPhone )?Duo|(?:iPhone )?Duo slot|single slot|combined cap|deux tailles (?:requises|obligatoires)|both (?:Duo )?(?:sizes|displays) (?:are )?required/i);
     expectPublicCopy(html, `${locale}/home`);
     expectPublicCopy(JSON.stringify(HOME_PAGE_COPY[locale]), `${locale}/home metadata`);
   });
@@ -75,11 +106,35 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
     expect(messages.asc_duo_note).toBe(DUO_SLOT_COPY[locale]);
   });
 
+  it("keeps home, size, specs and rejection copy free of Duo slot wording", () => {
+    const llmsKeys = ["home_import_closed_open_captures", "home_import_closed_open_captures_without_pass"] as const;
+    const pageKeys = ["tool_duo_empty", "tool_duo_content", "specs_single_slot", "size_slot_heading", "tool_duo_slot_hint", "asc_duo_note"] as const;
+    const entries = Object.entries(messages);
+    const copy = [
+      ...entries.filter(([key]) => /^(home_|size_|specs_|reject_)/.test(key)),
+      ...pageKeys.map((key) => [key, messages[key]]),
+      ...Object.entries(REJECTION_PAGE_COPY[locale]),
+      ["DUO_SLOT_COPY", DUO_SLOT_COPY[locale]],
+    ];
+    for (const [key, value] of copy) {
+      expect(value, `${locale}.${key}`).not.toMatch(/emplacement Duo|emplacement iPhone Duo|(?:iPhone )?Duo slot|single slot|combined cap/i);
+    }
+    for (const [key, value] of entries.filter(([key]) => key.startsWith("reject_") || key === "specs_single_slot" || key === "size_slot_heading")) {
+      expect(value, `${locale}.${key}`).not.toMatch(/\bslots?\b|emplacements?/i);
+    }
+    const approved = locale === "fr"
+      ? "Choisissez externe uniquement, interne uniquement ou un mix : 10 fichiers PNG/JPEG opaques maximum au total, une règle de DuoShot (Apple accepte jusqu’à 10 captures par taille d’appareil)."
+      : "Choose outer only, inner only, or a mix: up to 10 opaque PNG/JPEG files in total, a DuoShot rule (Apple accepts up to 10 screenshots per device size).";
+    for (const key of llmsKeys) expect(messages[key], `${locale}.${key}`).toContain(approved);
+  });
+
   it("uses the official per-device-size limit in the comparison guide and FAQ", () => {
     const file = `content/guides/best-app-store-screenshot-generator.${locale}.md`;
     const markdown = readFileSync(path.resolve(file), "utf8");
     expectPublicCopy(markdown, file);
-    expect(markdown.split(limit)).toHaveLength(3);
+    expect(markdown.match(new RegExp(limit, "g"))).toHaveLength(2);
+    expect(messages.specs_single_slot).toContain(locale === "fr" ? "Dans DuoShot :" : "In DuoShot:");
+    expect(markdown).not.toContain(locale === "fr" ? "Vous pouvez mettre seulement" : "You can use outer only");
   });
 
   it("renders specs, rejection, checker and comparison pages with consistent public copy", async () => {
@@ -93,7 +148,7 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
     for (const [name, page] of pages) {
       const html = renderToStaticMarkup(page);
       expectPublicCopy(html, `${locale}/${name}`);
-      expect(html).toContain(limit);
+      expect(html).toMatch(limit);
     }
   });
 
@@ -105,7 +160,7 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
       value: { mode: "mix", picks: [] }, outerFiles: [], innerFiles: [], onChange: () => {},
     }));
     expectPublicCopy(selection, `${locale}/tool selection`);
-    expect(selection).toContain(limit);
+    expect(selection).toMatch(limit);
     for (const demo of [true, false]) {
       const delivery = render(createElement(ExportPanel, {
         locale, prefix: locale === "en" ? "/en" : "", zipUrl: "/example.zip",
@@ -116,7 +171,7 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
         ] } as unknown as ComponentProps<typeof ExportPanel>["jobs"],
       }));
       expectPublicCopy(delivery, `${locale}/tool delivery`);
-      expect(delivery).toContain(limit);
+      expect(delivery).toMatch(limit);
       expect(delivery).toContain(locale === "fr" ? "10 captures Duo maximum" : "up to 10 Duo screenshots in your selection");
     }
   });

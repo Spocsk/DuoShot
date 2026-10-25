@@ -24,7 +24,7 @@ export const CLIENT_KEYS = {
     "lang_switch",
     "footer_analytics_preferences",
     "consent_product_analytics",
-    "consent_permission_datafast_measures_pages",
+    "consent_permission_umami_measures_pages",
     "consent_preference_not_saved_please",
     "consent_decline",
     "waitlist_email_label",

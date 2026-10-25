@@ -8,7 +8,7 @@ import { FREE_EXPORTS } from "@/lib/plans";
 import type { MessageKey } from "@/lib/i18n/types";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { trackProduct } from "@/lib/analytics-client";
-import { trackDatafastConversion } from "@/lib/datafast-client";
+import { trackUmamiConversion } from "@/lib/umami-client";
 import { reviewPath } from "@/lib/site";
 import { mapLimit } from "@/lib/map-limit";
 import { uploadSource } from "@/lib/source-upload";
@@ -120,11 +120,11 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         if (kind === "export") {
           setZipUrl(payload.url); setZipName(payload.filename ?? "app.zip");
           setDownloadId(payload.exportId ?? null); setExportImages(payload.images ?? []);
-          if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId);
+          if (payload.exportId) void trackUmamiConversion("export_succeeded", payload.exportId);
         } else {
           setReviewUrl(new URL(payload.url, window.location.origin).href);
           setReviewStatus(t("tool_review_ready"));
-          void trackDatafastConversion("review_created", payload.id ?? payload.url.split("/").filter(Boolean).pop());
+          void trackUmamiConversion("review_created", payload.id ?? payload.url.split("/").filter(Boolean).pop());
         }
         setToolPanel(kind === "export" ? "export" : "review");
         setStatusKind("ok"); setStatus(t(kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
@@ -237,7 +237,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         return;
       }
       if (!payload.url) throw new Error("STORAGE_UNAVAILABLE");
-      if (payload.exportId) void trackDatafastConversion("export_succeeded", payload.exportId, {
+      if (payload.exportId) void trackUmamiConversion("export_succeeded", payload.exportId, {
         image_count: Math.max(outerFiles.length, effectiveInner.length),
         plan: billing?.plan ?? "unknown",
       });
@@ -356,7 +356,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         return;
       }
       const publicId = payload.id ?? payload.url?.split("/").filter(Boolean).pop();
-      if (publicId) void trackDatafastConversion("review_created", publicId, { slide_count: Math.max(outerFiles.length, effectiveInner.length) });
+      if (publicId) void trackUmamiConversion("review_created", publicId, { slide_count: Math.max(outerFiles.length, effectiveInner.length) });
       if (publicId) patchActive({ lastReviewId: publicId, lastReviewStatus: "pending" });
       const path = payload.url || (publicId ? reviewPath(locale, publicId) : "");
       const absolute = path.startsWith("http") ? path : `${window.location.origin}${path}`;

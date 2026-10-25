@@ -27,7 +27,7 @@ export const RATE_LIMIT_RULES: Rule[] = [
   { name: "asc-upload", methods: ["POST"], pattern: /^\/api\/asc\/uploads$/, limit: 20, windowMs: 10 * MINUTE },
   { name: "asc-read", methods: ["GET"], pattern: /^\/api\/asc\/(?:apps|versions)(?:\/|$)/, limit: 60, windowMs: MINUTE },
   { name: "render", methods: ["POST"], pattern: /^\/api\/(?:export|reviews)$/, limit: 60, windowMs: 10 * MINUTE },
-  { name: "analytics", methods: ["POST"], pattern: /^\/api\/datafast\/events$/, limit: 120, windowMs: MINUTE },
+  { name: "analytics", methods: ["POST"], pattern: /^\/api\/umami\/api\/send$/, limit: 120, windowMs: MINUTE },
   // Render status polling and review media are frequent by design.
   { name: "polling", methods: ["GET"], pattern: /^\/api\/(?:render-jobs\/[^/]+|reviews\/[^/]+\/media)$/, limit: 600, windowMs: MINUTE },
   { name: "api", methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], pattern: /^\/api\/(?!stripe\/webhook$|health$|cron\/|internal\/)/, limit: 300, windowMs: MINUTE },

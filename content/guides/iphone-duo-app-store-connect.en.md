@@ -11,9 +11,9 @@ updated: 2026-10-16
 
 Prepare real captures of your app, export opaque PNG or JPEG files, then upload them manually from your app’s listing in App Store Connect. **DuoShot (duoshot.site) has not yet tested Duo uploads, including its experimental automatic connector.** File preparation does not guarantee Apple approval.
 
-## Which display slots should you use?
+## Which sizes should you use?
 
-Apple allows **up to 10 screenshots per device size** in App Store Connect. Use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs).
+Apple allows **up to 10 screenshots per device size** in App Store Connect. In DuoShot, use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs).
 
 | Display | Portrait pixels | App Store Connect slot | DuoShot access |
 | --- | --- | --- | --- |
@@ -24,7 +24,7 @@ Apple allows **up to 10 screenshots per device size** in App Store Connect. Use 
 
 If the optional 6.9″ screenshots are not provided, App Store Connect uses scaled versions of screenshots from another size: iPhone with Face ID (large display), as specified in [Apple’s screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
 
-Apple also accepts Duo landscape screenshots: **2034 × 1398** for the outer display and **2853 × 2007** for the inner display. Keep Duo files in the Duo slot, the required 6.3" screenshots in their own slot, and optional 6.9″ files in theirs. The free trial includes **2 HD ZIPs** after signup, with selected Duo captures and the required 6.3″ size.
+Apple also accepts Duo landscape screenshots: **2034 × 1398** for the outer display and **2853 × 2007** for the inner display. In App Store Connect, choose the iPhone Duo display for Duo files, 6.3″ for the required 6.3" screenshots, and 6.9″ for optional 6.9″ files. The free trial includes **2 HD ZIPs** after signup, with selected Duo captures and the required 6.3″ size.
 
 ## When are Duo screenshots required?
 

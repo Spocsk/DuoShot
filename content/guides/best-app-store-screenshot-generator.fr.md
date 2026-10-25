@@ -16,7 +16,7 @@ Il n'existe pas de « meilleur » générateur dans l'absolu. Tout dépend de ce
 La référence, ce sont les [spécifications de captures d'Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/) :
 
 - **Taille iPhone obligatoire :** au moins une capture pour l'iPhone à Dynamic Island (écran moyen), soit le **6,3″ en 1206 × 2622** (1179 × 2556 est aussi accepté). Les tailles 6,9″ (1320 × 2868, 1290 × 2796, 1260 × 2736) deviennent facultatives. Détails sur [/1206x2622](/1206x2622).
-- **iPhone Duo :** App Store Connect propose un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil. Il accepte l'écran extérieur (fermé) en **1398 × 2034** et l'écran intérieur (ouvert) en **2007 × 2853**, ainsi que leurs versions paysage. Vous pouvez utiliser seulement l'extérieur, seulement l'intérieur, ou un mélange. Voir [/1398x2034](/1398x2034) et [/2007x2853](/2007x2853).
+- **iPhone Duo :** App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil. Il accepte l'écran extérieur (fermé) en **1398 × 2034** et l'écran intérieur (ouvert) en **2007 × 2853**, ainsi que leurs versions paysage. Dans DuoShot : externe uniquement, interne uniquement ou un mix. Voir [/1398x2034](/1398x2034) et [/2007x2853](/2007x2853).
 - **Format :** JPEG ou PNG, sans transparence.
 - **Échéance :** les captures Duo seront exigées à partir d'avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur ([Apple Developer News, 5 oct. 2026](https://developer.apple.com/news/?id=kkphp5qo)).
 
@@ -74,7 +74,7 @@ Rien n'empêche de combiner : concevoir dans un outil, puis passer les fichiers 
 ## FAQ
 
 **Faut-il des séries séparées pour l'écran extérieur et l'écran intérieur ?**
-Non. App Store Connect propose un emplacement iPhone Duo, avec jusqu’à 10 captures par taille d’appareil. Vous pouvez mettre seulement l'extérieur, seulement l'intérieur, ou un mélange.
+Apple ne le précise pas : App Store Connect accepte jusqu’à 10 captures iPhone Duo par taille d’appareil. Dans DuoShot : externe uniquement, interne uniquement ou un mix.
 
 **Les captures Duo sont-elles déjà obligatoires ?**
 Pas encore pour toutes les apps. Apple les exige à partir d'avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur. Le dépôt est déjà ouvert.
