@@ -1,6 +1,7 @@
 "use client";
 
 import { analyticsChoice, syncAnalyticsConsentCookie } from "./analytics-consent";
+import { isInternalVisitor } from "./analytics-internal";
 import { sanitizedCampaignQuery } from "./analytics-campaign";
 import { analyticsPath } from "./analytics-path";
 import { UMAMI_DOMAIN, UMAMI_WEBSITE_ID } from "./umami-config";
@@ -32,7 +33,7 @@ function captureLandingCampaign() {
 captureLandingCampaign();
 
 async function getTracker() {
-  if (analyticsChoice() !== "accepted") return null;
+  if (analyticsChoice() !== "accepted" || isInternalVisitor()) return null;
   syncAnalyticsConsentCookie("accepted");
   try { localStorage.removeItem("umami.disabled"); } catch { /* optional */ }
   if (window.umami) return window.umami;

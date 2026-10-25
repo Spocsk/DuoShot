@@ -25,6 +25,13 @@ describe("Umami proxy", () => {
     expect(await (await POST(request(event, "event", consent))).json()).toEqual({ ignored: true });
     expect(upstream).not.toHaveBeenCalled();
   });
+  it("ignores internal visitors even with consent", async () => {
+    const req = new Request("https://duoshot.site/api/umami/api/send", {
+      method: "POST", headers: { Cookie: "duoshot_analytics_choice_v2=accepted; duoshot_internal=1", "Content-Type": "application/json" }, body: JSON.stringify({ type: "event", payload: event }),
+    });
+    expect(await (await POST(req)).json()).toEqual({ ignored: true });
+    expect(upstream).not.toHaveBeenCalled();
+  });
   it("forwards only allowed fields and values, normalizes URLs and preserves UA and IP", async () => {
     expect((await POST(request())).status).toBe(200);
     expect(upstream.mock.calls[0][0]).toBe("https://analytics.dylan-cdo.fr/api/send");

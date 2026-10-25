@@ -60,6 +60,16 @@ describe("Umami consent and delivery", () => {
     expect(payloads.at(-1)).toMatchObject({ data: { audience: "external", count: 2 } });
   });
 
+  it("excludes internal visitors even after acceptance", async () => {
+    accept();
+    (document as unknown as { cookie: string }).cookie = "duoshot_internal=1";
+    const { trackUmami } = await import("./umami-client");
+    expect(await trackUmami("page_viewed")).toBe(false);
+    expect(append).not.toHaveBeenCalled();
+    expect(tracker.track).not.toHaveBeenCalled();
+    expect(tracker.identify).not.toHaveBeenCalled();
+  });
+
   it("captures sanitized campaigns in memory before navigation and ignores private routes", async () => {
     const { trackUmami } = await import("./umami-client");
     location.pathname = "/reset-password"; accept();
