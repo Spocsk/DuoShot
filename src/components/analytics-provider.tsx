@@ -10,6 +10,7 @@ import {
   analyticsChoice, analyticsConfigured, refreshAnalyticsAudience, resetAnalyticsUser,
   setAnalyticsChoice, trackProduct, consumeAnalyticsAuthIntent, type AnalyticsChoice,
 } from "@/lib/analytics-client";
+import { markInternalFromLocation } from "@/lib/analytics-internal";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { POLICY_VERSION } from "@/lib/specs";
 
@@ -51,6 +52,10 @@ export function AnalyticsProvider() {
   const [choiceError, setChoiceError] = useState(false);
   const configured = analyticsConfigured();
   const { locale, t } = useI18n();
+
+  useEffect(() => {
+    markInternalFromLocation(window.location.search);
+  }, [pathname]);
 
   useEffect(() => {
     const open = () => setSettingsOpen(true);

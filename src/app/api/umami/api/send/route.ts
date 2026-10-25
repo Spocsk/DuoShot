@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ANALYTICS_CHOICE_KEY } from "@/lib/analytics-consent";
+import { hasInternalCookie } from "@/lib/analytics-internal";
 import { sanitizedAnalyticsUrl } from "@/lib/analytics-path";
 import { sanitizedCampaignQuery } from "@/lib/analytics-campaign";
 import { UMAMI_DOMAIN, UMAMI_ORIGIN, UMAMI_WEBSITE_ID } from "@/lib/umami-config";
@@ -15,8 +16,9 @@ const PROPERTIES = new Set(["audience", "page", "locale", "seconds", "method", "
 const FIELDS = new Set(["website", "hostname", "url", "referrer", "title", "screen", "language", "name", "data"]);
 
 export async function POST(request: Request) {
-  const consent = request.headers.get("cookie")?.split(";").some((part) => part.trim() === `${ANALYTICS_CHOICE_KEY}=accepted`);
-  if (!consent) return NextResponse.json({ ignored: true });
+  const cookie = request.headers.get("cookie");
+  const consent = cookie?.split(";").some((part) => part.trim() === `${ANALYTICS_CHOICE_KEY}=accepted`);
+  if (!consent || hasInternalCookie(cookie)) return NextResponse.json({ ignored: true });
   try {
     const text = await request.text();
     if (new TextEncoder().encode(text).length > 16_384) return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 413 });
