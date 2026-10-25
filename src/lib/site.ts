@@ -1,5 +1,6 @@
 import type { Locale } from "./specs";
 import { publicEnv } from "./env-public";
+import { COMPARE_ROUTE } from "./compare";
 
 export const SITE_NAME = "DuoShot";
 export const SITE_DESCRIPTOR = "iPhone Duo App Store Screenshots";
@@ -30,6 +31,7 @@ export function localizedPath(locale: Locale, path: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
   const pair = MARKETING_ROUTE_PAIRS.find((route) => route.fr === clean || route.en === clean || `/en${route.fr}` === clean);
   if (pair) return pair[locale];
+  if (clean === COMPARE_ROUTE.fr || clean === COMPARE_ROUTE.en) return COMPARE_ROUTE[locale];
   const reviewId = reviewIdFromPath(clean);
   if (reviewId !== null) {
     if (!reviewId) return locale === "en" ? "/en/r" : "/r";

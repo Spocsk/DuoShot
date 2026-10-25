@@ -1,5 +1,6 @@
 import type { Locale } from "./specs";
 import { localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
+import { COMPARE_ROUTE } from "./compare";
 
 // The legacy cookie also stored automatic redirects; only explicit choices persist now.
 export const LOCALE_COOKIE = "duoshot_locale_manual";
@@ -38,6 +39,8 @@ export function isCrawler(userAgent: string | null): boolean {
 export function shouldSkipLocaleRewrite(pathname: string): boolean {
   return (
     MARKETING_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en) ||
+    pathname === COMPARE_ROUTE.fr ||
+    pathname === COMPARE_ROUTE.en ||
     pathname.startsWith("/_next/") ||
     /\/(?:opengraph-image|twitter-image)(?:-[^/]+)?(?:\/[^/]+)?$/.test(pathname) ||
     /\.[^/]+$/.test(pathname) ||
