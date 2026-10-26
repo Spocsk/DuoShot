@@ -557,6 +557,7 @@ export const fr = {
   tool_warn: "Moins de 3 visuels : vérifiez que votre set présente bien l’app.",
   tool_warn_clone: "Les deux vues doivent montrer leurs états respectifs. Une forte similarité mérite une vérification humaine.",
   tool_warn_unpaired: "Les nombres de sources diffèrent. La sélection Duo peut utiliser les deux côtés, avec 10 captures Duo maximum dans la sélection. Les paires sont nécessaires uniquement pour un retour client.",
+  duo_landscape_first_warning: "Constaté sur l’App Store : si votre 1re capture Duo est en paysage, les résultats de recherche n’en affichent qu’une. En portrait, deux.",
   tool_cap: "Maximum 10 images.",
   tool_preparing: "Préparation du ZIP…",
   tool_progress_upload: "Envoi {done}/{total}…",

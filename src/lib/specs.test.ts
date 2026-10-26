@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { SpecsPage } from "@/components/specs-page";
 import { SizePage } from "@/components/size-page";
-import { connectPreviewStyle, duoChassisAspect, duoSpec, formatInches, IPHONE_63_ALTERNATIVE, iphone63Spec, SIZE_SPECS, specRowDetail, targetsFor } from "./specs";
+import { connectPreviewStyle, duoChassisAspect, duoSpec, firstDuoScreenshotIsLandscape, formatInches, IPHONE_63_ALTERNATIVE, iphone63Spec, SIZE_SPECS, specRowDetail, targetsFor } from "./specs";
 import { SCREENSHOT_SIZES, sizePageCopy } from "./screenshot-pages";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
@@ -22,6 +22,9 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
       expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/${size}"`);
     }
     expect(html).toContain(locale === "fr" ? "dépôt pas encore testé par DuoShot" : "uploads have not yet been tested by DuoShot");
+    expect(html).toContain(locale === "fr"
+      ? "si votre 1re capture Duo est en paysage, les résultats de recherche n’en affichent qu’une. En portrait, deux."
+      : "if your first Duo screenshot is landscape, search results show only one. In portrait, two.");
   });
 
   it("uses the correct Duo copy and links every guide to specs and the other sizes", () => {
@@ -88,6 +91,25 @@ describe("6.3-inch export preset", () => {
       expect(copy.related).toEqual(SCREENSHOT_SIZES.filter((size) => size !== "1206x2622"));
       expect(sizePageCopy(locale, "1398x2034").related).toContain("1206x2622");
     }
+  });
+});
+
+describe("firstDuoScreenshotIsLandscape", () => {
+  it("flags a landscape first screenshot for both Duo sizes", () => {
+    expect(firstDuoScreenshotIsLandscape([duoSpec("duo-outer", "landscape")])).toBe(true);
+    expect(firstDuoScreenshotIsLandscape([duoSpec("duo-inner", "landscape")])).toBe(true);
+  });
+
+  it("does not flag a portrait first screenshot, even when a landscape one follows", () => {
+    expect(firstDuoScreenshotIsLandscape([duoSpec("duo-outer", "portrait")])).toBe(false);
+    expect(firstDuoScreenshotIsLandscape([duoSpec("duo-inner", "portrait")])).toBe(false);
+    expect(firstDuoScreenshotIsLandscape([duoSpec("duo-outer", "portrait"), duoSpec("duo-outer", "landscape")])).toBe(false);
+  });
+
+  it("ignores non-Duo sizes and an empty set", () => {
+    expect(firstDuoScreenshotIsLandscape([iphone63Spec("landscape")])).toBe(false);
+    expect(firstDuoScreenshotIsLandscape([{ width: 2034, height: 1399 }])).toBe(false);
+    expect(firstDuoScreenshotIsLandscape([])).toBe(false);
   });
 });
 
