@@ -236,6 +236,16 @@ describe("asc_upload job with App Asset Library", () => {
     expect([...apple.images.values()].every((image) => image.deleted)).toBe(true);
   });
 
+  it("rejects an image with an alpha channel before reserving anything", async () => {
+    const alpha = await sharp({ create: { width: 1398, height: 2034, channels: 4, background: { r: 1, g: 2, b: 3, alpha: 0.5 } } }).png().toBuffer();
+    const apple = fakeAssetLibraryApple({ states: ["COMPLETE"] });
+    const { client } = await admin({ zipFiles: { ...files, "harbor/duo-outer-portrait/01.png": alpha } });
+    const response = await executeAscUpload(client, duoJob(), { fetch: apple.fetch, sleep: instant });
+    expect(await response.json()).toEqual({ error: "ASC_INVALID" });
+    expect(paths(apple, "POST")).not.toContain("/v1/appAssetLibraryImages");
+    expect(apple.images.size).toBe(0);
+  });
+
   it("keeps previous placements and rolls back the whole job if ordering fails", async () => {
     const apple = fakeAssetLibraryApple({ existing: { IPHONE_DUO_PROFILE: ["old-a"] }, states: ["COMPLETE"],
       fail: (method, path) => method === "POST" && path === "/v1/appAssetLibraryPlacementOrderingRequests" ? { status: 422, code: "ENTITY_ERROR" } : null });
@@ -253,7 +263,7 @@ describe("asc_upload job with App Asset Library", () => {
     const phoneGroup = "RENAMED_69_GROUP";
     refData.placementProfileGroups![1]!.placementProfileGroupId = phoneGroup;
     refData.placementTypes![0]!.specMappings![1]!.placementGroupId = phoneGroup;
-    refData.features![0]!.placementPolicies![0]!.groupLimits![1]!.groupIds = [phoneGroup];
+    refData.features![0]!.placementPolicies![0]!.groupLimits![0]!.groupIds = ["IPHONE_DUO_PROFILE", phoneGroup];
     const apple = fakeAssetLibraryApple({ refData, states: ["COMPLETE"] });
     const { client } = await admin({ zipFiles });
     const response = await executeAscUpload(client, job({ payload: { ...PAYLOAD, targets: ascTargetsForExport(true).targets } }), { fetch: apple.fetch, sleep: instant });

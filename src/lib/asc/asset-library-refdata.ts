@@ -72,6 +72,15 @@ export function resolveImageGroup(ref: AssetLibraryRefData, width: number, heigh
   return group.placementProfileGroupId;
 }
 
+/**
+ * The live refData (read 2026-10-30) returns APP_SCREENSHOT limits as a single
+ * groupLimits entry whose groupIds enumerates every iPhone/iPad/Duo group with
+ * maxCount 10. We read that as "each listed group is capped at maxCount", which
+ * matches the App Store's long-standing "up to 10 screenshots per display type"
+ * and is why the job checks capacity per group. Whether Apple ever treats the
+ * entry as a pool shared across the listed groups is still unconfirmed and is
+ * called out in docs/asc.md as a live-test item.
+ */
 export function placementLimit(ref: AssetLibraryRefData, group: string): number | undefined {
   const feature = ref.features?.find((item) => item.featureId === VERSION_FEATURE);
   if (!feature) throw new AscError("ASC_REFDATA_FEATURE_NOT_FOUND", 0, undefined, `Feature ${VERSION_FEATURE} indisponible.`);

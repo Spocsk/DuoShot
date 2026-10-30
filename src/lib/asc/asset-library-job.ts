@@ -62,7 +62,12 @@ export async function executeAssetLibraryUpload(input: {
       checkDeadline();
       if (!metadata.width || !metadata.height || !["png", "jpeg"].includes(metadata.format ?? "")) throw new AscError("ASC_INVALID");
       const group = file.slot === "iphone-69" ? resolveImageGroup(ref, metadata.width, metadata.height) : duoGroup!;
-      specs[position] = { group, spec: expectedImageSpec(ref, group, metadata.width, metadata.height) };
+      // expectedImageSpec enforces the exact pixel size (min==max). Reject alpha
+      // up front too: screenshot specs set alphaAllowed:false, and Apple only
+      // surfaces the rejection after a wasted reservation and transfer.
+      const spec = expectedImageSpec(ref, group, metadata.width, metadata.height);
+      if (metadata.hasAlpha && spec.alphaAllowed !== true) throw new AscError("ASC_INVALID", 0, undefined, `Canal alpha interdit pour ${spec.shortName ?? spec.specId}.`);
+      specs[position] = { group, spec };
       if (!groups.has(group)) groups.set(group, { previous: [], positions: [], uploaded: [] });
       groups.get(group)!.positions.push(position);
     }
