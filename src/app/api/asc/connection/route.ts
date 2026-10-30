@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AscError, createAscClient } from "@/lib/asc/client";
 import { readMasterKey, sealSecret } from "@/lib/asc/crypto";
-import { isIssuerId, isKeyId, parseAscPrivateKey } from "@/lib/asc/jwt";
+import { isIssuerId, isKeyId, normalizeAscPrivateKeyPem, parseAscPrivateKey } from "@/lib/asc/jwt";
 import { ascContext, ascFailure, maskIssuerId, NO_STORE } from "@/lib/asc/server";
 
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   if (!isIssuerId(issuerId)) return NextResponse.json({ error: "ASC_ISSUER_INVALID" }, { status: 400, headers: NO_STORE });
   if (!isKeyId(keyId)) return NextResponse.json({ error: "ASC_KEY_ID_INVALID" }, { status: 400, headers: NO_STORE });
   let privateKey: string;
-  try { parseAscPrivateKey(body.privateKey); privateKey = (body.privateKey as string).trim(); } catch {
+  try { parseAscPrivateKey(body.privateKey); privateKey = normalizeAscPrivateKeyPem((body.privateKey as string).trim()); } catch {
     return NextResponse.json({ error: "ASC_KEY_INVALID" }, { status: 400, headers: NO_STORE });
   }
   const master = readMasterKey();

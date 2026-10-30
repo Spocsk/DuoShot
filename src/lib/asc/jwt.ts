@@ -16,15 +16,33 @@ export function isKeyId(value: unknown): value is string {
 }
 
 /**
+ * Rebuilds a usable PKCS#8 PEM when the .p8 lost its line breaks — e.g. pasted
+ * as a single line, or carried through an env var / form field that stripped
+ * newlines. OpenSSL needs the BEGIN/END boundaries on their own lines and the
+ * base64 wrapped; a key glued onto one line is valid material but unparseable
+ * as-is. A PEM that already has real newlines is returned untouched (trimmed),
+ * so multi-key or malformed multi-line input still reaches the strict checks.
+ */
+export function normalizeAscPrivateKeyPem(pem: string): string {
+  if (pem.includes("\n")) return pem.trim();
+  const body = pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
+  const wrapped = body.match(/.{1,64}/g)?.join("\n") ?? body;
+  return `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
+}
+
+/**
  * Parses an App Store Connect .p8 file: a PKCS#8 PEM holding a P-256 EC key.
- * Throws ASC_KEY_INVALID for anything else, without echoing the input.
+ * Accepts a key whose newlines were lost (rebuilt first). Throws ASC_KEY_INVALID
+ * for anything else, without echoing the input.
  */
 export function parseAscPrivateKey(pem: unknown): KeyObject {
-  if (typeof pem !== "string" || pem.length > MAX_PEM_BYTES || pem.split("-----BEGIN ").length !== 2 || !pem.includes("-----BEGIN PRIVATE KEY-----")) {
+  if (typeof pem !== "string" || pem.length > MAX_PEM_BYTES) throw new Error("ASC_KEY_INVALID");
+  const normalized = normalizeAscPrivateKeyPem(pem);
+  if (normalized.split("-----BEGIN ").length !== 2 || !normalized.includes("-----BEGIN PRIVATE KEY-----")) {
     throw new Error("ASC_KEY_INVALID");
   }
   let key: KeyObject;
-  try { key = createPrivateKey({ key: pem.trim(), format: "pem" }); } catch { throw new Error("ASC_KEY_INVALID"); }
+  try { key = createPrivateKey({ key: normalized, format: "pem" }); } catch { throw new Error("ASC_KEY_INVALID"); }
   if (key.asymmetricKeyType !== "ec" || key.asymmetricKeyDetails?.namedCurve !== "prime256v1") {
     throw new Error("ASC_KEY_INVALID");
   }
