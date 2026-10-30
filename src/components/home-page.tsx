@@ -8,7 +8,8 @@ import { getFaq } from "@/lib/i18n";
 import { duoSpec, type Locale } from "@/lib/specs";
 import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { DuoDevice } from "@/components/duo-device";
+import { HeroScan } from "@/components/hero-scan";
+import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { LandingMotion } from "@/components/landing-motion";
 import { PricingSection } from "@/components/pricing-section";
 import { TrustLine } from "@/components/trust-line";
@@ -23,24 +24,28 @@ const OUTER = duoSpec("duo-outer", "portrait");
 const INNER = duoSpec("duo-inner", "portrait");
 
 /* ------------------------------------------------------------------ */
-/* Avant / après: raw captures in, the delivered ZIP out.              */
+/* Avant / après: one raw capture against the exported file, on a slider. */
 /* ------------------------------------------------------------------ */
 
-function RawCapture({ locale, kind }: { locale: Locale; kind: "outer" | "inner" }) {
-  const { t } = getTranslator(locale);
-  const outer = kind === "outer";
-  return <figure className={`studio-raw is-${kind}`}>
-    <div className="studio-raw-shot">
-      <HarborShot locale={locale} side={kind} />
+function CompareLayer({ locale, kind }: { locale: Locale; kind: "before" | "after" }) {
+  const { t, tf } = getTranslator(locale);
+  const before = kind === "before";
+  const notes = before
+    ? [t("home_ba_before_size"), t("home_ba_before_fold"), t("home_ba_before_alpha")]
+    : [tf("home_ba_after_size", { size: screenshotDimensions(INNER) }), t("home_ba_after_fold"), t("home_ba_after_alpha")];
+  return <div className={`studio-ba-shot is-${kind}`}>
+    <span className="studio-ba-tag"><b>{t(before ? "home_before" : "home_after")}</b><code>{before ? "1920 × 2560" : screenshotDimensions(INNER)}</code></span>
+    <div className="duo-book">
+      <div className="duo-screen">
+        <HarborShot locale={locale} side="inner" />
+        <span className="studio-ba-hinge" />
+        {before ? <span className="studio-ba-hit" /> : null}
+      </div>
     </div>
-    <figcaption>
-      <code>{outer ? "Simulator Screenshot 09.14.12.png" : "IMG_0418.PNG"}</code>
-      <span className="studio-raw-meta">{outer ? "1206 × 2622 · PNG" : "1920 × 2560 · PNG"}</span>
-      <span className="studio-raw-flag">{outer
-        ? t("home_size_not_accepted")
-        : t("home_transparency_flatten")}</span>
-    </figcaption>
-  </figure>;
+    <ul className="studio-ba-notes">
+      {notes.map((note) => <li key={note}><i className={before ? "studio-review-dot" : "studio-check"} />{note}</li>)}
+    </ul>
+  </div>;
 }
 
 function DeliveredFiles({ locale }: { locale: Locale }) {
@@ -67,39 +72,51 @@ function DeliveredFiles({ locale }: { locale: Locale }) {
   </div>;
 }
 
-function ProofSection({ locale }: { locale: Locale }) {
+function BeforeAfterSection({ locale }: { locale: Locale }) {
   const { t } = getTranslator(locale);
   const prefix = localePrefix(locale);
-  return <section className="studio-proof" aria-labelledby="studio-proof-title" data-reveal>
-    <div className="studio-proof-lead">
+  return <section className="studio-ba" aria-labelledby="studio-ba-title" data-reveal>
+    <div className="studio-ba-lead">
       <p className="studio-eyebrow">{t("home_before_after")}</p>
-      <h2 id="studio-proof-title">{t("home_both_views_exactly_where")}</h2>
-      <p>{t("home_import_simulator_device_captures")}</p>
+      <h2 id="studio-ba-title">{t("home_ba_title")}</h2>
+      <p>{t("home_ba_body")}</p>
     </div>
-    <div className="studio-proof-board">
-      <div className="studio-proof-before">
-        <p className="studio-proof-label"><b>{t("home_before")}</b>{t("home_raw_captures_example")}</p>
-        <div className="studio-raw-pair">
-          <RawCapture locale={locale} kind="outer" />
-          <RawCapture locale={locale} kind="inner" />
+    <div className="studio-ba-board">
+      <figure className="studio-ba-compare">
+        <BeforeAfterSlider
+          label={t("home_ba_slider_label")}
+          before={<CompareLayer locale={locale} kind="before" />}
+          after={<CompareLayer locale={locale} kind="after" />}
+        />
+        <figcaption>{t("home_ba_caption")}</figcaption>
+      </figure>
+      <div className="studio-ba-side">
+        <div>
+          <p className="studio-ba-label">{t("home_ba_outer_title")}</p>
+          <div className="studio-ba-outer" aria-hidden="true">
+            <figure className="is-raw">
+              <div><HarborShot locale={locale} side="outer" /></div>
+              <figcaption><code>1206 × 2622</code><span>{t("home_size_not_accepted")}</span></figcaption>
+            </figure>
+            <span className="studio-ba-arrow">→</span>
+            <figure className="is-final">
+              <div><HarborShot locale={locale} side="outer" /></div>
+              <figcaption><code>{screenshotDimensions(OUTER)}</code><span>{t("home_ba_exact_size")}</span></figcaption>
+            </figure>
+          </div>
+        </div>
+        <div>
+          <p className="studio-ba-label">{t("home_delivered_zip_harbor_3")}</p>
+          <DeliveredFiles locale={locale} />
+        </div>
+        <div className="studio-ba-actions">
+          <Button as="a" variant="secondary" href="/api/example-zip?v=4" data-testid="cta-example" >{t("cta_example")}</Button>
+          <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo-proof" className="studio-inline-link">
+            {t("home_see_example")} <span aria-hidden="true">↗</span>
+          </Link>
+          <small>{t("home_before_example_files_after")}</small>
         </div>
       </div>
-      <div className="studio-proof-arrow" aria-hidden="true"><span>DuoShot</span></div>
-      <div className="studio-proof-after">
-        <p className="studio-proof-label"><b>{t("home_after")}</b>{t("home_delivered_zip_harbor_3")}</p>
-        <div className="studio-final-pair" aria-hidden="true">
-          <div className="studio-final is-outer"><div><HarborShot locale={locale} side="outer" /></div><span>{screenshotDimensions(OUTER)}</span></div>
-          <div className="studio-final is-inner"><div><HarborShot locale={locale} side="inner" /></div><span>{screenshotDimensions(INNER)}</span></div>
-        </div>
-        <DeliveredFiles locale={locale} />
-      </div>
-    </div>
-    <div className="studio-proof-actions">
-      <Button as="a" variant="secondary" href="/api/example-zip?v=4" data-testid="cta-example" >{t("cta_example")}</Button>
-      <Link href={`${prefix}/tool?demo=harbor`} data-testid="cta-demo-proof" className="studio-inline-link">
-        {t("home_see_example")} <span aria-hidden="true">↗</span>
-      </Link>
-      <small>{t("home_before_example_files_after")}</small>
     </div>
   </section>;
 }
@@ -241,7 +258,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
               </p>
             </div>
             <div className="studio-hero-object">
-              <DuoDevice locale={locale} />
+              <HeroScan locale={locale} />
               <dl className="studio-hero-dimensions" data-testid="hero-dimensions">
                 <div className="is-outer">
                   <dt>{t("specs_outer_display")}</dt>
@@ -269,7 +286,7 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
             </div>
           </section>
 
-          <ProofSection locale={locale} />
+          <BeforeAfterSection locale={locale} />
 
           <SequenceSection locale={locale} />
 

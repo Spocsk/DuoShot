@@ -42,15 +42,42 @@ describe("marketing", () => {
   it("shows the open Harbor device turned to portrait, at its real scale", () => {
     cy.viewport(1397, 920);
     cy.visitFr("/");
-    cy.get(".studio-hero-object .duo-chassis").then(($closed) => {
-      cy.get(".studio-hero-object .duo-book").then(($open) => {
+    cy.get(".hero-scan .duo-chassis").then(($closed) => {
+      cy.get(".hero-scan .duo-book").then(($open) => {
         // Open 164.6 mm tall once turned, closed 117.8 mm.
         const ratio = $open[0].getBoundingClientRect().height / $closed[0].getBoundingClientRect().height;
         expect(ratio).to.be.closeTo(164.6 / 117.8, 0.03);
       });
     });
-    cy.get(".studio-hero-object .duo-book img").should("have.attr", "src", "/harbor/fr/01-inner.webp");
+    cy.get(".hero-scan .duo-book img").should("have.attr", "src", "/harbor/fr/01-inner.webp");
     cy.get('[data-testid="locale-switch"]').should("contain", "🇬🇧");
+  });
+
+  it("lists the blocking issues in the hero and compares before and after on a slider", () => {
+    cy.viewport(1397, 920);
+    cy.visitFr("/", {
+      onBeforeLoad(win) {
+        // Reduced motion keeps the hero on its finished report.
+        cy.stub(win, "matchMedia").callsFake((query: string) => ({
+          matches: query.includes("prefers-reduced-motion: reduce"), media: query, onchange: null,
+          addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+        }));
+      },
+    });
+    cy.get(".hero-scan").should("have.attr", "data-phase", "issues");
+    cy.get(".hero-scan-report li").should("have.length", 3).and("be.visible");
+    cy.get(".hero-scan-report").should("contain", "Texte sous le pli").and("contain", "Taille refusée").and("contain", "Transparence");
+    cy.get(".hero-scan .sr-only").should("contain", "trois points bloquants");
+    cy.get('[data-testid="before-after-range"]').scrollIntoView().should("have.value", "50").then(($input) => {
+      // React listens for the native input event; set the value the way the browser does, in the page's realm.
+      const input = $input[0] as HTMLInputElement;
+      const win = input.ownerDocument.defaultView as Window & typeof globalThis;
+      Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, "value")!.set!.call(input, "70");
+      input.dispatchEvent(new win.Event("input", { bubbles: true }));
+    });
+    cy.get(".studio-ba-slider").should(($slider) => {
+      expect(($slider[0] as HTMLElement).style.getPropertyValue("--pos")).to.eq("70%");
+    });
   });
 
   for (const [locale, path] of [["fr", "/"], ["en", "/en"]] as const) {
@@ -261,13 +288,13 @@ describe("screenshot dimensions and search intent", () => {
         expect(text.length).to.be.lessThan(120);
         expect(text).not.to.match(/10|générateur|generator/i);
       });
-      cy.get("#studio-proof-title").should("have.text", locale === "fr"
-        ? "Des captures brutes aux fichiers Duo vérifiés"
-        : "From raw captures to checked Duo files")
+      cy.get("#studio-ba-title").should("have.text", locale === "fr"
+        ? "Glissez pour voir ce que DuoShot corrige."
+        : "Drag to see what DuoShot fixes.")
         .invoke("text").should("not.match", /générateur|generator/i);
-      cy.get("#studio-proof-title + p").should("have.text", locale === "fr"
-        ? "Importez les vraies captures de votre app, prises sur simulateur ou appareil, et ajustez le cadrage au format Duo choisi. DuoShot vérifie les dimensions et le format des fichiers exportés, puis les range par écran dans un ZIP."
-        : "Upload real captures of your app from a simulator or device and adjust the framing for your chosen Duo size. DuoShot checks the exported files’ dimensions and format, then sorts them by screen in a ZIP.");
+      cy.get("#studio-ba-title + p").should("have.text", locale === "fr"
+        ? "À gauche, une capture brute de l’écran ouvert telle qu’on l’importe. À droite, le fichier exporté par DuoShot, à la taille exacte, opaque, recadré pour dégager le pli."
+        : "On the left, a raw open-screen capture as you import it. On the right, the file DuoShot exports: exact size, opaque, and reframed to clear the fold.");
       cy.get(".studio-faq .t-acc").should("have.length", 10);
       cy.contains(".studio-faq button", locale === "fr" ? "Combien d’images dans un set ?" : "How many images in a set?")
         .click().closest(".t-acc").find("p").should("be.visible")
