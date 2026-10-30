@@ -68,13 +68,16 @@ describe("marketing", () => {
     cy.get(".hero-scan-report li").should("have.length", 3).and("be.visible");
     cy.get(".hero-scan-report").should("contain", "Texte sous le pli").and("contain", "Taille refusée").and("contain", "Transparence");
     cy.get(".hero-scan .sr-only").should("contain", "trois points bloquants");
-    cy.get('[data-testid="before-after-range"]').scrollIntoView().should("have.value", "50").then(($input) => {
-      // React listens for the native input event; set the value the way the browser does, in the page's realm.
-      const input = $input[0] as HTMLInputElement;
-      const win = input.ownerDocument.defaultView as Window & typeof globalThis;
-      Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, "value")!.set!.call(input, "70");
-      input.dispatchEvent(new win.Event("input", { bubbles: true }));
-    });
+    cy.get('[data-testid="before-after-range"]').scrollIntoView().should("have.value", "50");
+    // Wait for hydration (React tags the node with its props), then set the value the way the browser does.
+    cy.get('[data-testid="before-after-range"]', { timeout: 30000 })
+      .should(($input) => expect(Object.keys($input[0]).some((key) => key.startsWith("__reactProps"))).to.eq(true))
+      .then(($input) => {
+        const input = $input[0] as HTMLInputElement;
+        const win = input.ownerDocument.defaultView as Window & typeof globalThis;
+        Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, "value")!.set!.call(input, "70");
+        input.dispatchEvent(new win.Event("input", { bubbles: true }));
+      });
     cy.get(".studio-ba-slider").should(($slider) => {
       expect(($slider[0] as HTMLElement).style.getPropertyValue("--pos")).to.eq("70%");
     });
@@ -289,8 +292,8 @@ describe("screenshot dimensions and search intent", () => {
         expect(text).not.to.match(/10|générateur|generator/i);
       });
       cy.get("#studio-ba-title").should("have.text", locale === "fr"
-        ? "Glissez pour voir ce que DuoShot corrige."
-        : "Drag to see what DuoShot fixes.")
+        ? "Des captures brutes aux fichiers Duo vérifiés"
+        : "From raw captures to checked Duo files")
         .invoke("text").should("not.match", /générateur|generator/i);
       cy.get("#studio-ba-title + p").should("have.text", locale === "fr"
         ? "À gauche, une capture brute de l’écran ouvert telle qu’on l’importe. À droite, le fichier exporté par DuoShot, à la taille exacte, opaque, recadré pour dégager le pli."

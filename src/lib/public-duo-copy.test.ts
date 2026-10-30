@@ -49,8 +49,8 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
       ? "Déposez les captures de votre app : DuoShot repère ce qui bloquerait App Store Connect (taille refusée, transparence, texte sous le pli) et vous exporte les formats Duo 1398×2034 et 2007×2853 en un ZIP."
       : "Drop in your app's screenshots: DuoShot spots what would block App Store Connect (rejected size, transparency, text under the fold) and exports the 1398×2034 and 2007×2853 Duo sizes as a ZIP.";
     const h2 = locale === "fr"
-      ? "Glissez pour voir ce que DuoShot corrige."
-      : "Drag to see what DuoShot fixes.";
+      ? "Des captures brutes aux fichiers Duo vérifiés"
+      : "From raw captures to checked Duo files";
     const proofIntro = locale === "fr"
       ? "À gauche, une capture brute de l’écran ouvert telle qu’on l’importe. À droite, le fichier exporté par DuoShot, à la taille exacte, opaque, recadré pour dégager le pli."
       : "On the left, a raw open-screen capture as you import it. On the right, the file DuoShot exports: exact size, opaque, and reframed to clear the fold.";
