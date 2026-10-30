@@ -46,14 +46,14 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
       ? "Vos captures App Store, prêtes pour l’iPhone Duo."
       : "Your App Store screenshots, ready for iPhone Duo.";
     const subtitle = locale === "fr"
-      ? "Importez les captures de votre app : DuoShot les met aux formats Duo acceptés par Apple (1398×2034 et 2007×2853) et vous les exporte en un ZIP."
-      : "Upload your app's screenshots: DuoShot fits them to the Duo sizes Apple accepts (1398×2034 and 2007×2853) and exports them as a ZIP.";
+      ? "Déposez les captures de votre app : DuoShot repère ce qui bloquerait App Store Connect (taille refusée, transparence, texte sous le pli) et vous exporte les formats Duo 1398×2034 et 2007×2853 en un ZIP."
+      : "Drop in your app's screenshots: DuoShot spots what would block App Store Connect (rejected size, transparency, text under the fold) and exports the 1398×2034 and 2007×2853 Duo sizes as a ZIP.";
     const h2 = locale === "fr"
       ? "Des captures brutes aux fichiers Duo vérifiés"
       : "From raw captures to checked Duo files";
     const proofIntro = locale === "fr"
-      ? "Importez les vraies captures de votre app, prises sur simulateur ou appareil, et ajustez le cadrage au format Duo choisi. DuoShot vérifie les dimensions et le format des fichiers exportés, puis les range par écran dans un ZIP."
-      : "Upload real captures of your app from a simulator or device and adjust the framing for your chosen Duo size. DuoShot checks the exported files’ dimensions and format, then sorts them by screen in a ZIP.";
+      ? "À gauche, une capture brute de l’écran ouvert telle qu’on l’importe. À droite, le fichier exporté par DuoShot, à la taille exacte, opaque, recadré pour dégager le pli."
+      : "On the left, a raw open-screen capture as you import it. On the right, the file DuoShot exports: exact size, opaque, and reframed to clear the fold.";
     const details = locale === "fr"
       ? "Écran externe, écran interne ou les deux : vous choisissez. Essai gratuit, sans carte."
       : "Outer display, inner display, or both: your choice. Free trial, no card required.";
