@@ -21,6 +21,7 @@ import {
   normalizeCropTransform,
   connectPreviewStyle,
   duoSpec,
+  firstDuoScreenshotIsLandscape,
   type CropTransform,
   type FitMode,
   type Locale,
@@ -341,6 +342,11 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
   }, [effectiveInnerInspects, innerSpec.height, innerSpec.width, innerTransforms, globalFit, outerInspects, outerSpec.height, outerSpec.width, outerTransforms]);
   const severeQualityCount = qualityItems.filter((item) => item.severity === "severe").length;
   const selectedPicks = duoPicks(duoSelection, outerFiles.length, effectiveInner.length);
+  // Non-blocking: a landscape first Duo screenshot shows only one result in App Store search (observed, not Apple docs).
+  const firstPick = selectedPicks[0];
+  const firstDuoLandscape = firstDuoScreenshotIsLandscape(
+    firstPick ? [firstPick.side === "outer" ? outerSpec : innerSpec] : [],
+  );
   const cloneAlert = clones.some((item) => item.label === "risk" && selectedPicks.some((pick) => pick.side === "outer" && pick.index === item.index) && selectedPicks.some((pick) => pick.side === "inner" && pick.index === item.index));
 
   function resetPreparation() {
@@ -790,7 +796,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
           <ToolStepBar value={toolPanel} done={stepsDone} onChange={goToPanel} />
           <div key={toolPanel} className="tool-panel-content" id={`tool-panel-${toolPanel}`} role="tabpanel" aria-labelledby={`tool-tab-${toolPanel}`}>
             {toolPanel === "captures" ? <CapturesPanel active={active} outerSpec={outerSpec} innerSpec={innerSpec} outerFiles={outerFiles} innerFiles={innerFiles}
-              effectiveInner={effectiveInner} sameSet={sameSet} cloneForced={cloneForced} unpaired={unpaired} warning={warning}
+              effectiveInner={effectiveInner} sameSet={sameSet} cloneForced={cloneForced} unpaired={unpaired} warning={warning} firstDuoLandscape={firstDuoLandscape}
               sameSetOpen={sameSetOpen} setSameSetOpen={setSameSetOpen} onSideFiles={onSideFiles} patchActive={patchActive} setZipUrl={setZipUrl}
             /> : null}
             {toolPanel === "adjust" ? <>

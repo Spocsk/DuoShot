@@ -20,6 +20,7 @@ export function CapturesPanel({
   cloneForced,
   unpaired,
   warning,
+  firstDuoLandscape,
   sameSetOpen,
   setSameSetOpen,
   onSideFiles,
@@ -36,6 +37,7 @@ export function CapturesPanel({
   cloneForced: boolean;
   unpaired: boolean;
   warning: string | null;
+  firstDuoLandscape: boolean;
   sameSetOpen: boolean;
   setSameSetOpen: Dispatch<SetStateAction<boolean>>;
   onSideFiles: (side: "outer" | "inner", list: FileInput) => Promise<void>;
@@ -73,6 +75,11 @@ export function CapturesPanel({
     {unpaired ? (
       <p className="ds-warn" role="status" data-testid="warn-unpaired">
         {t("tool_warn_unpaired")}
+      </p>
+    ) : null}
+    {firstDuoLandscape ? (
+      <p className="ds-warn" role="status" data-testid="warn-landscape-first">
+        {t("duo_landscape_first_warning")}
       </p>
     ) : null}
     {warning === "TOO_FEW" ? (
