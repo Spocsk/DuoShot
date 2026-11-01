@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl, MARKETING_ROUTE_PAIRS } from "@/lib/site";
+import { LEGAL_PATH } from "@/lib/seo";
 import { COMPARE_SITEMAP_PRIORITY, comparePublishedRoutes } from "@/lib/compare";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
-    ...MARKETING_ROUTE_PAIRS,
+    ...MARKETING_ROUTE_PAIRS.filter((route) => !LEGAL_PATH.test(route.fr)),
     ...comparePublishedRoutes().map((route) => ({ ...route, priority: COMPARE_SITEMAP_PRIORITY })),
   ];
   return routes.flatMap((route) => [

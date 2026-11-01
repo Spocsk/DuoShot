@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import type { Locale } from "./specs";
 import { SITE_NAME, absoluteUrl, localizedPath } from "./site";
 
+/** Legal pages stay reachable but out of the index. */
+export const LEGAL_PATH = /^(?:\/en)?\/(privacy|terms|cookies|legal)(?:\/|$)/;
+
 export function pageMetadata(options: {
   locale: Locale;
   path: string;
@@ -14,7 +17,11 @@ export function pageMetadata(options: {
   const isHome = canonicalPath === "/" || canonicalPath === "/en";
   const socialTitle = isHome ? options.title : `${options.title} · ${SITE_NAME}`;
   return {
-    robots: /^(?:\/en)?\/(tool|account|login|signup|forgot-password|reset-password|invite|r)(?:\/|$)/.test(canonicalPath) ?{ index: false, follow: false } : undefined,
+    robots: /^(?:\/en)?\/(tool|account|login|signup|forgot-password|reset-password|invite|r)(?:\/|$)/.test(canonicalPath)
+      ? { index: false, follow: false }
+      : LEGAL_PATH.test(canonicalPath)
+        ? { index: false, follow: true }
+        : undefined,
     title: isHome ? { absolute: socialTitle } : options.title,
     description: options.description,
     alternates: {
