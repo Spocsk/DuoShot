@@ -44,12 +44,12 @@ L’écran interne se plie en son milieu. Éloignez les titres et les commandes 
 
 | Emplacement | Exemples d’appareils | Tailles portrait |
 | --- | --- | --- |
-| Dynamic Island, grand écran | iPhone 18 Pro Max, 17 Pro Max, 16 Pro Max, Air, 16 Plus, 15 Pro Max | 1320 × 2868, 1290 × 2796, 1260 × 2736 |
+| Dynamic Island, grand écran | iPhone Air, 18 Pro Max, 17 Pro Max, 16 Pro Max, 16 Plus, 15 Pro Max, 15 Plus, 14 Pro Max | 1320 × 2868, 1290 × 2796, 1260 × 2736 |
 | Dynamic Island, écran moyen (requis) | iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15, 14 Pro | 1206 × 2622, 1179 × 2556 |
 | Face ID, grand écran | iPhone 14 Plus, 13 Pro Max, 12 Pro Max, 11 Pro Max, 11, XS Max, XR | 1284 × 2778, 1242 × 2688 |
-| Face ID, écran moyen | iPhone 17e, 16e, 14, 13, 13 mini, 12, 12 mini, 11 Pro | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
+| Face ID, écran moyen | iPhone 17e, 16e, 14, 13 Pro, 13, 13 mini, 12 Pro, 12, 12 mini, 11 Pro | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
 | Bouton principal, grand écran | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
-| Bouton principal, écran moyen | iPhone SE (2e et 3e gén.), 8, 7, 6s, 6 | 750 × 1334 |
+| Bouton principal, écran moyen | iPhone SE (3e, 2e gén.), 8, 7, 6s, 6 | 750 × 1334 |
 
 Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store Connect utilise des captures réduites de l’emplacement Face ID grand écran, et inversement. En pratique, la plupart des équipes déposent le jeu **1206 × 2622** requis et, en option, un jeu **1320 × 2868**. Voir la [page 1206 × 2622](/1206x2622) et la [page 1320 × 2868](/1320x2868).
 
@@ -57,11 +57,11 @@ Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store
 
 | Emplacement | Exemples d’appareils | Tailles portrait |
 | --- | --- | --- |
-| Écran 13″ (requis pour les apps iPad) | iPad Pro (M5, M4), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
+| Écran 13″ (requis pour les apps iPad) | iPad Pro (M5, M4), iPad Pro (6e, 5e, 4e, 3e, 1re gén.), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
 | Écran 12,9″ | iPad Pro (2e gén.) | 2048 × 2732 |
-| Écran 11″ | iPad Pro (M5, M4), iPad Air, iPad (A16), iPad mini (A17 Pro) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
-| Écran 10,5″ | iPad Air (3e gén.), iPad (7e à 9e gén.) | 1668 × 2224 |
-| Écran 9,7″ | Anciens iPad, iPad Air, iPad mini | 1536 × 2048, 768 × 1024 (et versions sans barre d’état) |
+| Écran 11″ | iPad Pro (M5, M4), iPad Pro (4e, 3e, 2e, 1re gén.), iPad Air (M4, M3, M2), iPad Air (5e, 4e gén.), iPad (A16), iPad (10e gén.), iPad mini (A17 Pro), iPad mini (6e gén.) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
+| Écran 10,5″ | iPad Pro, iPad Air (3e gén.), iPad (9e, 8e, 7e gén.) | 1668 × 2224 |
+| Écran 9,7″ | iPad Pro, iPad Air, iPad Air 2, iPad (6e, 5e, 4e, 3e gén.), iPad mini (5e gén.), iPad mini 4 | 1536 × 2048, 768 × 1024 (et versions sans barre d’état) |
 
 ## Mac, Apple TV, Vision Pro et Apple Watch
 

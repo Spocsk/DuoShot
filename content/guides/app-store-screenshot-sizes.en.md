@@ -44,12 +44,12 @@ The inner display folds in the middle. Keep headlines and important controls awa
 
 | Slot | Example devices | Portrait sizes |
 | --- | --- | --- |
-| Dynamic Island, large display | iPhone 18 Pro Max, 17 Pro Max, 16 Pro Max, Air, 16 Plus, 15 Pro Max | 1320 × 2868, 1290 × 2796, 1260 × 2736 |
+| Dynamic Island, large display | iPhone Air, 18 Pro Max, 17 Pro Max, 16 Pro Max, 16 Plus, 15 Pro Max, 15 Plus, 14 Pro Max | 1320 × 2868, 1290 × 2796, 1260 × 2736 |
 | Dynamic Island, medium display (required) | iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15, 14 Pro | 1206 × 2622, 1179 × 2556 |
 | Face ID, large display | iPhone 14 Plus, 13 Pro Max, 12 Pro Max, 11 Pro Max, 11, XS Max, XR | 1284 × 2778, 1242 × 2688 |
-| Face ID, medium display | iPhone 17e, 16e, 14, 13, 13 mini, 12, 12 mini, 11 Pro | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
+| Face ID, medium display | iPhone 17e, 16e, 14, 13 Pro, 13, 13 mini, 12 Pro, 12, 12 mini, 11 Pro | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
 | Home Button, large display | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
-| Home Button, medium display | iPhone SE (2nd and 3rd gen), 8, 7, 6s, 6 | 750 × 1334 |
+| Home Button, medium display | iPhone SE (3rd, 2nd gen), 8, 7, 6s, 6 | 750 × 1334 |
 
 If you skip the large Dynamic Island slot, App Store Connect falls back to scaled screenshots from the Face ID large display slot, and the reverse also applies. In practice most teams upload the required **1206 × 2622** set and, optionally, a **1320 × 2868** set. See the [1206 × 2622 page](/en/1206x2622) and the [1320 × 2868 page](/en/1320x2868).
 
@@ -57,11 +57,11 @@ If you skip the large Dynamic Island slot, App Store Connect falls back to scale
 
 | Slot | Example devices | Portrait sizes |
 | --- | --- | --- |
-| 13" display (required for iPad apps) | iPad Pro (M5, M4), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
+| 13" display (required for iPad apps) | iPad Pro (M5, M4), iPad Pro (6th, 5th, 4th, 3rd, 1st gen), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
 | 12.9" display | iPad Pro (2nd gen) | 2048 × 2732 |
-| 11" display | iPad Pro (M5, M4), iPad Air, iPad (A16), iPad mini (A17 Pro) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
-| 10.5" display | iPad Air (3rd gen), iPad (7th to 9th gen) | 1668 × 2224 |
-| 9.7" display | Older iPad, iPad Air, iPad mini | 1536 × 2048, 768 × 1024 (and versions without status bar) |
+| 11" display | iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A17 Pro), iPad mini (6th gen) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
+| 10.5" display | iPad Pro, iPad Air (3rd gen), iPad (9th, 8th, 7th gen) | 1668 × 2224 |
+| 9.7" display | iPad Pro, iPad Air, iPad Air 2, iPad (6th, 5th, 4th, 3rd gen), iPad mini (5th gen), iPad mini 4 | 1536 × 2048, 768 × 1024 (and versions without status bar) |
 
 ## Mac, Apple TV, Vision Pro and Apple Watch
 
