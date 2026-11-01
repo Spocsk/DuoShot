@@ -58,7 +58,7 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       }
       const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
       expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle"]);
-      expect(graph[0]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: "2026-10-16", url: absoluteUrl(localizedPath(locale, comparisonPath(slug))), author: { "@id": `${absoluteUrl("/")}#organization` } });
+      expect(graph[0]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: COMPARISONS.find((entry) => entry.slug === slug)!.checked, url: absoluteUrl(localizedPath(locale, comparisonPath(slug))), author: { "@id": `${absoluteUrl("/")}#organization` } });
     });
   }
 
@@ -84,14 +84,19 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
   });
 });
 
-it("generates all four comparison slugs, keeping Screenhance", () => {
+it("generates every comparison slug, keeping Screenhance", () => {
   expect(generateStaticParams()).toEqual([
     { slug: "duoshot-vs-applaunchflow" },
     { slug: "duoshot-vs-appscreens" },
     { slug: "duoshot-vs-screenhance" },
     { slug: "duoshot-vs-app-asset-kit" },
+    { slug: "duoshot-vs-screenies" },
+    { slug: "duoshot-vs-appshot-maker" },
+    { slug: "duoshot-vs-applaunchpad" },
+    { slug: "duoshot-vs-screenshots-pro" },
+    { slug: "duoshot-vs-appmockup" },
   ]);
-  expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(4);
+  expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(COMPARISONS.length);
 });
 
 it("returns 404 for unknown comparisons and unsupported languages", async () => {

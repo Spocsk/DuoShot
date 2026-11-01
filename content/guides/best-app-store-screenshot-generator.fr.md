@@ -94,6 +94,11 @@ Non. DuoShot produit un ZIP, et vous déposez les captures vous-même. AppScreen
 - [DuoShot vs AppScreens](/guides/duoshot-vs-appscreens)
 - [DuoShot vs Screenhance](/guides/duoshot-vs-screenhance)
 - [DuoShot vs App Asset Kit](/guides/duoshot-vs-app-asset-kit)
+- [DuoShot vs Screenies](/guides/duoshot-vs-screenies)
+- [DuoShot vs AppShot Maker](/guides/duoshot-vs-appshot-maker)
+- [DuoShot vs AppLaunchpad](/guides/duoshot-vs-applaunchpad)
+- [DuoShot vs Screenshots.pro](/guides/duoshot-vs-screenshots-pro)
+- [DuoShot vs AppMockUp](/guides/duoshot-vs-appmockup)
 
 Pour préparer les fichiers, choisir les emplacements et effectuer le dépôt manuel, consultez [Captures iPhone Duo dans App Store Connect](/guides/iphone-duo-app-store-connect).
 

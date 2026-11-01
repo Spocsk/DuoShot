@@ -94,6 +94,11 @@ No. DuoShot exports a ZIP; you upload the screenshots manually. AppScreens, AppL
 - [DuoShot vs AppScreens](/en/guides/duoshot-vs-appscreens)
 - [DuoShot vs Screenhance](/en/guides/duoshot-vs-screenhance)
 - [DuoShot vs App Asset Kit](/en/guides/duoshot-vs-app-asset-kit)
+- [DuoShot vs Screenies](/en/guides/duoshot-vs-screenies)
+- [DuoShot vs AppShot Maker](/en/guides/duoshot-vs-appshot-maker)
+- [DuoShot vs AppLaunchpad](/en/guides/duoshot-vs-applaunchpad)
+- [DuoShot vs Screenshots.pro](/en/guides/duoshot-vs-screenshots-pro)
+- [DuoShot vs AppMockUp](/en/guides/duoshot-vs-appmockup)
 
 For file preparation, display slots and manual upload steps, read [iPhone Duo screenshots in App Store Connect](/en/guides/iphone-duo-app-store-connect).
 
