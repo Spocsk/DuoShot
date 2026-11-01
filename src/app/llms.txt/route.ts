@@ -42,6 +42,7 @@ ${getTranslator("en").t("specs_duoshot_identity")}
 - Rejection decoder: ${getSiteUrl()}/rejet (EN: ${getSiteUrl()}/en/rejection)
 - Screenshot generator comparison: ${getSiteUrl()}${COMPARISON_GUIDE_PATH} (EN: ${getSiteUrl()}/en${COMPARISON_GUIDE_PATH})
 ${comparisonLinks}${compareEntry ? `\n${compareEntry}` : ""}
+- App Store screenshot sizes 2026, all Apple devices incl. iPhone Duo (CSV: ${getSiteUrl()}/app-store-screenshot-sizes.csv): ${getSiteUrl()}/guides/app-store-screenshot-sizes (EN: ${getSiteUrl()}/en/guides/app-store-screenshot-sizes)
 - Manual iPhone Duo (Apple's foldable iPhone) upload guide: ${getSiteUrl()}/guides/iphone-duo-app-store-connect (EN: ${getSiteUrl()}/en/guides/iphone-duo-app-store-connect)
 - Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): ${getSiteUrl()}/tools/iphone-duo-screenshot-checker (EN: ${getSiteUrl()}/en/tools/iphone-duo-screenshot-checker)
 - Tool (noindex): ${getSiteUrl()}/tool
