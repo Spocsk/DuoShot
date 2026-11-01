@@ -7,9 +7,11 @@ import type { Locale } from "./specs";
 // AppScreens: template, visual editor and localized screenshot FAQs.
 // Screenhance: homepage introduction (store screenshots, mockups and launch visuals).
 // App Asset Kit: screenshot/icon maker, local processing, export workflow and default sizes.
+// Checked 2026-11-01: Screenies (iPhone Duo generator page), AppShot Maker, AppLaunchpad, Screenshots.pro, AppMockUp homepages.
 export const COMPARISONS = [
   {
     slug: "duoshot-vs-applaunchflow",
+    checked: "2026-10-16",
     name: "AppLaunchFlow",
     url: "https://applaunchflow.com/",
     summary: {
@@ -23,6 +25,7 @@ export const COMPARISONS = [
   },
   {
     slug: "duoshot-vs-appscreens",
+    checked: "2026-10-16",
     name: "AppScreens",
     url: "https://appscreens.com/",
     summary: {
@@ -36,6 +39,7 @@ export const COMPARISONS = [
   },
   {
     slug: "duoshot-vs-screenhance",
+    checked: "2026-10-16",
     name: "Screenhance",
     url: "https://screenhance.com/",
     summary: {
@@ -49,6 +53,7 @@ export const COMPARISONS = [
   },
   {
     slug: "duoshot-vs-app-asset-kit",
+    checked: "2026-10-16",
     name: "App Asset Kit",
     url: "https://www.appassetkit.com/",
     summary: {
@@ -60,6 +65,76 @@ export const COMPARISONS = [
       en: "Screenshots and app icons, local browser processing",
     },
   },
+  {
+    slug: "duoshot-vs-screenies",
+    name: "Screenies",
+    url: "https://screenies.app/iphone-duo-screenshot-generator",
+    checked: "2026-11-01",
+    summary: {
+      fr: "Screenies présente un générateur de captures App Store qui ajoute titres, fonds et le cadre iPhone Duo d’Apple à vos captures réelles, pour l’écran interne ou externe. Il fonctionne avec des crédits (1 crédit par slide externe, 2 par slide interne) et peut déposer un jeu terminé dans App Store Connect après l’achat d’un pack de crédits.",
+      en: "Screenies presents an App Store screenshot generator that adds headlines, backgrounds and Apple’s iPhone Duo frame to your real captures, for the inner or outer display. It uses credits (1 credit per outer slide, 2 per inner slide) and can upload a finished set to App Store Connect after a credit pack purchase.",
+    },
+    focus: {
+      fr: "Captures avec cadre iPhone Duo, crédits et dépôt App Store Connect",
+      en: "Framed iPhone Duo screenshots, credits and App Store Connect upload",
+    },
+  },
+  {
+    slug: "duoshot-vs-appshot-maker",
+    name: "AppShot Maker",
+    url: "https://appshotmaker.com/en",
+    checked: "2026-11-01",
+    summary: {
+      fr: "AppShot Maker présente un éditeur de captures App Store et Google Play dans le navigateur, sans envoi des fichiers au serveur. Il propose des préréglages iPhone 6,3″, 6,9″, iPhone Duo et iPad 13″, des cadres d’appareil et un export ZIP de PNG.",
+      en: "AppShot Maker presents a browser-based App Store and Google Play screenshot editor that does not upload your files. It offers iPhone 6.3″, 6.9″, iPhone Duo and iPad 13″ presets, device frames and a PNG ZIP export.",
+    },
+    focus: {
+      fr: "Éditeur local dans le navigateur, préréglages Duo et cadres",
+      en: "Local in-browser editor, Duo presets and frames",
+    },
+  },
+  {
+    slug: "duoshot-vs-applaunchpad",
+    name: "AppLaunchpad",
+    url: "https://theapplaunchpad.com/",
+    checked: "2026-11-01",
+    summary: {
+      fr: "AppLaunchpad présente un générateur de captures App Store et Google Play avec plus de 1 000 modèles, des cadres d’appareils iOS et Android, la localisation et le redimensionnement automatique vers les tailles des stores.",
+      en: "AppLaunchpad presents an App Store and Google Play screenshot generator with 1,000+ templates, iOS and Android device frames, localization and automatic resizing to store sizes.",
+    },
+    focus: {
+      fr: "Modèles, cadres d’appareils et localisation",
+      en: "Templates, device frames and localization",
+    },
+  },
+  {
+    slug: "duoshot-vs-screenshots-pro",
+    name: "Screenshots.pro",
+    url: "https://screenshots.pro/",
+    checked: "2026-11-01",
+    summary: {
+      fr: "Screenshots.pro présente un éditeur de captures panoramiques pour iOS et Android, utilisable sans compte, avec des cadres d’appareils (dont des angles 3D), la traduction des captures, l’export multi-tailles et une API REST pour les pipelines CI/CD.",
+      en: "Screenshots.pro presents a panoramic screenshot editor for iOS and Android, usable without an account, with device frames (including 3D angles), screenshot translation, multi-size export and a REST API for CI/CD pipelines.",
+    },
+    focus: {
+      fr: "Éditeur panoramique, cadres 3D et API",
+      en: "Panoramic editor, 3D frames and API",
+    },
+  },
+  {
+    slug: "duoshot-vs-appmockup",
+    name: "AppMockUp",
+    url: "https://app-mockup.com/",
+    checked: "2026-11-01",
+    summary: {
+      fr: "AppMockUp Studio présente un éditeur gratuit de captures App Store et Google Play, utilisable sans compte, avec des fonds et dégradés prédéfinis.",
+      en: "AppMockUp Studio presents a free App Store and Google Play screenshot designer, usable without an account, with preset backgrounds and gradients.",
+    },
+    focus: {
+      fr: "Éditeur gratuit sans compte",
+      en: "Free editor, no account",
+    },
+  },
 ] as const;
 
 export function comparisonPath(slug: string) {
@@ -69,7 +144,9 @@ export function comparisonPath(slug: string) {
 export function competitorComparison(locale: Locale, slug: string) {
   const competitor = COMPARISONS.find((entry) => entry.slug === slug);
   if (!competitor) return null;
-  const { name, url, summary, focus } = competitor;
+  const { name, url, summary, focus, checked } = competitor;
+  const [year, month, day] = checked.split("-").map(Number);
+  const checkedOn = new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
   const title = locale === "fr"
     ? `DuoShot vs ${name} : captures App Store`
     : `DuoShot vs ${name}: App Store screenshots`;
@@ -81,7 +158,7 @@ export function competitorComparison(locale: Locale, slug: string) {
     .map((entry) => `- [DuoShot vs ${entry.name}](${link(comparisonPath(entry.slug))})`).join("\n");
   const body = locale === "fr" ? `# ${title}
 
-DuoShot (duoshot.site) est notre produit pour préparer les captures iPhone Duo (le téléphone pliable d'Apple). Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **16 octobre 2026**. Il ne s’agit pas d’un test du service concurrent.
+DuoShot (duoshot.site) est notre produit pour préparer les captures iPhone Duo (le téléphone pliable d'Apple). Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **${checkedOn}**. Il ne s’agit pas d’un test du service concurrent.
 
 ## Ce que présente ${name}
 
@@ -127,7 +204,7 @@ Partez de votre besoin : composition visuelle, langues à traiter, dimensions de
 ${related}
 ` : `# ${title}
 
-DuoShot (duoshot.site) is our product for preparing iPhone Duo (Apple's foldable iPhone) screenshots. This comparison describes its workflow and summarizes the public presentation of [${name}](${url}), checked on **October 16, 2026**. We have not tested the competing service.
+DuoShot (duoshot.site) is our product for preparing iPhone Duo (Apple's foldable iPhone) screenshots. This comparison describes its workflow and summarizes the public presentation of [${name}](${url}), checked on **${checkedOn}**. We have not tested the competing service.
 
 ## What ${name} presents
 
@@ -172,5 +249,5 @@ Start with your needs: visual composition, languages, output dimensions and uplo
 - [App Store screenshot generator guide](${link(COMPARISON_GUIDE_PATH)})
 ${related}
 `;
-  return { title, description, dateModified: "2026-10-16", body };
+  return { title, description, dateModified: checked, body };
 }

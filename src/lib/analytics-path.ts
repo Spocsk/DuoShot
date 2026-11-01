@@ -8,6 +8,7 @@ const PUBLIC_ROUTES = new Set([
   // Fixed public SEO slugs from comparisons.ts, never arbitrary /guides/[slug] values.
   "/guides/duoshot-vs-applaunchflow", "/guides/duoshot-vs-appscreens",
   "/guides/duoshot-vs-screenhance", "/guides/duoshot-vs-app-asset-kit",
+  "/guides/duoshot-vs-screenies", "/guides/duoshot-vs-appshot-maker", "/guides/duoshot-vs-applaunchpad", "/guides/duoshot-vs-screenshots-pro", "/guides/duoshot-vs-appmockup",
 ]);
 
 /** Only known route names are allowed in analytics; never send IDs or query strings. */
