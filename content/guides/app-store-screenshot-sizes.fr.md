@@ -15,7 +15,7 @@ Toutes les tailles ci-dessous viennent des [spécifications de captures d’Appl
 
 ## Qu’est-ce qui est requis, et qu’est-ce qui est optionnel ?
 
-App Store Connect n’exige que deux tailles pour soumettre une app. Toutes les autres sont optionnelles, car App Store Connect réduit vos captures pour les appareils plus petits quand l’interface est identique.
+Pour une app iPhone ou iPad, App Store Connect n’exige que deux tailles : l’iPhone avec Dynamic Island (écran moyen) et, si l’app tourne sur iPad, l’écran iPad 13 pouces. Les apps Mac, Apple TV, Apple Vision Pro et Apple Watch ont chacune leur propre taille requise. Toutes les autres tailles iPhone et iPad sont optionnelles, car App Store Connect réduit vos captures pour les appareils plus petits quand l’interface est identique.
 
 | Emplacement | Requis ? | Tailles portrait acceptées |
 | --- | --- | --- |
@@ -47,7 +47,7 @@ L’écran interne se plie en son milieu. Éloignez les titres et les commandes 
 | Dynamic Island, grand écran | iPhone 18 Pro Max, 17 Pro Max, 16 Pro Max, Air, 16 Plus, 15 Pro Max | 1320 × 2868, 1290 × 2796, 1260 × 2736 |
 | Dynamic Island, écran moyen (requis) | iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15, 14 Pro | 1206 × 2622, 1179 × 2556 |
 | Face ID, grand écran | iPhone 14 Plus, 13 Pro Max, 12 Pro Max, 11 Pro Max, 11, XS Max, XR | 1284 × 2778, 1242 × 2688 |
-| Face ID, écran moyen | iPhone 17e, 16e, 14, 13, 13 mini, 12, 12 mini, 11 Pro, XS | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
+| Face ID, écran moyen | iPhone 17e, 16e, 14, 13, 13 mini, 12, 12 mini, 11 Pro | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
 | Bouton principal, grand écran | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
 | Bouton principal, écran moyen | iPhone SE (2e et 3e gén.), 8, 7, 6s, 6 | 750 × 1334 |
 

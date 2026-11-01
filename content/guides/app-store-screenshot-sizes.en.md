@@ -15,7 +15,7 @@ All sizes below come from [Apple's screenshot specifications](https://developer.
 
 ## What is required, and what is optional?
 
-App Store Connect needs only two sizes to submit an app. Every other size is optional, because App Store Connect scales your screenshots down for smaller devices when the interface is the same.
+For an iPhone or iPad app, App Store Connect requires only two sizes: iPhone with Dynamic Island (medium display) and, if the app runs on iPad, the iPad 13-inch display. Mac, Apple TV, Apple Vision Pro and Apple Watch apps each have their own required size. Every other iPhone and iPad size is optional, because App Store Connect scales your screenshots down for smaller devices when the interface is the same.
 
 | Slot | Required? | Portrait sizes accepted |
 | --- | --- | --- |
@@ -47,7 +47,7 @@ The inner display folds in the middle. Keep headlines and important controls awa
 | Dynamic Island, large display | iPhone 18 Pro Max, 17 Pro Max, 16 Pro Max, Air, 16 Plus, 15 Pro Max | 1320 × 2868, 1290 × 2796, 1260 × 2736 |
 | Dynamic Island, medium display (required) | iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15, 14 Pro | 1206 × 2622, 1179 × 2556 |
 | Face ID, large display | iPhone 14 Plus, 13 Pro Max, 12 Pro Max, 11 Pro Max, 11, XS Max, XR | 1284 × 2778, 1242 × 2688 |
-| Face ID, medium display | iPhone 17e, 16e, 14, 13, 13 mini, 12, 12 mini, 11 Pro, XS | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
+| Face ID, medium display | iPhone 17e, 16e, 14, 13, 13 mini, 12, 12 mini, 11 Pro | 1170 × 2532, 1125 × 2436, 1080 × 2340 |
 | Home Button, large display | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
 | Home Button, medium display | iPhone SE (2nd and 3rd gen), 8, 7, 6s, 6 | 750 × 1334 |
 
