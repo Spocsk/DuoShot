@@ -14,9 +14,9 @@ iPhone,Face ID (medium display),"iPhone 13 mini, 12 mini",1080,2340,2340,1080,Op
 iPhone,Home Button (large display),"iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus",1242,2208,2208,1242,Optional
 iPhone,Home Button (medium display),"iPhone SE (3rd and 2nd gen), 8, 7, 6s, 6",750,1334,1334,750,Optional
 iPhone,Home Button (4-inch display),"iPhone SE (1st gen), 5s, 5c, 5",640,1136,1136,640,Optional
-iPhone,Home Button (4-inch display),"iPhone SE (1st gen), 5s, 5c, 5",640,1096,1096,640,Optional
+iPhone,Home Button (4-inch display),"iPhone SE (1st gen), 5s, 5c, 5",640,1096,1136,600,Optional
 iPhone,Home Button (3.5-inch display),"iPhone 4s, 4",640,960,960,640,Optional
-iPhone,Home Button (3.5-inch display),"iPhone 4s, 4",640,920,920,640,Optional
+iPhone,Home Button (3.5-inch display),"iPhone 4s, 4",640,920,960,600,Optional
 iPad,13-inch display,"iPad Pro (M5, M4), iPad Air (M4, M3, M2)",2064,2752,2752,2064,Required if app runs on iPad
 iPad,13-inch display,iPad Pro (6th to 3rd gen),2048,2732,2732,2048,Required if app runs on iPad
 iPad,12.9-inch display,iPad Pro (2nd gen),2048,2732,2732,2048,Optional
@@ -26,9 +26,9 @@ iPad,11-inch display,iPad Pro (4th to 1st gen),1668,2388,2388,1668,Optional
 iPad,11-inch display,"iPad (A16), iPad (10th gen), iPad Air (5th, 4th gen)",1640,2360,2360,1640,Optional
 iPad,10.5-inch display,"iPad Air (3rd gen), iPad (9th to 7th gen)",1668,2224,2224,1668,Optional
 iPad,9.7-inch display,"iPad Pro, iPad Air, iPad mini 4 and 5",1536,2048,2048,1536,Optional
-iPad,9.7-inch display,"iPad (6th to 2nd gen), iPad mini (3rd, 2nd gen)",1536,2008,2008,1536,Optional
-iPad,9.7-inch display,"iPad (6th to 2nd gen), iPad mini (3rd, 2nd gen)",768,1024,1024,768,Optional
-iPad,9.7-inch display,"iPad (6th to 2nd gen), iPad mini (3rd, 2nd gen)",768,1004,1004,768,Optional
+iPad,9.7-inch display,"iPad Pro, iPad Air, iPad Air 2, iPad (6th to 3rd gen), iPad mini (5th gen), iPad mini 4",1536,2008,2048,1496,Optional
+iPad,9.7-inch display,"iPad Pro, iPad Air, iPad Air 2, iPad (6th to 3rd gen), iPad mini (5th gen), iPad mini 4",768,1024,1024,768,Optional
+iPad,9.7-inch display,"iPad Pro, iPad Air, iPad Air 2, iPad (6th to 3rd gen), iPad mini (5th gen), iPad mini 4",768,1004,1024,748,Optional
 Mac,Mac,Mac,,,1280,800,Required for Mac apps (one of the 16:10 sizes)
 Mac,Mac,Mac,,,1440,900,Required for Mac apps (one of the 16:10 sizes)
 Mac,Mac,Mac,,,2560,1600,Required for Mac apps (one of the 16:10 sizes)
