@@ -11,7 +11,7 @@ import { screenshotDimensions } from "@/lib/screenshot-copy";
 import { sizeFaq } from "@/lib/size-faq";
 import { sizeEnrichment } from "@/lib/size-enrichment";
 import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
-import { appStoreConnectGuide, ASC_GUIDE_PATH } from "@/lib/guides";
+import { appStoreConnectGuide, ASC_GUIDE_PATH, sizesGuide, SIZES_GUIDE_PATH } from "@/lib/guides";
 import { localizedPath, toolPath } from "@/lib/site";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
@@ -81,6 +81,7 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         <ul className="mt-4 space-y-3">
           <li><Link href={localizedPath(locale, "/specs")} className="ds-link">{t("specs_iphone_duo_screenshot_sizes")}</Link></li>
           <li><Link href={localizedPath(locale, ASC_GUIDE_PATH)} className="ds-link">{guide.title}</Link></li>
+          <li><Link href={localizedPath(locale, SIZES_GUIDE_PATH)} className="ds-link">{sizesGuide(locale).title}</Link></li>
           {copy.related.map((related) => <li key={related}><Link href={localizedPath(locale, `/${related}`)} className="ds-link">{sizePageCopy(locale, related).title}</Link></li>)}
         </ul>
       </section>
