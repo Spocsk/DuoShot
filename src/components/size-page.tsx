@@ -9,7 +9,9 @@ import { MAX_IMAGES, type Locale } from "@/lib/specs";
 import { aspectRatio, SCREENSHOT_VERIFIED_ON, sizePageCopy, type ScreenshotSize } from "@/lib/screenshot-pages";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
 import { sizeFaq } from "@/lib/size-faq";
+import { sizeEnrichment } from "@/lib/size-enrichment";
 import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
+import { appStoreConnectGuide, ASC_GUIDE_PATH } from "@/lib/guides";
 import { localizedPath, toolPath } from "@/lib/site";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
@@ -20,6 +22,8 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
   const path = `/${size}`;
   const answer = size === "1398x2034" || size === "2007x2853" ? directAnswer(locale, size) : undefined;
   const faq = sizeFaq(locale, size);
+  const enrich = sizeEnrichment(locale, size);
+  const guide = appStoreConnectGuide(locale);
   const status = size === "1206x2622" ? t("specs_required_iphone_sizes") : size === "1320x2868" ? t("size_status_optional") : t("size_status_duo");
   return <div className="flex min-h-full flex-col">
     <JsonLd locale={locale} path={path} faq={faq} article={{ ...copy, dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer?.text }} />
@@ -41,6 +45,12 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         </dl>
         <a href={APPLE_SCREENSHOT_SOURCE} className="ds-link mt-4 inline-block">{t("specs_read_connect_specifications")}</a>
       </section>
+      <section className="mt-10" aria-labelledby="size-devices">
+        <h2 id="size-devices" className="font-display text-3xl">{enrich.devices.heading}</h2>
+        <p className="mt-4">{enrich.devices.body}</p>
+        <h3 className="font-display mt-6 text-xl">{enrich.orientation.heading}</h3>
+        <p className="mt-2">{enrich.orientation.body}</p>
+      </section>
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t("size_file_heading")}</h2>
         <p className="mt-4">{t("size_file_body")}</p>
@@ -54,6 +64,13 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         <p className="mt-4">{t(size === "1320x2868" ? "specs_iphone_69_body" : size === "1206x2622" ? "specs_iphone_63_body" : "specs_single_slot")}</p>
         <a href={APPLE_SCREENSHOT_SOURCE} className="ds-link mt-4 inline-block">{t("specs_read_connect_specifications")}</a>
       </section>
+      <section className="mt-10" aria-labelledby="size-rejections">
+        <h2 id="size-rejections" className="font-display text-3xl">{enrich.rejections.heading}</h2>
+        <p className="mt-4">{enrich.rejections.intro}</p>
+        <ul className="mt-4 list-disc space-y-2 pl-5">
+          {enrich.rejections.items.map((item) => <li key={item}>{item}</li>)}
+        </ul>
+      </section>
       <section className="mt-10" aria-labelledby="size-faq">
         <h2 id="size-faq" className="font-display text-3xl">{t("faq_title")}</h2>
         <FaqList items={faq} />
@@ -63,6 +80,7 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         <h2 className="font-display text-3xl">{t("size_related_heading")}</h2>
         <ul className="mt-4 space-y-3">
           <li><Link href={localizedPath(locale, "/specs")} className="ds-link">{t("specs_iphone_duo_screenshot_sizes")}</Link></li>
+          <li><Link href={localizedPath(locale, ASC_GUIDE_PATH)} className="ds-link">{guide.title}</Link></li>
           {copy.related.map((related) => <li key={related}><Link href={localizedPath(locale, `/${related}`)} className="ds-link">{sizePageCopy(locale, related).title}</Link></li>)}
         </ul>
       </section>
