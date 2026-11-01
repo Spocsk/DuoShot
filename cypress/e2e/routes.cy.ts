@@ -15,11 +15,11 @@ const PAGES: Page[] = [
   { fr: "/2007x2853", en: "/en/2007x2853", indexed: true },
   { fr: "/pourquoi-pas-ia", en: "/en/why-not-ai", indexed: true },
   { fr: "/rejet", en: "/en/rejection", indexed: true },
-  { fr: "/privacy", en: "/en/privacy", indexed: true },
-  { fr: "/terms", en: "/en/terms", indexed: true },
-  { fr: "/cookies", en: "/en/cookies", indexed: true },
-  { fr: "/legal", en: "/en/legal", indexed: true },
-  { fr: "/legal/subprocessors", en: "/en/legal/subprocessors", indexed: true },
+  { fr: "/privacy", en: "/en/privacy", indexed: false },
+  { fr: "/terms", en: "/en/terms", indexed: false },
+  { fr: "/cookies", en: "/en/cookies", indexed: false },
+  { fr: "/legal", en: "/en/legal", indexed: false },
+  { fr: "/legal/subprocessors", en: "/en/legal/subprocessors", indexed: false },
   { fr: "/tool", en: "/en/tool", indexed: false },
   { fr: "/account", en: "/en/account", indexed: false },
   { fr: "/login", en: "/en/login", indexed: false },
@@ -60,6 +60,14 @@ describe("public routes", () => {
           expect(robots.includes("noindex"), "noindex").to.eq(!page.indexed);
         });
       });
+    });
+  });
+
+  it("keeps legal pages out of the sitemap", () => {
+    cy.request("/sitemap.xml").its("body").then((body: string) => {
+      for (const path of ["/privacy", "/terms", "/cookies", "/legal", "/legal/subprocessors"]) {
+        expect(body, path).not.to.match(new RegExp(`<loc>[^<]*(?:/en)?${path}</loc>`));
+      }
     });
   });
 

@@ -6,7 +6,7 @@ import { FAQ, getFaq } from "./i18n";
 import sitemap from "@/app/sitemap";
 import robots from "@/app/robots";
 import { absoluteUrl, localizedPath, MARKETING_ROUTE_PAIRS, SITE_PITCH_FR, SITE_PITCH_EN } from "./site";
-import { pageMetadata } from "./seo";
+import { LEGAL_PATH, pageMetadata } from "./seo";
 import { JsonLd, SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
 import { SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "./screenshot-pages";
 import { generateMetadata as specsMetadata } from "@/app/[locale]/specs/page";
@@ -74,11 +74,20 @@ describe("public routes and crawler metadata", () => {
     }
   });
 
+  it("keeps legal pages crawlable but out of the index", () => {
+    for (const path of ["/privacy", "/terms", "/cookies", "/legal", "/legal/subprocessors"]) {
+      for (const locale of ["fr", "en"] as const) {
+        expect(pageMetadata({ locale, path, title: "t", description: "d" }).robots).toEqual({ index: false, follow: true });
+      }
+    }
+    expect(pageMetadata({ locale: "fr", path: "/specs", title: "t", description: "d" }).robots).toBeUndefined();
+  });
+
   it("gives every sitemap entry its canonical and reciprocal alternates", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site/");
     const entries = sitemap();
     expect(new Set(entries.map((entry) => entry.url)).size).toBe(entries.length);
-    for (const route of MARKETING_ROUTE_PAIRS) {
+    for (const route of MARKETING_ROUTE_PAIRS.filter((item) => !LEGAL_PATH.test(item.fr))) {
       for (const locale of ["fr", "en"] as const) {
         const metadata = pageMetadata({ locale, path: route.fr, title: "test", description: "test" });
         const entry = entries.find((item) => item.url === metadata.alternates?.canonical);
