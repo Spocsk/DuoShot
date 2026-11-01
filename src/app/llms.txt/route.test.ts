@@ -62,6 +62,7 @@ describe("GET /llms.txt", () => {
     expect(body).toContain(`Third-party reference (ASC CLI): ${DUO_SLOT_SOURCE}`);
     expect(body).toContain(`Primary source (Apple screenshot specifications): ${APPLE_SCREENSHOT_SOURCE}`);
     expect(body).toContain("exports above it are refused with HTTP 400, no silent trimming");
+    expect(body).toContain("Observed on the App Store: if your first Duo screenshot is landscape, search results show only one. In portrait, two.");
     expect(body).not.toMatch(/emplacement Duo|Duo slot|DUO_SLOT_LIMIT|combined cap|emplacement unique|single slot/i);
     expect(body).toMatch(/April 2027[^\n]+for apps built with the iOS 27\.1 SDK or later/);
   });

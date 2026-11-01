@@ -141,6 +141,27 @@ export function duoSpec(slot: "duo-outer" | "duo-inner", orientation: Orientatio
   return spec;
 }
 
+/** Pixel dimensions of a screenshot, matched against the Duo export sizes. */
+export type ScreenshotSize = Pick<SizeSpec, "width" | "height">;
+
+/** True when these dimensions are a Duo landscape export size (outer 2034×1398, inner 2853×2007). */
+export function isDuoLandscapeSize(size: ScreenshotSize): boolean {
+  return SIZE_SPECS.some((spec) =>
+    isDuoSlot(spec.slot) && spec.orientation === "landscape" && spec.width === size.width && spec.height === size.height,
+  );
+}
+
+/**
+ * Observed on the App Store (not Apple documentation — https://x.com/alpennec/status/2114584197998240175):
+ * when the first iPhone Duo screenshot of a set is landscape, search results show only one screenshot;
+ * a portrait first screenshot shows two. Given the ordered screenshots of a Duo set, returns true when
+ * the first one is a Duo landscape size.
+ */
+export function firstDuoScreenshotIsLandscape(screenshots: readonly ScreenshotSize[]): boolean {
+  const first = screenshots[0];
+  return first ? isDuoLandscapeSize(first) : false;
+}
+
 /** Physical iPhone Duo chassis in millimetres. Open book keeps the closed height. */
 export const DUO_OUTER_MM = { width: 84.1, height: 117.8 } as const;
 export const DUO_INNER_MM = { width: 164.6, height: 117.8 } as const;

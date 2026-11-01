@@ -574,6 +574,7 @@ export const en: Messages = {
   tool_warn: "Fewer than 3 visuals: check that your set tells the app’s story.",
   tool_warn_clone: "Both views should show their respective screen states. Strong similarity needs human review.",
   tool_warn_unpaired: "Source counts differ. Your Duo selection can use either side, with up to 10 Duo screenshots in your selection. Paired counts are needed only for a client review.",
+  duo_landscape_first_warning: "Observed on the App Store: if your first Duo screenshot is landscape, search results show only one. In portrait, two.",
   tool_cap: "Maximum 10 images.",
   tool_preparing: "Preparing the ZIP…",
   tool_progress_upload: "Uploading {done}/{total}…",

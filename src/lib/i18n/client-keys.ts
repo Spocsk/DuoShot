@@ -243,6 +243,7 @@ export const CLIENT_KEYS = {
     "tool_warn",
     "tool_warn_clone",
     "tool_warn_unpaired",
+    "duo_landscape_first_warning",
     "tool_cap",
     "tool_preparing",
     "tool_progress_upload",

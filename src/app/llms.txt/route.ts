@@ -64,6 +64,7 @@ ${sizes}
 - Example ZIP: raw outer + inner sets; pick up to 10 in total for your selection
 - The limit of 10 screenshots total across both screens is DuoShot's rule, not Apple's; exports above it are refused with HTTP 400, no silent trimming. Whether Apple's capacity is shared across both screens remains to be confirmed in a real App Store Connect upload.
 - Guideline 2.3.3: screenshots must accurately represent the app
+- ${getTranslator("en").t("duo_landscape_first_warning")}
 - Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
 - iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
 
