@@ -22,7 +22,8 @@ describe("analytics URL minimization", () => {
   it.each([
     "/forgot-password", "/specs", "/1398x2034", "/2007x2853", "/1206x2622", "/1320x2868",
     "/tools/iphone-duo-screenshot-checker", "/guides/iphone-duo-app-store-connect",
-    "/guides/best-app-store-screenshot-generator", ...COMPARISONS.map(({ slug }) => comparisonPath(slug)),
+    "/guides/best-app-store-screenshot-generator", "/guides/screenshot-size", "/alternatives",
+    ...COMPARISONS.map(({ slug }) => comparisonPath(slug)),
     ...ALTERNATIVE_SLUGS.map((slug) => alternativePath(slug)),
   ])("allows the existing public route %s in both locales", (path) => {
     expect(analyticsPath(path)).toBe(path);

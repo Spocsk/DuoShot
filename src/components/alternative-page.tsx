@@ -22,9 +22,15 @@ export function AlternativePage({ locale, data }: { locale: Locale; data: Altern
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
       <nav aria-label="Breadcrumb" className="text-sm text-[var(--muted)]">
         <ol className="flex flex-wrap gap-2">
-          <li><Link href={localizedPath(locale, data.breadcrumb[0].path)} className="ds-link">{data.breadcrumb[0].name}</Link></li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page">{data.breadcrumb[1].name}</li>
+          {data.breadcrumb.map((crumb, index) => {
+            const last = index === data.breadcrumb.length - 1;
+            return <li key={crumb.path} className="flex items-center gap-2">
+              {index > 0 && <span aria-hidden="true">/</span>}
+              {last
+                ? <span aria-current="page">{crumb.name}</span>
+                : <Link href={localizedPath(locale, crumb.path)} className="ds-link">{crumb.name}</Link>}
+            </li>;
+          })}
         </ol>
       </nav>
       <p className="ds-label mt-4">{data.updatedLabel}</p>

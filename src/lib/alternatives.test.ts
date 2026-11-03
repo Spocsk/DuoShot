@@ -99,7 +99,9 @@ describe("alternative-to pages", () => {
       expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle", "FAQPage", "BreadcrumbList"]);
       const breadcrumb = graph[2].itemListElement;
       expect(breadcrumb.map((item: { name: string }) => item.name)).toEqual(view.breadcrumb.map((crumb) => crumb.name));
-      expect(breadcrumb[1].item).toBe(absoluteUrl(localizedPath(locale, alternativePath(slug))));
+      expect(breadcrumb.at(-1).item).toBe(absoluteUrl(localizedPath(locale, alternativePath(slug))));
+      // The hub sits between Home and the leaf.
+      expect(breadcrumb[1].item).toBe(absoluteUrl(localizedPath(locale, "/alternatives")));
       const faq = graph[1].mainEntity;
       expect(faq).toHaveLength(view.faq.length);
       expect(faq).toHaveLength(3);

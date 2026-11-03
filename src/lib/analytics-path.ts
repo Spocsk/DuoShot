@@ -4,7 +4,9 @@ const PUBLIC_ROUTES = new Set([
   "/specs", "/privacy", "/signup", "/why-not-ai", "/pourquoi-pas-ia",
   "/forgot-password", "/1398x2034", "/2007x2853", "/1206x2622", "/1320x2868",
   "/tools/iphone-duo-screenshot-checker", "/guides/iphone-duo-app-store-connect",
-  "/guides/best-app-store-screenshot-generator",
+  "/guides/best-app-store-screenshot-generator", "/guides/screenshot-size",
+  // Hubs: the alternatives index and the per-device screenshot-size index.
+  "/alternatives",
   // Fixed public SEO slugs from comparisons.ts, never arbitrary /guides/[slug] values.
   "/guides/duoshot-vs-applaunchflow", "/guides/duoshot-vs-appscreens",
   "/guides/duoshot-vs-screenhance", "/guides/duoshot-vs-app-asset-kit",

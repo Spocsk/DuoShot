@@ -20,8 +20,23 @@ type SchemaNode = {
   inLanguage?: string;
   step?: { "@type": string; position: number; name: string; text: string; url: string }[];
   mainEntity?: { name: string; acceptedAnswer: { text: string } }[];
+  itemListElement?: { name: string; item: string }[];
   offers?: { price: string; priceCurrency: string; priceSpecification?: { billingDuration: string } }[];
 };
+
+/** The visible breadcrumb names, read from <nav aria-label="Breadcrumb">. */
+function visibleBreadcrumb(doc: Document): string[] {
+  return Array.from(doc.querySelectorAll('nav[aria-label="Breadcrumb"] li'))
+    .map((li) => (li.querySelector('a, [aria-current="page"]') as HTMLElement | null)?.textContent?.trim())
+    .filter((text): text is string => Boolean(text));
+}
+
+function checkBreadcrumb(doc: Document, expected: string[]) {
+  const visible = visibleBreadcrumb(doc);
+  expect(visible).to.deep.eq(expected);
+  const breadcrumb = graphOf(doc).find((node) => node["@type"] === "BreadcrumbList");
+  expect(breadcrumb!.itemListElement!.map((item) => item.name)).to.deep.eq(visible);
+}
 
 function graphOf(doc: Document): SchemaNode[] {
   return Array.from(doc.querySelectorAll('script[type="application/ld+json"]'))
@@ -295,6 +310,37 @@ describe("SEO screenshot pages", () => {
         cy.get(`main a[href="${prefix}/tool"]`).should("exist");
       });
     }
+
+    it(`lists the five alternatives from the hub with a matching breadcrumb in ${locale}`, () => {
+      visit(`${prefix}/alternatives`);
+      cy.get("h1").should("have.length", 1);
+      for (const slug of ["appscreens", "applaunchpad", "screenshots-pro", "appmockup", "hotpot"]) {
+        cy.get(`main a[href="${prefix}/alternatives/${slug}"]`).should("exist");
+      }
+      cy.document().then((doc) => {
+        checkBreadcrumb(doc, [locale === "fr" ? "Accueil" : "Home", "Alternatives"]);
+        const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
+        expect(canonical).to.eq(`${new URL(canonical).origin}${prefix}/alternatives`);
+        cy.request("/sitemap.xml").its("body").should("contain", `<loc>${canonical}</loc>`);
+      });
+    });
+
+    it(`lists every device grouped by display group from the screenshot-size hub in ${locale}`, () => {
+      visit(`${prefix}/guides/screenshot-size`);
+      cy.get("h1").should("have.length", 1);
+      cy.get('[data-testid="screenshot-size-index"] a').should("have.length", DEVICE_SLUGS.length);
+      for (const slug of DEVICE_SLUGS) {
+        cy.get(`[data-testid="screenshot-size-index"] a[href="${prefix}${deviceGuidePath(slug)}"]`).should("exist");
+      }
+      cy.get(`main a[href="${prefix}/guides/app-store-screenshot-sizes"]`).should("exist");
+      cy.document().then((doc) => {
+        checkBreadcrumb(doc, [locale === "fr" ? "Accueil" : "Home", "Guides",
+          locale === "fr" ? "Tailles de captures App Store par appareil" : "App Store screenshot sizes by device"]);
+        const canonical = doc.querySelector('link[rel="canonical"]')!.getAttribute("href")!;
+        expect(canonical).to.eq(`${new URL(canonical).origin}${prefix}/guides/screenshot-size`);
+        cy.request("/sitemap.xml").its("body").should("contain", `<loc>${canonical}</loc>`);
+      });
+    });
 
     it(`matches FAQ markup to displayed questions on home, pricing and rejection in ${locale}`, () => {
       for (const path of [prefix || "/", `${prefix}/pricing`, locale === "fr" ? "/rejet" : "/en/rejection"]) {

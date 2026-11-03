@@ -1,7 +1,6 @@
 import type { Locale } from "./specs";
 import type { Device, DeviceSize } from "./devices";
-import { deviceDisplayName, deviceGuidePath } from "./devices";
-import { SIZES_GUIDE_PATH } from "./guides";
+import { deviceDisplayName, deviceGuidePath, SCREENSHOT_SIZE_HUB } from "./devices";
 import type { FaqItem } from "./screenshot-copy";
 import { screenshotDimensions } from "./screenshot-copy";
 
@@ -86,7 +85,6 @@ function faqItems(locale: Locale, device: Device, answer: string): FaqItem[] {
   return items;
 }
 
-const HUB_LABEL = { fr: "Tailles des captures App Store", en: "App Store screenshot sizes" } as const;
 const HOME_LABEL = { fr: "Accueil", en: "Home" } as const;
 const GUIDES_LABEL = { fr: "Guides", en: "Guides" } as const;
 
@@ -118,7 +116,7 @@ export function devicePageCopy(locale: Locale, device: Device): DevicePageCopy {
     breadcrumb: [
       { name: HOME_LABEL[locale], path: "/" },
       { name: GUIDES_LABEL[locale], path: "/guides" },
-      { name: HUB_LABEL[locale], path: SIZES_GUIDE_PATH },
+      { name: SCREENSHOT_SIZE_HUB.label[locale], path: SCREENSHOT_SIZE_HUB.path },
       { name, path: deviceGuidePath(device.slug) },
     ],
   };
