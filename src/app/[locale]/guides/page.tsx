@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CallCtaCard } from "@/components/call-cta-card";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { COMPARISONS, competitorComparison, comparisonPath } from "@/lib/comparisons";
 import { guideIndexEntries } from "@/lib/guides-index";
@@ -66,6 +67,7 @@ export default async function Page({ params }: LocaleParams) {
           </li>)}
         </ul>
       </section>)}
+      <CallCtaCard locale={locale} />
     </main>
     <SiteFooter locale={locale} />
   </div>;
