@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import nextConfig from "../../next.config";
+import { deviceGuidePath } from "./devices";
 import {
   cookieLocale,
   isCrawler,
@@ -134,6 +135,14 @@ describe("locale", () => {
       expect(localeRedirectTarget({ pathname, search: "", cookie: "en", acceptLanguage: null })).toBeNull();
       expect(localeRedirectTarget({ pathname: `/en${pathname}`, search: "", cookie: "fr", acceptLanguage: null })).toBeNull();
     }
+  });
+
+  it("skips locale negotiation for known device guide pages in both locales", () => {
+    const fr = deviceGuidePath("iphone-duo");
+    const en = `/en${fr}`;
+    expect(shouldSkipLocaleRewrite(fr)).toBe(true);
+    expect(shouldSkipLocaleRewrite(en)).toBe(true);
+    expect(shouldSkipLocaleRewrite(deviceGuidePath("not-a-real-device"))).toBe(false);
   });
 
   it("leaves static resources alone", () => {

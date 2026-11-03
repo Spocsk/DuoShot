@@ -1,6 +1,19 @@
 import type { Locale } from "./specs";
 import { localizedPath, MARKETING_ROUTE_PAIRS } from "./site";
 import { COMPARE_ROUTE } from "./compare";
+import { DEVICE_SLUGS, deviceGuidePath } from "./devices";
+
+// Exact FR/EN paths for the known programmatic device guide pages, handled like
+// MARKETING_ROUTE_PAIRS so they are served as-is; unknown slugs fall through to
+// the dynamic-route locale negotiation.
+const DEVICE_GUIDE_ROUTE_PAIRS = DEVICE_SLUGS.map((slug) => {
+  const fr = deviceGuidePath(slug);
+  return { fr, en: localizedPath("en", fr) };
+});
+
+function isDeviceGuidePath(pathname: string): boolean {
+  return DEVICE_GUIDE_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en);
+}
 
 // The legacy cookie also stored automatic redirects; only explicit choices persist now.
 export const LOCALE_COOKIE = "duoshot_locale_manual";
@@ -39,6 +52,7 @@ export function isCrawler(userAgent: string | null): boolean {
 export function shouldSkipLocaleRewrite(pathname: string): boolean {
   return (
     MARKETING_ROUTE_PAIRS.some(({ fr, en }) => pathname === fr || pathname === en) ||
+    isDeviceGuidePath(pathname) ||
     pathname === COMPARE_ROUTE.fr ||
     pathname === COMPARE_ROUTE.en ||
     pathname.startsWith("/_next/") ||
