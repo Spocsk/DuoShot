@@ -91,9 +91,17 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           target="_blank"
           rel="noopener noreferrer"
           data-testid="footer-fazier"
-          className="ds-link inline-flex min-h-6 items-center gap-2 rounded-md border border-[var(--line)] px-3 py-2"
+          className="ds-link inline-flex items-center"
         >
-          {t("footer_fazier")} <span aria-hidden="true">↗</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched&theme=light"
+            width={120}
+            height={51}
+            alt={t("footer_fazier_alt")}
+            loading="lazy"
+            decoding="async"
+          />
         </a>
         <FeaturedOn locale={locale} />
       </div>
