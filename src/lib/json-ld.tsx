@@ -11,6 +11,7 @@ export type PageSchema = {
   software?: boolean | { name: string; description: string };
   article?: { title: string; description: string; dateModified: string; abstract?: string };
   howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
+  /** Visible breadcrumb trail; names must match the rendered breadcrumb text. */
   breadcrumb?: readonly { name: string; path: string }[];
 };
 

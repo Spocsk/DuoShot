@@ -286,6 +286,16 @@ describe("SEO screenshot pages", () => {
       });
     }
 
+    for (const slug of ["appscreens", "applaunchpad", "screenshots-pro", "appmockup", "hotpot"]) {
+      it(`serves the ${slug} alternative page with one h1 and a comparison table in ${locale}`, () => {
+        visit(`${prefix}/alternatives/${slug}`);
+        cy.get("h1").should("have.length", 1);
+        cy.get("main table").should("exist");
+        cy.get("main").should("contain", locale === "fr" ? "Mis à jour le 3 novembre 2026" : "Updated November 3, 2026");
+        cy.get(`main a[href="${prefix}/tool"]`).should("exist");
+      });
+    }
+
     it(`matches FAQ markup to displayed questions on home, pricing and rejection in ${locale}`, () => {
       for (const path of [prefix || "/", `${prefix}/pricing`, locale === "fr" ? "/rejet" : "/en/rejection"]) {
         visit(path);
@@ -306,7 +316,7 @@ describe("SEO screenshot pages", () => {
     it(`publishes the free screenshot checker with localized links and SEO in ${locale}`, () => {
       const path = `${prefix}/tools/iphone-duo-screenshot-checker`;
       visit(`${prefix}/specs`);
-      cy.get(`main a[href="${path}"]`).click();
+      clickHydrated(`main a[href="${path}"]`);
       cy.location("pathname").should("eq", path);
       cy.get("h1").should("contain", locale === "fr" ? "Vérificateur gratuit" : "Free iPhone Duo screenshot checker");
       cy.get("#checker-privacy").should("contain", locale === "fr" ? "Aucune image n’est envoyée" : "No images are uploaded");

@@ -1,5 +1,6 @@
 import { COMPARISON_GUIDE_PATH } from "./guides";
 import { localizedPath } from "./site";
+import { ALTERNATIVE_SLUGS, alternativePath } from "./alternatives";
 import type { Locale } from "./specs";
 
 // Competitor summaries use only the linked official homepages, checked 2026-10-16.
@@ -156,6 +157,11 @@ export function competitorComparison(locale: Locale, slug: string) {
   const link = (path: string) => localizedPath(locale, path);
   const related = COMPARISONS.filter((entry) => entry.slug !== slug)
     .map((entry) => `- [DuoShot vs ${entry.name}](${link(comparisonPath(entry.slug))})`).join("\n");
+  // Link to the matching "alternative to <X>" landing page when one exists.
+  const altSlug = slug.replace(/^duoshot-vs-/, "");
+  const altLine = ALTERNATIVE_SLUGS.includes(altSlug)
+    ? `\n- [${locale === "fr" ? `Alternative à ${name}` : `${name} alternative`}](${link(alternativePath(altSlug))})`
+    : "";
   const body = locale === "fr" ? `# ${title}
 
 DuoShot (duoshot.site) est notre produit pour préparer les captures iPhone Duo (le téléphone pliable d'Apple). Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **${checkedOn}**. Il ne s’agit pas d’un test du service concurrent.
@@ -200,7 +206,7 @@ Partez de votre besoin : composition visuelle, langues à traiter, dimensions de
 
 ## Autres comparatifs
 
-- [Guide des générateurs de captures App Store](${link(COMPARISON_GUIDE_PATH)})
+- [Guide des générateurs de captures App Store](${link(COMPARISON_GUIDE_PATH)})${altLine}
 ${related}
 ` : `# ${title}
 
@@ -246,7 +252,7 @@ Start with your needs: visual composition, languages, output dimensions and uplo
 
 ## Other comparisons
 
-- [App Store screenshot generator guide](${link(COMPARISON_GUIDE_PATH)})
+- [App Store screenshot generator guide](${link(COMPARISON_GUIDE_PATH)})${altLine}
 ${related}
 `;
   return { title, description, dateModified: checked, body };
