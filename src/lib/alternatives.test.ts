@@ -97,10 +97,10 @@ describe("alternative-to pages", () => {
       const html = renderToStaticMarkup(await AlternativeRoute({ params: Promise.resolve({ locale, slug }) }));
       const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
       expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle", "FAQPage", "BreadcrumbList"]);
-      const breadcrumb = graph[0].itemListElement;
+      const breadcrumb = graph[2].itemListElement;
       expect(breadcrumb.map((item: { name: string }) => item.name)).toEqual(view.breadcrumb.map((crumb) => crumb.name));
       expect(breadcrumb[1].item).toBe(absoluteUrl(localizedPath(locale, alternativePath(slug))));
-      const faq = graph[2].mainEntity;
+      const faq = graph[1].mainEntity;
       expect(faq).toHaveLength(view.faq.length);
       expect(faq).toHaveLength(3);
       faq.forEach((node: { name: string; acceptedAnswer: { text: string } }, index: number) => {
