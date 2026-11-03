@@ -136,7 +136,7 @@ export const en: Messages = {
   footer_why: "Why not AI",
   footer_reject: "What to check",
   footer_analytics_preferences: "Analytics preferences",
-  footer_fazier: "DuoShot on Fazier",
+  footer_fazier_alt: "DuoShot launched on Fazier",
   footer_featured_on: "Featured on",
   consent_product_analytics: "Product analytics. ",
   consent_permission_umami_measures_pages: "With your permission, Umami measures pages, visible time and creation steps, without receiving your screenshots or email address.",

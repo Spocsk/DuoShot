@@ -36,7 +36,12 @@ describe("marketing", () => {
     cy.get('[data-testid="billing-monthly"]').should("not.exist");
     cy.get('[data-testid="billing-yearly"]').should("not.exist");
     cy.get('[data-testid="cta-tool-closing"]').scrollIntoView().should("be.visible").and("have.attr", "href", "/tool");
-    cy.get('[data-testid="footer-fazier"]').should("contain", "DuoShot sur Fazier").find("img").should("not.exist");
+    cy.get('[data-testid="footer-fazier"]')
+      .should("have.attr", "href", "https://fazier.com/launches/duoshot.site")
+      .find("img")
+      .should("have.attr", "src")
+      .and("include", "fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched");
+    cy.get('[data-testid="footer-fazier"] img').should("have.attr", "alt", "DuoShot lancé sur Fazier");
   });
 
   it("shows the open Harbor device turned to portrait, at its real scale", () => {
@@ -143,7 +148,12 @@ describe("marketing", () => {
     cy.get('[data-testid="billing-monthly"]').should("not.exist");
     cy.get('[data-testid="billing-yearly"]').should("not.exist");
     cy.get('[data-testid="cta-tool-closing"]').should("have.attr", "href", "/en/tool");
-    cy.get('[data-testid="footer-fazier"]').should("contain", "DuoShot on Fazier").find("img").should("not.exist");
+    cy.get('[data-testid="footer-fazier"]')
+      .should("have.attr", "href", "https://fazier.com/launches/duoshot.site")
+      .find("img")
+      .should("have.attr", "src")
+      .and("include", "fazier.com/api/v1//public/badges/launch_badges.svg?badge_type=launched");
+    cy.get('[data-testid="footer-fazier"] img').should("have.attr", "alt", "DuoShot launched on Fazier");
   });
 
   it("serves a dedicated pricing page", () => {
