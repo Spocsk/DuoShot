@@ -91,7 +91,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           target="_blank"
           rel="noopener noreferrer"
           data-testid="footer-fazier"
-          className="inline-flex items-center"
+          className="ds-link inline-flex items-center"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
