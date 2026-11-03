@@ -11,6 +11,8 @@ export type PageSchema = {
   software?: boolean | { name: string; description: string };
   article?: { title: string; description: string; dateModified: string; abstract?: string };
   howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
+  /** Visible breadcrumb trail; names must match the rendered breadcrumb text. */
+  breadcrumb?: readonly { name: string; path: string }[];
 };
 
 export function siteJsonLdGraph(locale: Locale) {
@@ -60,12 +62,22 @@ export function siteJsonLdGraph(locale: Locale) {
   };
 }
 
-export function jsonLdGraph(locale: Locale, { path, faq, software, article, howTo }: PageSchema) {
+export function jsonLdGraph(locale: Locale, { path, faq, software, article, howTo, breadcrumb }: PageSchema) {
   const url = absoluteUrl(localizedPath(locale, path));
   return {
     "@context": "https://schema.org",
     "@graph": [
       // Shared site entities are emitted by SiteJsonLd in the document layout.
+      ...(breadcrumb?.length ? [{
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: breadcrumb.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.name,
+          item: absoluteUrl(localizedPath(locale, item.path)),
+        })),
+      }] : []),
       ...(typeof software === "object" ? [{
         "@type": "SoftwareApplication",
         "@id": `${url}#software`,
