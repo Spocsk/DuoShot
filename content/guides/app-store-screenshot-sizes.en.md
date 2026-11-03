@@ -5,6 +5,7 @@ lang: en
 slug: app-store-screenshot-sizes
 alternate: /guides/app-store-screenshot-sizes
 updated: 2026-11-01
+published: 2026-10-16
 ---
 
 # App Store screenshot sizes 2026, including iPhone Duo

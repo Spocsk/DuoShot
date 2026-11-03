@@ -5,6 +5,7 @@ lang: fr
 slug: best-app-store-screenshot-generator
 alternate: /en/guides/best-app-store-screenshot-generator
 updated: 2026-10-15
+published: 2026-10-15
 ---
 
 # Meilleur générateur de captures App Store (2026)

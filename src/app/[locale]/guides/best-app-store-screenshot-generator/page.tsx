@@ -14,7 +14,7 @@ export default async function Page({ params }: LocaleParams) {
   const locale = await pageLocale(params);
   const guide = comparisonGuide(locale);
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path={COMPARISON_GUIDE_PATH} article={guide} />
+    <JsonLd locale={locale} path={COMPARISON_GUIDE_PATH} article={{ ...guide, author: "person" }} />
     <SiteHeader locale={locale} path={COMPARISON_GUIDE_PATH} />
     <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
       <article><GuideMarkdown body={guide.body} /></article>

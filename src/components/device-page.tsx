@@ -63,7 +63,7 @@ export function DevicePage({ locale, device }: { locale: Locale; device: Device 
       path={path}
       faq={copy.faq}
       breadcrumb={copy.breadcrumb}
-      article={{ title: copy.h1, description: copy.description, dateModified: DEVICE_VERIFIED_ON, abstract: copy.answer }}
+      article={{ title: copy.h1, description: copy.description, datePublished: DEVICE_VERIFIED_ON, dateModified: DEVICE_VERIFIED_ON, author: "person", abstract: copy.answer }}
     />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
