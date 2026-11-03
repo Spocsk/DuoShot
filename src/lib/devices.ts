@@ -53,6 +53,12 @@ export type Device = {
 export const DEVICE_VERIFIED_ON = "2026-11-03";
 export const SCREENSHOT_SIZE_BASE_PATH = "/guides/screenshot-size";
 
+/** The per-device screenshot-size hub: the index page every /guides/screenshot-size/<device> sits under. */
+export const SCREENSHOT_SIZE_HUB = {
+  path: SCREENSHOT_SIZE_BASE_PATH,
+  label: { fr: "Tailles de captures App Store par appareil", en: "App Store screenshot sizes by device" },
+} as const satisfies { path: string; label: LocalizedText };
+
 export function deviceGuidePath(slug: string): string {
   return `${SCREENSHOT_SIZE_BASE_PATH}/${slug}`;
 }
@@ -353,4 +359,22 @@ export function devicesByPlatform(locale: Locale): { platform: Platform; label: 
     label: PLATFORM_LABEL[platform][locale],
     devices: DEVICES.filter((device) => device.platform === platform),
   })).filter((group) => group.devices.length > 0);
+}
+
+/**
+ * The devices grouped by Apple display group, in first-appearance order. Each group carries its
+ * localized name and the sizes App Store Connect accepts for it (shared by every device in it).
+ */
+export function devicesByGroup(locale: Locale): { group: string; sizes: DeviceSize[]; devices: Device[] }[] {
+  const buckets: { key: LocalizedText; group: string; sizes: DeviceSize[]; devices: Device[] }[] = [];
+  for (const device of DEVICES) {
+    // Devices in the same display group share the same group/sizes object references.
+    let bucket = buckets.find((item) => item.key === device.group);
+    if (!bucket) {
+      bucket = { key: device.group, group: device.group[locale], sizes: device.sizes, devices: [] };
+      buckets.push(bucket);
+    }
+    bucket.devices.push(device);
+  }
+  return buckets.map(({ group, sizes, devices }) => ({ group, sizes, devices }));
 }

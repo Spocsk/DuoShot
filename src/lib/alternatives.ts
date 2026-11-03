@@ -400,8 +400,11 @@ export const ALTERNATIVES: readonly Alternative[] = [
 
 export const ALTERNATIVE_SLUGS = ALTERNATIVES.map(({ slug }) => slug);
 
+/** The hub listing every "alternative to <X>" page. */
+export const ALTERNATIVES_BASE_PATH = "/alternatives";
+
 export function alternativePath(slug: string): string {
-  return `/alternatives/${slug}`;
+  return `${ALTERNATIVES_BASE_PATH}/${slug}`;
 }
 
 const ROW_LABELS: Record<keyof Alternative["rows"], AltLocalized> = {
@@ -492,6 +495,7 @@ export function alternativePage(locale: Locale, slug: string): AlternativeView |
     relatedHeading: locale === "fr" ? "À lire ensuite" : "Read next",
     breadcrumb: [
       { name: locale === "fr" ? "Accueil" : "Home", path: "/" },
+      { name: locale === "fr" ? "Alternatives" : "Alternatives", path: ALTERNATIVES_BASE_PATH },
       { name: locale === "fr" ? `Alternative à ${name}` : `${name} alternative`, path: alternativePath(slug) },
     ],
   };
