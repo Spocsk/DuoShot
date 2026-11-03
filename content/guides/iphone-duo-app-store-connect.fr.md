@@ -5,6 +5,7 @@ lang: fr
 slug: iphone-duo-app-store-connect
 alternate: /en/guides/iphone-duo-app-store-connect
 updated: 2026-10-16
+published: 2026-10-16
 ---
 
 # Captures iPhone Duo (le téléphone pliable d'Apple) dans App Store Connect

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CallCtaCard } from "@/components/call-cta-card";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { COMPARISONS, competitorComparison, comparisonPath } from "@/lib/comparisons";
+import { guideIndexEntries } from "@/lib/guides-index";
 import { listGuides } from "@/lib/guides";
 import { getTranslator } from "@/lib/i18n";
 import { JsonLd } from "@/lib/json-ld";
@@ -22,10 +23,16 @@ export default async function Page({ params }: LocaleParams) {
   const { t } = getTranslator(locale);
   const title = t("guides_title");
   const description = t("guides_description");
-  const guides = listGuides(locale);
-  const dateModified = guides.map((guide) => guide.dateModified).sort().at(-1)!;
+  // dateModified tracks the most recently updated markdown content guide.
+  const dateModified = listGuides(locale).map((guide) => guide.dateModified).sort().at(-1)!;
+  // First commit of this index page (git history).
+  const GUIDES_INDEX_PUBLISHED_ON = "2026-10-17";
+  const breadcrumb = [
+    { name: locale === "fr" ? "Accueil" : "Home", path: "/" },
+    { name: t("guides_guides"), path: "/guides" },
+  ];
   const sections = [
-    { title: t("guides_guides"), links: guides },
+    { title: t("guides_guides"), links: guideIndexEntries(locale) },
     { title: t("guides_checker"), links: [{ path: SCREENSHOT_CHECKER_PATH, title: t("checker_title"), description: t("checker_description") }] },
     { title: t("guides_sizes"), links: [
       { path: "/specs", ...SPECS_PAGE_COPY[locale] },
@@ -34,10 +41,22 @@ export default async function Page({ params }: LocaleParams) {
     { title: t("guides_comparisons"), links: COMPARISONS.map(({ slug }) => ({ path: comparisonPath(slug), ...competitorComparison(locale, slug)! })) },
   ];
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path="/guides" article={{ title, description, dateModified }} />
+    <JsonLd locale={locale} path="/guides" article={{ title, description, dateModified, datePublished: GUIDES_INDEX_PUBLISHED_ON, author: "person" }} breadcrumb={breadcrumb} />
     <SiteHeader locale={locale} path="/guides" />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
-      <h1 className="font-display text-4xl sm:text-5xl">{title}</h1>
+      <nav aria-label="Breadcrumb" className="text-sm text-[var(--muted)]">
+        <ol className="flex flex-wrap gap-2">
+          {breadcrumb.map((crumb, index) => (
+            <li key={crumb.path} className="flex items-center gap-2">
+              {index > 0 && <span aria-hidden="true">/</span>}
+              {index === breadcrumb.length - 1
+                ? <span aria-current="page">{crumb.name}</span>
+                : <Link href={localizedPath(locale, crumb.path)} className="ds-link">{crumb.name}</Link>}
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <h1 className="font-display mt-4 text-4xl sm:text-5xl">{title}</h1>
       <p className="mt-4 text-[var(--muted)]">{description}</p>
       {sections.map((section) => <section key={section.title} className="mt-10">
         <h2 className="font-display text-3xl">{section.title}</h2>

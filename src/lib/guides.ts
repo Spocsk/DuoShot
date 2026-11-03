@@ -42,5 +42,13 @@ function readGuide(locale: Locale, guidePath: string) {
     if (!fields[field]) throw new Error(`Missing guide ${field}: ${locale}`);
   }
   if (fields.lang !== locale) throw new Error(`Incorrect guide language: ${locale}`);
-  return { slug: fields.slug, title: fields.title, description: fields.description, dateModified: fields.updated, body: match[2] };
+  // `published` (first-publication date) is optional; `updated` stays the dateModified.
+  return {
+    slug: fields.slug,
+    title: fields.title,
+    description: fields.description,
+    dateModified: fields.updated,
+    datePublished: fields.published || undefined,
+    body: match[2],
+  };
 }

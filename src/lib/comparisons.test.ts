@@ -58,7 +58,9 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       }
       const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
       expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle"]);
-      expect(graph[0]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: COMPARISONS.find((entry) => entry.slug === slug)!.checked, url: absoluteUrl(localizedPath(locale, comparisonPath(slug))), author: { "@id": `${absoluteUrl("/")}#organization` } });
+      expect(graph[0]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: COMPARISONS.find((entry) => entry.slug === slug)!.checked, url: absoluteUrl(localizedPath(locale, comparisonPath(slug))), author: { "@type": "Person", name: "Dylan Couto de Oliveira" }, publisher: { "@id": `${absoluteUrl("/")}#organization` } });
+      // Generated comparison pages have no published date in data, so datePublished is omitted.
+      expect(graph[0]).not.toHaveProperty("datePublished");
     });
   }
 
