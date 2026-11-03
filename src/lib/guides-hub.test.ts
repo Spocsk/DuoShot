@@ -48,7 +48,8 @@ describe.each(["fr", "en"] as const)("%s guides hub", (locale) => {
       ...COMPARISONS.map(({ slug }) => ({ path: comparisonPath(slug), ...competitorComparison(locale, slug)! })),
     ];
     expect(html.match(/<h1\b/g)).toHaveLength(1);
-    expect(html.match(/<section\b/g)).toHaveLength(4);
+    // 4 link sections + the call offer card section.
+    expect(html.match(/<section\b/g)).toHaveLength(5);
     expect(html.match(/<h2\b/g)).toHaveLength(4);
     expect(html.match(/<ul\b/g)).toHaveLength(4);
     expect(html.match(/<li\b/g)).toHaveLength(links.length);
