@@ -1,3 +1,8 @@
+// Wait for hydration (React tags the node with its props) before clicking, else the navigation is lost in CI.
+function clickHydrated(selector: string) {
+  cy.get(selector).should(($a) => expect(Object.keys($a[0]).some((k) => k.startsWith("__reactProps"))).to.eq(true)).click();
+}
+
 type SchemaNode = {
   "@type": string;
   "@id"?: string;
@@ -91,7 +96,7 @@ describe("SEO screenshot pages", () => {
       const guidePath = `${prefix}/guides/iphone-duo-app-store-connect`;
       for (const source of [`${prefix}/specs`, `${prefix}/guides/best-app-store-screenshot-generator`]) {
         visit(source);
-        cy.get(`main a[href="${guidePath}"]`).click();
+        clickHydrated(`main a[href="${guidePath}"]`);
         cy.location("pathname").should("eq", guidePath);
       }
       cy.get("h1").should("have.length", 1).and("contain", "App Store Connect");
@@ -238,7 +243,7 @@ describe("SEO screenshot pages", () => {
       it(`discovers the ${name} comparison from the guide and serves indexable ${locale} content`, () => {
         const path = `/guides/${slug}`;
         visit(`${prefix}/guides/best-app-store-screenshot-generator`);
-        cy.get(`main a[href="${prefix}${path}"]`).click();
+        clickHydrated(`main a[href="${prefix}${path}"]`);
         cy.location("pathname").should("eq", `${prefix}${path}`);
         cy.get("h1").should("have.length", 1).and("contain", `DuoShot vs ${name}`);
         cy.get(`main a[href="${officialUrl}"]`).should("exist");
