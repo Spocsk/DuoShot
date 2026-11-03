@@ -96,7 +96,7 @@ describe("alternative-to pages", () => {
       const view = alternativePage(locale, slug)!;
       const html = renderToStaticMarkup(await AlternativeRoute({ params: Promise.resolve({ locale, slug }) }));
       const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
-      expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["BreadcrumbList", "TechArticle", "FAQPage"]);
+      expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle", "FAQPage", "BreadcrumbList"]);
       const breadcrumb = graph[0].itemListElement;
       expect(breadcrumb.map((item: { name: string }) => item.name)).toEqual(view.breadcrumb.map((crumb) => crumb.name));
       expect(breadcrumb[1].item).toBe(absoluteUrl(localizedPath(locale, alternativePath(slug))));

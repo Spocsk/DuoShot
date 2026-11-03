@@ -68,16 +68,6 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
     "@context": "https://schema.org",
     "@graph": [
       // Shared site entities are emitted by SiteJsonLd in the document layout.
-      ...(breadcrumb?.length ? [{
-        "@type": "BreadcrumbList",
-        "@id": `${url}#breadcrumb`,
-        itemListElement: breadcrumb.map((item, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: item.name,
-          item: absoluteUrl(localizedPath(locale, item.path)),
-        })),
-      }] : []),
       ...(typeof software === "object" ? [{
         "@type": "SoftwareApplication",
         "@id": `${url}#software`,
@@ -127,6 +117,16 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
           "@type": "Question",
           name: item.q,
           acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      }] : []),
+      ...(breadcrumb?.length ? [{
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: breadcrumb.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.name,
+          item: absoluteUrl(localizedPath(locale, item.path)),
         })),
       }] : []),
     ],
