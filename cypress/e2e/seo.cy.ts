@@ -1,3 +1,5 @@
+import { DEVICE_SLUGS, deviceGuidePath } from "../../src/lib/devices";
+
 // Wait for hydration (React tags the node with its props) before clicking, else the navigation is lost in CI.
 function clickHydrated(selector: string) {
   cy.get(selector).should(($a) => expect(Object.keys($a[0]).some((k) => k.startsWith("__reactProps"))).to.eq(true)).click();
@@ -346,6 +348,28 @@ describe("SEO screenshot pages", () => {
           expect(passes).to.have.length(Cypress.expose("passPriceConfigured") ? 1 : 0);
           if (passes.length) expect(passes[0].priceCurrency).to.eq("EUR");
         });
+      }
+    });
+
+    it(`serves every programmatic device size page with one h1 and a sizes table in ${locale}`, () => {
+      for (const slug of DEVICE_SLUGS) {
+        const path = `${prefix}${deviceGuidePath(slug)}`;
+        visit(path);
+        cy.location("pathname").should("eq", path);
+        cy.get("main h1").should("have.length", 1).and("contain", "2026");
+        cy.get("main table").should("exist");
+        cy.get("main").should("contain", locale === "fr"
+          ? "App Store Connect accepte ces tailles pour le groupe"
+          : "App Store Connect accepts these sizes for the");
+        cy.get('section[aria-labelledby="device-faq"] .t-acc').its("length").should("be.greaterThan", 1);
+      }
+    });
+
+    it(`lists every device page from the hub grouped by platform in ${locale}`, () => {
+      visit(`${prefix}/guides/app-store-screenshot-sizes`);
+      cy.get('[data-testid="device-index"] a').should("have.length", DEVICE_SLUGS.length);
+      for (const slug of DEVICE_SLUGS) {
+        cy.get(`[data-testid="device-index"] a[href="${prefix}${deviceGuidePath(slug)}"]`).should("exist");
       }
     });
 

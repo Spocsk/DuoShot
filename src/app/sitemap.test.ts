@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sitemap from "./sitemap";
+import { DEVICES, deviceGuidePath } from "@/lib/devices";
 
 describe("sitemap", () => {
   it("leaves legal pages out", () => {
@@ -8,6 +9,23 @@ describe("sitemap", () => {
     for (const path of ["/privacy", "/terms", "/cookies", "/legal", "/legal/subprocessors"]) {
       expect(urls).not.toContain(path);
       expect(urls).not.toContain(`/en${path}`);
+    }
+  });
+
+  it("lists every device page in both locales with alternates", () => {
+    const entries = sitemap();
+    const byPath = new Map(entries.map((entry) => [new URL(entry.url).pathname, entry]));
+    for (const device of DEVICES) {
+      const fr = deviceGuidePath(device.slug);
+      const en = `/en${fr}`;
+      expect(byPath.has(fr), fr).toBe(true);
+      expect(byPath.has(en), en).toBe(true);
+      const origin = new URL(entries[0].url).origin;
+      expect(byPath.get(fr)!.alternates?.languages).toEqual({
+        fr: `${origin}${fr}`,
+        en: `${origin}${en}`,
+        "x-default": `${origin}${fr}`,
+      });
     }
   });
 });
