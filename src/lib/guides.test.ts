@@ -47,7 +47,15 @@ describe.each(["fr", "en"] as const)("%s comparison guide", (locale) => {
     expect(html).toContain('href="https://www.screenpane.com/"');
     expect(html).toContain(locale === "fr" ? "Pass, Indie et Studio" : "Pass, Indie and Studio");
     const article = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"].find((node: { "@type": string }) => node["@type"] === "TechArticle");
-    expect(article).toMatchObject({ headline: guide.title, description: guide.description, dateModified: "2026-10-15", inLanguage: locale });
+    expect(article).toMatchObject({
+      headline: guide.title,
+      description: guide.description,
+      datePublished: "2026-10-15",
+      dateModified: "2026-10-15",
+      inLanguage: locale,
+      author: { "@type": "Person", name: "Dylan Couto de Oliveira" },
+      publisher: { "@id": `${absoluteUrl("/")}#organization` },
+    });
   });
 
   it("is linked from the existing specs page in its own language", () => {

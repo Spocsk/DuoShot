@@ -5,6 +5,7 @@ lang: en
 slug: best-app-store-screenshot-generator
 alternate: /guides/best-app-store-screenshot-generator
 updated: 2026-10-15
+published: 2026-10-15
 ---
 
 # Best App Store screenshot generator (2026)

@@ -16,7 +16,7 @@ export function AlternativePage({ locale, data }: { locale: Locale; data: Altern
       path={path}
       faq={data.faq}
       breadcrumb={data.breadcrumb}
-      article={{ title: data.title, description: data.description, dateModified: data.dateModified, abstract: data.answer }}
+      article={{ title: data.title, description: data.description, datePublished: data.datePublished, dateModified: data.dateModified, author: "person", abstract: data.answer }}
     />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">

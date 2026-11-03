@@ -3,27 +3,10 @@ import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { JsonLd } from "@/lib/json-ld";
 import { pageMetadata } from "@/lib/seo";
 import { localizedPath } from "@/lib/site";
-import { ALTERNATIVES, ALTERNATIVES_BASE_PATH, alternativePage, alternativePath } from "@/lib/alternatives";
+import { ALTERNATIVES, ALTERNATIVES_BASE_PATH, ALTERNATIVES_HUB_COPY, alternativePage, alternativePath } from "@/lib/alternatives";
 import { pageLocale, type LocaleParams } from "../params";
 
-const COPY = {
-  fr: {
-    h1: "DuoShot et ses alternatives pour les captures App Store",
-    intro: "Comparez DuoShot aux générateurs de captures App Store. Chaque page met en regard les prix, le filigrane, la prise en charge de l’iPhone Duo et l’export multilingue, à partir de données publiques vérifiées.",
-    title: "Alternatives à DuoShot : générateurs de captures App Store",
-    description: "Comparez DuoShot aux alternatives pour vos captures App Store iPhone Duo : AppScreens, AppLaunchpad, Screenshots.pro, AppMockUp et Hotpot.",
-    home: "Accueil",
-    hub: "Alternatives",
-  },
-  en: {
-    h1: "DuoShot and its alternatives for App Store screenshots",
-    intro: "Compare DuoShot with App Store screenshot generators. Each page lines up price, watermark, iPhone Duo support and multi-language export, all from verified public data.",
-    title: "DuoShot alternatives: App Store screenshot generators",
-    description: "Compare DuoShot with alternatives for your iPhone Duo App Store screenshots: AppScreens, AppLaunchpad, Screenshots.pro, AppMockUp and Hotpot.",
-    home: "Home",
-    hub: "Alternatives",
-  },
-} as const;
+const COPY = ALTERNATIVES_HUB_COPY;
 
 export async function generateMetadata({ params }: LocaleParams) {
   const locale = await pageLocale(params);
