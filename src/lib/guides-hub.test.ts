@@ -95,6 +95,15 @@ describe.each(["fr", "en"] as const)("%s guides hub", (locale) => {
     }
   });
 
+  it("lists the App Store screenshot guidelines content guide in the Guides registry", () => {
+    const path = "/guides/app-store-screenshot-guidelines";
+    const entry = guideIndexEntries(locale).find((link) => link.path === path);
+    const source = listGuides(locale).find((guide) => guide.path === path);
+    expect(source).toBeDefined();
+    expect(entry).toEqual({ path, title: source!.title, description: source!.description });
+    expect(entry!.title).toBe(locale === "fr" ? "Règles des captures App Store" : "App Store screenshot guidelines");
+  });
+
   it("publishes concise, indexable metadata and reciprocal sitemap alternates", async () => {
     const metadata = await generateMetadata(props());
     const url = absoluteUrl(localizedPath(locale, "/guides"));

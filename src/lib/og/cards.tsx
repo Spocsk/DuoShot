@@ -12,6 +12,7 @@ export type OgPage =
   | "guides"
   | "specs"
   | "comparison-guide"
+  | "guidelines-guide"
   | "competitor-comparison"
   | "compare"
   | "asc-guide"
@@ -57,6 +58,10 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
   "comparison-guide": {
     fr: { eyebrow: "Guide · Comparatif 2026", title: "Générateurs de captures App Store", lead: "Cinq outils comparés : prix, tailles et export.", alt: "Comparatif 2026 des générateurs de captures App Store : AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot." },
     en: { eyebrow: "Guide · 2026 comparison", title: "App Store screenshot generators", lead: "Five tools compared: prices, sizes and export.", alt: "2026 App Store screenshot generator comparison: AppScreens, AppLaunchFlow, SnapMonk, Screenpane and DuoShot." },
+  },
+  "guidelines-guide": {
+    fr: { eyebrow: "Guide · Règles App Store", title: "Règles des captures App Store", lead: "App Review 2.3.3 à 2.3.10 et règles de fichier.", alt: "Règles des captures App Store : les lignes de l’App Review (2.3.3, 2.3.7 à 2.3.10) et les règles de fichier qui causent des refus." },
+    en: { eyebrow: "Guide · App Store rules", title: "App Store screenshot guidelines", lead: "App Review 2.3.3 to 2.3.10 and file rules.", alt: "App Store screenshot guidelines: the App Review lines (2.3.3, 2.3.7 to 2.3.10) and the file rules that cause rejections." },
   },
   home: {
     fr: { eyebrow: "iPhone Duo · App Store Connect", title: "Captures iPhone Duo.\nAux dimensions App Store.", alt: `DuoShot : captures iPhone Duo aux dimensions App Store, ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px.` },
@@ -406,6 +411,7 @@ const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
   "asc-guide": PairArt,
   "screenshot-checker": PairArt,
   "comparison-guide": PairArt,
+  "guidelines-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,
   "iphone-69": Iphone69Art,
