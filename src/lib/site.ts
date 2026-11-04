@@ -89,6 +89,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/alternatives/hotpot", en: "/en/alternatives/hotpot", priority: 0.7 },
   { fr: "/guides/iphone-duo-app-store-connect", en: "/en/guides/iphone-duo-app-store-connect", priority: 0.7 },
   { fr: "/guides/app-store-screenshot-sizes", en: "/en/guides/app-store-screenshot-sizes", priority: 0.8 },
+  { fr: "/guides/app-store-screenshot-guidelines", en: "/en/guides/app-store-screenshot-guidelines", priority: 0.7 },
   { fr: "/guides/screenshot-size", en: "/en/guides/screenshot-size", priority: 0.7 },
   { fr: "/1398x2034", en: "/en/1398x2034", priority: 0.8 },
   { fr: "/2007x2853", en: "/en/2007x2853", priority: 0.8 },
