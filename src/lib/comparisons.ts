@@ -9,6 +9,7 @@ import type { Locale } from "./specs";
 // Screenhance: homepage introduction (store screenshots, mockups and launch visuals).
 // App Asset Kit: screenshot/icon maker, local processing, export workflow and default sizes.
 // Checked 2026-11-01: Screenies (iPhone Duo generator page), AppShot Maker, AppLaunchpad, Screenshots.pro, AppMockUp homepages.
+// Checked 2026-11-07: Duo Studio (duomockup.com) English homepage — free browser mockup editor with device frames and local processing.
 export const COMPARISONS = [
   {
     slug: "duoshot-vs-applaunchflow",
@@ -134,6 +135,20 @@ export const COMPARISONS = [
     focus: {
       fr: "Éditeur gratuit sans compte",
       en: "Free editor, no account",
+    },
+  },
+  {
+    slug: "duoshot-vs-duo-studio",
+    name: "Duo Studio",
+    url: "https://duomockup.com/en/",
+    checked: "2026-11-07",
+    summary: {
+      fr: "Duo Studio (duomockup.com) présente un éditeur gratuit dans le navigateur pour créer jusqu’à 10 canevas marketing App Store. Il propose des artworks iPhone 17 Pro, iPad Pro et iPhone Duo plié/déplié, des titres par image, un aperçu App Store et un export PNG ou ZIP ordonné. Aucun compte n’est requis ; le traitement reste local. Il précise que ses cadres ne sont pas des assets marketing officiels Apple.",
+      en: "Duo Studio (duomockup.com) presents a free browser editor for up to 10 App Store marketing canvases. It offers iPhone 17 Pro, iPad Pro and folded/unfolded iPhone Duo artwork, per-image headlines, an App Store preview and PNG or ordered ZIP export. No account is required; processing stays local. It states that its frames are not official Apple marketing assets.",
+    },
+    focus: {
+      fr: "Mockups marketing gratuits avec cadres, traitement local",
+      en: "Free marketing mockups with device frames, local processing",
     },
   },
 ] as const;
