@@ -312,3 +312,56 @@ describe("workspace roles", () => {
     }
   }, 30000);
 });
+
+describe("call7d trial tokens", () => {
+  const owner = "88888888-0000-4000-8000-000000000008";
+  const other = "99999999-0000-4000-8000-000000000009";
+  let trialWorkspace: string;
+  let otherWorkspace: string;
+  beforeAll(async () => {
+    await db.query("insert into auth.users values($1,'trial@example.invalid'),($2,'trial2@example.invalid')", [owner, other]);
+    trialWorkspace = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [owner])).rows[0].workspace_id;
+    otherWorkspace = (await db.query<{ workspace_id: string }>("select workspace_id from workspace_members where user_id=$1", [other])).rows[0].workspace_id;
+    await db.query("insert into call_trial_tokens(token_hash,expires_at) values('call-a',now()+interval '7 days')");
+  });
+  type Claim = { c: { used_at: string | null; workspace_id: string | null; stripe_customer_id: string | null; session_id: string | null } };
+  const claim = (hash: string, workspace: string, customer: string) =>
+    db.query<Claim>("select claim_call_trial($1,$2,$3) as c", [hash, workspace, customer]);
+
+  it("claims a token once and binds it to the workspace and customer", async () => {
+    const claimed = (await claim("call-a", trialWorkspace, "cus_trial")).rows[0].c;
+    expect(claimed.used_at).not.toBeNull();
+    expect(claimed.workspace_id).toBe(trialWorkspace);
+    expect(claimed.stripe_customer_id).toBe("cus_trial");
+  });
+  it("is idempotent for the same workspace and customer so the saved session is reused", async () => {
+    await db.query("select save_call_trial_session('call-a','cs_trial_1')");
+    const retry = (await claim("call-a", trialWorkspace, "cus_trial")).rows[0].c;
+    expect(retry.session_id).toBe("cs_trial_1");
+  });
+  it("refuses the same token claimed by another workspace", async () => {
+    await expect(claim("call-a", otherWorkspace, "cus_other")).rejects.toThrow("TRIAL_TOKEN_INVALID");
+  });
+  it("refuses a second token for a workspace that already trialed", async () => {
+    await db.query("insert into call_trial_tokens(token_hash,expires_at) values('call-b',now()+interval '7 days')");
+    await expect(claim("call-b", trialWorkspace, "cus_trial")).rejects.toThrow("TRIAL_ALREADY_USED");
+  });
+  it("rejects a missing or expired token", async () => {
+    await expect(claim("call-missing", otherWorkspace, "cus_other")).rejects.toThrow("TRIAL_TOKEN_INVALID");
+    await db.query("insert into call_trial_tokens(token_hash,expires_at) values('call-exp',now()-interval '1 second')");
+    await expect(claim("call-exp", otherWorkspace, "cus_other")).rejects.toThrow("TRIAL_TOKEN_INVALID");
+  });
+  it("keeps the trial tokens table and its RPCs service-role only", async () => {
+    const privileges = (await db.query<Record<string, boolean>>(`select
+      has_table_privilege('anon','public.call_trial_tokens','select') as anon_select,
+      has_table_privilege('authenticated','public.call_trial_tokens','select') as auth_select,
+      has_table_privilege('authenticated','public.call_trial_tokens','insert') as auth_insert,
+      has_function_privilege('authenticated','public.claim_call_trial(text,uuid,text)','execute') as claim,
+      has_function_privilege('anon','public.claim_call_trial(text,uuid,text)','execute') as claim_anon,
+      has_function_privilege('authenticated','public.save_call_trial_session(text,text)','execute') as save`)).rows[0];
+    expect(Object.entries(privileges).filter(([, granted]) => granted).map(([name]) => name)).toEqual([]);
+    expect((await db.query("select relrowsecurity from pg_class where oid='public.call_trial_tokens'::regclass")).rows).toEqual([{ relrowsecurity: true }]);
+    expect((await db.query("select policyname from pg_policies where tablename='call_trial_tokens'")).rows).toEqual([]);
+    expect((await db.query<{ ok: boolean }>("select has_table_privilege('service_role','public.call_trial_tokens','insert') as ok")).rows[0].ok).toBe(true);
+  });
+});
