@@ -84,6 +84,21 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
     for (const fact of facts) expect(html).toContain(fact);
     expect(html).not.toContain("2064 × 2752");
   });
+
+  it("presents AppScreen (appscreen.pro) as distinct from AppScreens", async () => {
+    const html = renderToStaticMarkup(await ComparisonPage({ params: Promise.resolve({ locale, slug: "duoshot-vs-appscreen-pro" }) }));
+    const facts = locale === "fr" ? [
+      "AppScreen (appscreen.pro, édité par Intenseloop, Inc.)",
+      "éditeur de captures panoramiques pour l’App Store et Google Play",
+      "AppScreen est un produit différent d’AppScreens (appscreens.com).",
+    ] : [
+      "AppScreen (appscreen.pro, by Intenseloop, Inc.)",
+      "panorama screenshot editor for the App Store and Google Play",
+      "AppScreen is a different product from AppScreens (appscreens.com).",
+    ];
+    for (const fact of facts) expect(html).toContain(fact);
+    expect(html).toContain('href="https://appscreen.pro/"');
+  });
 });
 
 it("generates every comparison slug, keeping Screenhance", () => {
@@ -97,6 +112,7 @@ it("generates every comparison slug, keeping Screenhance", () => {
     { slug: "duoshot-vs-applaunchpad" },
     { slug: "duoshot-vs-screenshots-pro" },
     { slug: "duoshot-vs-appmockup" },
+    { slug: "duoshot-vs-appscreen-pro" },
   ]);
   expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(COMPARISONS.length);
 });
