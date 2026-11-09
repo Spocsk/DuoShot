@@ -12,7 +12,7 @@ export type PageSchema = {
   path: string;
   faq?: readonly FaqItem[];
   software?: boolean | { name: string; description: string };
-  article?: { title: string; description: string; dateModified: string; datePublished?: string; author?: "person"; abstract?: string };
+  article?: { title: string; description: string; dateModified: string; datePublished?: string; author?: "person"; abstract?: string; citation?: string };
   howTo?: { name: string; steps: readonly { id: string; name: string; text: string }[] };
   /** Visible breadcrumb trail; names must match the rendered breadcrumb text. */
   breadcrumb?: readonly { name: string; path: string }[];
@@ -97,7 +97,7 @@ export function jsonLdGraph(locale: Locale, { path, faq, software, article, howT
         ...(article.author === "person"
           ? { author: { "@type": "Person", name: ARTICLE_AUTHOR }, publisher: { "@id": `${absoluteUrl("/")}#organization` } }
           : { author: { "@id": `${absoluteUrl("/")}#organization` } }),
-        citation: APPLE_SCREENSHOT_SOURCE,
+        citation: article.citation ?? APPLE_SCREENSHOT_SOURCE,
       }] : []),
       ...(howTo?.steps.length ? [{
         "@type": "HowTo",
