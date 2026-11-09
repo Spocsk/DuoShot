@@ -82,6 +82,7 @@ export const MARKETING_ROUTE_PAIRS = [
   { fr: "/guides/duoshot-vs-screenshots-pro", en: "/en/guides/duoshot-vs-screenshots-pro", priority: 0.7 },
   { fr: "/guides/duoshot-vs-appmockup", en: "/en/guides/duoshot-vs-appmockup", priority: 0.7 },
   { fr: "/guides/duoshot-vs-duo-studio", en: "/en/guides/duoshot-vs-duo-studio", priority: 0.7 },
+  { fr: "/guides/duoshot-vs-appscreen-pro", en: "/en/guides/duoshot-vs-appscreen-pro", priority: 0.7 },
   { fr: "/alternatives", en: "/en/alternatives", priority: 0.7 },
   { fr: "/alternatives/appscreens", en: "/en/alternatives/appscreens", priority: 0.7 },
   { fr: "/alternatives/applaunchpad", en: "/en/alternatives/applaunchpad", priority: 0.7 },

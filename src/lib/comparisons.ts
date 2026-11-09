@@ -10,6 +10,7 @@ import type { Locale } from "./specs";
 // App Asset Kit: screenshot/icon maker, local processing, export workflow and default sizes.
 // Checked 2026-11-01: Screenies (iPhone Duo generator page), AppShot Maker, AppLaunchpad, Screenshots.pro, AppMockUp homepages.
 // Checked 2026-11-07: Duo Studio (duomockup.com) English homepage — free browser mockup editor with device frames and local processing.
+// Checked 2026-11-08: AppScreen (appscreen.pro) homepage and v1.5 changelog; a different product from AppScreens (appscreens.com).
 export const COMPARISONS = [
   {
     slug: "duoshot-vs-applaunchflow",
@@ -149,6 +150,20 @@ export const COMPARISONS = [
     focus: {
       fr: "Mockups marketing gratuits avec cadres, traitement local",
       en: "Free marketing mockups with device frames, local processing",
+    },
+  },
+  {
+    slug: "duoshot-vs-appscreen-pro",
+    name: "AppScreen",
+    url: "https://appscreen.pro/",
+    checked: "2026-11-08",
+    summary: {
+      fr: "AppScreen (appscreen.pro, édité par Intenseloop, Inc.) présente un éditeur de captures panoramiques pour l’App Store et Google Play, avec des cadres d’appareils, des légendes et 65 modèles sur une seule toile panoramique, pour iPhone, iPad, Apple Watch, bannières App Store et Android. Depuis la v1.5 (4 novembre 2026), sa toile iPhone Duo exporte à la taille de l’écran interne, 2007 × 2853, comme taille Pro. Son offre Pro est un achat unique et ajoute la prise en charge des agents (MCP). AppScreen est un produit différent d’AppScreens (appscreens.com).",
+      en: "AppScreen (appscreen.pro, by Intenseloop, Inc.) presents a panorama screenshot editor for the App Store and Google Play, with device frames, captions and 65 templates on a single panorama canvas, covering iPhone, iPad, Apple Watch, App Store banners and Android. Since v1.5 (November 4, 2026) its iPhone Duo canvas exports at the inner display size, 2007 × 2853, as a Pro size. Its Pro plan is a one-time purchase and adds agent (MCP) support. AppScreen is a different product from AppScreens (appscreens.com).",
+    },
+    focus: {
+      fr: "Éditeur panoramique (App Store + Google Play), cadres, modèles et export iPhone Duo écran interne",
+      en: "Panorama editor (App Store + Google Play), frames, templates and iPhone Duo inner-display export",
     },
   },
 ] as const;
