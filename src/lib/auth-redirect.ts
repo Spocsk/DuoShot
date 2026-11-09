@@ -11,12 +11,17 @@ export function authDestination(value: string | null): URL {
   } catch { return fallback; }
 }
 
+/** The single gated trial link allowed as a `next`: its path, a base64url token, an optional en locale. */
+const CALL_TRIAL_NEXT = /^\/api\/stripe\/call-trial\?token=[A-Za-z0-9_-]+(?:&locale=en)?$/;
+
 /**
  * `next` for the login and signup pages: a same-origin path only ("/tool?upgrade=1&plan=pass30").
  * Rejects absolute and protocol-relative URLs, backslashes, control characters and auth routes.
+ * The gated call7d trial link is the one allowed /api destination, so logging in can resume it.
  */
 export function safeNextPath(value: unknown): string | undefined {
   if (typeof value !== "string" || value.length > 300) return undefined;
+  if (CALL_TRIAL_NEXT.test(value)) return value;
   if (!value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020]/.test(value)) return undefined;
   try {
     const parsed = new URL(value, "https://duoshot.invalid");

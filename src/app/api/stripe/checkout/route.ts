@@ -3,6 +3,7 @@ import { readWorkspaceBilling } from "@/lib/workspace-billing";
 import { CHECKOUT_CATALOG, ONE_TIME_CATALOG, isOneTimeKind, pass30PriceId, type PurchaseKind } from "@/lib/plans";
 import { checkoutAvailable, passCheckoutAvailable } from "@/lib/billing-availability";
 import { getStripe } from "@/lib/stripe";
+import { linkWorkspaceCustomer } from "@/lib/stripe-customer";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
@@ -56,23 +57,10 @@ async function checkout(request: Request) {
   }
 
 
-  let customerId = workspace.stripe_customer_id;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email ?? undefined,
-      metadata: { workspace_id: membership.workspace_id },
-    }, { idempotencyKey: `duoshot-customer-${membership.workspace_id}` });
-    customerId = customer.id;
-    const { data: linked, error } = await admin.from("workspaces").update({ stripe_customer_id: customerId })
-      .eq("id", membership.workspace_id).is("stripe_customer_id", null).select("stripe_customer_id").maybeSingle();
-    if (error) return NextResponse.json({ error: "BILLING_LINK_FAILED" }, { status: 500 });
-    if (!linked) {
-      const { data: current } = await admin.from("workspaces").select("stripe_customer_id")
-        .eq("id", membership.workspace_id).single();
-      if (!current?.stripe_customer_id) return NextResponse.json({ error: "BILLING_LINK_FAILED" }, { status: 500 });
-      customerId = current.stripe_customer_id;
-    }
-  }
+  const customerId = await linkWorkspaceCustomer({
+    stripe, admin, workspaceId: membership.workspace_id,
+    customerId: workspace.stripe_customer_id, email: user.email,
+  });
   if (!customerId) return NextResponse.json({ error: "BILLING_LINK_FAILED" }, { status: 500 });
 
   const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });

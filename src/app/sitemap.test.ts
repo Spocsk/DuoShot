@@ -12,9 +12,9 @@ describe("sitemap", () => {
     }
   });
 
-  it("lists both guides hub content guides in both locales", () => {
+  it("lists the guides hub content guides in both locales", () => {
     const urls = sitemap().map((entry) => new URL(entry.url).pathname);
-    for (const slug of ["app-store-screenshot-sizes", "app-store-screenshot-guidelines"]) {
+    for (const slug of ["app-store-screenshot-sizes", "app-store-screenshot-guidelines", "app-preview-specifications"]) {
       expect(urls).toContain(`/guides/${slug}`);
       expect(urls).toContain(`/en/guides/${slug}`);
     }

@@ -112,6 +112,7 @@ it("generates every comparison slug, keeping Screenhance", () => {
     { slug: "duoshot-vs-applaunchpad" },
     { slug: "duoshot-vs-screenshots-pro" },
     { slug: "duoshot-vs-appmockup" },
+    { slug: "duoshot-vs-duo-studio" },
     { slug: "duoshot-vs-appscreen-pro" },
   ]);
   expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(COMPARISONS.length);
