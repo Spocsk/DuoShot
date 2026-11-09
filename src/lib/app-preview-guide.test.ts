@@ -5,6 +5,7 @@ import { generateImageMetadata, generateStaticParams } from "@/app/[locale]/guid
 import sitemap from "@/app/sitemap";
 import { GET as llms } from "@/app/llms.txt/route";
 import { appPreviewGuide, APP_PREVIEW_GUIDE_PATH } from "./guides";
+import { APPLE_APP_PREVIEW_SOURCE } from "./apple-screenshot-status";
 import { ARTICLE_AUTHOR } from "./json-ld";
 import { shouldSkipLocaleRewrite } from "./locale";
 import { absoluteUrl, localizedPath } from "./site";
@@ -35,8 +36,10 @@ describe.each(["fr", "en"] as const)("%s App Store app preview specs guide", (lo
     expect(html.match(/<h1\b/g)).toHaveLength(1);
     // The accepted iPhone/iPhone Duo app preview resolution, taken straight from Apple.
     expect(html).toContain("886 × 1920");
-    // DuoShot makes the screenshots, not the preview videos.
-    expect(html).toContain(locale === "fr" ? "il ne crée pas les vidéos d’aperçu" : "it doesn't make app preview videos");
+    // DuoShot makes the screenshots, not the preview videos. React escapes the ASCII apostrophe
+    // in "doesn't" to &#x27;, so decode entities before asserting on the sentence.
+    const text = html.replace(/&#x27;/g, "'");
+    expect(text).toContain(locale === "fr" ? "il ne crée pas les vidéos d’aperçu" : "it doesn't make app preview videos");
     for (const link of guide.body.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
       const href = link[1];
       expect(html).toContain(`href="${href}"`);
@@ -53,7 +56,10 @@ describe.each(["fr", "en"] as const)("%s App Store app preview specs guide", (lo
       "@type": "TechArticle", headline: guide.title, description: guide.description,
       inLanguage: locale, url: url(), dateModified: "2026-11-09", datePublished: "2026-11-09",
       author: { "@type": "Person", name: ARTICLE_AUTHOR },
+      // This guide cites Apple's app preview specifications page, not the screenshot one.
+      citation: APPLE_APP_PREVIEW_SOURCE,
     });
+    expect(APPLE_APP_PREVIEW_SOURCE).toBe("https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications");
   });
 
   it("is listed in llms.txt in both locales", async () => {
