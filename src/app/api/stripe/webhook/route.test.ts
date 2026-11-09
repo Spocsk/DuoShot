@@ -225,6 +225,32 @@ describe("POST /api/stripe/webhook", () => {
       expect(insert).not.toHaveBeenCalled();
     });
   });
+
+  describe("call7d trial", () => {
+    it("grants Indie while a call7d subscription is trialing", async () => {
+      const { update, retrieve } = setup("trialing", "customer.subscription.updated", false, "price_indie");
+      retrieve.mockResolvedValue({
+        id: "sub_1", customer: "cus_1", status: "trialing", metadata: { workspace_id: "ws-1", offer: "call7d", kind: "indie_monthly" },
+        items: { data: [{ price: { id: "price_indie" }, current_period_end: 2_000_000_000 }] }, cancel_at_period_end: false,
+      });
+      expect((await POST(request("valid"))).status).toBe(200);
+      expect(update).toHaveBeenCalledWith(expect.objectContaining({
+        plan: "indie", seats: 1, stripe_subscription_id: "sub_1", subscription_status: "trialing",
+      }));
+    });
+
+    it("revokes access when the call7d trial subscription is deleted", async () => {
+      const { update, retrieve } = setup("canceled", "customer.subscription.deleted", false, "price_indie");
+      retrieve.mockResolvedValue({
+        id: "sub_1", customer: "cus_1", status: "canceled", metadata: { workspace_id: "ws-1", offer: "call7d" },
+        items: { data: [{ price: { id: "price_indie" }, current_period_end: 2_000_000_000 }] }, cancel_at_period_end: false,
+      });
+      expect((await POST(request("valid"))).status).toBe(200);
+      expect(update).toHaveBeenCalledWith(expect.objectContaining({
+        plan: "free", seats: 1, stripe_subscription_id: null, subscription_status: "canceled",
+      }));
+    });
+  });
 });
 
 

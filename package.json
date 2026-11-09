@@ -16,6 +16,7 @@
     "cypress:run": "cypress run",
     "test:e2e": "start-server-and-test start http://localhost:3000 cypress:run",
     "db:types": "node scripts/gen-db-types.mjs",
+    "call7d:token": "node scripts/create-call7d-token.mjs",
     "i18n:keys": "I18N_WRITE_CLIENT_KEYS=1 vitest run src/lib/i18n/client-boundary.test.ts"
   },
   "dependencies": {

@@ -39,6 +39,8 @@ export function AuthForm({
   const router = useRouter();
   const prefix = localePrefix(locale);
   const afterAuth = nextPath ?? `${prefix}/tool`;
+  // A route handler (the gated trial link) needs a full navigation, not a client transition.
+  const goAfterAuth = () => afterAuth.startsWith("/api/") ? window.location.assign(afterAuth) : router.push(afterAuth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [privacy, setPrivacy] = useState(false);
@@ -133,14 +135,14 @@ export function AuthForm({
         );
         if (data.session) {
           onSuccess?.();
-          if (variant === "page") router.push(afterAuth);
+          if (variant === "page") goAfterAuth();
         }
       } else {
         markAnalyticsAuthIntent("password");
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         onSuccess?.();
-        if (variant === "page") router.push(afterAuth);
+        if (variant === "page") goAfterAuth();
       }
     } catch (error) {
       clearAnalyticsAuthIntent();

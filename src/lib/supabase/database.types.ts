@@ -129,6 +129,44 @@ export type Database = {
           },
         ]
       }
+      call_trial_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          session_id: string | null
+          stripe_customer_id: string | null
+          token_hash: string
+          used_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          session_id?: string | null
+          stripe_customer_id?: string | null
+          token_hash: string
+          used_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          session_id?: string | null
+          stripe_customer_id?: string | null
+          token_hash?: string
+          used_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_trial_tokens_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkout_attempts: {
         Row: {
           attempt_id: string
@@ -819,6 +857,14 @@ export type Database = {
         Args: never
         Returns: Json
       }
+      claim_call_trial: {
+        Args: {
+          p_token_hash: string
+          p_workspace_id: string
+          p_customer_id: string
+        }
+        Returns: Json
+      }
       claim_render: {
         Args: never
         Returns: Json
@@ -938,6 +984,13 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      save_call_trial_session: {
+        Args: {
+          p_token_hash: string
+          p_session_id: string
+        }
+        Returns: undefined
       }
       storage_cleanup_candidates: {
         Args: {
