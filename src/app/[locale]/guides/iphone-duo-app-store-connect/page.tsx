@@ -17,7 +17,7 @@ export default async function Page({ params }: LocaleParams) {
   const guide = appStoreConnectGuide(locale);
   const copy = ascGuideCopy(locale);
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path={ASC_GUIDE_PATH} article={guide} faq={copy.faq} howTo={{ name: copy.howToHeading, steps: copy.steps }} />
+    <JsonLd locale={locale} path={ASC_GUIDE_PATH} article={{ ...guide, author: "person" }} faq={copy.faq} howTo={{ name: copy.howToHeading, steps: copy.steps }} />
     <SiteHeader locale={locale} path={ASC_GUIDE_PATH} />
     <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
       <article>

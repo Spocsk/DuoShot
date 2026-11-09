@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: ComparisonParams) {
 export default async function Page({ params }: ComparisonParams) {
   const { locale, path, guide } = await comparison(params);
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path={path} article={guide} />
+    <JsonLd locale={locale} path={path} article={{ ...guide, author: "person" }} />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-6xl px-5 py-12">
       <article><GuideMarkdown body={guide.body} /></article>

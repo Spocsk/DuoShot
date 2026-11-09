@@ -5,6 +5,7 @@ lang: en
 slug: best-app-store-screenshot-generator
 alternate: /guides/best-app-store-screenshot-generator
 updated: 2026-10-15
+published: 2026-10-15
 ---
 
 # Best App Store screenshot generator (2026)
@@ -99,6 +100,7 @@ No. DuoShot exports a ZIP; you upload the screenshots manually. AppScreens, AppL
 - [DuoShot vs AppLaunchpad](/en/guides/duoshot-vs-applaunchpad)
 - [DuoShot vs Screenshots.pro](/en/guides/duoshot-vs-screenshots-pro)
 - [DuoShot vs AppMockUp](/en/guides/duoshot-vs-appmockup)
+- [DuoShot vs Duo Studio](/en/guides/duoshot-vs-duo-studio)
 
 For file preparation, display slots and manual upload steps, read [iPhone Duo screenshots in App Store Connect](/en/guides/iphone-duo-app-store-connect).
 

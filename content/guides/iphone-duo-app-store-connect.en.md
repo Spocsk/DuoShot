@@ -5,6 +5,7 @@ lang: en
 slug: iphone-duo-app-store-connect
 alternate: /guides/iphone-duo-app-store-connect
 updated: 2026-10-16
+published: 2026-10-16
 ---
 
 # iPhone Duo (Apple's foldable iPhone) screenshots in App Store Connect

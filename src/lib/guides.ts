@@ -5,9 +5,14 @@ import type { Locale } from "./specs";
 export const COMPARISON_GUIDE_PATH = "/guides/best-app-store-screenshot-generator";
 export const ASC_GUIDE_PATH = "/guides/iphone-duo-app-store-connect";
 export const SIZES_GUIDE_PATH = "/guides/app-store-screenshot-sizes";
+export const GUIDELINES_GUIDE_PATH = "/guides/app-store-screenshot-guidelines";
 
 export function comparisonGuide(locale: Locale) {
   return readGuide(locale, COMPARISON_GUIDE_PATH);
+}
+
+export function guidelinesGuide(locale: Locale) {
+  return readGuide(locale, GUIDELINES_GUIDE_PATH);
 }
 
 export function appStoreConnectGuide(locale: Locale) {
@@ -42,5 +47,13 @@ function readGuide(locale: Locale, guidePath: string) {
     if (!fields[field]) throw new Error(`Missing guide ${field}: ${locale}`);
   }
   if (fields.lang !== locale) throw new Error(`Incorrect guide language: ${locale}`);
-  return { slug: fields.slug, title: fields.title, description: fields.description, dateModified: fields.updated, body: match[2] };
+  // `published` (first-publication date) is optional; `updated` stays the dateModified.
+  return {
+    slug: fields.slug,
+    title: fields.title,
+    description: fields.description,
+    dateModified: fields.updated,
+    datePublished: fields.published || undefined,
+    body: match[2],
+  };
 }

@@ -5,6 +5,7 @@ lang: fr
 slug: best-app-store-screenshot-generator
 alternate: /en/guides/best-app-store-screenshot-generator
 updated: 2026-10-15
+published: 2026-10-15
 ---
 
 # Meilleur générateur de captures App Store (2026)
@@ -99,6 +100,7 @@ Non. DuoShot produit un ZIP, et vous déposez les captures vous-même. AppScreen
 - [DuoShot vs AppLaunchpad](/guides/duoshot-vs-applaunchpad)
 - [DuoShot vs Screenshots.pro](/guides/duoshot-vs-screenshots-pro)
 - [DuoShot vs AppMockUp](/guides/duoshot-vs-appmockup)
+- [DuoShot vs Duo Studio](/guides/duoshot-vs-duo-studio)
 
 Pour préparer les fichiers, choisir les emplacements et effectuer le dépôt manuel, consultez [Captures iPhone Duo dans App Store Connect](/guides/iphone-duo-app-store-connect).
 

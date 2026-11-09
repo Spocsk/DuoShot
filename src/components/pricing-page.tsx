@@ -8,6 +8,7 @@ import { JsonLd } from "@/lib/json-ld";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { PricingSection } from "@/components/pricing-section";
 import { FaqList } from "@/components/faq-list";
+import { CallCtaCard } from "@/components/call-cta-card";
 
 export async function PricingPage({ locale }: { locale: Locale }) {
   const i18n = getTranslator(locale);
@@ -24,6 +25,7 @@ export async function PricingPage({ locale }: { locale: Locale }) {
       <SiteHeader locale={locale} path="/pricing" />
       <main id="main">
         <PricingSection locale={locale} heading="h1" checkoutAvailable={available} passAvailable={passAvailable} />
+        <CallCtaCard locale={locale} />
         <section className="mx-auto max-w-6xl px-5 pb-16" data-testid="pricing-faq">
           <h2 className="font-display text-4xl">{t("pricing_faq_title")}</h2>
           <FaqList items={faq} />

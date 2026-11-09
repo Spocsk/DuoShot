@@ -7,8 +7,11 @@ import Page, { generateMetadata } from "@/app/[locale]/guides/page";
 import { generateImageMetadata, generateStaticParams } from "@/app/[locale]/guides/opengraph-image";
 import sitemap from "@/app/sitemap";
 import { I18nProvider } from "@/components/i18n-provider";
+import { ALTERNATIVES_BASE_PATH } from "./alternatives";
 import { COMPARISONS, competitorComparison, comparisonPath } from "./comparisons";
+import { SCREENSHOT_SIZE_HUB } from "./devices";
 import { listGuides } from "./guides";
+import { guideIndexEntries } from "./guides-index";
 import { getMessages, getTranslator } from "./i18n";
 import { shouldSkipLocaleRewrite } from "./locale";
 import { SCREENSHOT_CHECKER_PATH } from "./screenshot-checker";
@@ -35,34 +38,53 @@ describe.each(["fr", "en"] as const)("%s guides hub", (locale) => {
   const props = () => ({ params: Promise.resolve({ locale }) });
   const { t } = getTranslator(locale);
 
-  it("lists every localized content guide, checker, size and comparison with its existing description", async () => {
+  const breadcrumb = [{ name: locale === "fr" ? "Accueil" : "Home", path: "/" }, { name: "Guides", path: "/guides" }];
+
+  it("lists every registry guide/hub, checker, size and comparison with its existing localized link", async () => {
     const html = renderToStaticMarkup(await Page(props()));
     const guides = contentGuides(locale);
     expect(guides.length).toBeGreaterThan(0);
     expect(listGuides(locale)).toEqual([...guides].sort((a, b) => a.title.localeCompare(b.title, locale)));
+    // The Guides section is the registry: the markdown content guides plus the two hub pages.
+    const guideSection = guideIndexEntries(locale);
+    expect(guideSection.map((entry) => entry.path)).toEqual(expect.arrayContaining([
+      ...guides.map((guide) => guide.path), SCREENSHOT_SIZE_HUB.path, ALTERNATIVES_BASE_PATH,
+    ]));
+    expect(guideSection).toHaveLength(guides.length + 2);
     const links = [
-      ...guides,
+      ...guideSection,
       { path: SCREENSHOT_CHECKER_PATH, title: t("checker_title"), description: t("checker_description") },
       { path: "/specs", ...SPECS_PAGE_COPY[locale] },
       ...SCREENSHOT_SIZES.map((size) => ({ path: `/${size}`, ...sizePageCopy(locale, size) })),
       ...COMPARISONS.map(({ slug }) => ({ path: comparisonPath(slug), ...competitorComparison(locale, slug)! })),
     ];
     expect(html.match(/<h1\b/g)).toHaveLength(1);
-    expect(html.match(/<section\b/g)).toHaveLength(4);
-    expect(html.match(/<h2\b/g)).toHaveLength(4);
+    // 4 link sections + the call offer card section (its own h2).
+    expect(html.match(/<section\b/g)).toHaveLength(5);
+    expect(html.match(/<h2\b/g)).toHaveLength(5);
     expect(html.match(/<ul\b/g)).toHaveLength(4);
-    expect(html.match(/<li\b/g)).toHaveLength(links.length);
+    // One <li> per section link, plus the two breadcrumb crumbs.
+    expect(html.match(/<li\b/g)).toHaveLength(links.length + breadcrumb.length);
     for (const link of links) {
       expect(html).toContain(`<a class="ds-link" href="${localizedPath(locale, link.path)}">${escaped(link.title)}</a>`);
       expect(html).toContain(`<p class="mt-1 text-[var(--muted)]">${escaped(link.description)}</p>`);
     }
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
-    expect(graph).toHaveLength(1);
+    expect(graph).toHaveLength(2);
     expect(graph[0]).toMatchObject({
       "@type": "TechArticle", headline: t("guides_title"), description: t("guides_description"),
       dateModified: guides.map((guide) => guide.dateModified).sort().at(-1),
       inLanguage: locale, url: absoluteUrl(localizedPath(locale, "/guides")),
     });
+    // The BreadcrumbList JSON-LD names must match the visible breadcrumb exactly.
+    const nav = html.match(/aria-label="Breadcrumb"[\s\S]*?<\/nav>/)![0];
+    const visibleCrumbs = Array.from(nav.matchAll(/<(?:a[^>]*|span aria-current="page")>([^<]+)<\/(?:a|span)>/g)).map((match) => match[1]);
+    expect(visibleCrumbs).toEqual(breadcrumb.map((crumb) => crumb.name));
+    expect(graph[1]).toMatchObject({ "@type": "BreadcrumbList" });
+    expect(graph[1].itemListElement.map((item: { name: string }) => item.name)).toEqual(visibleCrumbs);
+    expect(graph[1].itemListElement.map((item: { item: string }) => item.item)).toEqual(
+      breadcrumb.map((crumb) => absoluteUrl(localizedPath(locale, crumb.path))),
+    );
     for (const forbidden of ["5,4″", "7,6″", '5.4"', '7.6"', "APP_IPHONE_DUO", "exigée"]) {
       expect(html).not.toContain(forbidden);
       expect(html).not.toContain(escaped(forbidden));
@@ -71,6 +93,15 @@ describe.each(["fr", "en"] as const)("%s guides hub", (locale) => {
     for (const key of ["guides_title", "guides_description", "guides_guides", "guides_checker", "guides_sizes", "guides_comparisons", "footer_guides"] as const) {
       expect(t(key)).not.toMatch(/required|exigée/i);
     }
+  });
+
+  it("lists the App Store screenshot guidelines content guide in the Guides registry", () => {
+    const path = "/guides/app-store-screenshot-guidelines";
+    const entry = guideIndexEntries(locale).find((link) => link.path === path);
+    const source = listGuides(locale).find((guide) => guide.path === path);
+    expect(source).toBeDefined();
+    expect(entry).toEqual({ path, title: source!.title, description: source!.description });
+    expect(entry!.title).toBe(locale === "fr" ? "Règles des captures App Store" : "App Store screenshot guidelines");
   });
 
   it("publishes concise, indexable metadata and reciprocal sitemap alternates", async () => {

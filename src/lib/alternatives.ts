@@ -400,8 +400,31 @@ export const ALTERNATIVES: readonly Alternative[] = [
 
 export const ALTERNATIVE_SLUGS = ALTERNATIVES.map(({ slug }) => slug);
 
+/** First-publication date of the "alternative to <X>" pages (first git commit of the batch). */
+export const ALTERNATIVES_PUBLISHED_ON = "2026-11-03";
+
 /** The hub listing every "alternative to <X>" page. */
 export const ALTERNATIVES_BASE_PATH = "/alternatives";
+
+/** Visible copy for the /alternatives hub, reused by the hub page and the /guides index registry. */
+export const ALTERNATIVES_HUB_COPY = {
+  fr: {
+    h1: "DuoShot et ses alternatives pour les captures App Store",
+    intro: "Comparez DuoShot aux générateurs de captures App Store. Chaque page met en regard les prix, le filigrane, la prise en charge de l’iPhone Duo et l’export multilingue, à partir de données publiques vérifiées.",
+    title: "Alternatives à DuoShot : générateurs de captures App Store",
+    description: "Comparez DuoShot aux alternatives pour vos captures App Store iPhone Duo : AppScreens, AppLaunchpad, Screenshots.pro, AppMockUp et Hotpot.",
+    home: "Accueil",
+    hub: "Alternatives",
+  },
+  en: {
+    h1: "DuoShot and its alternatives for App Store screenshots",
+    intro: "Compare DuoShot with App Store screenshot generators. Each page lines up price, watermark, iPhone Duo support and multi-language export, all from verified public data.",
+    title: "DuoShot alternatives: App Store screenshot generators",
+    description: "Compare DuoShot with alternatives for your iPhone Duo App Store screenshots: AppScreens, AppLaunchpad, Screenshots.pro, AppMockUp and Hotpot.",
+    home: "Home",
+    hub: "Alternatives",
+  },
+} as const;
 
 export function alternativePath(slug: string): string {
   return `${ALTERNATIVES_BASE_PATH}/${slug}`;
@@ -426,6 +449,7 @@ export type AlternativeView = {
   title: string;
   description: string;
   dateModified: string;
+  datePublished: string;
   answer: string;
   updatedLabel: string;
   tableCaption: string;
@@ -473,6 +497,7 @@ export function alternativePage(locale: Locale, slug: string): AlternativeView |
     title,
     description,
     dateModified: checked,
+    datePublished: ALTERNATIVES_PUBLISHED_ON,
     answer,
     updatedLabel: locale === "fr" ? `Mis à jour le ${checkedOn}` : `Updated ${checkedOn}`,
     tableCaption: locale === "fr" ? `DuoShot et ${name}` : `DuoShot and ${name}`,
