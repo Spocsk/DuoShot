@@ -827,7 +827,7 @@ function ToolAppInner({ locale, owner }: Props & { owner: string }) {
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}
             {toolPanel === "export" ? <>
-              <ExportPanel locale={locale} prefix={prefix} zipUrl={zipUrl} session={session} orientation={orientation} demo={isDemo} jobs={jobs} />
+              <ExportPanel locale={locale} prefix={prefix} zipUrl={zipUrl} session={session} billing={billing} orientation={orientation} demo={isDemo} jobs={jobs} />
               <OtherActions hasExportable={outerFiles.length > 0 && outerFiles.length === effectiveInner.length} jobs={jobs} />
               <ReviewOutcome locale={locale} billing={billing} checkoutBusy={checkoutBusy} onCheckout={onCheckout} jobs={jobs} />
             </> : null}

@@ -12,6 +12,8 @@ export type BillingStatus = {
   remainingFreeExports?: number | null;
   canUse69?: boolean;
   checkoutAvailable?: boolean;
+  /** Set while a one-time pass is unexpired (future ISO date); it then grants at least Indie. */
+  passExpiresAt?: string | null;
 };
 
 export type SessionState = "loading" | "out" | "in";
