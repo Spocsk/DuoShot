@@ -45,6 +45,24 @@ describe("geometry", () => {
     expect(normalizeCropTransform({ x: 0.8, zoom: 1.2 }, "contain")).toEqual({ fit: "contain", x: 0.8, y: 0.5, zoom: 1.2 });
   });
 
+  it("centers a contain image horizontally when width leaves margin", () => {
+    const metrics = compositionMetrics(1320, 2868, 1398, 2034, { fit: "contain", x: 0.5, y: 0.5 });
+    expect(metrics.fit).toBe("contain");
+    expect(metrics.rect.width).toBeCloseTo(936.15, 1);
+    expect(metrics.rect.height).toBeCloseTo(2034, 1);
+    // Margin ((1398 - 936.15) / 2) must sit on both sides, not all on the right.
+    expect(metrics.rect.left).toBeCloseTo((1398 - metrics.rect.width) / 2, 1);
+    expect(metrics.rect.top).toBeCloseTo(0, 1);
+  });
+
+  it("centers a contain image vertically when height leaves margin", () => {
+    const metrics = compositionMetrics(2868, 1320, 1398, 2034, { fit: "contain", x: 0.5, y: 0.5 });
+    expect(metrics.fit).toBe("contain");
+    expect(metrics.rect.width).toBeCloseTo(1398, 1);
+    expect(metrics.rect.top).toBeCloseTo((2034 - metrics.rect.height) / 2, 1);
+    expect(metrics.rect.left).toBeCloseTo(0, 1);
+  });
+
   it("flags large upscales even without crop", () => {
     const metrics = compositionMetrics(200, 200, 1000, 1000, { fit: "contain", x: 0.5, y: 0.5 });
     expect(metrics.cropPercent).toBe(0);
