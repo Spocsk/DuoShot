@@ -170,7 +170,7 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
     for (const demo of [true, false]) {
       const delivery = render(createElement(ExportPanel, {
         locale, prefix: locale === "en" ? "/en" : "", zipUrl: "/example.zip",
-        session: "in", orientation: "portrait", demo,
+        session: "in", billing: null, orientation: "portrait", demo,
         jobs: { exportImages: [
           { slot: "duo-outer", index: 1, width: 1398, height: 2034, format: "png" },
           { slot: "duo-inner", index: 2, width: 2007, height: 2853, format: "png" },
