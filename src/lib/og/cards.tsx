@@ -14,6 +14,7 @@ export type OgPage =
   | "comparison-guide"
   | "guidelines-guide"
   | "app-preview-guide"
+  | "creative-assets-guide"
   | "competitor-comparison"
   | "compare"
   | "asc-guide"
@@ -67,6 +68,10 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
   "app-preview-guide": {
     fr: { eyebrow: "Guide · Aperçus vidéo App Store", title: "Spécifications des aperçus App Store", lead: "Tailles acceptées, 15–30 s et encodage.", alt: "Spécifications des aperçus vidéo App Store : tailles acceptées par appareil dont l’iPhone Duo, 15–30 s, 500 Mo et l’encodage H.264 ou ProRes." },
     en: { eyebrow: "Guide · App Store app previews", title: "App Store app preview specs", lead: "Accepted sizes, 15–30 s and encoding.", alt: "App Store app preview specs: accepted video sizes per device including iPhone Duo, 15–30 s, 500 MB and H.264 or ProRes encoding." },
+  },
+  "creative-assets-guide": {
+    fr: { eyebrow: "Guide · Creative assets App Store", title: "Creative assets App Store", lead: "Bandeau 3840 × 1646, recherche 3:2, vidéo 5–30 s.", alt: "Spécifications des creative assets App Store : bandeau de fiche 3840 × 1646, résultats de recherche 3:2, vidéo 5–30 s et règles de contenu d’Apple." },
+    en: { eyebrow: "Guide · App Store creative assets", title: "App Store creative assets", lead: "Header 3840 × 1646, search 3:2, 5–30 s video.", alt: "App Store creative assets specs: product page header 3840 × 1646, search results 3:2, 5–30 s video and Apple's content rules." },
   },
   home: {
     fr: { eyebrow: "iPhone Duo · App Store Connect", title: "Captures iPhone Duo.\nAux dimensions App Store.", alt: `DuoShot : captures iPhone Duo aux dimensions App Store, ${OUTER_PORTRAIT} et ${INNER_PORTRAIT} px.` },
@@ -418,6 +423,7 @@ const ART: Record<OgPage, (props: { locale: Locale }) => ReactNode> = {
   "comparison-guide": PairArt,
   "guidelines-guide": PairArt,
   "app-preview-guide": PairArt,
+  "creative-assets-guide": PairArt,
   home: HomeArt,
   specs: SpecsArt,
   "iphone-69": Iphone69Art,

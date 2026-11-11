@@ -7,6 +7,7 @@ export const ASC_GUIDE_PATH = "/guides/iphone-duo-app-store-connect";
 export const SIZES_GUIDE_PATH = "/guides/app-store-screenshot-sizes";
 export const GUIDELINES_GUIDE_PATH = "/guides/app-store-screenshot-guidelines";
 export const APP_PREVIEW_GUIDE_PATH = "/guides/app-preview-specifications";
+export const CREATIVE_ASSETS_GUIDE_PATH = "/guides/app-store-creative-assets";
 
 export function comparisonGuide(locale: Locale) {
   return readGuide(locale, COMPARISON_GUIDE_PATH);
@@ -18,6 +19,10 @@ export function guidelinesGuide(locale: Locale) {
 
 export function appPreviewGuide(locale: Locale) {
   return readGuide(locale, APP_PREVIEW_GUIDE_PATH);
+}
+
+export function creativeAssetsGuide(locale: Locale) {
+  return readGuide(locale, CREATIVE_ASSETS_GUIDE_PATH);
 }
 
 export function appStoreConnectGuide(locale: Locale) {

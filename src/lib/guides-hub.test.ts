@@ -112,6 +112,14 @@ describe.each(["fr", "en"] as const)("%s guides hub", (locale) => {
     expect(entry).toEqual({ path, title: source!.title, description: source!.description });
   });
 
+  it("lists the App Store creative assets content guide in the Guides registry", () => {
+    const path = "/guides/app-store-creative-assets";
+    const entry = guideIndexEntries(locale).find((link) => link.path === path);
+    const source = listGuides(locale).find((guide) => guide.path === path);
+    expect(source).toBeDefined();
+    expect(entry).toEqual({ path, title: source!.title, description: source!.description });
+  });
+
   it("publishes concise, indexable metadata and reciprocal sitemap alternates", async () => {
     const metadata = await generateMetadata(props());
     const url = absoluteUrl(localizedPath(locale, "/guides"));
