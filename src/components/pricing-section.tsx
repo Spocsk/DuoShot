@@ -150,6 +150,29 @@ function comparisonRows(i18n: Translator, ids: PlanId[]) {
   return rows.map((row) => ({ label: row.label, cells: ids.map((id) => value(id, row.pick)) }));
 }
 
+/**
+ * EARLY50 launch deal on the Indie plan only: half price for life for the first 20 Indie
+ * subscribers, redeemed in the promo code field at checkout. The discounted and full prices
+ * are derived from PLANS.indie (halved for the deal), never hard-coded, and no seats counter
+ * is shown. Studio and the pass never render this.
+ */
+export function Early50Note({ i18n }: { i18n: Translator }) {
+  const { locale, t, tf } = i18n;
+  return (
+    <div className="studio-plan-early50" data-testid="pricing-early50">
+      <p className="studio-plan-early50-title">{t("pricing_early50_title")}</p>
+      <p className="studio-plan-early50-body">
+        {tf("pricing_early50_body", {
+          monthly: eur(PLANS.indie.monthlyEur / 2, locale),
+          yearly: eur(PLANS.indie.yearlyEur / 2, locale),
+          fullMonthly: eur(PLANS.indie.monthlyEur, locale),
+          fullYearly: eur(PLANS.indie.yearlyEur, locale),
+        })}
+      </p>
+    </div>
+  );
+}
+
 function OfferCta({ locale, offer, featured, available }: { locale: Locale; offer: Offer; featured: boolean; available?: boolean }) {
   if (!offer.cta) return null;
   const variant = featured ? "primary" : "secondary";
@@ -216,6 +239,7 @@ export function PricingSection({
               <p className="studio-plan-price">{offer.price}</p>
               <p className="studio-plan-note">{offer.note}</p>
               <p className="studio-plan-body">{planBody(id, i18n)}</p>
+              {id === "indie" ? <Early50Note i18n={i18n} /> : null}
               <div className="studio-plan-cta"><OfferCta locale={locale} offer={offer} featured={featured} available={isPass(id) ? passAvailable : checkoutAvailable} /></div>
             </article>
           );
