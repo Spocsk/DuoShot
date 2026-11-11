@@ -411,6 +411,16 @@ html:not(.duo-motion) .studio-sequence .studio-sequence-step-visual { display: b
 .studio-plan-team .studio-plan-body { max-width: 34rem; }
 .studio-plan-seats { margin-top: 0.6rem; color: var(--studio-ink); font-size: 0.88rem; font-weight: 600; }
 .studio-plan-local { margin-top: 0.35rem; color: var(--studio-muted); font-size: 0.82rem; line-height: 1.45; }
+.studio-plan-early50 { margin-top: 0.9rem; padding: 0.7rem 0.85rem; border: 1px dashed var(--studio-sea); border-radius: 0.75rem; background: var(--studio-sea-soft); }
+.studio-plan-early50-title { color: var(--studio-sea); font-size: 0.82rem; font-weight: 650; letter-spacing: -0.01em; }
+.studio-plan-early50-body { margin-top: 0.25rem; color: var(--studio-muted); font-size: 0.8rem; line-height: 1.45; }
+.tool-export-offers { margin-top: 1.25rem; padding: 1rem; border: 1px solid var(--studio-line); border-radius: 1rem; background: var(--studio-surface); }
+.tool-export-offers-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.tool-export-offers-close { padding: 0 0.3rem; border: 0; background: transparent; color: var(--studio-muted); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.tool-export-offers-close:hover { color: var(--studio-ink); }
+.tool-export-offers-call { margin-top: 0.85rem; }
+.tool-export-offers-call .studio-plan-early50-title { color: var(--studio-sea); }
+.tool-export-offers-call .ds-cta-ghost { margin-top: 0.6rem; }
 .studio-plan-team-offer .studio-plan-price { margin-top: 0; }
 .studio-plan-team-offer .ds-cta-ghost { margin-top: 0.9rem; }
 .studio-plan-team-offer .studio-inline-link { margin-top: 0.3rem; }
