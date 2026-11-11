@@ -7,6 +7,7 @@ import { formatInches, zipFolderName, type DeviceSlot, type Locale, type Orienta
 import { useI18n } from "@/components/i18n-provider";
 import { formatEurFromCents, FREE_EXPORTS, PLANS, type PurchaseKind } from "@/lib/plans";
 import { SwapLabel } from "@/components/tool/controls";
+import { ExportOffers } from "@/components/tool/export-offers";
 import type { BillingStatus, SessionState } from "@/components/tool/use-billing";
 import type { useRenderJobs } from "@/components/tool/use-render-jobs";
 
@@ -79,11 +80,12 @@ export function ReviewOutcome({ locale, billing, checkoutBusy, onCheckout, jobs 
 }
 
 /** Export step: the delivered file list once the ZIP exists, otherwise what is still missing. */
-export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo, jobs }: {
+export function ExportPanel({ locale, prefix, zipUrl, session, billing, orientation, demo, jobs }: {
   locale: Locale;
   prefix: string;
   zipUrl: string | null;
   session: SessionState;
+  billing: BillingStatus | null;
   orientation: Orientation;
   demo: boolean;
   jobs: Jobs;
@@ -107,6 +109,7 @@ export function ExportPanel({ locale, prefix, zipUrl, session, orientation, demo
         <p className="mt-3 text-sm text-[var(--muted)]">{t("tool_unzip_archive_get_both")}</p>
       </div>
     ) : null}
+    {zipUrl ? <ExportOffers session={session} billing={billing} /> : null}
     <p className="mt-3 text-sm text-[var(--muted)]" data-testid="tool-export-connect-hint">
       {t("tool_export_connect_hint")}{" "}
       <Link href={`${prefix}/specs`} className="ds-link">{t("tool_export_connect_specs")}</Link>

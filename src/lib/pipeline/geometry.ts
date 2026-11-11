@@ -105,8 +105,9 @@ export function compositionMetrics(
     overflowY,
     severity,
     rect: {
-      left: overflowX > 0 ? -overflowX * transform.x : 0,
-      top: overflowY > 0 ? -overflowY * transform.y : 0,
+      // Cover pans by overflow; contain (no overflow) centers the margin on both sides.
+      left: overflowX > 0 ? -overflowX * transform.x : (dstW - width) / 2,
+      top: overflowY > 0 ? -overflowY * transform.y : (dstH - height) / 2,
       width,
       height,
     },

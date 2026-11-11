@@ -95,6 +95,7 @@ Je développe [DuoShot](/), et il ne crée pas les vidéos d’aperçu. Il crée
 ## Guides liés
 
 - [Tailles de captures App Store (tous les appareils)](/guides/app-store-screenshot-sizes)
+- [Creative assets App Store (bandeau et résultats de recherche)](/guides/app-store-creative-assets)
 - [Taille de capture iPhone Duo](/guides/screenshot-size/iphone-duo)
 - [iPhone Duo dans App Store Connect](/guides/iphone-duo-app-store-connect)
 - [Règles des captures App Store](/guides/app-store-screenshot-guidelines)

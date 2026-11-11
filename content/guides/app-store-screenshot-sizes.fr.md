@@ -85,4 +85,6 @@ Notre [vérificateur gratuit](/tools/iphone-duo-screenshot-checker) contrôle le
 
 DuoShot exporte des captures sans cadre pour les écrans externe et interne de l’iPhone Duo, la taille 6,3″ requise et la taille 6,9″ optionnelle, dans un seul ZIP. L’essai gratuit comprend 2 ZIP HD avec les captures Duo et la taille 6,3″ requise. Le format 6,9″ est disponible avec Pass, Indie et Studio. DuoShot ne couvre pas aujourd’hui les tailles iPad, Mac, Apple TV, Vision Pro ni Watch. Pour d’autres outils, consultez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator).
 
+iOS 27 ajoute des [creative assets](/guides/app-store-creative-assets) — un bandeau de fiche et un visuel de résultats de recherche — au-dessus de vos captures ; ils sont distincts et ne changent pas les tailles présentées ici.
+
 [Préparez vos captures](/tool) ou consultez la [page complète des spécifications](/specs).
