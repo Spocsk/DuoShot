@@ -15,6 +15,7 @@ import { uploadSource } from "@/lib/source-upload";
 import { appNameOf, type SetMeta } from "@/lib/sets-store";
 import type { ToolPanel } from "@/components/tool/canvas";
 import { explainError } from "@/components/tool/errors";
+import { exportFailureReason } from "@/lib/export-failure-reason";
 import type { BillingStatus } from "@/components/tool/use-billing";
 
 type StatusKind = "ok" | "err" | "busy" | "info";
@@ -129,7 +130,12 @@ export function useRenderJobs(ctx: RenderJobsContext) {
         setToolPanel(kind === "export" ? "export" : "review");
         setStatusKind("ok"); setStatus(t(kind === "export" ? "tool_zip_ready" : "tool_review_ready"));
         void refreshBilling();
-      }).catch(() => {
+      }).catch((error) => {
+        if (kind === "export") {
+          void trackProduct("export_failed", {
+            reason: exportFailureReason(error instanceof Error ? error.message : undefined),
+          });
+        }
         if (mounted) { setStatusKind("err"); setStatus(t("tool_render_recovery_unavailable_reload")); }
       }).finally(() => { if (mounted) (kind === "export" ? setBusyExport : setBusyReview)(false); });
     }
@@ -159,20 +165,25 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       validateDuoSelection(ctx.duoSelection, outerFiles.length, effectiveInner.length);
       const supabase = createBrowserSupabase();
       const { data: sessionData } = await supabase.auth.getUser();
+      const plan = billing?.plan ?? "unknown";
       if (!sessionData.user) {
+        void trackProduct("export_failed", { reason: "AUTH_REQUIRED", plan });
         setShowAuth(true);
         flashStatus(t("error_auth"), "info");
         return;
       }
       if (include69 && billing && billing.canUse69 === false) {
+        void trackProduct("export_failed", { reason: "IPHONE_69_GATED", plan });
         setPaywall("69");
         return;
       }
       if (billing?.plan === "free" && billing.remainingFreeExports === 0) {
+        void trackProduct("export_failed", { reason: "TRIAL_EXHAUSTED", plan });
         setPaywall("trial");
         return;
       }
       if (severeQualityCount > 0 && !qualityAcknowledged) {
+        void trackProduct("export_failed", { reason: "QUALITY_ACK_REQUIRED", plan });
         flashStatus(t("tool_quality_ack_required"), "err");
         document.querySelector('[data-testid="quality-gate"]')?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
         return;
@@ -215,10 +226,7 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       };
       if (!response.ok) {
         void refreshBilling();
-        void trackProduct("export_failed", {
-          reason: ["TRIAL_EXHAUSTED", "IPHONE_69_GATED", "CLONE_RISK"].includes(payload.error ?? "")
-            ? payload.error! : "other",
-        });
+        void trackProduct("export_failed", { reason: exportFailureReason(payload.error), plan });
         if (payload.error === "TRIAL_EXHAUSTED") {
           setPaywall("trial");
           flashStatus(tf("error_trial", { exports: FREE_EXPORTS }), "err");
@@ -256,7 +264,9 @@ export function useRenderJobs(ctx: RenderJobsContext) {
       );
       void refreshBilling();
     } catch (error) {
-      void trackProduct("export_failed", { reason: "network_or_storage" });
+      void trackProduct("export_failed", {
+        reason: exportFailureReason(error instanceof Error ? error.message : undefined),
+      });
       flashStatus(error instanceof Error ? explainError(i18n, error.message) : t("error_export"), "err");
     } finally {
       setBusyExport(false);
