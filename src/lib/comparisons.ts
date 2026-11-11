@@ -11,6 +11,7 @@ import type { Locale } from "./specs";
 // Checked 2026-11-01: Screenies (iPhone Duo generator page), AppShot Maker, AppLaunchpad, Screenshots.pro, AppMockUp homepages.
 // Checked 2026-11-07: Duo Studio (duomockup.com) English homepage — free browser mockup editor with device frames and local processing.
 // Checked 2026-11-08: AppScreen (appscreen.pro) homepage and v1.5 changelog; a different product from AppScreens (appscreens.com).
+// Checked 2026-11-10: Store Connect Studio (Anax, anaxkg.com) English page — Mac app for screenshots, metadata, translation and direct App Store Connect sync.
 export const COMPARISONS = [
   {
     slug: "duoshot-vs-applaunchflow",
@@ -164,6 +165,20 @@ export const COMPARISONS = [
     focus: {
       fr: "Éditeur panoramique (App Store + Google Play), cadres, modèles et export iPhone Duo écran interne",
       en: "Panorama editor (App Store + Google Play), frames, templates and iPhone Duo inner-display export",
+    },
+  },
+  {
+    slug: "duoshot-vs-store-connect-studio",
+    name: "Store Connect Studio",
+    url: "https://anaxkg.com/en/store-connect-studio",
+    checked: "2026-11-10",
+    summary: {
+      fr: "Store Connect Studio, édité par Anax, présente une app Mac native (macOS 26 ou version ultérieure) avec une app compagnon gratuite pour iPhone et iPad, qui conçoit les captures App Store à partir de modèles, modifie et traduit vos métadonnées App Store, et synchronise l’ensemble avec App Store Connect via votre propre clé API conservée dans le trousseau macOS. Elle annonce des cadres d’appareils (plats ou 3D), des légendes, une loupe, des panneaux sur deux captures et 53 modèles intégrés, et indique prendre en charge les tailles de captures iPhone Duo et Mac, aux côtés de l’iPhone 6,3″ et de l’iPad 13″. Les fonctions principales sont gratuites, les modèles ou apps supplémentaires étant des achats uniques. Contrairement à la synchronisation directe de Store Connect Studio, DuoShot ne dépose pas encore vers App Store Connect et s’arrête à un ZIP que vous déposez vous-même.",
+      en: "Store Connect Studio, by Anax, presents a native Mac app (macOS 26 or later) with a free iPhone and iPad companion that designs App Store screenshots from templates, edits and translates your App Store metadata, and syncs everything to App Store Connect with your own API key kept in the macOS Keychain. It lists device frames (flat or 3D), captions, a magnifier lens, cross-page panels and 53 built-in templates, and states it supports iPhone Duo and Mac screenshot sizes alongside iPhone 6.3″ and iPad 13″. Core features are free, with extra templates or apps as one-time purchases. Unlike Store Connect Studio's direct sync, DuoShot does not yet upload to App Store Connect and stops at a ZIP you upload yourself.",
+    },
+    focus: {
+      fr: "App Mac pour captures, métadonnées, traduction et synchronisation directe avec App Store Connect",
+      en: "Mac app for screenshots, metadata, translation and direct App Store Connect sync",
     },
   },
 ] as const;

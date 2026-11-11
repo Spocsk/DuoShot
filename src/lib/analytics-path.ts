@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = new Set([
   "/guides/duoshot-vs-screenies", "/guides/duoshot-vs-appshot-maker", "/guides/duoshot-vs-applaunchpad", "/guides/duoshot-vs-screenshots-pro", "/guides/duoshot-vs-appmockup",
   "/guides/duoshot-vs-duo-studio",
   "/guides/duoshot-vs-appscreen-pro",
+  "/guides/duoshot-vs-store-connect-studio",
   // Fixed "alternative to <X>" slugs from alternatives.ts, never arbitrary /alternatives/[slug] values.
   "/alternatives/appscreens", "/alternatives/applaunchpad", "/alternatives/screenshots-pro", "/alternatives/appmockup", "/alternatives/hotpot",
 ]);

@@ -149,6 +149,12 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
       const html = renderToStaticMarkup(page);
       expectPublicCopy(html, `${locale}/${name}`);
       expect(html).toMatch(limit);
+      if (name === "rejection" || name === "rejet") {
+        // Both exact App Store Connect dimension errors must stay surfaced, even in French (Apple shows them in English).
+        for (const message of ["image dimensions are not valid", "The dimensions of one or more screenshots are wrong."]) {
+          expect(html, `${locale}/${name}`).toContain(message);
+        }
+      }
     }
   });
 
