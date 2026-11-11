@@ -103,7 +103,9 @@ export function devicePageCopy(locale: Locale, device: Device): DevicePageCopy {
   const h1 = locale === "fr"
     ? `Taille de capture App Store ${name} (${VERIFIED_YEAR})`
     : `App Store screenshot size for ${name} (${VERIFIED_YEAR})`;
-  const title = locale === "fr" ? `${h1} | générateur DuoShot` : `${h1} | DuoShot`;
+  // The document layout appends " · DuoShot"; keeping "générateur" here but not
+  // the brand name avoids the duplicate "… DuoShot · DuoShot" title.
+  const title = locale === "fr" ? `${h1} | générateur` : h1;
   const description = locale === "fr"
     ? `Taille de capture App Store pour ${name} (${VERIFIED_YEAR}) : tailles acceptées, obligation et erreurs de rejet fréquentes.`
     : `App Store screenshot size for ${name} (${VERIFIED_YEAR}): accepted sizes, requirement and common rejection errors.`;

@@ -3,9 +3,6 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { securityHeaders } from "./src/lib/security-headers";
 
-/** Browser navigations ask for HTML; image and RSC fetches do not. */
-const HTML_DOCUMENT = { type: "header", key: "accept", value: ".*text/html.*" } as const;
-
 // Compile the page tree into the proxy bundle; standalone servers do not have src/app.
 const localizedPageRoutes = readdirSync(path.join(__dirname, "src/app/[locale]"), { recursive: true })
   .filter((file): file is string => typeof file === "string" && /(?:^|[/\\])page\.[jt]sx?$/.test(file))
@@ -58,10 +55,8 @@ const nextConfig: NextConfig = {
       { source: "/en/pourquoi-pas-ia", destination: "/en/why-not-ai", permanent: true },
       { source: "/en/rejet", destination: "/en/rejection", permanent: true },
       // French pages are served by app/[locale] with locale "fr" (see rewrites): a page opened
-      // at /fr/… goes back to its public unprefixed URL. Only the French OG images, fetched as
-      // images rather than documents, are served under /fr.
-      { source: "/fr", has: [HTML_DOCUMENT], destination: "/", permanent: true },
-      { source: "/fr/:path+", has: [HTML_DOCUMENT], destination: "/:path+", permanent: true },
+      // at /fr or /fr/… is permanently redirected back to its public unprefixed URL in the proxy
+      // (src/proxy.ts), which can exclude the French OG images served under /fr by path.
       // Social cards cached before the single [locale] tree (route groups added a hash), then
       // before each card got an id for its localized alt text.
       { source: "/opengraph-image-:hash", destination: "/fr/opengraph-image/card", permanent: true },
