@@ -85,4 +85,6 @@ Our [free screenshot checker](/en/tools/iphone-duo-screenshot-checker) validates
 
 DuoShot exports frameless screenshots for the iPhone Duo outer and inner displays, the required 6.3" size and the optional 6.9" size, in one ZIP. The free trial includes 2 HD ZIPs with Duo captures and the required 6.3" size. The 6.9" format is available with Pass, Indie and Studio. DuoShot does not cover iPad, Mac, Apple TV, Vision Pro or Watch sizes today. For other tools, see the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator).
 
+iOS 27 adds [creative assets](/en/guides/app-store-creative-assets) — a product page header and a search results image — above your screenshots; they're separate and don't change the sizes here.
+
 [Prepare your screenshots](/en/tool) or read the [full specifications page](/en/specs).

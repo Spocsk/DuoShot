@@ -95,6 +95,7 @@ I build [DuoShot](/en), and it doesn't make app preview videos. It makes the **s
 ## Related guides
 
 - [App Store screenshot sizes (all devices)](/en/guides/app-store-screenshot-sizes)
+- [App Store creative assets (header and search results)](/en/guides/app-store-creative-assets)
 - [iPhone Duo screenshot size](/en/guides/screenshot-size/iphone-duo)
 - [iPhone Duo in App Store Connect](/en/guides/iphone-duo-app-store-connect)
 - [App Store screenshot guidelines](/en/guides/app-store-screenshot-guidelines)
