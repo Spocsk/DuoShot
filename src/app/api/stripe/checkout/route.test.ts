@@ -281,6 +281,10 @@ describe("POST /api/stripe/checkout", () => {
         mode: "payment",
         invoice_creation: { enabled: true },
       }));
+      // The receipt/invoice e-mail rides on the Stripe Customer (set from user.email in
+      // stripe-customer.ts) once invoice_creation is on, so the payment does not force a
+      // receipt_email of its own — overriding it here would change a live payment flow.
+      expect(create.mock.calls[0][0].payment_intent_data).not.toHaveProperty("receipt_email");
 
       create.mockClear();
       expect((await POST(request("indie_monthly"))).status).toBe(200);

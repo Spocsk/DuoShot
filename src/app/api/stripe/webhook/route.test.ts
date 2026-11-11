@@ -331,3 +331,87 @@ describe("Stripe revenue analytics", () => {
     expect(sendUmamiServerEvent).not.toHaveBeenCalled();
   });
 });
+
+// A Pass Checkout runs in mode "payment" with invoice_creation enabled, so Stripe emits
+// an invoice.paid for the one-off charge. That invoice has no subscription, which the
+// handler reads as invoice.parent?.subscription_details?.subscription. It must not grant a
+// second pass nor book a second revenue event — the Pass is already handled by its
+// checkout.session.completed.
+describe("Pass invoice from invoice_creation (payment Checkout without subscription)", () => {
+  function mocks() {
+    const insert = vi.fn(() => createQueryBuilder({ data: null, error: null }));
+    const update = vi.fn(() => createQueryBuilder({ data: { id: "ws-1" }, error: null }));
+    const rpc = vi.fn(async () => ({ data: { granted: true }, error: null }));
+    const retrieve = vi.fn();
+    const from = vi.fn((table: string) => {
+      if (table === "stripe_events") return { ...createQueryBuilder({ data: null, error: null }), insert };
+      if (table === "workspace_members") return createQueryBuilder({ data: { user_id: "owner-1" }, error: null });
+      return { ...createQueryBuilder({ data: { stripe_customer_id: "cus_1", stripe_subscription_id: null, stripe_sync_version: 0 }, error: null }), update };
+    });
+    vi.mocked(createAdminSupabase).mockReturnValue({ from, rpc } as never);
+    return { insert, update, rpc, retrieve };
+  }
+
+  function stripeReturns(event: unknown, retrieve: ReturnType<typeof vi.fn>) {
+    vi.mocked(getStripe).mockReturnValue({
+      webhooks: { constructEvent: vi.fn(() => event) },
+      subscriptions: { retrieve },
+    } as never);
+  }
+
+  // The modern invoice shape (API reads invoice.parent?.subscription_details?.subscription):
+  // no subscription, manual billing_reason, parent without subscription_details.
+  function invoicePaid(live: boolean, parent: unknown = null) {
+    return {
+      id: "evt_invoice", type: "invoice.paid", livemode: live,
+      data: { object: { id: "in_pass", amount_paid: 1900, currency: "eur", customer: "cus_1", billing_reason: "manual", subscription: null, parent } },
+    };
+  }
+
+  function goLive() {
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_example");
+    vi.stubEnv("ANALYTICS_INTERNAL_USER_IDS", "");
+  }
+
+  it.each([
+    ["in test mode (livemode false)", false, null],
+    ["in live mode at a production endpoint", true, null],
+    ["when the parent carries no subscription_details", true, { quote_details: { quote: "qt_1" } }],
+  ])("acknowledges but never attributes or counts a Pass invoice %s", async (_label, live, parent) => {
+    const { insert, update, rpc, retrieve } = mocks();
+    if (live) goLive();
+    stripeReturns(invoicePaid(live, parent), retrieve);
+    const { status, body } = await readJson(await POST(request("valid")));
+    expect(status).toBe(200);
+    expect(body.received).toBe(true);
+    expect(insert).toHaveBeenCalledWith({ id: "evt_invoice", type: "invoice.paid" });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+    expect(retrieve).not.toHaveBeenCalled();
+    expect(sendUmamiServerEvent).not.toHaveBeenCalled();
+  });
+
+  it("grants the Pass once on checkout.session.completed and ignores the follow-up invoice.paid", async () => {
+    goLive();
+    // 1) The paid Pass Checkout session grants the pass and books revenue exactly once.
+    const completed = mocks();
+    stripeReturns({
+      id: "evt_pass", type: "checkout.session.completed", livemode: true,
+      data: { object: { id: "cs_pass", mode: "payment", payment_status: "paid", amount_total: 1900, currency: "eur", customer: "cus_1", client_reference_id: "ws-1", metadata: { kind: "pass30", workspace_id: "ws-1" } } },
+    }, completed.retrieve);
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(completed.rpc).toHaveBeenCalledExactlyOnceWith("grant_workspace_pass", { p_workspace_id: "ws-1", p_session_id: "cs_pass", p_customer_id: "cus_1", p_days: 30 });
+    expect(sendUmamiServerEvent).toHaveBeenCalledExactlyOnceWith("payment_succeeded", { revenue: 19, currency: "EUR", plan: "pass30", audience: "external" });
+
+    // 2) The invoice.paid that invoice_creation emits for the same payment adds nothing:
+    // no second grant, no workspace projection, no subscription fetch, no second revenue.
+    const invoice = mocks();
+    stripeReturns(invoicePaid(true), invoice.retrieve);
+    expect((await POST(request("valid"))).status).toBe(200);
+    expect(invoice.rpc).not.toHaveBeenCalled();
+    expect(invoice.update).not.toHaveBeenCalled();
+    expect(invoice.retrieve).not.toHaveBeenCalled();
+    expect(sendUmamiServerEvent).toHaveBeenCalledOnce();
+  });
+});
