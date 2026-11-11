@@ -99,6 +99,21 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
     for (const fact of facts) expect(html).toContain(fact);
     expect(html).toContain('href="https://appscreen.pro/"');
   });
+
+  it("presents Store Connect Studio with direct App Store Connect sync and DuoShot's missing upload", async () => {
+    const html = renderToStaticMarkup(await ComparisonPage({ params: Promise.resolve({ locale, slug: "duoshot-vs-store-connect-studio" }) }));
+    const facts = locale === "fr" ? [
+      "Store Connect Studio, édité par Anax,",
+      "synchronise l’ensemble avec App Store Connect via votre propre clé API conservée dans le trousseau macOS",
+      "DuoShot ne dépose pas encore vers App Store Connect et s’arrête à un ZIP que vous déposez vous-même.",
+    ] : [
+      "Store Connect Studio, by Anax,",
+      "syncs everything to App Store Connect with your own API key kept in the macOS Keychain",
+      "DuoShot does not yet upload to App Store Connect and stops at a ZIP you upload yourself.",
+    ];
+    for (const fact of facts) expect(html).toContain(fact);
+    expect(html).toContain('href="https://anaxkg.com/en/store-connect-studio"');
+  });
 });
 
 it("generates every comparison slug, keeping Screenhance", () => {
@@ -114,6 +129,7 @@ it("generates every comparison slug, keeping Screenhance", () => {
     { slug: "duoshot-vs-appmockup" },
     { slug: "duoshot-vs-duo-studio" },
     { slug: "duoshot-vs-appscreen-pro" },
+    { slug: "duoshot-vs-store-connect-studio" },
   ]);
   expect(new Set(COMPARISONS.map(({ slug }) => slug)).size).toBe(COMPARISONS.length);
 });
