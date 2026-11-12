@@ -1,5 +1,6 @@
 import { IPHONE_63_ALTERNATIVE, SIZE_SPECS, SPECS_VERSION_DATE, duoSpec, specPixels } from "@/lib/specs";
 import { getSiteUrl } from "@/lib/site";
+import { DEVICES, deviceDisplayName, deviceGuidePath } from "@/lib/devices";
 import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { INNER_PORTRAIT, OUTER_PORTRAIT } from "@/lib/screenshot-copy";
 import { passCheckoutAvailable } from "@/lib/billing-availability";
@@ -16,10 +17,19 @@ export function GET() {
       : `${spec.label}${spec.label.includes(spec.inches) ? "" : ` ${spec.inches}`}`;
     return `- ${label} ${spec.orientation}: ${spec.width}x${spec.height}`;
   }).join("\n");
-  const comparisonLinks = COMPARISONS.map(({ slug, name }) =>
-    `- DuoShot vs ${name}: ${getSiteUrl()}${comparisonPath(slug)} (EN: ${getSiteUrl()}/en${comparisonPath(slug)})`,
-  ).join("\n");
+  const comparisonLinks = COMPARISONS
+    // Skip comparisons whose pages are not yet deployed (prod returns 404); re-add once live.
+    .filter(({ slug }) => slug !== "duoshot-vs-store-connect-studio")
+    .map(({ slug, name }) =>
+      `- DuoShot vs ${name}: ${getSiteUrl()}${comparisonPath(slug)} (EN: ${getSiteUrl()}/en${comparisonPath(slug)})`,
+    ).join("\n");
   const compareEntry = compareLlmsEntry(getSiteUrl());
+  // One line per device page under /guides/screenshot-size, from the same source as the sitemap (DEVICES),
+  // so the two never drift. Includes /guides/screenshot-size/iphone-duo (EN and FR) and every other device.
+  const deviceGuideLinks = DEVICES.map((device) => {
+    const path = deviceGuidePath(device.slug);
+    return `- App Store screenshot size, ${deviceDisplayName(device)}: ${getSiteUrl()}${path} (EN: ${getSiteUrl()}/en${path})`;
+  }).join("\n");
   const { t, tf } = getTranslator("fr");
   const passAvailable = passCheckoutAvailable();
   const tagline = t(passAvailable ? "home_import_closed_open_captures" : "home_import_closed_open_captures_without_pass");
@@ -45,8 +55,8 @@ ${comparisonLinks}${compareEntry ? `\n${compareEntry}` : ""}
 - App Store screenshot sizes 2026, all Apple devices incl. iPhone Duo (CSV: ${getSiteUrl()}/app-store-screenshot-sizes.csv): ${getSiteUrl()}/guides/app-store-screenshot-sizes (EN: ${getSiteUrl()}/en/guides/app-store-screenshot-sizes)
 - App Store screenshot guidelines, the App Review rules (2.3.3, 2.3.7-2.3.10) and file rules behind screenshot rejections: ${getSiteUrl()}/guides/app-store-screenshot-guidelines (EN: ${getSiteUrl()}/en/guides/app-store-screenshot-guidelines)
 - App Store app preview (video) specs: accepted sizes per device incl. iPhone Duo, 15-30 s, 500 MB, H.264/ProRes, 30 fps (DuoShot makes the screenshots, not the preview videos): ${getSiteUrl()}/guides/app-preview-specifications (EN: ${getSiteUrl()}/en/guides/app-preview-specifications)
-- App Store creative assets (iOS 27) specs: product page header 3840x1646 (21:9), search results 3:2, video 5-30 s at 30/60 fps, and Apple's content rules (DuoShot makes the screenshots, not the creative assets): ${getSiteUrl()}/guides/app-store-creative-assets (EN: ${getSiteUrl()}/en/guides/app-store-creative-assets)
-- App Store screenshot sizes by device, grouped by display group: ${getSiteUrl()}/guides/screenshot-size (EN: ${getSiteUrl()}/en/guides/screenshot-size)
+${/* The App Store creative assets guide (#128) is not yet deployed: prod returns 404 for /guides/app-store-creative-assets. Re-add this line once the page is live. */ ""}- App Store screenshot sizes by device, grouped by display group: ${getSiteUrl()}/guides/screenshot-size (EN: ${getSiteUrl()}/en/guides/screenshot-size)
+${deviceGuideLinks}
 - Manual iPhone Duo (Apple's foldable iPhone) upload guide: ${getSiteUrl()}/guides/iphone-duo-app-store-connect (EN: ${getSiteUrl()}/en/guides/iphone-duo-app-store-connect)
 - Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): ${getSiteUrl()}/tools/iphone-duo-screenshot-checker (EN: ${getSiteUrl()}/en/tools/iphone-duo-screenshot-checker)
 - Tool (noindex): ${getSiteUrl()}/tool

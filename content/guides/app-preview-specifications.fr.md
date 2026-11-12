@@ -1,5 +1,5 @@
 ---
-title: "Spécifications des aperçus vidéo App Store (2026) : tailles, durée, format — iPhone Duo inclus"
+title: "Spécifications des aperçus vidéo App Store 2026"
 description: "Tailles d’aperçu vidéo acceptées par appareil (iPhone Duo inclus), durée 15–30 s, 500 Mo, H.264 ou ProRes, 30 ips, et le lien entre aperçus et captures."
 lang: fr
 slug: app-preview-specifications

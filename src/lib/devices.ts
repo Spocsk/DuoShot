@@ -288,7 +288,7 @@ const ENTRIES: Entry[] = [
   { slug: "ipad-pro-11", name: "iPad Pro (M5, M4)", group: IPAD_11 },
   { slug: "ipad-air-11", name: "iPad Air (M4, M3, M2)", group: IPAD_11 },
   { slug: "ipad-a16", name: "iPad (A16)", group: IPAD_11 },
-  { slug: "ipad-mini", name: "iPad mini (A17 Pro)", group: IPAD_11 },
+  { slug: "ipad-mini", name: "iPad mini (A20 Pro, A17 Pro)", group: IPAD_11 },
 
   { slug: "mac", name: "Mac", group: MAC },
   { slug: "apple-tv", name: "Apple TV", group: APPLE_TV },

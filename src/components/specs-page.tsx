@@ -12,6 +12,8 @@ import { localizedPath, toolPath } from "@/lib/site";
 import { SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "@/lib/screenshot-pages";
 import { getTranslator } from "@/lib/i18n";
 import { appStoreConnectGuide, ASC_GUIDE_PATH, comparisonGuide, COMPARISON_GUIDE_PATH, sizesGuide, SIZES_GUIDE_PATH } from "@/lib/guides";
+import { comparisonPath, competitorComparison } from "@/lib/comparisons";
+import { ALTERNATIVES_BASE_PATH, ALTERNATIVES_HUB_COPY } from "@/lib/alternatives";
 import { SCREENSHOT_CHECKER_PATH } from "@/lib/screenshot-checker";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
@@ -80,6 +82,8 @@ export function SpecsPage({ locale }: { locale: Locale }) {
             <li><Link className="ds-link" href={localizedPath(locale, COMPARISON_GUIDE_PATH)}>{comparisonGuide(locale).title}</Link></li>
             <li><Link className="ds-link" href={localizedPath(locale, ASC_GUIDE_PATH)}>{appStoreConnectGuide(locale).title}</Link></li>
             <li><Link className="ds-link" href={localizedPath(locale, SIZES_GUIDE_PATH)}>{sizesGuide(locale).title}</Link></li>
+            <li><Link className="ds-link" href={localizedPath(locale, comparisonPath("duoshot-vs-appscreens"))}>{competitorComparison(locale, "duoshot-vs-appscreens")!.title}</Link></li>
+            <li><Link className="ds-link" href={localizedPath(locale, ALTERNATIVES_BASE_PATH)}>{ALTERNATIVES_HUB_COPY[locale].title}</Link></li>
           </ul>
         </section>
         <section className="mt-12" aria-labelledby="panel-vs-connect">

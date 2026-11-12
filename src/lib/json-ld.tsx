@@ -19,9 +19,13 @@ export type PageSchema = {
 };
 
 export function siteJsonLdGraph(locale: Locale) {
+  // Set DuoShot apart from the similarly named camera apps: it is a web screenshot studio for iOS developers.
+  const distinguisher = locale === "fr"
+    ? " DuoShot est un atelier web de captures App Store pour les développeurs iOS, sans rapport avec les applications caméra du même nom."
+    : " DuoShot is a web App Store screenshot studio for iOS developers, unrelated to the camera apps of the same name.";
   const description = (locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN).replace(
     "iPhone Duo", locale === "fr" ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)",
-  );
+  ) + distinguisher;
   return {
     "@context": "https://schema.org",
     "@graph": [

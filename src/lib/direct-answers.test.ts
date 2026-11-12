@@ -108,13 +108,25 @@ describe.each(["fr", "en"] as const)("%s direct answers", (locale) => {
     }
   });
 
-  it.each(["1206x2622", "1320x2868"] as const)("keeps %s without a direct answer or an abstract", (size) => {
+  it.each(["1206x2622", "1320x2868"] as const)("renders %s with a citable direct answer and abstract", (size) => {
     const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
-    expect(html).not.toContain('data-testid="direct-answer"');
+    const answer = directAnswer(locale, size);
+    // The direct-answer block renders immediately after the H1 and links Apple's specifications.
+    const paragraph = html.match(/<\/h1>\s*(<p\b[^>]*>[\s\S]*?<\/p>)/)?.[1];
+    expect(paragraph).toMatch(/^<p data-testid="direct-answer" class="mt-4 text-lg">/);
+    const text = unescapeHtml(paragraph!.match(/<span data-testid="direct-answer-text">([^<]*)<\/span>/)![1]);
+    expect(text).toBe(answer.text);
+    // Citable: exact size and a link to Apple's screenshot specifications.
+    expect(text).toContain(size === "1206x2622" ? "1206 × 2622" : "1320 × 2868");
+    expect(paragraph!.match(/<a href="([^"]+)" class="ds-link">/)?.[1]).toBe(APPLE_SCREENSHOT_SOURCE);
+    expect(answer.sourceUrl).toBe(APPLE_SCREENSHOT_SOURCE);
+    // No April 2027 deadline is attached to these sizes (only the Duo sizes carry it).
+    expect(text).not.toMatch(/2027|avril|April/);
+    // The structured data now carries the abstract reused from the direct answer, alongside the FAQPage.
     expect(schemaNodes(html)).toEqual(jsonLdGraph(locale, {
-      path: `/${size}`, faq: sizeFaq(locale, size), article: { ...sizePageCopy(locale, size), dateModified: SCREENSHOT_VERIFIED_ON },
+      path: `/${size}`, faq: sizeFaq(locale, size),
+      article: { ...sizePageCopy(locale, size), dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer.text },
     })["@graph"]);
-    expect(schemaNodes(html)[0]).not.toHaveProperty("abstract");
   });
 
   it("matches structured offer prices to the plan source and visible pricing copy", async () => {

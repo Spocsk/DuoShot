@@ -1,5 +1,5 @@
 ---
-title: "Creative assets App Store (iOS 27) : tailles du bandeau de fiche et des résultats de recherche"
+title: "Creative assets App Store : tailles (iOS 27)"
 description: "Spécifications des creative assets App Store : bandeau 3840 × 1646, résultats de recherche 3:2, vidéo 5–30 s et règles de contenu d’Apple."
 lang: fr
 slug: app-store-creative-assets

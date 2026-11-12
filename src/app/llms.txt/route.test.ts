@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { APPLE_SCREENSHOT_SOURCE, DUO_SLOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { MARKETING_ROUTE_PAIRS } from "@/lib/site";
+import { DEVICES, deviceGuidePath } from "@/lib/devices";
 import { GET } from "./route";
 
 beforeEach(() => {
@@ -22,7 +23,7 @@ describe("GET /llms.txt", () => {
     const response = GET();
     expect(response.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
     const body = await response.text();
-    expect(body).toContain("Specs version: 2026-10-13");
+    expect(body).toContain("Specs version: 2026-11-12");
     expect(body).toContain('iPhone Duo outer display portrait: 1398x2034');
     expect(body).toContain('iPhone Duo inner display landscape: 2853x2007');
     expect(body).toContain('iPhone 6.3" portrait: 1206x2622');
@@ -81,10 +82,29 @@ describe("GET /llms.txt", () => {
     expect(body).toContain("Free trial: 0 EUR, 2 HD ZIPs");
     expect(body).toContain("Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year");
     expect(body).not.toMatch(/coupon|discount|remise|réduction/i);
-    for (const route of MARKETING_ROUTE_PAIRS.filter(({ fr }) => /specs|guides|x\d|pourquoi|rejet|pricing/.test(fr))) {
+    // duoshot-vs-store-connect-studio is not deployed yet (prod 404), so llms.txt omits it on purpose.
+    // app-store-creative-assets is not deployed yet (prod 404), so llms.txt omits it on purpose.
+    for (const route of MARKETING_ROUTE_PAIRS.filter(({ fr }) => /specs|guides|x\d|pourquoi|rejet|pricing/.test(fr) && !fr.includes("store-connect-studio") && !fr.includes("app-store-creative-assets"))) {
       expect(body).toContain(`https://duoshot.site${route.fr}`);
       expect(body).toContain(`https://duoshot.site${route.en}`);
     }
+  });
+
+  it("lists every /guides/screenshot-size device page in both locales, from the sitemap's source", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
+    const body = await GET().text();
+    // The per-device iPhone Duo page (target of "iphone duo screenshot size"), EN and FR.
+    expect(body).toContain("https://duoshot.site/guides/screenshot-size/iphone-duo (EN: https://duoshot.site/en/guides/screenshot-size/iphone-duo)");
+    for (const device of DEVICES) {
+      const path = deviceGuidePath(device.slug);
+      expect(body, device.slug).toContain(`https://duoshot.site${path} (EN: https://duoshot.site/en${path})`);
+    }
+    // The hub itself stays listed above the per-device lines.
+    expect(body).toContain("https://duoshot.site/guides/screenshot-size (EN: https://duoshot.site/en/guides/screenshot-size)");
+    // #128 (creative assets) is not deployed and must not be advertised here.
+    expect(body).not.toContain("app-store-creative-assets");
+    // duoshot-vs-store-connect-studio is likewise not deployed yet (prod 404), so its comparison link is omitted.
+    expect(body).not.toContain("duoshot-vs-store-connect-studio");
   });
 
   it("hides the pass without its Stripe price", async () => {

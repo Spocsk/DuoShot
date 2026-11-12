@@ -1,5 +1,5 @@
 ---
-title: "Tailles des captures App Store 2026 (avec iPhone Duo)"
+title: "Tailles des captures App Store 2026 (iPhone Duo)"
 description: "Toutes les tailles de captures App Store pour iPhone Duo, iPhone, iPad, Mac, Apple TV, Vision Pro et Watch, emplacements requis et CSV à télécharger."
 lang: fr
 slug: app-store-screenshot-sizes
@@ -60,7 +60,7 @@ Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store
 | --- | --- | --- |
 | Écran 13″ (requis pour les apps iPad) | iPad Pro (M5, M4), iPad Pro (6e, 5e, 4e, 3e, 1re gén.), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
 | Écran 12,9″ | iPad Pro (2e gén.) | 2048 × 2732 |
-| Écran 11″ | iPad Pro (M5, M4), iPad Pro (4e, 3e, 2e, 1re gén.), iPad Air (M4, M3, M2), iPad Air (5e, 4e gén.), iPad (A16), iPad (10e gén.), iPad mini (A17 Pro), iPad mini (6e gén.) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
+| Écran 11″ | iPad Pro (M5, M4), iPad Pro (4e, 3e, 2e, 1re gén.), iPad Air (M4, M3, M2), iPad Air (5e, 4e gén.), iPad (A16), iPad (10e gén.), iPad mini (A20 Pro, A17 Pro), iPad mini (6e gén.) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
 | Écran 10,5″ | iPad Pro, iPad Air (3e gén.), iPad (9e, 8e, 7e gén.) | 1668 × 2224 |
 | Écran 9,7″ | iPad Pro, iPad Air, iPad Air 2, iPad (6e, 5e, 4e, 3e gén.), iPad mini (5e gén.), iPad mini 4 | 1536 × 2048, 768 × 1024 (et versions sans barre d’état) |
 
@@ -69,7 +69,7 @@ Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store
 - **Mac :** au choix 1280 × 800, 1440 × 900, 2560 × 1600 ou 2880 × 1800, toutes en 16:10.
 - **Apple TV :** 1920 × 1080 ou 3840 × 2160.
 - **Apple Vision Pro :** 3840 × 2160.
-- **Apple Watch :** au choix 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE) ou 312 × 390 (Series 3, 2, 1). Gardez la même taille Watch pour toutes les langues.
+- **Apple Watch :** au choix 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE 3, SE 2, SE) ou 312 × 390 (Series 3, 2, 1). Gardez la même taille Watch pour toutes les langues.
 
 ## Les règles de format qui bloquent le dépôt
 

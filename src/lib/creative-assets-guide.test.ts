@@ -65,10 +65,10 @@ describe.each(["fr", "en"] as const)("%s App Store creative assets guide", (loca
     expect(APPLE_CREATIVE_ASSETS_SOURCE).toBe("https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications");
   });
 
-  it("is listed in llms.txt in both locales", async () => {
+  it("is not yet listed in llms.txt while prod returns 404 for the page", async () => {
     const body = await llms().text();
-    expect(body).toContain(`${absoluteUrl("/guides/app-store-creative-assets")}`);
-    expect(body).toContain(`${absoluteUrl("/en/guides/app-store-creative-assets")}`);
+    // #128 is not deployed: /guides/app-store-creative-assets 404s in prod, so it must not be advertised yet.
+    expect(body).not.toContain("app-store-creative-assets");
   });
 
   it("publishes a localized social image", () => {

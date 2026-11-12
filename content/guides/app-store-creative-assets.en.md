@@ -1,5 +1,5 @@
 ---
-title: "App Store creative assets (iOS 27): product page header and search results sizes"
+title: "App Store creative assets specs (iOS 27)"
 description: "App Store creative assets specs: product page header 3840 × 1646, search results 3:2 image, video 5–30 s, and Apple's content rules."
 lang: en
 slug: app-store-creative-assets

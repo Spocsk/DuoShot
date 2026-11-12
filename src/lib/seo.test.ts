@@ -8,7 +8,7 @@ import robots from "@/app/robots";
 import { absoluteUrl, localizedPath, MARKETING_ROUTE_PAIRS, SITE_PITCH_FR, SITE_PITCH_EN } from "./site";
 import { LEGAL_PATH, pageMetadata } from "./seo";
 import { JsonLd, SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
-import { SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "./screenshot-pages";
+import { SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "./screenshot-pages";
 import { generateMetadata as specsMetadata } from "@/app/[locale]/specs/page";
 import { generateMetadata as outerMetadata } from "@/app/[locale]/1398x2034/page";
 import { generateMetadata as innerMetadata } from "@/app/[locale]/2007x2853/page";
@@ -23,7 +23,13 @@ import { generateMetadata as whyFrMetadata } from "@/app/[locale]/pourquoi-pas-i
 import { generateMetadata as whyEnMetadata } from "@/app/[locale]/why-not-ai/page";
 import { generateMetadata as rejectionFrMetadata } from "@/app/[locale]/rejet/page";
 import { generateMetadata as rejectionEnMetadata } from "@/app/[locale]/rejection/page";
-import { HOME_PAGE_COPY, PRICING_PAGE_COPY } from "./marketing-copy";
+import { HOME_PAGE_COPY, PRICING_PAGE_COPY, REJECTION_PAGE_COPY, WHY_NOT_AI_PAGE_COPY } from "./marketing-copy";
+import { devicePageCopy } from "./device-page-copy";
+import { COMPARISONS, competitorComparison } from "./comparisons";
+import { ALTERNATIVE_SLUGS, ALTERNATIVES_HUB_COPY, alternativePage } from "./alternatives";
+import { COMPARE_PAGE_COPY } from "./compare";
+import { SCREENSHOT_SIZE_HUB_COPY } from "./screenshot-size-hub-copy";
+import { listGuides } from "./guides";
 import { generateImageMetadata as iphone69ImageMetadata, generateStaticParams as iphone69ImageParams } from "@/app/[locale]/1320x2868/opengraph-image";
 import { generateMetadata as deviceMetadata } from "@/app/[locale]/guides/screenshot-size/[device]/page";
 import { generateMetadata as hubMetadata } from "@/app/[locale]/guides/screenshot-size/page";
@@ -373,8 +379,13 @@ describe("page-specific structured data", () => {
       publisher: { "@id": graph[0]["@id"] },
       applicationCategory: "DeveloperApplication", operatingSystem: "Web",
       description: (locale === "fr" ? SITE_PITCH_FR : SITE_PITCH_EN).replace("iPhone Duo", locale === "fr"
-        ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)"),
+        ? "iPhone Duo (le téléphone pliable d'Apple)" : "iPhone Duo (Apple's foldable iPhone)") + (locale === "fr"
+        ? " DuoShot est un atelier web de captures App Store pour les développeurs iOS, sans rapport avec les applications caméra du même nom."
+        : " DuoShot is a web App Store screenshot studio for iOS developers, unrelated to the camera apps of the same name."),
     });
+    expect(graph[1].description).toContain(locale === "fr"
+      ? "sans rapport avec les applications caméra du même nom"
+      : "unrelated to the camera apps of the same name");
     expect(graph[0].description).toBe(graph[1].description);
     const script = SiteJsonLd({ locale });
     expect(JSON.parse(script.props.dangerouslySetInnerHTML.__html)).toEqual(siteJsonLdGraph(locale));
@@ -426,5 +437,43 @@ describe("page-specific structured data", () => {
     const serialized = script.props.dangerouslySetInnerHTML.__html;
     expect(serialized).not.toContain("<");
     expect(JSON.parse(serialized)["@graph"].at(-1).mainEntity[0].name).toBe("</script><script>alert(1)</script>");
+  });
+});
+
+// The document layout applies the template "%s · DuoShot" to every non-home title; home opts out with an
+// absolute title. So the rendered <title> is the page title plus a 10-character brand suffix (or the absolute).
+describe("every indexable marketing title stays within 60 characters", () => {
+  const BRAND_SUFFIX = " · DuoShot";
+  it.each(["fr", "en"] as const)("keeps home, pricing, specs, guides, alternatives, comparisons and size/device titles ≤ 60 in %s", (locale) => {
+    const { t } = getTranslator(locale);
+    const entries: { label: string; rendered: string }[] = [];
+    const add = (label: string, title: string, absolute = false) =>
+      entries.push({ label, rendered: absolute ? title : `${title}${BRAND_SUFFIX}` });
+
+    add("home", HOME_PAGE_COPY[locale].title, true);
+    add("pricing", PRICING_PAGE_COPY[locale].title);
+    add("specs", SPECS_PAGE_COPY[locale].title);
+    add("why-not-ai", WHY_NOT_AI_PAGE_COPY[locale].title);
+    add("rejection", REJECTION_PAGE_COPY[locale].title);
+    add("guides-index", t("guides_title"));
+    add("checker", t("checker_title"));
+    add("screenshot-size-hub", SCREENSHOT_SIZE_HUB_COPY[locale].title);
+    add("alternatives-hub", ALTERNATIVES_HUB_COPY[locale].title);
+    add("compare-hub", COMPARE_PAGE_COPY[locale].title);
+    for (const size of SCREENSHOT_SIZES) add(`size:${size}`, sizePageCopy(locale, size).title);
+    for (const device of DEVICES) add(`device:${device.slug}`, devicePageCopy(locale, device).title);
+    for (const { slug } of COMPARISONS) add(`vs:${slug}`, competitorComparison(locale, slug)!.title);
+    for (const slug of ALTERNATIVE_SLUGS) add(`alt:${slug}`, alternativePage(locale, slug)!.title);
+    for (const guide of listGuides(locale)) add(`guide:${guide.path}`, guide.title);
+
+    for (const { label, rendered } of entries) {
+      expect(rendered.length, `${label} → "${rendered}" (${rendered.length})`).toBeLessThanOrEqual(60);
+      // Point 1 regression guard: the brand suffix is never doubled.
+      expect(rendered, `${label}: ${rendered}`).not.toContain("DuoShot · DuoShot");
+    }
+    // FR device titles must keep their "générateur" qualifier.
+    if (locale === "fr") {
+      for (const device of DEVICES) expect(devicePageCopy("fr", device).title).toContain("générateur");
+    }
   });
 });
