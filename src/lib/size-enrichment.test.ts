@@ -6,7 +6,9 @@ import { SCREENSHOT_SIZES, sizePageCopy } from "./screenshot-pages";
 import { sizeEnrichment } from "./size-enrichment";
 import { sizeFaq } from "./size-faq";
 import { ASC_GUIDE_PATH, appStoreConnectGuide } from "./guides";
-import { localizedPath } from "./site";
+import { localizedPath, rejectionPath } from "./site";
+import { deviceGuidePath } from "./devices";
+import { SCREENSHOT_CHECKER_PATH } from "./screenshot-checker";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
 
@@ -53,7 +55,7 @@ describe("size page enrichment", () => {
       expect(html).toContain(enrich.devices.heading);
       expect(html).toContain(enrich.orientation.heading);
       expect(html).toContain(enrich.rejections.heading);
-      expect(enrich.rejections.items).toHaveLength(3);
+      expect(enrich.rejections.items).toHaveLength(size === "1206x2622" ? 5 : 3);
       // The three rejection causes: wrong size, transparency/alpha channel, wrong (PNG/JPEG) format.
       const rejections = enrich.rejections.items.join(" ");
       expect(rejections).toMatch(locale === "fr" ? /canal alpha|transparence/i : /alpha channel|transparen/i);
@@ -74,6 +76,46 @@ describe("size page enrichment", () => {
       expect(blob("fr", size)).not.toBe(blob("en", size));
       expect(sizePageCopy("fr", size).title).not.toBe(sizePageCopy("en", size).title);
     }
+  });
+
+  it.each(["fr", "en"] as const)("renders the 1206x2622 Apple-slots table with four rows and the source in %s", (locale) => {
+    const html = renderToStaticMarkup(createElement(SizePage, { locale, size: "1206x2622" }));
+    const slots = sizeEnrichment(locale, "1206x2622").slots!;
+    expect(slots).toBeTruthy();
+    expect(slots.rows).toHaveLength(4);
+    expect(html).toContain("<table");
+    expect(html).toContain('scope="col"');
+    expect(html).toContain(slots.heading);
+    for (const row of slots.rows) expect(html).toContain(row.group);
+    expect(html).toContain(slots.source);
+    expect(html).toContain(locale === "fr" ? "vérifié le 12 novembre 2026" : "checked November 12, 2026");
+    // The table ships only on the 1206x2622 page.
+    const other = renderToStaticMarkup(createElement(SizePage, { locale, size: "1320x2868" }));
+    expect(sizeEnrichment(locale, "1320x2868").slots).toBeUndefined();
+    expect(other).not.toContain(slots.heading);
+  });
+
+  it.each(["fr", "en"] as const)("adds the Duo guide, checker and rejection links on the 1206x2622 page in %s", (locale) => {
+    const html = renderToStaticMarkup(createElement(SizePage, { locale, size: "1206x2622" }));
+    expect(html).toContain(`href="${localizedPath(locale, deviceGuidePath("iphone-duo"))}"`);
+    expect(html).toContain(`href="${localizedPath(locale, SCREENSHOT_CHECKER_PATH)}"`);
+    expect(html).toContain(`href="${rejectionPath(locale)}"`);
+    expect(localizedPath(locale, deviceGuidePath("iphone-duo"))).toBe(locale === "en" ? "/en/guides/screenshot-size/iphone-duo" : "/guides/screenshot-size/iphone-duo");
+    expect(localizedPath(locale, SCREENSHOT_CHECKER_PATH)).toBe(locale === "en" ? "/en/tools/iphone-duo-screenshot-checker" : "/tools/iphone-duo-screenshot-checker");
+    expect(rejectionPath(locale)).toBe(locale === "en" ? "/en/rejection" : "/rejet");
+  });
+
+  it.each(["fr", "en"] as const)("gives the 1206x2622 FAQ six questions mirrored in the JSON-LD in %s", (locale) => {
+    const faq = sizeFaq(locale, "1206x2622");
+    expect(faq).toHaveLength(6);
+    const html = renderToStaticMarkup(createElement(SizePage, { locale, size: "1206x2622" }));
+    const faqNode = jsonLdFromHtml(html)["@graph"].find((node: { "@type": string }) => node["@type"] === "FAQPage");
+    expect(faqNode.mainEntity.map((entity: { name: string }) => entity.name)).toEqual(faq.map((item) => item.q));
+    expect(faqNode.mainEntity.map((entity: { acceptedAnswer: { text: string } }) => entity.acceptedAnswer.text)).toEqual(faq.map((item) => item.a));
+  });
+
+  it("drops the old ambiguous large-display sentence from the 1206x2622 devices copy", () => {
+    expect(sizeEnrichment("en", "1206x2622").devices.body).not.toContain("scales the large-display ones");
   });
 
   it("never claims both iPhone Duo sizes are required", () => {
