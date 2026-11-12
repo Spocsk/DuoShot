@@ -1,5 +1,5 @@
 ---
-title: "Meilleur générateur de captures App Store : comparatif"
+title: "Meilleur générateur de captures App Store"
 description: "AppScreens, AppLaunchFlow, SnapMonk, Screenpane et DuoShot comparés : prix, offres gratuites, tailles iPhone Duo, IA et export. Vérifié le 15/10/2026."
 lang: fr
 slug: best-app-store-screenshot-generator

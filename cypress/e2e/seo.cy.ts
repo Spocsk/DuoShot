@@ -164,6 +164,9 @@ describe("SEO screenshot pages", () => {
         cy.get(`footer a[href="${prefix}/${size}"]`).should("exist");
       }
       cy.get(`footer a[href="${prefix}/specs"]`).should("exist");
+      // Internal mesh to the comparison and alternatives pages, including the AppScreens comparison.
+      cy.get(`main a[href="${prefix}/guides/duoshot-vs-appscreens"]`).should("exist");
+      cy.get(`main a[href="${prefix}/alternatives"]`).should("exist");
       cy.get('[data-testid="cta-specs"]').click();
       for (const size of ["1398x2034", "2007x2853", "1206x2622", "1320x2868"]) {
         cy.get(`main a[href="${prefix}/${size}"]`).should("exist");
@@ -226,6 +229,9 @@ describe("SEO screenshot pages", () => {
         cy.contains("main a", locale === "en" ? "Prepare your screenshots" : "Préparer vos captures")
           .should("have.attr", "href", `${prefix}/tool`);
         cy.get(`main a[href="${prefix}/specs"]`).should("exist");
+        // At least one link to an existing vs/alternatives page, including the AppScreens comparison.
+        cy.get(`main a[href="${prefix}/guides/duoshot-vs-appscreens"]`).should("exist");
+        cy.get(`main a[href="${prefix}/alternatives"]`).should("exist");
         for (const related of ["1398x2034", "2007x2853", "1206x2622", "1320x2868"].filter((related) => related !== size)) {
           cy.get(`main a[href="${prefix}/${related}"]`).should("exist");
         }

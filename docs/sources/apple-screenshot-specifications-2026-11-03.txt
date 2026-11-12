@@ -1003,7 +1003,7 @@ se types
 
  iPad (10th generation)
 
- iPad mini (A17 Pro)
+ iPad mini (A20 Pro, A17 Pro)
 
  iPad mini (6th generation)
 

@@ -12,6 +12,8 @@ import { sizeFaq } from "@/lib/size-faq";
 import { sizeEnrichment } from "@/lib/size-enrichment";
 import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { appStoreConnectGuide, ASC_GUIDE_PATH, sizesGuide, SIZES_GUIDE_PATH } from "@/lib/guides";
+import { comparisonPath, competitorComparison } from "@/lib/comparisons";
+import { ALTERNATIVES_BASE_PATH, ALTERNATIVES_HUB_COPY } from "@/lib/alternatives";
 import { localizedPath, toolPath } from "@/lib/site";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
@@ -20,18 +22,18 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
   const { t, tf } = getTranslator(locale);
   const copy = sizePageCopy(locale, size);
   const path = `/${size}`;
-  const answer = size === "1398x2034" || size === "2007x2853" ? directAnswer(locale, size) : undefined;
+  const answer = directAnswer(locale, size);
   const faq = sizeFaq(locale, size);
   const enrich = sizeEnrichment(locale, size);
   const guide = appStoreConnectGuide(locale);
   const status = size === "1206x2622" ? t("specs_required_iphone_sizes") : size === "1320x2868" ? t("size_status_optional") : t("size_status_duo");
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path={path} faq={faq} article={{ ...copy, dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer?.text }} />
+    <JsonLd locale={locale} path={path} faq={faq} article={{ ...copy, dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer.text }} />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
       <p className="ds-label">{tf("specs_verified_on", { date: SCREENSHOT_VERIFIED_ON })}</p>
       <h1 className="font-display mt-3 text-4xl sm:text-5xl">{copy.title}</h1>
-      {answer && <DirectAnswer answer={answer} />}
+      <DirectAnswer answer={answer} />
       <p className="mt-4 text-lg">{copy.intro}</p>
       <section className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6" aria-labelledby="size-summary">
         <h2 id="size-summary" className="font-display text-2xl">{t("size_summary_heading")}</h2>
@@ -82,6 +84,8 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
           <li><Link href={localizedPath(locale, "/specs")} className="ds-link">{t("specs_iphone_duo_screenshot_sizes")}</Link></li>
           <li><Link href={localizedPath(locale, ASC_GUIDE_PATH)} className="ds-link">{guide.title}</Link></li>
           <li><Link href={localizedPath(locale, SIZES_GUIDE_PATH)} className="ds-link">{sizesGuide(locale).title}</Link></li>
+          <li><Link href={localizedPath(locale, comparisonPath("duoshot-vs-appscreens"))} className="ds-link">{competitorComparison(locale, "duoshot-vs-appscreens")!.title}</Link></li>
+          <li><Link href={localizedPath(locale, ALTERNATIVES_BASE_PATH)} className="ds-link">{ALTERNATIVES_HUB_COPY[locale].title}</Link></li>
           {copy.related.map((related) => <li key={related}><Link href={localizedPath(locale, `/${related}`)} className="ds-link">{sizePageCopy(locale, related).title}</Link></li>)}
         </ul>
       </section>

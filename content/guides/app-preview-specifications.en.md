@@ -1,5 +1,5 @@
 ---
-title: "App Store App Preview Specs (2026): Sizes, Length, Format — incl. iPhone Duo"
+title: "App Store App Preview Specs 2026"
 description: "Accepted App Store app preview video sizes per device (iPhone Duo included), 15–30 s, 500 MB, H.264 or ProRes, 30 fps, and how previews meet screenshots."
 lang: en
 slug: app-preview-specifications

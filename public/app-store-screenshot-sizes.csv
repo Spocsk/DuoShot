@@ -20,10 +20,10 @@ iPhone,Home Button (3.5-inch display),"iPhone 4s, 4",640,920,960,600,Optional
 iPad,13-inch display,"iPad Pro (M5, M4), iPad Pro (6th, 5th, 4th, 3rd, 1st gen), iPad Air (M4, M3, M2)",2064,2752,2752,2064,Required if app runs on iPad
 iPad,13-inch display,"iPad Pro (M5, M4), iPad Pro (6th, 5th, 4th, 3rd, 1st gen), iPad Air (M4, M3, M2)",2048,2732,2732,2048,Required if app runs on iPad
 iPad,12.9-inch display,iPad Pro (2nd gen),2048,2732,2732,2048,Optional
-iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A17 Pro), iPad mini (6th gen)",1488,2266,2266,1488,Optional
-iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A17 Pro), iPad mini (6th gen)",1668,2420,2420,1668,Optional
-iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A17 Pro), iPad mini (6th gen)",1668,2388,2388,1668,Optional
-iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A17 Pro), iPad mini (6th gen)",1640,2360,2360,1640,Optional
+iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen)",1488,2266,2266,1488,Optional
+iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen)",1668,2420,2420,1668,Optional
+iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen)",1668,2388,2388,1668,Optional
+iPad,11-inch display,"iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen)",1640,2360,2360,1640,Optional
 iPad,10.5-inch display,"iPad Pro, iPad Air (3rd gen), iPad (9th, 8th, 7th gen)",1668,2224,2224,1668,Optional
 iPad,9.7-inch display,"iPad Pro, iPad Air, iPad Air 2, iPad (6th, 5th, 4th, 3rd gen), iPad mini (5th gen), iPad mini 4",1536,2048,2048,1536,Optional
 iPad,9.7-inch display,"iPad Pro, iPad Air, iPad Air 2, iPad (6th, 5th, 4th, 3rd gen), iPad mini (5th gen), iPad mini 4",1536,2008,2048,1496,Optional

@@ -1,5 +1,5 @@
 ---
-title: "App Store screenshot sizes 2026 (incl. iPhone Duo)"
+title: "App Store screenshot sizes 2026 (iPhone Duo)"
 description: "Every App Store screenshot size for iPhone Duo, iPhone, iPad, Mac, Apple TV, Vision Pro and Watch, with required slots and a downloadable CSV."
 lang: en
 slug: app-store-screenshot-sizes
@@ -60,7 +60,7 @@ If you skip the large Dynamic Island slot, App Store Connect falls back to scale
 | --- | --- | --- |
 | 13" display (required for iPad apps) | iPad Pro (M5, M4), iPad Pro (6th, 5th, 4th, 3rd, 1st gen), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
 | 12.9" display | iPad Pro (2nd gen) | 2048 × 2732 |
-| 11" display | iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A17 Pro), iPad mini (6th gen) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
+| 11" display | iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
 | 10.5" display | iPad Pro, iPad Air (3rd gen), iPad (9th, 8th, 7th gen) | 1668 × 2224 |
 | 9.7" display | iPad Pro, iPad Air, iPad Air 2, iPad (6th, 5th, 4th, 3rd gen), iPad mini (5th gen), iPad mini 4 | 1536 × 2048, 768 × 1024 (and versions without status bar) |
 
@@ -69,7 +69,7 @@ If you skip the large Dynamic Island slot, App Store Connect falls back to scale
 - **Mac:** one of 1280 × 800, 1440 × 900, 2560 × 1600 or 2880 × 1800, all 16:10.
 - **Apple TV:** 1920 × 1080 or 3840 × 2160.
 - **Apple Vision Pro:** 3840 × 2160.
-- **Apple Watch:** one of 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE) or 312 × 390 (Series 3, 2, 1). Use the same Watch size across all localizations.
+- **Apple Watch:** one of 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE 3, SE 2, SE) or 312 × 390 (Series 3, 2, 1). Use the same Watch size across all localizations.
 
 ## Format rules that cause upload errors
 

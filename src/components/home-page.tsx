@@ -277,6 +277,10 @@ export function HomePage({ locale, checkoutAvailable, passAvailable }: { locale:
                   <Link href={`${prefix}/1206x2622`} className="ds-link">{t("home_iphone_63_size_guide")}</Link>{" · "}
                   <Link href={`${prefix}/1320x2868`} className="ds-link">{t("home_iphone_69_size_guide")}</Link>
                 </p>
+                <p className="studio-hero-footnote">
+                  <Link href={`${prefix}/guides/duoshot-vs-appscreens`} className="ds-link">DuoShot vs AppScreens</Link>{" · "}
+                  <Link href={`${prefix}/alternatives`} className="ds-link">{locale === "fr" ? "Alternatives à DuoShot" : "DuoShot alternatives"}</Link>
+                </p>
                 <p className="studio-hero-footnote">{t("home_harbor_fictional_app")}</p>
                 <p className="studio-hero-footnote">
                   {tf("home_inner_panel_note", { inner: screenshotDimensions(INNER) })}{" "}

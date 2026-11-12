@@ -193,9 +193,11 @@ export function competitorComparison(locale: Locale, slug: string) {
   const { name, url, summary, focus, checked } = competitor;
   const [year, month, day] = checked.split("-").map(Number);
   const checkedOn = new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  // Kept short so that even the longest competitor name plus the layout's " · DuoShot" suffix
+  // stays within the 60-character rendered-title budget (the keyword "DuoShot vs <name>" leads).
   const title = locale === "fr"
-    ? `DuoShot vs ${name} : captures App Store`
-    : `DuoShot vs ${name}: App Store screenshots`;
+    ? `DuoShot vs ${name} : captures`
+    : `DuoShot vs ${name}: screenshots`;
   const description = locale === "fr"
     ? `Comparez DuoShot et ${name} : présentation sourcée, dimensions et tarifs DuoShot, export ZIP et points à vérifier avant de choisir.`
     : `Compare DuoShot and ${name}: sourced overview, DuoShot sizes and pricing, ZIP export and points to check before choosing.`;

@@ -88,6 +88,16 @@ function faqItems(locale: Locale, device: Device, answer: string): FaqItem[] {
 const HOME_LABEL = { fr: "Accueil", en: "Home" } as const;
 const GUIDES_LABEL = { fr: "Guides", en: "Guides" } as const;
 
+/**
+ * A shorter device name for the <title> only (the H1, breadcrumb and body keep the full Apple name):
+ * drops Apple's parenthetical chips (e.g. "(A20 Pro, A17 Pro)", "(M5, M4)") and keeps any display size,
+ * so even the longest-named devices stay within the 60-character rendered-title budget.
+ */
+function deviceTitleName(device: Device): string {
+  const base = device.name.replace(/\s*\([^)]*\)/g, "").trim();
+  return device.displaySize ? `${base} ${device.displaySize}` : base;
+}
+
 export type DevicePageCopy = {
   h1: string;
   title: string;
@@ -103,9 +113,12 @@ export function devicePageCopy(locale: Locale, device: Device): DevicePageCopy {
   const h1 = locale === "fr"
     ? `Taille de capture App Store ${name} (${VERIFIED_YEAR})`
     : `App Store screenshot size for ${name} (${VERIFIED_YEAR})`;
-  // The document layout appends " · DuoShot"; keeping "générateur" here but not
-  // the brand name avoids the duplicate "… DuoShot · DuoShot" title.
-  const title = locale === "fr" ? `${h1} | générateur` : h1;
+  // The <title> uses a condensed device name so that, with the layout's " · DuoShot" suffix, the
+  // rendered title stays ≤ 60 characters. FR keeps "générateur"; the brand appears once, via the suffix.
+  const titleName = deviceTitleName(device);
+  const title = locale === "fr"
+    ? `Captures App Store ${titleName} : générateur`
+    : `${titleName}: App Store screenshot size`;
   const description = locale === "fr"
     ? `Taille de capture App Store pour ${name} (${VERIFIED_YEAR}) : tailles acceptées, obligation et erreurs de rejet fréquentes.`
     : `App Store screenshot size for ${name} (${VERIFIED_YEAR}): accepted sizes, requirement and common rejection errors.`;

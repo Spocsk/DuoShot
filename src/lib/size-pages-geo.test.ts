@@ -6,8 +6,13 @@ import { MAX_IMAGES, SPECS_VERSION_DATE } from "./specs";
 import { getTranslator } from "./i18n";
 
 describe("size page summary box data", () => {
-  it("keeps the verification date tied to the specs source of truth", () => {
-    expect(SCREENSHOT_VERIFIED_ON).toBe(SPECS_VERSION_DATE);
+  it("keeps the screenshot verification date no later than the specs version", () => {
+    // The size pages' content was last verified on SCREENSHOT_VERIFIED_ON; the Apple specs were
+    // re-checked (and SPECS_VERSION_DATE bumped) on 2026-11-12 without changing these sizes.
+    expect(SCREENSHOT_VERIFIED_ON <= SPECS_VERSION_DATE).toBe(true);
+    for (const date of [SCREENSHOT_VERIFIED_ON, SPECS_VERSION_DATE]) {
+      expect(Number.isNaN(Date.parse(date))).toBe(false);
+    }
   });
 
   it.each([

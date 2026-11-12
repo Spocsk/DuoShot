@@ -411,7 +411,7 @@ export const ALTERNATIVES_HUB_COPY = {
   fr: {
     h1: "DuoShot et ses alternatives pour les captures App Store",
     intro: "Comparez DuoShot aux générateurs de captures App Store. Chaque page met en regard les prix, le filigrane, la prise en charge de l’iPhone Duo et l’export multilingue, à partir de données publiques vérifiées.",
-    title: "Alternatives à DuoShot : générateurs de captures App Store",
+    title: "Alternatives : générateurs de captures App Store",
     description: "Comparez DuoShot aux alternatives pour vos captures App Store iPhone Duo : AppScreens, AppLaunchpad, Screenshots.pro, AppMockUp et Hotpot.",
     home: "Accueil",
     hub: "Alternatives",
@@ -419,7 +419,7 @@ export const ALTERNATIVES_HUB_COPY = {
   en: {
     h1: "DuoShot and its alternatives for App Store screenshots",
     intro: "Compare DuoShot with App Store screenshot generators. Each page lines up price, watermark, iPhone Duo support and multi-language export, all from verified public data.",
-    title: "DuoShot alternatives: App Store screenshot generators",
+    title: "App Store screenshot generator alternatives",
     description: "Compare DuoShot with alternatives for your iPhone Duo App Store screenshots: AppScreens, AppLaunchpad, Screenshots.pro, AppMockUp and Hotpot.",
     home: "Home",
     hub: "Alternatives",
@@ -478,9 +478,11 @@ export function alternativePage(locale: Locale, slug: string): AlternativeView |
     locale === "fr" ? "fr-FR" : "en-US",
     { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" },
   );
+  // Kept short so that, with the layout's " · DuoShot" suffix, the rendered title stays ≤ 60 characters.
+  // FR keeps "générateur"; EN keeps "generator"; the brand appears once, via the suffix.
   const title = locale === "fr"
-    ? `Alternative à ${name} : DuoShot, générateur de captures App Store`
-    : `${name} alternative: DuoShot, App Store screenshot generator`;
+    ? `Alternative à ${name} : générateur`
+    : `${name} alternative: screenshot generator`;
   const description = locale === "fr"
     ? `${name} : alternative pour vos captures App Store iPhone Duo. Comparez prix, filigrane et langues, puis exportez un ZIP de PNG/JPEG avec DuoShot.`
     : `${name} alternative for iPhone Duo App Store screenshots. Compare price, watermark and languages, then export a ZIP of PNG/JPEG with DuoShot.`;
