@@ -213,7 +213,7 @@ describe("public routes and crawler metadata", () => {
     }
   });
 
-  it("publishes the optional 6.9-inch page's localized Open Graph image metadata", () => {
+  it("publishes the 6.9-inch page's localized Open Graph image metadata", () => {
     expect(iphone69ImageParams()).toEqual([{ locale: "fr" }, { locale: "en" }]);
     for (const locale of ["fr", "en"] as const) {
       expect(iphone69ImageMetadata({ params: { locale } })).toEqual([{
@@ -340,7 +340,7 @@ describe("page-specific structured data", () => {
     const app = graph.find((node) => "offers" in node)!;
     expect(app.description).toContain(locale === "fr" ? "Dynamic Island 6,3″ requis" : "Dynamic Island 6.3″ required");
     expect(app.description).toContain(size69);
-    expect(app.description).toContain(locale === "fr" ? "optionnel" : "optional");
+    expect(app.description).toContain(locale === "fr" ? "6,9″ avec Pass" : "6.9″ with Pass");
     expect(app.offers?.[0]).toMatchObject({ price: "0", description: expect.stringContaining(size63) });
     const sizesAnswer = FAQ[locale].find(({ a }) => a.includes("1206×2622"))!.a;
     expect(sizesAnswer).toContain(locale === "fr"
@@ -353,14 +353,15 @@ describe("page-specific structured data", () => {
     expect(article.description).toContain("1179x2556");
     expect(article.intro).toContain(locale === "fr" ? "essai gratuit" : "free trial");
     const optionalArticle = sizePageCopy(locale, "1320x2868");
-    expect(optionalArticle.description).toContain(locale === "fr" ? "optionnelles" : "Optional");
+    expect(optionalArticle.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
+    expect(optionalArticle.description).not.toMatch(locale === "fr" ? /optionnel/i : /optional/i);
     expect(optionalArticle.description).toContain("1320x2868");
     expect(optionalArticle.description).toContain("2868x1320");
     expect(optionalArticle.description).toContain("Indie");
     expect(optionalArticle.description).toContain("Studio");
     expect(optionalArticle.portrait).toMatchObject({ slot: "iphone-69", width: 1320, height: 2868, gated: "indie-studio" });
     expect(optionalArticle.landscape).toMatchObject({ slot: "iphone-69", width: 2868, height: 1320, gated: "indie-studio" });
-    expect(SPECS_PAGE_COPY[locale].description).toContain(locale === "fr" ? "6,9″ optionnel" : "6.9″ is optional");
+    expect(SPECS_PAGE_COPY[locale].description).toContain(locale === "fr" ? "6,9″ accepté" : "6.9″ also accepted");
   });
 
   it.each(["fr", "en"] as const)("identifies the shared organization and software in %s without duplicating them on pages", (locale) => {
@@ -426,7 +427,8 @@ describe("page-specific structured data", () => {
       expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
       expect(metadata.description!.length).toBeLessThanOrEqual(155);
       expect(metadata.description).toContain(locale === "fr" ? "6,3″ requis" : "6.3″ iPhone required");
-      expect(metadata.description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
+      expect(metadata.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
+      expect(metadata.description).not.toMatch(locale === "fr" ? /optionnel/i : /optional/i);
       const app = siteJsonLdGraph(locale)["@graph"].find((node) => "offers" in node);
       expect(app?.offers?.some((offer) => offer.price === "19")).toBe(Boolean(priceId));
     }

@@ -32,9 +32,10 @@ describe("size page summary box data", () => {
     const { t } = getTranslator(locale);
     // iPhone 6.3" reuses the existing required-slot source of truth.
     expect(t("specs_required_iphone_sizes")).toContain(locale === "fr" ? "6,3" : "6.3");
-    // The optional 6.9" status names the paid plans, never "required".
-    expect(t("size_status_optional")).toContain(locale === "fr" ? "optionnelle" : "Optional");
-    expect(t("size_status_optional")).not.toMatch(locale === "fr" ? /requis/i : /required/i);
+    // The 6.9" large-display status names the paid plans, never "required" or "optional".
+    expect(t("size_status_optional")).toContain(locale === "fr" ? "6,9″" : "6.9″");
+    expect(t("size_status_optional")).toContain(locale === "fr" ? "Pass, Indie, Studio" : "Pass, Indie, Studio");
+    expect(t("size_status_optional")).not.toMatch(locale === "fr" ? /requis|optionnel/i : /required|optional/i);
     // The Duo status carries the April 2027 / iOS 27.1 SDK qualifier and the outer/inner/mix choice.
     expect(t("size_status_duo")).toContain(locale === "fr"
       ? "avril 2027 pour les apps compilées avec le SDK iOS 27.1 ou ultérieur"

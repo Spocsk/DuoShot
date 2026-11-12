@@ -16,7 +16,7 @@ There is no single "best" App Store screenshot generator. The right tool depends
 
 Apple's [screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/) are the reference:
 
-- **Required iPhone size:** at least one screenshot for iPhone with Dynamic Island (medium display), i.e. **6.3″, 1206 × 2622** (1179 × 2556 is also accepted). The 6.9″ sizes (1320 × 2868, 1290 × 2796, 1260 × 2736) are optional. See [/en/1206x2622](/en/1206x2622).
+- **Required iPhone size:** at least one screenshot for iPhone with Dynamic Island (medium display), i.e. **6.3″, 1206 × 2622** (1179 × 2556 is also accepted). App Store Connect also accepts the 6.9″ sizes (1320 × 2868, 1290 × 2796, 1260 × 2736) for the large-display slot. See [/en/1206x2622](/en/1206x2622).
 - **iPhone Duo:** App Store Connect accepts up to 10 iPhone Duo screenshots per device size. It accepts the outer (closed) screen at **1398 × 2034** and the inner (open) screen at **2007 × 2853**, plus their landscape versions. In DuoShot: outer only, inner only, or a mix. See [/en/1398x2034](/en/1398x2034) and [/en/2007x2853](/en/2007x2853).
 - **Format:** JPEG or PNG, no transparency.
 - **Deadline:** Duo screenshots become required from April 2027 for apps built with the iOS 27.1 SDK or later ([Apple Developer News, Oct 5, 2026](https://developer.apple.com/news/?id=kkphp5qo)).
@@ -80,8 +80,8 @@ Apple doesn't say: App Store Connect accepts up to 10 iPhone Duo screenshots per
 **Are Duo screenshots mandatory now?**
 Not yet for every app. Apple requires them from April 2027 for apps built with the iOS 27.1 SDK or later. Uploads are already open.
 
-**Is 6.9″ still required?**
-No. Apple now requires the 6.3″ size (1206 × 2622 or 1179 × 2556). 6.9″ is optional.
+**Is 6.9″ required?**
+Apple's "Required device sizes" list names the 6.3″ size (1206 × 2622 or 1179 × 2556) but doesn't name the 6.9″ (large display) slot, though the Face ID (large display) row reads "Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided". Check App Store Connect for your app.
 
 **Which free tier is the most useful?**
 AppScreens lets you export essential sizes on its free plan; DuoShot gives 2 HD exports including Duo and 6.3″; Screenpane offers a 14-day full trial. AppLaunchFlow's free plan doesn't allow full-resolution downloads.

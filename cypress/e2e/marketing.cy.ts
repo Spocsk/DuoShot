@@ -176,7 +176,7 @@ describe("marketing", () => {
       else cy.visitEn("/en/pricing");
       cy.get("h1").should("have.length", 1);
       cy.get('meta[name="description"]').invoke("attr", "content").should("contain", locale === "fr" ? "6,3″ requis" : "6.3″ iPhone required")
-        .and("contain", locale === "fr" ? "6,9″ optionnel" : "optional 6.9″")
+        .and("contain", locale === "fr" ? "6,9″" : "6.9″")
         .its("length").should("be.at.most", 155);
       cy.get(".studio-plan-title").each(($title) => {
         expect($title.find("h2")).to.have.length(1);
@@ -325,15 +325,15 @@ describe("screenshot dimensions and search intent", () => {
             ? "iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect ; taille incluse dans l’essai gratuit"
             : 'iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect, included in the free trial')
           .and("contain", locale === "fr"
-            ? `Option 6,9″ (${passAvailable ? "Pass / Indie / Studio" : "offres payantes"})`
-            : `Optional 6.9″ (${passAvailable ? "Pass / Indie / Studio" : "paid access"})`);
+            ? `6,9″ (${passAvailable ? "Pass / Indie / Studio" : "offres payantes"})`
+            : `6.9″ (${passAvailable ? "Pass / Indie / Studio" : "paid access"})`);
         cy.contains(".studio-faq button", locale === "fr" ? "Comment ça se paie ?" : "How does payment work?")
           .click().closest(".t-acc").find("p").should("be.visible")
           .and("contain", locale === "fr" ? "Essai gratuit" : "Free trial")
           .and("contain", locale === "fr" ? "sans carte" : "no card")
           .and("contain", locale === "fr"
-            ? `Le 6,9″ est optionnel avec ${passAvailable ? "Pass, Indie et Studio" : "les offres payantes"}`
-            : `The 6.9″ size is optional with ${passAvailable ? "Pass, Indie and Studio" : "paid access"}`);
+            ? `Le 6,9″ est disponible avec ${passAvailable ? "Pass, Indie et Studio" : "les offres payantes"}`
+            : `The 6.9″ size is available with ${passAvailable ? "Pass, Indie and Studio" : "paid access"}`);
       });
       cy.get('[data-testid="cta-specs"]').should("have.attr", "href", `${prefix}/specs`).click();
       cy.location("pathname").should("eq", `${prefix}/specs`);

@@ -21,11 +21,11 @@ Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store
 | iPhone Duo — écran externe | 1398 × 2034 | iPhone Duo | Inclus dans l’essai gratuit |
 | iPhone Duo — écran interne | 2007 × 2853 | iPhone Duo | Inclus dans l’essai gratuit |
 | iPhone 6,3″ | 1206 × 2622 | iPhone Dynamic Island (écran moyen, 6,3″) requis | Inclus dans l’essai gratuit |
-| iPhone 6,9″ | 1320 × 2868 | Emplacement iPhone 6,9″ optionnel | Pass, Indie et Studio |
+| iPhone 6,9″ | 1320 × 2868 | Emplacement iPhone 6,9″ (grand écran) | Pass, Indie et Studio |
 
-Si les captures 6,9″ optionnelles ne sont pas fournies, App Store Connect utilise des versions mises à l’échelle de captures d’une autre taille : iPhone avec Face ID (grand écran), selon les [spécifications d’Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
+Si les captures 6,9″ ne sont pas fournies, App Store Connect utilise des versions mises à l’échelle de captures d’une autre taille : iPhone avec Face ID (grand écran), selon les [spécifications d’Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
 
-Apple accepte aussi les captures Duo en paysage : **2034 × 1398** pour l’écran externe et **2853 × 2007** pour l’écran interne. Dans App Store Connect, choisissez l’écran iPhone Duo pour les fichiers Duo, le 6,3″ pour les captures 6,3″ requises et le 6,9″ pour les fichiers 6,9″ optionnels. L’essai gratuit comprend **2 ZIP HD** après inscription, avec les captures Duo sélectionnées et le format 6,3″ requis.
+Apple accepte aussi les captures Duo en paysage : **2034 × 1398** pour l’écran externe et **2853 × 2007** pour l’écran interne. Dans App Store Connect, choisissez l’écran iPhone Duo pour les fichiers Duo, le 6,3″ pour les captures 6,3″ requises et le 6,9″ pour les fichiers 6,9″. L’essai gratuit comprend **2 ZIP HD** après inscription, avec les captures Duo sélectionnées et le format 6,3″ requis.
 
 ## Quand les captures Duo seront-elles obligatoires ?
 
@@ -35,6 +35,6 @@ Apple indique que les captures Duo seront **exigées à partir d’avril 2027 po
 
 Partez de vraies captures de l’app et vérifiez chaque composition selon la règle App Store Review 2.3.3 : les captures doivent représenter fidèlement votre app. Vérifiez que les textes et commandes importants restent lisibles près du pli sur les captures internes. Le guide de pli de DuoShot est une aide de composition simulée, pas une zone sûre spécifiée par Apple.
 
-Consultez les [dimensions externes](/1398x2034), les [dimensions internes](/2007x2853), le [format 6,3″ requis](/1206x2622) et le [format 6,9″ optionnel](/1320x2868). [Préparez vos captures](/tool), ou lisez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator).
+Consultez les [dimensions externes](/1398x2034), les [dimensions internes](/2007x2853), le [format 6,3″ requis](/1206x2622) et le [format 6,9″](/1320x2868). [Préparez vos captures](/tool), ou lisez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator).
 
 La procédure manuelle ci-dessous suit les [instructions Apple de gestion des visuels App Store](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-your-app-store-assets). Le dépôt via DuoShot reste non testé.

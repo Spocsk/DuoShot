@@ -59,12 +59,12 @@ const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
   },
   "1320x2868": {
     fr: [
-      { q: "La taille 6,9″ est-elle obligatoire ?", a: "Non, elle est optionnelle dans App Store Connect. DuoShot exporte le 1320 × 2868 (ou 2868 × 1320 en paysage) avec Pass, Indie et Studio ; l’iPhone Dynamic Island (écran moyen, 6,3″) requis reste inclus dans l’essai gratuit." },
+      { q: "La taille 6,9″ est-elle obligatoire dans App Store Connect ?", a: "La liste « Required device sizes » d’Apple ne cite pas l’emplacement 6,9″ (large display), mais la ligne Face ID (large display) indique « Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided ». Vérifiez dans App Store Connect pour votre app. DuoShot exporte le 1320 × 2868 (ou 2868 × 1320 en paysage) avec Pass, Indie et Studio ; l’iPhone Dynamic Island (écran moyen, 6,3″) requis reste inclus dans l’essai gratuit." },
       { q: "Quels autres formats 6,9″ Connect accepte-t-il ?", a: "App Store Connect accepte aussi 1290 × 2796 (ou 2796 × 1290) pour l’emplacement iPhone 6,9 pouces." },
       { q: "Combien de captures puis-je déposer à cette taille ?", a: COUNT.fr },
     ],
     en: [
-      { q: "Is the 6.9″ size required?", a: "No, it is optional in App Store Connect. DuoShot exports 1320 × 2868 (or 2868 × 1320 in landscape) with Pass, Indie and Studio; the iPhone with Dynamic Island (medium display, 6.3\") required stays included in the free trial." },
+      { q: "Is the 6.9″ size required in App Store Connect?", a: "Apple's \"Required device sizes\" list doesn't name the 6.9″ (large display) slot, but the Face ID (large display) row reads \"Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided\". Check App Store Connect for your app. DuoShot exports 1320 × 2868 (or 2868 × 1320 in landscape) with Pass, Indie and Studio; the iPhone with Dynamic Island (medium display, 6.3\") required stays included in the free trial." },
       { q: "Which other 6.9″ formats does Connect accept?", a: "App Store Connect also accepts 1290 × 2796 (or 2796 × 1290) for the 6.9-inch iPhone slot." },
       { q: "How many screenshots can I upload at this size?", a: COUNT.en },
     ],

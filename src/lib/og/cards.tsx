@@ -86,8 +86,8 @@ const COPY: Record<OgPage, Record<Locale, Copy>> = {
     en: { eyebrow: "Checks", title: "Screenshots rejected? Dimensions and alpha.", alt: "DuoShot preparation report: dimensions checked, alpha channel flattened, opaque PNG." },
   },
   "iphone-69": {
-    fr: { eyebrow: "Dimensions · iPhone 6,9″", title: "Captures iPhone\n1320 × 2868", lead: "Optionnel dans App Store Connect.\nExport avec Pass, Indie et Studio.", alt: "Captures iPhone 6,9 pouces : 1320 × 2868 px en portrait, 2868 × 1320 px en paysage. Optionnelles dans App Store Connect, export DuoShot avec Pass, Indie et Studio." },
-    en: { eyebrow: "Dimensions · iPhone 6.9″", title: "iPhone screenshots\n1320 × 2868", lead: "Optional in App Store Connect.\nExport with Pass, Indie and Studio.", alt: "6.9-inch iPhone screenshots: 1320 × 2868 px portrait, 2868 × 1320 px landscape. Optional in App Store Connect, DuoShot export with Pass, Indie and Studio." },
+    fr: { eyebrow: "Dimensions · iPhone 6,9″", title: "Captures iPhone\n1320 × 2868", lead: "Emplacement 6,9″ dans App Store Connect.\nExport avec Pass, Indie et Studio.", alt: "Captures iPhone 6,9 pouces : 1320 × 2868 px en portrait, 2868 × 1320 px en paysage. Acceptées par App Store Connect, export DuoShot avec Pass, Indie et Studio." },
+    en: { eyebrow: "Dimensions · iPhone 6.9″", title: "iPhone screenshots\n1320 × 2868", lead: "6.9″ slot in App Store Connect.\nExport with Pass, Indie and Studio.", alt: "6.9-inch iPhone screenshots: 1320 × 2868 px portrait, 2868 × 1320 px landscape. Accepted by App Store Connect, DuoShot export with Pass, Indie and Studio." },
   },
   pricing: {
     fr: { eyebrow: "Tarifs", title: "Essai gratuit, Indie, Studio.", lead: `Commencez sans carte. ${PLANS.free.freeExports} exports HD offerts.`, alt: `Tarifs DuoShot : Essai gratuit, Indie ${PLANS.indie.monthlyEur} € par mois, Studio ${PLANS.studio.monthlyEur} € par mois.` },

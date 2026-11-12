@@ -94,7 +94,7 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     const row63 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(renderToStaticMarkup(getTranslator(locale).t("pricing_feat_63"))));
     expect(row63).toBeDefined();
     expect(row63!.match(/>Yes<|>Oui</g)).toHaveLength(4);
-    expect(html).toContain(locale === "fr" ? "Tailles 6,9″ optionnelles" : "Optional 6.9″ sizes");
+    expect(html).toContain(locale === "fr" ? "Tailles 6,9″" : "6.9″ sizes");
     expect(html).toContain(renderToStaticMarkup(getTranslator(locale).t("pricing_lead")));
     const row69 = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)?.find((row) => row.includes(getTranslator(locale).t("pricing_feat_69")));
     expect(row69!.match(/>Yes<|>Oui</g)).toHaveLength(3);
@@ -108,7 +108,8 @@ describe.each(["fr", "en"] as const)("%s commercial copy and initial rendering",
     expect(metadata.description).toContain(locale === "fr" ? "69 €/mois" : "€69/month");
     expect(metadata.description!.length).toBeLessThanOrEqual(155);
     expect(metadata.description).toContain(locale === "fr" ? "6,3″ requis" : "6.3″ iPhone required");
-    expect(metadata.description).toContain(locale === "fr" ? "6,9″ optionnel" : "optional 6.9″");
+    expect(metadata.description).toContain(locale === "fr" ? "6,9″" : "6.9″");
+    expect(metadata.description).not.toMatch(locale === "fr" ? /optionnel/i : /optional/i);
     expect(metadata.description?.includes("Pass")).toBe(Boolean(priceId));
     if (priceId) expect(metadata.description).toContain(locale === "fr"
       ? `Pass ${PASS30.priceEur} €/${PASS30.days} j`

@@ -223,7 +223,9 @@ describe("SEO screenshot pages", () => {
           cy.get('section[aria-labelledby="size-faq"] a[href="https://www.apple.com/iphone-duo/specs/"]').should("exist");
         }
         if (size === "1320x2868") {
-          cy.get("main").should("contain", locale === "en" ? "optional in App Store Connect" : "optionnelles dans App Store Connect")
+          cy.get("main").should("contain", locale === "en"
+            ? "doesn't name the 6.9″ (large display) slot"
+            : "ne cite pas l’emplacement 6,9″ (large display)")
             .and("contain", locale === "en" ? "with Pass, Indie and Studio" : "avec Pass, Indie et Studio");
         }
         cy.contains("main a", locale === "en" ? "Prepare your screenshots" : "Préparer vos captures")
@@ -456,7 +458,7 @@ describe("SEO screenshot pages", () => {
       .and("contain", 'iPhone Duo outer display: 1398x2034')
       .and("contain", 'iPhone Duo inner display: 2007x2853')
       .and("contain", 'iPhone with Dynamic Island (medium display, 6.3") required: 1206x2622, included in the free trial')
-      .and("contain", 'iPhone 6.9": 1320x2868, optional with')
+      .and("contain", 'iPhone 6.9": 1320x2868, available with')
       .and("contain", "Free trial: 0 EUR, 2 HD ZIPs")
       .and("contain", "Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year")
       .and("not.match", /coupon|discount|remise|réduction/i)
