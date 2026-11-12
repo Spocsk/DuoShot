@@ -43,6 +43,50 @@ describe("proxy locale redirects", () => {
   });
 });
 
+describe("proxy /fr default-locale redirects", () => {
+  it.each([
+    ["/fr", "https://duoshot.site/"],
+    ["/fr/pricing", "https://duoshot.site/pricing"],
+    ["/fr/guides/screenshot-size", "https://duoshot.site/guides/screenshot-size"],
+    ["/fr/guides/screenshot-size/iphone-16-pro-max", "https://duoshot.site/guides/screenshot-size/iphone-16-pro-max"],
+  ])("permanently redirects %s to the unprefixed URL", async (path, location) => {
+    for (const method of ["GET", "HEAD"] as const) {
+      const response = await proxy(new NextRequest(`https://duoshot.site${path}`, { method }));
+      expect(response.status, `${method} ${path}`).toBe(308);
+      expect(response.headers.get("location"), `${method} ${path}`).toBe(location);
+    }
+  });
+
+  it("preserves the query string on the redirect", async () => {
+    const response = await proxy(new NextRequest("https://duoshot.site/fr/pricing?ref=a&x=1"));
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe("https://duoshot.site/pricing?ref=a&x=1");
+  });
+
+  it.each(["/fr/opengraph-image/card", "/fr/specs/opengraph-image/card", "/fr/twitter-image"])(
+    "keeps the French OG image routes under /fr: %s",
+    async (path) => {
+      const response = await proxy(new NextRequest(`https://duoshot.site${path}`));
+      expect(response.headers.get("location")).toBeNull();
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+    },
+  );
+
+  it("leaves /en, /api and the login redirect untouched", async () => {
+    const en = await proxy(new NextRequest("https://duoshot.site/en"));
+    expect(en.headers.get("location")).toBeNull();
+    expect(en.headers.get("x-middleware-next")).toBe("1");
+
+    const api = await proxy(new NextRequest("https://duoshot.site/api/health"));
+    expect(api.headers.get("location")).toBeNull();
+    expect(api.headers.get("x-middleware-next")).toBe("1");
+
+    const login = await proxy(new NextRequest("https://duoshot.site/login"));
+    expect(login.status).toBe(307);
+    expect(login.headers.get("location")).toBe("https://duoshot.site/en/login");
+  });
+});
+
 describe("proxy internal-route gate", () => {
   it("lets the worker's loopback call through to the route", async () => {
     const response = await call({ host: "127.0.0.1:3000", "x-forwarded-for": "127.0.0.1" });

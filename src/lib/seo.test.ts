@@ -23,8 +23,11 @@ import { generateMetadata as whyFrMetadata } from "@/app/[locale]/pourquoi-pas-i
 import { generateMetadata as whyEnMetadata } from "@/app/[locale]/why-not-ai/page";
 import { generateMetadata as rejectionFrMetadata } from "@/app/[locale]/rejet/page";
 import { generateMetadata as rejectionEnMetadata } from "@/app/[locale]/rejection/page";
-import { HOME_PAGE_COPY } from "./marketing-copy";
+import { HOME_PAGE_COPY, PRICING_PAGE_COPY } from "./marketing-copy";
 import { generateImageMetadata as iphone69ImageMetadata, generateStaticParams as iphone69ImageParams } from "@/app/[locale]/1320x2868/opengraph-image";
+import { generateMetadata as deviceMetadata } from "@/app/[locale]/guides/screenshot-size/[device]/page";
+import { generateMetadata as hubMetadata } from "@/app/[locale]/guides/screenshot-size/page";
+import { DEVICES } from "./devices";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -213,6 +216,73 @@ describe("public routes and crawler metadata", () => {
       }]);
       expect(iphone69ImageMetadata({ params: { locale } })[0].alt).toContain("1320 × 2868");
     }
+  });
+});
+
+// The rendered <title> is the page title plus the document layout's " · DuoShot" template;
+// home pages opt out with an absolute title.
+const renderedTitle = (metadata: Awaited<ReturnType<typeof homeMetadata>>) =>
+  typeof metadata.title === "string" ? `${metadata.title} · DuoShot` : (metadata.title as { absolute: string }).absolute;
+
+describe("brand suffix is never duplicated in titles", () => {
+  it.each(["fr", "en"] as const)("keeps a single brand across device and hub guide titles in %s", async (locale) => {
+    const hub = await hubMetadata({ params: Promise.resolve({ locale }) });
+    const deviceMetas = await Promise.all(
+      DEVICES.map((device) => deviceMetadata({ params: Promise.resolve({ locale, device: device.slug }) })),
+    );
+    for (const metadata of [hub, ...deviceMetas]) {
+      const title = renderedTitle(metadata);
+      expect(title, title).not.toContain("DuoShot · DuoShot");
+      expect(title, title).not.toContain("générateur DuoShot");
+      expect(title.match(/DuoShot/g)?.length ?? 0, title).toBeLessThanOrEqual(1);
+      // Open Graph and Twitter titles carry the same brand suffix as the <title>.
+      expect(metadata.openGraph?.title).toBe(title);
+      expect(metadata.twitter?.title).toBe(title);
+    }
+    // The French device pages keep their "générateur" qualifier.
+    if (locale === "fr") for (const metadata of deviceMetas) expect(renderedTitle(metadata)).toContain("générateur");
+  });
+
+  it.each(["fr", "en"] as const)("keeps a single brand across the broader edited titles in %s", async (locale) => {
+    for (const generateMetadata of [
+      homeMetadata, specsMetadata, pricingMetadata, toolMetadata,
+      outerMetadata, innerMetadata, iphone63Metadata, iphone69Metadata, comparisonMetadata,
+      locale === "fr" ? whyFrMetadata : whyEnMetadata,
+      locale === "fr" ? rejectionFrMetadata : rejectionEnMetadata,
+    ]) {
+      const title = renderedTitle(await generateMetadata({ params: Promise.resolve({ locale }) }));
+      expect(title, title).not.toContain("DuoShot · DuoShot");
+    }
+  });
+});
+
+describe("ampersand titles are encoded exactly once", () => {
+  it("uses a real ampersand in the EN pricing and specs source copy", () => {
+    expect(PRICING_PAGE_COPY.en.title).toBe("App Store screenshot plans & pricing");
+    expect(SPECS_PAGE_COPY.en.title).toBe("iPhone Duo screenshot size, safe area & fold");
+    for (const title of [PRICING_PAGE_COPY.en.title, SPECS_PAGE_COPY.en.title]) {
+      expect(title).toContain(" & ");
+      expect(title).not.toContain("&amp;");
+    }
+  });
+
+  it.each(["fr", "en"] as const)("never pre-encodes an ampersand in pricing or specs metadata values in %s", async (locale) => {
+    for (const generateMetadata of [pricingMetadata, specsMetadata]) {
+      const metadata = await generateMetadata({ params: Promise.resolve({ locale }) });
+      const title = typeof metadata.title === "string" ? metadata.title : (metadata.title as { absolute: string }).absolute;
+      for (const rawValue of [title, metadata.openGraph?.title, metadata.twitter?.title]) {
+        const value = typeof rawValue === "string" || rawValue === undefined ? rawValue : (rawValue as { absolute: string }).absolute;
+        expect(value, value).not.toContain("&amp;");
+        expect(value, value).not.toContain("&amp;amp;");
+      }
+    }
+  });
+
+  it("keeps a raw ampersand in the specs JSON-LD rather than an HTML entity", () => {
+    const script = JsonLd({ locale: "en", path: "/specs", article: { ...SPECS_PAGE_COPY.en, dateModified: SCREENSHOT_VERIFIED_ON } });
+    const serialized = script.props.dangerouslySetInnerHTML.__html;
+    expect(serialized).toContain("safe area & fold");
+    expect(serialized).not.toContain("&amp;");
   });
 });
 

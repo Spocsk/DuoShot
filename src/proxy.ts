@@ -60,6 +60,18 @@ export async function proxy(request: NextRequest, event?: NextFetchEvent) {
     });
   }
 
+  // "fr" is the default locale and has no URL prefix, so /fr and /fr/… are duplicates
+  // of their canonical unprefixed pages. Redirect them permanently for every client,
+  // crawlers included. The French OG images are genuinely served under /fr (see the
+  // next.config rewrites), so those image routes are left untouched.
+  if ((request.method === "GET" || request.method === "HEAD") &&
+    (pathname === "/fr" || pathname.startsWith("/fr/")) &&
+    !/\/(?:opengraph-image|twitter-image)(?:-[^/]+)?(?:\/[^/]+)?$/.test(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname === "/fr" ? "/" : pathname.slice(3);
+    return NextResponse.redirect(url, 308);
+  }
+
   const skip =
     (request.method !== "GET" && request.method !== "HEAD") ||
     shouldSkipLocaleRewrite(pathname) ||
