@@ -47,7 +47,7 @@ ${getTranslator("en").t("specs_duoshot_identity")}
 - Outer display sizes: ${getSiteUrl()}/1398x2034 (EN: ${getSiteUrl()}/en/1398x2034)
 - Inner display sizes: ${getSiteUrl()}/2007x2853 (EN: ${getSiteUrl()}/en/2007x2853)
 - iPhone with Dynamic Island (medium display, 6.3") required: ${getSiteUrl()}/1206x2622 (EN: ${getSiteUrl()}/en/1206x2622)
-- Optional 6.9" iPhone sizes: ${getSiteUrl()}/1320x2868 (EN: ${getSiteUrl()}/en/1320x2868)
+- 6.9" iPhone sizes: ${getSiteUrl()}/1320x2868 (EN: ${getSiteUrl()}/en/1320x2868)
 - Why not AI: ${getSiteUrl()}/pourquoi-pas-ia (EN: ${getSiteUrl()}/en/why-not-ai)
 - Rejection decoder: ${getSiteUrl()}/rejet (EN: ${getSiteUrl()}/en/rejection)
 - Screenshot generator comparison: ${getSiteUrl()}${COMPARISON_GUIDE_PATH} (EN: ${getSiteUrl()}/en${COMPARISON_GUIDE_PATH})
@@ -65,7 +65,7 @@ ${deviceGuideLinks}
 - iPhone Duo outer display: 1398x2034
 - iPhone Duo inner display: 2007x2853
 - iPhone with Dynamic Island (medium display, 6.3") required: 1206x2622, included in the free trial
-- iPhone 6.9": 1320x2868, optional with ${passAvailable ? "Pass, Indie and Studio" : "Indie and Studio"}
+- iPhone 6.9": 1320x2868, available with ${passAvailable ? "Pass, Indie and Studio" : "Indie and Studio"}
 
 ## Pixels
 ${sizes}
@@ -80,7 +80,7 @@ ${sizes}
 - The limit of 10 screenshots total across both screens is DuoShot's rule, not Apple's; exports above it are refused with HTTP 400, no silent trimming. Whether Apple's capacity is shared across both screens remains to be confirmed in a real App Store Connect upload.
 - Guideline 2.3.3: screenshots must accurately represent the app
 - ${getTranslator("en").t("duo_landscape_first_warning")}
-- Optional 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
+- 6.9" sizes are included with ${passAvailable ? "Pass / Indie / Studio" : "paid access"}
 - iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect; DuoShot exports 1206x2622 portrait or 2622x1206 landscape, included in the free trial. The accepted 1179x2556 alternative is not a DuoShot export preset.
 
 ## Prices (EUR)

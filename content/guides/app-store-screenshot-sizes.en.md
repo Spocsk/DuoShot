@@ -52,7 +52,7 @@ The inner display folds in the middle. Keep headlines and important controls awa
 | Home Button, large display | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
 | Home Button, medium display | iPhone SE (3rd, 2nd gen), 8, 7, 6s, 6 | 750 × 1334 |
 
-If you skip the large Dynamic Island slot, App Store Connect falls back to scaled screenshots from the Face ID large display slot, and the reverse also applies. In practice most teams upload the required **1206 × 2622** set and, optionally, a **1320 × 2868** set. See the [1206 × 2622 page](/en/1206x2622) and the [1320 × 2868 page](/en/1320x2868).
+If you skip the large Dynamic Island slot, App Store Connect falls back to scaled screenshots from the Face ID large display slot, and the reverse also applies. In practice most teams upload the required **1206 × 2622** set and often also a **1320 × 2868** set. See the [1206 × 2622 page](/en/1206x2622) and the [1320 × 2868 page](/en/1320x2868).
 
 ## iPad screenshot sizes
 
@@ -83,7 +83,7 @@ Our [free screenshot checker](/en/tools/iphone-duo-screenshot-checker) validates
 
 ## How DuoShot fits in
 
-DuoShot exports frameless screenshots for the iPhone Duo outer and inner displays, the required 6.3" size and the optional 6.9" size, in one ZIP. The free trial includes 2 HD ZIPs with Duo captures and the required 6.3" size. The 6.9" format is available with Pass, Indie and Studio. DuoShot does not cover iPad, Mac, Apple TV, Vision Pro or Watch sizes today. For other tools, see the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator).
+DuoShot exports frameless screenshots for the iPhone Duo outer and inner displays, the required 6.3" size and the 6.9" size, in one ZIP. The free trial includes 2 HD ZIPs with Duo captures and the required 6.3" size. The 6.9" format is available with Pass, Indie and Studio. DuoShot does not cover iPad, Mac, Apple TV, Vision Pro or Watch sizes today. For other tools, see the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator).
 
 iOS 27 adds [creative assets](/en/guides/app-store-creative-assets) — a product page header and a search results image — above your screenshots; they're separate and don't change the sizes here.
 

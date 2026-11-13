@@ -39,7 +39,8 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
         expect(html).toContain("1320 × 2868");
         expect(html).toContain("2868 × 1320");
         expect(html).toContain("1290 × 2796");
-        expect(html).toContain(locale === "fr" ? "optionnelles" : "optional");
+        expect(html).toContain("Required device sizes");
+        expect(html).toContain("Required if app runs on iPhone");
         expect(html).toContain(locale === "fr" ? "avec Pass, Indie et Studio" : "with Pass, Indie and Studio");
         const slotSection = html.match(/<section[^>]*>\s*<h2[^>]*>[^<]*6[,.]9[^<]*<\/h2>([\s\S]*?)<\/section>/)![1];
         expect(slotSection).not.toContain(locale === "fr" ? "emplacement iPhone Duo" : "iPhone Duo slot");

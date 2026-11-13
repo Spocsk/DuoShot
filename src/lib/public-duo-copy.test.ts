@@ -82,16 +82,16 @@ describe.each(["fr", "en"] as const)("%s public Duo copy", (locale) => {
       "Cette limite est une règle de DuoShot",
       "Apple accepte jusqu’à 10 captures par taille d’appareil.",
       "iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect ; taille incluse dans l’essai gratuit",
-      `Option 6,9″ (${passAvailable ? "Pass / Indie / Studio" : "offres payantes"})`,
-      `Le 6,9″ est optionnel avec ${passAvailable ? "Pass, Indie et Studio" : "les offres payantes"}.`,
+      `6,9″ (${passAvailable ? "Pass / Indie / Studio" : "offres payantes"})`,
+      `Le 6,9″ est disponible avec ${passAvailable ? "Pass, Indie et Studio" : "les offres payantes"}.`,
     ] : [
       "In DuoShot, choose outer only, inner only, or a mix",
       "1 to 10 opaque PNG/JPEG files in total across the outer and inner displays.",
       "This is a DuoShot limit",
       "Apple accepts up to 10 screenshots per device size.",
       'iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect, included in the free trial',
-      `Optional 6.9″ (${passAvailable ? "Pass / Indie / Studio" : "paid access"})`,
-      `The 6.9″ size is optional with ${passAvailable ? "Pass, Indie and Studio" : "paid access"}.`,
+      `6.9″ (${passAvailable ? "Pass / Indie / Studio" : "paid access"})`,
+      `The 6.9″ size is available with ${passAvailable ? "Pass, Indie and Studio" : "paid access"}.`,
     ];
     for (const fact of faqFacts) expect(faqHtml).toContain(renderToStaticMarkup(fact));
     if (!passAvailable) expect(faqHtml).not.toContain("Pass");

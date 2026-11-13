@@ -41,14 +41,14 @@ describe("GET /llms.txt", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://duoshot.site");
     const body = await GET().text();
     expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required: https://duoshot.site/1206x2622 (EN: https://duoshot.site/en/1206x2622)');
-    expect(body).toContain('Optional 6.9" iPhone sizes: https://duoshot.site/1320x2868 (EN: https://duoshot.site/en/1320x2868)');
+    expect(body).toContain('6.9" iPhone sizes: https://duoshot.site/1320x2868 (EN: https://duoshot.site/en/1320x2868)');
     expect(body).toContain('Free screenshot checker (dimensions, transparency, Duo count; client-side, no uploads): https://duoshot.site/tools/iphone-duo-screenshot-checker (EN: https://duoshot.site/en/tools/iphone-duo-screenshot-checker)');
     expect(body).toContain('iPhone 6.3" portrait alternative accepted by App Store Connect: 1179x2556');
     expect(body).toContain('iPhone 6.3" landscape alternative accepted by App Store Connect: 2556x1179');
     expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required for App Store Connect');
     expect(body).toContain('included in the free trial');
     expect(body).toContain('1179x2556 alternative is not a DuoShot export preset');
-    expect(body).toContain('Optional 6.9" sizes are included with paid access');
+    expect(body).toContain('6.9" sizes are included with paid access');
   });
 
   it.each([true, false])("distinguishes Apple's capacity from DuoShot's rule and preserves upload qualifications (pass: %s)", async (passAvailable) => {
@@ -78,7 +78,7 @@ describe("GET /llms.txt", () => {
     expect(body).toContain('iPhone Duo outer display: 1398x2034');
     expect(body).toContain('iPhone Duo inner display: 2007x2853');
     expect(body).toContain('iPhone with Dynamic Island (medium display, 6.3") required: 1206x2622, included in the free trial');
-    expect(body).toContain('iPhone 6.9": 1320x2868, optional with Indie and Studio');
+    expect(body).toContain('iPhone 6.9": 1320x2868, available with Indie and Studio');
     expect(body).toContain("Free trial: 0 EUR, 2 HD ZIPs");
     expect(body).toContain("Indie: 12 EUR/month or 120 EUR/year; Studio: 49 EUR/month or 490 EUR/year");
     expect(body).not.toMatch(/coupon|discount|remise|réduction/i);
@@ -116,8 +116,8 @@ describe("GET /llms.txt", () => {
     const body = await GET().text();
     expect(body).toContain("Pass 30 jours: 19 € une fois. Accès Indie pendant 30 jours pour un lancement : sans abonnement ni renouvellement.");
     expect(body).not.toMatch(/coupon|discount|remise|réduction/i);
-    expect(body).toContain('Optional 6.9" sizes are included with Pass / Indie / Studio');
-    expect(body).toContain('iPhone 6.9": 1320x2868, optional with Pass, Indie and Studio');
+    expect(body).toContain('6.9" sizes are included with Pass / Indie / Studio');
+    expect(body).toContain('iPhone 6.9": 1320x2868, available with Pass, Indie and Studio');
   });
 
   it("hides the pass when checkout is disabled, even with a configured price", async () => {
