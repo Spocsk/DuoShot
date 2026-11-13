@@ -11,10 +11,28 @@ import type { ScreenshotSize } from "./screenshot-pages";
  * tested. See also the visible FAQ in size-faq.ts.
  */
 
+/** A size cell split into parts so one segment (e.g. the page's own size) can be emphasized. */
+export type SlotSizes = { text: string; strong?: boolean }[];
+export type SlotRow = { group: string; sizes: SlotSizes; status: string };
+
+/** Optional comparison table, only on the 1206x2622 page: the iPhone App Store Connect slots. */
+export type SizeSlots = {
+  heading: string;
+  columns: [string, string, string];
+  rows: SlotRow[];
+  source: string;
+  note: string;
+};
+
+/** Optional extra "Related" links, only on the 1206x2622 page (hrefs computed in SizePage). */
+export type SizeRelated = { duoGuide: string; checker: string; rejection: string };
+
 export type SizeEnrichment = {
   devices: { heading: string; body: string };
   orientation: { heading: string; body: string };
   rejections: { heading: string; intro: string; items: string[] };
+  slots?: SizeSlots;
+  related?: SizeRelated;
 };
 
 const HEADINGS = {
@@ -28,35 +46,109 @@ function enrichment(
   orientationBody: string,
   rejectionsIntro: string,
   rejectionsItems: string[],
+  extra?: { slots?: SizeSlots; related?: SizeRelated },
 ): SizeEnrichment {
   const h = HEADINGS[locale];
   return {
     devices: { heading: h.devices, body: devicesBody },
     orientation: { heading: h.orientation, body: orientationBody },
     rejections: { heading: h.rejections, intro: rejectionsIntro, items: rejectionsItems },
+    ...extra,
   };
 }
+
+/** The 1206 × 2622 comparison table, grounded verbatim in Apple's screenshot specifications. */
+const SLOTS_1206: Record<Locale, SizeSlots> = {
+  fr: {
+    heading: "1206 × 2622 face aux autres emplacements iPhone (spécifications Apple)",
+    columns: ["Groupe App Store Connect (nom Apple)", "Tailles acceptées, portrait (paysage)", "Statut sur la page d’Apple"],
+    rows: [
+      {
+        group: "« iPhone with Dynamic Island (medium display) » — iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15, 14 Pro",
+        sizes: [{ text: "1179 × 2556 (2556 × 1179) · " }, { text: "1206 × 2622 (2622 × 1206)", strong: true }],
+        status: "Requis : au moins une capture",
+      },
+      {
+        group: "« iPhone with Dynamic Island (large display) » — iPhone Air, 18 Pro Max, 17 Pro Max, 16 Pro Max, 16 Plus, 15 Pro Max, 15 Plus, 14 Pro Max",
+        sizes: [{ text: "1260 × 2736 · 1290 × 2796 · 1320 × 2868 (et paysages)" }],
+        status: "Absent de la liste « Required device sizes » d’Apple ; si absent, mis à l’échelle depuis « iPhone with Face ID (large display) »",
+      },
+      {
+        group: "« iPhone with Face ID (medium display) » — iPhone 17e, 16e, 14, 13 Pro, 13, 13 mini, 12 Pro, 12, 12 mini, 11 Pro, XS, X",
+        sizes: [{ text: "1170 × 2532 · 1125 × 2436 · 1080 × 2340 (et paysages)" }],
+        status: "Si absent, mis à l’échelle depuis « iPhone with Dynamic Island (medium display) »",
+      },
+      {
+        group: "« iPhone Duo »",
+        sizes: [{ text: "1398 × 2034 (externe) · 2007 × 2853 (interne) (et paysages)" }],
+        status: "Apple : requis à partir d’avril 2027 pour les apps utilisant le SDK iOS 27.1 ou ultérieur",
+      },
+    ],
+    source: "Source : Apple, Screenshot specifications, vérifié le 12 novembre 2026. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.",
+    note: "Un jeu 1206 × 2622 alimente aussi l’ancien emplacement Face ID (écran moyen), car Apple met à l’échelle depuis « iPhone with Dynamic Island (medium display) » quand cet emplacement est vide.",
+  },
+  en: {
+    heading: "1206 × 2622 vs the other iPhone slots (Apple specifications)",
+    columns: ["App Store Connect group (Apple name)", "Accepted sizes, portrait (landscape)", "Status on Apple’s page"],
+    rows: [
+      {
+        group: "iPhone with Dynamic Island (medium display) — iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15, 14 Pro",
+        sizes: [{ text: "1179 × 2556 (2556 × 1179) · " }, { text: "1206 × 2622 (2622 × 1206)", strong: true }],
+        status: "Required: at least one screenshot",
+      },
+      {
+        group: "iPhone with Dynamic Island (large display) — iPhone Air, 18 Pro Max, 17 Pro Max, 16 Pro Max, 16 Plus, 15 Pro Max, 15 Plus, 14 Pro Max",
+        sizes: [{ text: "1260 × 2736 · 1290 × 2796 · 1320 × 2868 (and landscapes)" }],
+        status: "Not in Apple’s \"Required device sizes\" list; if missing, scaled from iPhone with Face ID (large display)",
+      },
+      {
+        group: "iPhone with Face ID (medium display) — iPhone 17e, 16e, 14, 13 Pro, 13, 13 mini, 12 Pro, 12, 12 mini, 11 Pro, XS, X",
+        sizes: [{ text: "1170 × 2532 · 1125 × 2436 · 1080 × 2340 (and landscapes)" }],
+        status: "If missing, scaled from iPhone with Dynamic Island (medium display)",
+      },
+      {
+        group: "iPhone Duo",
+        sizes: [{ text: "1398 × 2034 (outer) · 2007 × 2853 (inner) (and landscapes)" }],
+        status: "Apple: required from April 2027 for apps using the iOS 27.1 SDK or later",
+      },
+    ],
+    source: "Source: Apple, Screenshot specifications, checked November 12, 2026. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.",
+    note: "A 1206 × 2622 set also feeds the older Face ID medium-display slot, because Apple scales from Dynamic Island (medium display) when that slot is empty.",
+  },
+};
+
+/** Extra "Related" link labels for the 1206x2622 page; hrefs are built in SizePage. */
+const RELATED_1206: Record<Locale, SizeRelated> = {
+  fr: { duoGuide: "Taille des captures iPhone Duo", checker: "Vérifier une capture iPhone Duo", rejection: "Quoi vérifier avant la revue App Store" },
+  en: { duoGuide: "iPhone Duo screenshot size", checker: "Check an iPhone Duo screenshot", rejection: "What to check before App Store review" },
+};
 
 const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = {
   "1206x2622": {
     fr: enrichment("fr",
-      "Cette taille vise le groupe « iPhone with Dynamic Island (medium display) » d’App Store Connect : iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15 et 14 Pro. Le groupe accepte 1206 × 2622 ou 1179 × 2556 pixels en portrait (et leurs paysages). Si vous n’ajoutez pas ces captures, App Store Connect met à l’échelle celles du grand écran.",
+      "Cette taille vise le groupe « iPhone with Dynamic Island (medium display) » d’App Store Connect : iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15 et 14 Pro. Le groupe accepte 1206 × 2622 ou 1179 × 2556 pixels en portrait (et leurs paysages). App Store Connect exige au moins une capture dans ce groupe pour soumettre une app iPhone. La note d’Apple pour ce groupe précise que, si les tailles acceptées ne sont pas fournies, des captures mises à l’échelle depuis « iPhone with Face ID (large display) » sont utilisées.",
       "En portrait, exportez 1206 × 2622 pixels ; en paysage, 2622 × 1206 pixels. Gardez une orientation cohérente sur toute la série de captures de cet emplacement.",
       "Avant de déposer vos captures 1206 × 2622, écartez ces causes fréquentes de rejet :",
       [
         "Mauvaise taille : déposez exactement 1206 × 2622 pixels en portrait (ou 2622 × 1206 en paysage). Une image à une autre résolution est refusée.",
         "Transparence ou canal alpha : aplatissez le fond. Les images ne peuvent pas comporter de canal alpha ni de zones transparentes.",
         "Mauvais format : exportez en PNG ou JPEG. Les autres formats (HEIC, WebP, PDF…) sont rejetés.",
-      ]),
+        "Mauvais emplacement : un fichier 1320 × 2868 appartient à « iPhone with Dynamic Island (large display) », et 1398 × 2034 ou 2007 × 2853 à « iPhone Duo ». Aucun ne remplit l’emplacement « medium display » requis.",
+        "Orientation inversée ou un pixel de travers : 2622 × 1206 est la taille paysage, et 1206 × 2621 ou 1205 × 2622 ne figure pas sur la liste d’Apple. Vérifiez le nombre exact de pixels avant le dépôt. Sur un Mac, « sips -g pixelWidth -g pixelHeight -g hasAlpha fichier.png » affiche la taille et le canal alpha.",
+      ],
+      { slots: SLOTS_1206.fr, related: RELATED_1206.fr }),
     en: enrichment("en",
-      "This size targets App Store Connect’s “iPhone with Dynamic Island (medium display)” group: iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15 and 14 Pro. The group accepts 1206 × 2622 or 1179 × 2556 pixels in portrait (and their landscapes). If you don’t add these screenshots, App Store Connect scales the large-display ones.",
+      "This size targets App Store Connect’s “iPhone with Dynamic Island (medium display)” group: iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15 and 14 Pro. The group accepts 1206 × 2622 or 1179 × 2556 pixels in portrait (and their landscapes). App Store Connect requires at least one screenshot in this group to submit an iPhone app. Apple’s note for the group says that if the accepted sizes aren’t provided, scaled screenshots for iPhone with Face ID (large display) are used.",
       "In portrait, export 1206 × 2622 pixels; in landscape, 2622 × 1206 pixels. Keep one consistent orientation across the whole set for this slot.",
       "Before you upload your 1206 × 2622 screenshots, rule out these common rejection causes:",
       [
         "Wrong size: upload exactly 1206 × 2622 pixels in portrait (or 2622 × 1206 in landscape). An image at any other resolution is rejected.",
         "Transparency or alpha channel: flatten the background. Images can’t include an alpha channel or transparent areas.",
         "Wrong format: export PNG or JPEG. Other formats (HEIC, WebP, PDF…) are rejected.",
-      ]),
+        "Wrong slot: a 1320 × 2868 file belongs to iPhone with Dynamic Island (large display), and 1398 × 2034 or 2007 × 2853 to iPhone Duo. Neither fills the required medium-display slot.",
+        "Swapped orientation or one pixel off: 2622 × 1206 is the landscape size, and 1206 × 2621 or 1205 × 2622 is not on Apple’s list. Check the exact pixel count before uploading. On a Mac, “sips -g pixelWidth -g pixelHeight -g hasAlpha file.png” shows size and alpha.",
+      ],
+      { slots: SLOTS_1206.en, related: RELATED_1206.en }),
   },
   "1320x2868": {
     fr: enrichment("fr",
