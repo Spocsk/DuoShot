@@ -1,7 +1,8 @@
 import { COMPARISON_GUIDE_PATH } from "./guides";
-import { localizedPath } from "./site";
+import { localizedPath, rejectionPath } from "./site";
 import { ALTERNATIVE_SLUGS, alternativePath } from "./alternatives";
 import type { Locale } from "./specs";
+import type { FaqItem } from "./screenshot-copy";
 
 // Competitor summaries use only the linked official homepages, checked 2026-10-16.
 // AppLaunchFlow: Screenshot Editor, Promo Videos and ASO Copy sections.
@@ -12,6 +13,7 @@ import type { Locale } from "./specs";
 // Checked 2026-11-07: Duo Studio (duomockup.com) English homepage — free browser mockup editor with device frames and local processing.
 // Checked 2026-11-08: AppScreen (appscreen.pro) homepage and v1.5 changelog; a different product from AppScreens (appscreens.com).
 // Checked 2026-11-10: Store Connect Studio (Anax, anaxkg.com) English page — Mac app for screenshots, metadata, translation and direct App Store Connect sync.
+// Checked 2026-11-13: AppScreens (appscreens.com) public homepage, menu and pricing page — enriched comparison; only facts visible on those pages are used.
 export const COMPARISONS = [
   {
     slug: "duoshot-vs-applaunchflow",
@@ -29,7 +31,7 @@ export const COMPARISONS = [
   },
   {
     slug: "duoshot-vs-appscreens",
-    checked: "2026-10-16",
+    checked: "2026-11-13",
     name: "AppScreens",
     url: "https://appscreens.com/",
     summary: {
@@ -209,6 +211,12 @@ export function competitorComparison(locale: Locale, slug: string) {
   const altLine = ALTERNATIVE_SLUGS.includes(altSlug)
     ? `\n- [${locale === "fr" ? `Alternative à ${name}` : `${name} alternative`}](${link(alternativePath(altSlug))})`
     : "";
+  // Enriched, source-dated comparison for AppScreens (appscreens.com). Shared layout is unchanged
+  // for every other competitor; this branch only adds optional sections and a FAQ for this one entry.
+  if (slug === "duoshot-vs-appscreens") {
+    const enriched = appScreensComparison(locale, { title, name, url, link, checkedOn, related, altLine });
+    return { title, description, dateModified: checked, body: enriched.body, faq: enriched.faq };
+  }
   const body = locale === "fr" ? `# ${title}
 
 DuoShot (duoshot.site) est notre produit pour préparer les captures iPhone Duo (le téléphone pliable d'Apple). Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **${checkedOn}**. Il ne s’agit pas d’un test du service concurrent.
@@ -302,5 +310,195 @@ Start with your needs: visual composition, languages, output dimensions and uplo
 - [App Store screenshot generator guide](${link(COMPARISON_GUIDE_PATH)})${altLine}
 ${related}
 `;
-  return { title, description, dateModified: checked, body };
+  return { title, description, dateModified: checked, body, faq: undefined as readonly FaqItem[] | undefined };
+}
+
+type EnrichedArgs = {
+  title: string;
+  name: string;
+  url: string;
+  link: (path: string) => string;
+  checkedOn: string;
+  related: string;
+  altLine: string;
+};
+
+// AppScreens-specific body and FAQ. Every AppScreens fact comes from its public site reviewed
+// 2026-11-13 (homepage, menu and pricing page); DuoShot facts mirror src/lib/plans and specs.
+function appScreensComparison(locale: Locale, { title, name, url, link, checkedOn, related, altLine }: EnrichedArgs): { body: string; faq: readonly FaqItem[] } {
+  const pricingUrl = "https://appscreens.com/pricing";
+  if (locale === "fr") {
+    const faq: readonly FaqItem[] = [
+      {
+        q: "Peut-on réutiliser 1206 × 2622 pour l’iPhone Duo ?",
+        a: "Non, pas tel quel. 1206 × 2622 est la taille de l’iPhone 6,3″ et ses proportions diffèrent des écrans de l’iPhone Duo, qui sont 1398 × 2034 (externe) et 2007 × 2853 (interne). Exportez chaque écran à sa propre taille App Store Connect ; voyez le guide des tailles iPhone Duo indiqué ci-dessus.",
+      },
+      {
+        q: "DuoShot dépose-t-il vers App Store Connect ?",
+        a: "Non. DuoShot exporte un ZIP de fichiers PNG ou JPEG opaques que vous déposez vous-même dans App Store Connect. Le dépôt iPhone Duo n’a pas été testé par DuoShot.",
+      },
+      {
+        q: "Avez-vous testé AppScreens ?",
+        a: `Non. Cette page résume uniquement la présentation publique d’${name}, relue le ${checkedOn}. Consultez leur site officiel pour les fonctionnalités et les tarifs actuels.`,
+      },
+    ];
+    const body = `# ${title}
+
+DuoShot (duoshot.site) est notre produit pour préparer les captures iPhone Duo (le téléphone pliable d'Apple). Ce comparatif décrit son fonctionnement et résume la présentation publique de [${name}](${url}), consultée le **${checkedOn}**. Il ne s’agit pas d’un test du service concurrent.
+
+## En bref
+
+DuoShot part de vos captures réelles, les vérifie et exporte un ZIP aux tailles App Store Connect — dont l’iPhone Duo et l’emplacement requis « iPhone with Dynamic Island (medium display) ». ${name} se présente sur son site comme un éditeur visuel avec modèles, localisation et envoi direct vers les stores. Choisissez selon votre besoin : le contrôle des fichiers avec DuoShot, ou la composition visuelle avec ${name}. DuoShot est notre produit : considérez cette page comme un comparatif affilié, pas comme un test d’${name}.
+
+## Ce que présente ${name}
+
+${name} présente un éditeur visuel de captures App Store et Google Play, avec des modèles personnalisables et des outils de localisation. Son site indique aussi l'envoi direct vers App Store Connect et Google Play sur les offres payantes, et une API ainsi qu'un serveur MCP. Source : [site officiel de ${name}](${url}). Consultez ce site pour les tarifs et les conditions actuelles ; nous ne déduisons pas de fonctionnalités absentes d’une page publique.
+
+## Comparer les approches, d’après leur site
+
+| Point de comparaison | DuoShot | ${name} |
+|---|---|---|
+| Point de départ | Vos captures d’app réelles, vérifiées avant l’export | Modèle ou toile vierge, avec vos captures importées |
+| Modèles et cadres | Pas de cadre d’appareil ; PNG ou JPEG opaque | 150+ ensembles de modèles ; cadres d'appareils (réels, clay, 3D) |
+| Localisation | Non proposée — importez vos captures déjà localisées | 80+ langues, y compris de droite à gauche |
+| iPhone Duo | Exporte 1398 × 2034 et 2007 × 2853 | Leur menu cite iPhone Duo ; leur tableau de tarifs le réserve aux abonnements |
+| Envoi vers les stores | ZIP manuel ; pas d’envoi vers App Store Connect | Envoi direct vers les stores, indiqué pour les offres payantes |
+| Plateformes | App Store iPhone et iPhone Duo ; pas d’iPad ni Google Play | App Store et Google Play, plus d’autres préréglages |
+| Tarifs | [Tarifs DuoShot](${link("/pricing")}) | Free, Pro 99 $/an, Scale 180 $/an, affichés le ${checkedOn} ([leur page tarifs](${pricingUrl})) |
+
+Ces lignes reflètent le site public d’${name} au ${checkedOn} ; vérifiez-y l’offre actuelle.
+
+## Ce que DuoShot exporte
+
+DuoShot compose vos vraies captures d’app en PNG ou JPEG opaque, sans coque d’appareil, puis les regroupe dans un ZIP organisé par écran.
+
+- iPhone Duo **écran externe : 1398 × 2034** ; **écran interne : 2007 × 2853**.
+- iPhone **6,3″ : 1206 × 2622**, l’emplacement requis « iPhone with Dynamic Island (medium display) », inclus dans l’essai gratuit.
+- iPhone **6,9″ : 1320 × 2868**, avec Pass, Indie et Studio.
+
+## Ce que DuoShot vérifie, et ce qu’il ne garantit pas
+
+DuoShot vérifie les dimensions et le format opaque (il refuse l’alpha ou la transparence), signale les vues quasi identiques et propose un guide de pli simulé pour examiner la lisibilité sur l’écran interne.
+
+Ces contrôles ne garantissent pas l’acceptation par Apple, DuoShot ne dépose pas vers App Store Connect, et le dépôt iPhone Duo n’a pas été testé par DuoShot.
+
+- [Dimensions et guide du pli](${link("/specs")})
+- [6,3″ · 1206 × 2622](${link("/1206x2622")})
+- [iPhone Duo externe · 1398 × 2034](${link("/1398x2034")})
+- [iPhone Duo interne · 2007 × 2853](${link("/2007x2853")})
+- [Tailles des captures App Store](${link("/guides/app-store-screenshot-sizes")})
+- [Guide des tailles iPhone Duo](${link("/guides/screenshot-size/iphone-duo")})
+- [Vérificateur de captures iPhone Duo](${link("/tools/iphone-duo-screenshot-checker")})
+- [Erreurs de rejet fréquentes](${rejectionPath(locale)})
+
+## Tarifs DuoShot
+
+- Essai gratuit : **2 ZIP HD** après inscription, sans carte.
+- Pass 30 jours : **19 €**, paiement unique.
+- Indie : **12 €/mois, ou 120 €/an payés en une fois**.
+- Studio : **49 €/mois, ou 490 €/an payés en une fois**.
+
+TVA non applicable (art. 293 B du CGI).
+
+Les conditions et la disponibilité des offres figurent sur la page [tarifs DuoShot](${link("/pricing")}).
+
+## Avant de choisir
+
+Partez de votre besoin : contrôle des fichiers ou composition visuelle, langues à traiter, dimensions de sortie et méthode de dépôt. Vérifiez les fonctionnalités et les offres d’${name} sur son [site officiel](${url}). Pour DuoShot, vous pouvez [ouvrir l’outil](${link("/tool")}) et examiner les aperçus et contrôles avant un export.
+
+**DuoShot fournit un ZIP ; vous déposez les fichiers manuellement. Le dépôt iPhone Duo dans App Store Connect n’a pas été testé par DuoShot.**
+
+## Autres comparatifs
+
+- [Guide des générateurs de captures App Store](${link(COMPARISON_GUIDE_PATH)})${altLine}
+${related}
+`;
+    return { body, faq };
+  }
+  const faq: readonly FaqItem[] = [
+    {
+      q: "Can I reuse 1206 × 2622 for iPhone Duo?",
+      a: "No, not as-is. 1206 × 2622 is the 6.3″ iPhone size and has different proportions from the iPhone Duo displays, which are 1398 × 2034 (outer) and 2007 × 2853 (inner). Export each display at its own App Store Connect size; see the iPhone Duo size guide linked above.",
+    },
+    {
+      q: "Does DuoShot upload to App Store Connect?",
+      a: "No. DuoShot exports a ZIP of opaque PNG or JPEG files that you upload yourself in App Store Connect. DuoShot has not tested iPhone Duo uploads.",
+    },
+    {
+      q: "Have you tested AppScreens?",
+      a: `No. This page only summarizes ${name}’ public presentation, last reviewed on ${checkedOn}. Check their official site for current features and pricing.`,
+    },
+  ];
+  const body = `# ${title}
+
+DuoShot (duoshot.site) is our product for preparing iPhone Duo (Apple's foldable iPhone) screenshots. This comparison describes its workflow and summarizes the public presentation of [${name}](${url}), checked on **${checkedOn}**. We have not tested the competing service.
+
+## In short
+
+DuoShot starts from your real screenshots, checks them and exports a ZIP at App Store Connect sizes — including iPhone Duo and the required “iPhone with Dynamic Island (medium display)” slot. ${name} presents itself on its site as a visual editor with templates, localization and direct upload to the stores. Choose by your need: file control with DuoShot, or visual composition with ${name}. DuoShot is our product, so treat this page as an affiliated comparison, not a test of ${name}.
+
+## What ${name} presents
+
+${name} presents a visual editor for App Store and Google Play screenshots, with customizable templates and localization tools. Its site also lists direct upload to App Store Connect and Google Play on paid plans, plus an API and an MCP server. Source: [${name} official website](${url}). Check that site for current pricing and terms; we do not infer missing features from a public page.
+
+## Comparing the approaches, from their site
+
+| Comparison point | DuoShot | ${name} |
+|---|---|---|
+| Starting point | Your real app screenshots, checked before export | A template or blank canvas, with your app screenshots imported |
+| Templates and frames | No device frames; opaque PNG or JPEG | 150+ template sets; device frames (real, clay, 3D) |
+| Localization | Not provided — bring your own localized captures | 80+ languages, including right-to-left |
+| iPhone Duo | Exports 1398 × 2034 and 2007 × 2853 | Their menu lists iPhone Duo; their pricing table marks it as subscription-only |
+| Store upload | Manual ZIP; no App Store Connect upload | Direct upload to the stores, stated for paid plans |
+| Platforms | App Store iPhone and iPhone Duo; no iPad or Google Play | App Store and Google Play, plus other presets |
+| Pricing | [DuoShot pricing](${link("/pricing")}) | Free, Pro $99/year, Scale $180/year, shown ${checkedOn} ([their pricing page](${pricingUrl})) |
+
+These rows reflect ${name}’ public site on ${checkedOn}; check it for the current offer.
+
+## What DuoShot exports
+
+DuoShot composes your real app captures as opaque PNG or JPEG images, without device frames, then packages them in a ZIP organized by screen.
+
+- iPhone Duo **outer display: 1398 × 2034**; **inner display: 2007 × 2853**.
+- iPhone **6.3″: 1206 × 2622**, the required “iPhone with Dynamic Island (medium display)” slot, included in the free trial.
+- iPhone **6.9″: 1320 × 2868**, with Pass, Indie and Studio.
+
+## What DuoShot checks, and what it does not guarantee
+
+DuoShot checks dimensions and the opaque format (it rejects alpha or transparency), flags near-duplicate views, and provides a simulated fold guide to review legibility on the inner display.
+
+These checks do not guarantee Apple approval, DuoShot does not upload to App Store Connect, and iPhone Duo uploads have not been tested by DuoShot.
+
+- [Sizes and fold guide](${link("/specs")})
+- [6.3″ · 1206 × 2622](${link("/1206x2622")})
+- [iPhone Duo outer · 1398 × 2034](${link("/1398x2034")})
+- [iPhone Duo inner · 2007 × 2853](${link("/2007x2853")})
+- [App Store screenshot sizes](${link("/guides/app-store-screenshot-sizes")})
+- [iPhone Duo screenshot size guide](${link("/guides/screenshot-size/iphone-duo")})
+- [iPhone Duo screenshot checker](${link("/tools/iphone-duo-screenshot-checker")})
+- [Common rejection errors](${rejectionPath(locale)})
+
+## DuoShot pricing
+
+- Free trial: **2 HD ZIPs** after signup, no card.
+- 30-day Pass: **€19**, one-time payment.
+- Indie: **€12/month, or €120/year paid upfront**.
+- Studio: **€49/month, or €490/year paid upfront**.
+
+VAT not applicable, art. 293 B of the French CGI.
+
+Offer terms and availability are on the [DuoShot pricing page](${link("/pricing")}).
+
+## Before choosing
+
+Start with your need: file control versus visual composition, languages, output dimensions and upload workflow. Check ${name} features and plans on its [official website](${url}). With DuoShot, you can [open the tool](${link("/tool")}) and inspect previews and checks before exporting.
+
+**DuoShot provides a ZIP; you upload the files manually. DuoShot has not tested iPhone Duo uploads to App Store Connect.**
+
+## Other comparisons
+
+- [App Store screenshot generator guide](${link(COMPARISON_GUIDE_PATH)})${altLine}
+${related}
+`;
+  return { body, faq };
 }
