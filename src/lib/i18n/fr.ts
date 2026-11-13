@@ -79,7 +79,7 @@ export const fr = {
   legal_privacy_rights: "Accès, portabilité (export JSON), effacement (compte, objectif 30 jours), opposition — depuis la page <account>Compte</account>. UK GDPR : mêmes droits. CCPA/CPRA : nous ne vendons pas les données — Do Not Sell. LGPD : accès, correction et suppression si vous êtes au Brésil. Violation : CNIL sous 72 h si requis. Pas de DPO en v1 (art. 37 à réévaluer).",
   legal_terms_intro: "Dernière mise à jour : {policyVersion}. Les présentes conditions régissent l’usage de DuoShot et les abonnements payants (CGU et CGV). Notice produit, pas un avis d’avocat.",
   legal_terms_service_title: "Service",
-  legal_terms_service: "DuoShot génère des captures App Store sans coque d’appareil pour iPhone Duo (écran externe et écran interne), ainsi que l’iPhone Dynamic Island (écran moyen, 6,3″) requis et les tailles 6,9″. Vous devez détenir les droits sur chaque fichier déposé. Les sorties restent soumises à la guideline 2.3.3 — nous n’inventons pas de fonctionnalités. Aucune garantie d’acceptation Apple.",
+  legal_terms_service: "DuoShot génère des captures App Store sans coque d’appareil pour iPhone Duo (écran externe et écran interne), ainsi que l’iPhone Dynamic Island (écran moyen, 6,3″) requis et les tailles 6,9″ optionnelles. Vous devez détenir les droits sur chaque fichier déposé. Les sorties restent soumises à la guideline 2.3.3 — nous n’inventons pas de fonctionnalités. Aucune garantie d’acceptation Apple.",
   legal_terms_eligibility_title: "Éligibilité",
   legal_terms_eligibility: "Service réservé aux personnes de 16 ans et plus.",
   legal_terms_account_title: "Compte",

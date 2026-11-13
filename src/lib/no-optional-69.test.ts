@@ -24,7 +24,9 @@ const OPTIONAL = ["optional", "optionnel"];
 const PROXIMITY = 60;
 
 // Handled by a separate PR; its copy still pairs 6.9″ with "optional".
-const IGNORED_I18N_KEYS = new Set(["specs_iphone_63_body"]);
+// legal_terms_service: texte légal (CGU) — inchangé sans validation explicite
+// de Dylan, exclu volontairement de cette PR.
+const IGNORED_I18N_KEYS = new Set(["specs_iphone_63_body", "legal_terms_service"]);
 
 function optionalNear69(text: string): boolean {
   const haystack = text.toLowerCase();

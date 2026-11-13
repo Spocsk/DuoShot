@@ -76,7 +76,7 @@ export const en: Messages = {
   legal_privacy_rights: "Access, portability (JSON export), erasure (account delete, target 30 days), objection — from the <account>account</account> page. UK GDPR: same rights. CCPA/CPRA: we do not sell or share personal information for cross-context advertising — Do Not Sell. LGPD: access, correction and deletion if you are in Brazil. Breach: CNIL notified within 72 hours when required. No DPO appointed in v1 (Art. 37 to be reassessed).",
   legal_terms_intro: "Last updated {policyVersion}. These terms cover use of DuoShot and paid subscriptions (terms of use and sale). Product notice, not legal advice.",
   legal_terms_service_title: "Service",
-  legal_terms_service: "DuoShot generates frameless App Store screenshots for iPhone Duo (outer display and inner display), plus iPhone with Dynamic Island (medium display, 6.3\") required and 6.9″ sizes. You must own the rights to every file you upload. Outputs must still comply with App Store Review Guideline 2.3.3 — we do not invent features. We do not guarantee Apple will accept a set.",
+  legal_terms_service: "DuoShot generates frameless App Store screenshots for iPhone Duo (outer display and inner display), plus iPhone with Dynamic Island (medium display, 6.3\") required and optional 6.9″ sizes. You must own the rights to every file you upload. Outputs must still comply with App Store Review Guideline 2.3.3 — we do not invent features. We do not guarantee Apple will accept a set.",
   legal_terms_eligibility_title: "Eligibility",
   legal_terms_eligibility: "The service is for people aged 16 or older.",
   legal_terms_account_title: "Account",
