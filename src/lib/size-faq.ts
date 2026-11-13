@@ -51,10 +51,18 @@ const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
     fr: [
       { q: "Cette taille est-elle requise pour App Store Connect ?", a: "Oui. iPhone Dynamic Island (écran moyen, 6,3″) requis : 1206 × 2622 pixels en portrait ou 2622 × 1206 en paysage. App Store Connect accepte aussi 1179 × 2556 ou 2556 × 1179. DuoShot exporte en 1206 × 2622, inclus dans l’essai gratuit." },
       { q: "Combien de captures puis-je déposer à cette taille ?", a: COUNT.fr },
+      { q: "1206 × 2622 ou 1179 × 2556 : laquelle utiliser ?", a: "Les deux sont acceptées dans le même groupe, « iPhone with Dynamic Island (medium display) ». La page d’Apple ne lie aucune des deux tailles à un modèle précis. Choisissez-en une et conservez-la pour toute la série. DuoShot exporte en 1206 × 2622." },
+      { q: "2622 × 1206 est-elle la même taille ?", a: "Oui, c’est la version paysage de 1206 × 2622 et elle est acceptée dans le même groupe." },
+      { q: "Ai-je encore besoin du 1320 × 2868 ?", a: "La liste « Required device sizes » d’Apple ne nomme que l’emplacement « medium display » pour l’iPhone. Si l’emplacement « large display » est vide, Apple utilise des captures mises à l’échelle depuis « iPhone with Face ID (large display) », et cette ligne indique « Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren’t provided ». Vérifiez App Store Connect pour votre app ; ajouter le 1320 × 2868 évite la question." },
+      { q: "Puis-je réutiliser le 1206 × 2622 pour l’iPhone Duo ?", a: "Pas tel quel. L’iPhone Duo utilise 1398 × 2034 (écran externe) et 2007 × 2853 (écran interne), qui ont des proportions différentes : le fichier doit être recadré ou redessiné." },
     ],
     en: [
       { q: "Is this size required for App Store Connect?", a: "Yes. iPhone with Dynamic Island (medium display, 6.3\") required: 1206 × 2622 pixels in portrait or 2622 × 1206 in landscape. App Store Connect also accepts 1179 × 2556 or 2556 × 1179. DuoShot exports 1206 × 2622, included in the free trial." },
       { q: "How many screenshots can I upload at this size?", a: COUNT.en },
+      { q: "1206 × 2622 or 1179 × 2556: which one should I use?", a: "Both are accepted in the same group, iPhone with Dynamic Island (medium display). Apple's page does not tie either size to a specific model. Pick one and keep it for the whole set. DuoShot exports 1206 × 2622." },
+      { q: "Is 2622 × 1206 the same size?", a: "Yes, it is the landscape version of 1206 × 2622 and is accepted in the same group." },
+      { q: "Do I still need 1320 × 2868?", a: "Apple's \"Required device sizes\" list only names the medium-display slot for iPhone. If the large-display slot is empty, Apple uses scaled screenshots from iPhone with Face ID (large display), and that row reads \"Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided\". Check App Store Connect for your app; adding 1320 × 2868 avoids the question." },
+      { q: "Can I reuse 1206 × 2622 for iPhone Duo?", a: "Not as is. iPhone Duo uses 1398 × 2034 (outer) and 2007 × 2853 (inner), which have different proportions, so the file must be recropped or redesigned." },
     ],
   },
   "1320x2868": {

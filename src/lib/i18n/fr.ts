@@ -525,7 +525,7 @@ export const fr = {
   home_inner_panel_note: "La dalle interne de l’iPhone Duo affiche 1878 × 2670 pixels ; exportez vos captures à la taille App Store Connect {inner}, pas à la résolution native de la dalle.",
   specs_required_iphone_sizes: "iPhone Dynamic Island (écran moyen, 6,3″) requis",
   specs_iphone_6_3_inch: "Dimensions iPhone 6,3 pouces en portrait et paysage",
-  specs_iphone_63_body: "iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect : 1206 × 2622 pixels en portrait ou 2622 × 1206 en paysage. Il accepte aussi 1179 × 2556 pixels en portrait ou 2556 × 1179 en paysage. DuoShot exporte le format 1206 × 2622 (inversé en paysage), inclus dans l’essai gratuit. La taille 6,9″ est optionnelle et disponible avec Pass, Indie et Studio.",
+  specs_iphone_63_body: "iPhone Dynamic Island (écran moyen, 6,3″) requis pour App Store Connect : 1206 × 2622 pixels en portrait ou 2622 × 1206 en paysage. Il accepte aussi 1179 × 2556 pixels en portrait ou 2556 × 1179 en paysage. DuoShot exporte le format 1206 × 2622 (inversé en paysage), inclus dans l’essai gratuit. La liste « Required device sizes » d’Apple ne cite pas l’emplacement 6,9″ (large display), mais la ligne Face ID (large display) indique « Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren’t provided ». DuoShot exporte le 6,9″ avec Pass, Indie et Studio.",
   size_outer_title: "Capture App Store iPhone Duo : 1398x2034",
   size_inner_title: "Capture App Store iPhone Duo : 2007x2853",
   size_outer_description: "Captures App Store 1398x2034 pour l’écran externe iPhone Duo. Paysage : 2034x1398. PNG/JPEG opaques ; dépôt Duo pas encore testé.",

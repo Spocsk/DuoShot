@@ -14,7 +14,9 @@ import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screen
 import { appStoreConnectGuide, ASC_GUIDE_PATH, sizesGuide, SIZES_GUIDE_PATH } from "@/lib/guides";
 import { comparisonPath, competitorComparison } from "@/lib/comparisons";
 import { ALTERNATIVES_BASE_PATH, ALTERNATIVES_HUB_COPY } from "@/lib/alternatives";
-import { localizedPath, toolPath } from "@/lib/site";
+import { localizedPath, rejectionPath, toolPath } from "@/lib/site";
+import { deviceGuidePath } from "@/lib/devices";
+import { SCREENSHOT_CHECKER_PATH } from "@/lib/screenshot-checker";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
 
@@ -47,6 +49,27 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         </dl>
         <a href={APPLE_SCREENSHOT_SOURCE} className="ds-link mt-4 inline-block">{t("specs_read_connect_specifications")}</a>
       </section>
+      {enrich.slots && <section className="mt-10" aria-labelledby="size-slots">
+        <h2 id="size-slots" className="font-display text-3xl">{enrich.slots.heading}</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--line)]">
+                {enrich.slots.columns.map((col) => <th key={col} scope="col" className="py-2 pr-4 align-bottom font-semibold">{col}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {enrich.slots.rows.map((row) => <tr key={row.group} className="border-b border-[var(--line)] align-top">
+                <th scope="row" className="py-2 pr-4 font-normal">{row.group}</th>
+                <td className="py-2 pr-4 font-mono">{row.sizes.map((part) => part.strong ? <strong key={part.text}>{part.text}</strong> : <span key={part.text}>{part.text}</span>)}</td>
+                <td className="py-2">{row.status}</td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 text-sm"><a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{enrich.slots.source}</a></p>
+        <p className="mt-2 text-sm text-[var(--muted)]">{enrich.slots.note}</p>
+      </section>}
       <section className="mt-10" aria-labelledby="size-devices">
         <h2 id="size-devices" className="font-display text-3xl">{enrich.devices.heading}</h2>
         <p className="mt-4">{enrich.devices.body}</p>
@@ -87,6 +110,11 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
           <li><Link href={localizedPath(locale, comparisonPath("duoshot-vs-appscreens"))} className="ds-link">{competitorComparison(locale, "duoshot-vs-appscreens")!.title}</Link></li>
           <li><Link href={localizedPath(locale, ALTERNATIVES_BASE_PATH)} className="ds-link">{ALTERNATIVES_HUB_COPY[locale].title}</Link></li>
           {copy.related.map((related) => <li key={related}><Link href={localizedPath(locale, `/${related}`)} className="ds-link">{sizePageCopy(locale, related).title}</Link></li>)}
+          {enrich.related && <>
+            <li><Link href={localizedPath(locale, deviceGuidePath("iphone-duo"))} className="ds-link">{enrich.related.duoGuide}</Link></li>
+            <li><Link href={localizedPath(locale, SCREENSHOT_CHECKER_PATH)} className="ds-link">{enrich.related.checker}</Link></li>
+            <li><Link href={rejectionPath(locale)} className="ds-link">{enrich.related.rejection}</Link></li>
+          </>}
         </ul>
       </section>
       <Button as="link" variant="primary" href={toolPath(locale)} className="mt-8">{t("specs_prepare_screenshots")}</Button>

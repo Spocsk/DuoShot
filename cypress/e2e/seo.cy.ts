@@ -1,4 +1,5 @@
 import { DEVICE_SLUGS, deviceGuidePath } from "../../src/lib/devices";
+import { SCREENSHOT_VERIFIED_ON } from "../../src/lib/screenshot-pages";
 
 // Wait for hydration (React tags the node with its props) before clicking, else the navigation is lost in CI.
 function clickHydrated(selector: string) {
@@ -171,7 +172,7 @@ describe("SEO screenshot pages", () => {
       for (const size of ["1398x2034", "2007x2853", "1206x2622", "1320x2868"]) {
         cy.get(`main a[href="${prefix}/${size}"]`).should("exist");
       }
-      cy.get("main").should("contain", locale === "en" ? "Verified on 2026-10-13" : "Vérifié le 2026-10-13")
+      cy.get("main").should("contain", locale === "en" ? `Verified on ${SCREENSHOT_VERIFIED_ON}` : `Vérifié le ${SCREENSHOT_VERIFIED_ON}`)
         .and("contain", locale === "en" ? "In DuoShot: outer only, inner only, or a mix." : "Dans DuoShot : externe uniquement, interne uniquement ou un mix.")
         .and("not.contain", locale === "en" ? "iPhone Duo slot" : "un emplacement iPhone Duo")
         .and("contain", locale === "en" ? "10 screenshots per device size" : "10 captures par taille d’appareil")
@@ -183,7 +184,7 @@ describe("SEO screenshot pages", () => {
       cy.get('main a[href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/"]').should("exist");
       cy.document().then((doc) => {
         checkSiteEntities(doc);
-        expect(graphOf(doc).find((node) => node["@type"] === "TechArticle")?.dateModified).to.eq("2026-10-13");
+        expect(graphOf(doc).find((node) => node["@type"] === "TechArticle")?.dateModified).to.eq(SCREENSHOT_VERIFIED_ON);
         checkFaq(doc);
       });
       cy.get(`main a[href="${prefix}/1398x2034"]`).click();
@@ -211,7 +212,7 @@ describe("SEO screenshot pages", () => {
           .and("contain", locale === "en" ? "At a glance" : "En bref")
           .and("contain", locale === "en" ? "Aspect ratio" : "Rapport d’affichage")
           .and("contain", locale === "en" ? "Verified on" : "Vérifié le")
-          .and("contain", "2026-10-13");
+          .and("contain", SCREENSHOT_VERIFIED_ON);
         cy.get('section[aria-labelledby="size-faq"] .t-acc').its("length").should("be.greaterThan", 1);
         if (size === "1398x2034" || size === "2007x2853") {
           cy.get("main").should("contain", locale === "en"

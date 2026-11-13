@@ -522,7 +522,7 @@ export const en: Messages = {
   home_inner_panel_note: "The iPhone Duo inner panel is 1878 × 2670 pixels; export screenshots at the App Store Connect size {inner}, not the panel’s native resolution.",
   specs_required_iphone_sizes: "iPhone with Dynamic Island (medium display, 6.3\") required",
   specs_iphone_6_3_inch: "iPhone 6.3-inch portrait and landscape screenshot sizes",
-  specs_iphone_63_body: "iPhone with Dynamic Island (medium display, 6.3\") required for App Store Connect: 1206 × 2622 pixels in portrait or 2622 × 1206 in landscape. It also accepts 1179 × 2556 pixels in portrait or 2556 × 1179 in landscape. DuoShot exports the 1206 × 2622 format (swapped in landscape), included in the free trial. The 6.9″ size is optional and available with Pass, Indie and Studio.",
+  specs_iphone_63_body: "iPhone with Dynamic Island (medium display, 6.3\") required for App Store Connect: 1206 × 2622 pixels in portrait or 2622 × 1206 in landscape. It also accepts 1179 × 2556 pixels in portrait or 2556 × 1179 in landscape. DuoShot exports the 1206 × 2622 format (swapped in landscape), included in the free trial. Apple's \"Required device sizes\" list doesn't name the 6.9″ (large display) slot, but the Face ID (large display) row reads \"Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided\". DuoShot exports 6.9″ with Pass, Indie and Studio.",
   size_outer_title: "1398x2034 iPhone Duo screenshot size",
   size_inner_title: "2007x2853 iPhone Duo screenshot size",
   size_outer_description: "1398x2034 App Store screenshots for the iPhone Duo outer screen. Use 2034x1398 in landscape and opaque PNG/JPEG files. Duo uploads remain untested.",

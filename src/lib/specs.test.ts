@@ -17,7 +17,8 @@ describe.each(["fr", "en"] as const)("%s screenshot guides", (locale) => {
     expect(section).toContain("1179 × 2556");
     expect(section).toContain("2556 × 1179");
     expect(section).toContain(locale === "fr" ? "essai gratuit" : "free trial");
-    expect(section).toContain(locale === "fr" ? "optionnelle" : "optional");
+    expect(section).toContain("Required device sizes");
+    expect(section).toContain("Required if app runs on iPhone");
     for (const size of SCREENSHOT_SIZES) {
       expect(html).toContain(`href="${locale === "en" ? "/en" : ""}/${size}"`);
     }
