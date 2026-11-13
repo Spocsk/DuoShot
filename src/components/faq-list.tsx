@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function FaqList({ items }: { items: { q: string; a: string }[] }) {
+export function FaqList({ items }: { items: readonly { q: string; a: string }[] }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="mt-8">

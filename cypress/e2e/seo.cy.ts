@@ -296,7 +296,9 @@ describe("SEO screenshot pages", () => {
           const article = graphOf(doc).find((node) => node["@type"] === "TechArticle")!;
           expect(article.headline).to.eq(doc.querySelector("h1")!.textContent);
           expect(article.url).to.eq(canonical);
-          expect(article.dateModified).to.eq("2026-10-16");
+          // Doit suivre le champ `checked` de src/lib/comparisons.ts (non importable ici car il dépend de node:fs).
+          const COMPARISON_DATES: Record<string, string> = { "duoshot-vs-appscreens": "2026-11-13" };
+          expect(article.dateModified).to.eq(COMPARISON_DATES[slug] ?? "2026-10-16");
           expect(doc.documentElement.scrollWidth).to.be.at.most(doc.defaultView!.innerWidth + 1);
           cy.request("/sitemap.xml").its("body").should("contain", `<loc>${canonical}</loc>`);
         });
