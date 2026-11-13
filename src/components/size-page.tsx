@@ -70,6 +70,17 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         <p className="mt-4 text-sm"><a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{enrich.slots.source}</a></p>
         <p className="mt-2 text-sm text-[var(--muted)]">{enrich.slots.note}</p>
       </section>}
+      {enrich.timeline && <section className="mt-10" aria-labelledby="size-timeline">
+        <h2 id="size-timeline" className="font-display text-3xl">{enrich.timeline.heading}</h2>
+        <p className="mt-4">{enrich.timeline.intro}</p>
+        <div className="mt-4 space-y-4">
+          {enrich.timeline.quotes.map((quote) => <blockquote key={quote.text} className="border-l-2 border-[var(--line)] pl-4">
+            <p>“{quote.text}”</p>
+            <cite className="ds-label mt-1 block not-italic">{quote.cite}</cite>
+          </blockquote>)}
+        </div>
+        <p className="mt-4 text-sm"><a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{t("specs_read_connect_specifications")}</a></p>
+      </section>}
       <section className="mt-10" aria-labelledby="size-devices">
         <h2 id="size-devices" className="font-display text-3xl">{enrich.devices.heading}</h2>
         <p className="mt-4">{enrich.devices.body}</p>

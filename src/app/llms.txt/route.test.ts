@@ -23,7 +23,7 @@ describe("GET /llms.txt", () => {
     const response = GET();
     expect(response.headers.get("Content-Type")).toBe("text/plain; charset=utf-8");
     const body = await response.text();
-    expect(body).toContain("Specs version: 2026-11-12");
+    expect(body).toContain("Specs version: 2026-11-13");
     expect(body).toContain('iPhone Duo outer display portrait: 1398x2034');
     expect(body).toContain('iPhone Duo inner display landscape: 2853x2007');
     expect(body).toContain('iPhone 6.3" portrait: 1206x2622');

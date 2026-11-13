@@ -3,7 +3,7 @@ import { SIZE_SPECS, type Locale } from "./specs";
 
 export const SCREENSHOT_SIZES = ["1398x2034", "2007x2853", "1206x2622", "1320x2868"] as const;
 export type ScreenshotSize = typeof SCREENSHOT_SIZES[number];
-export const SCREENSHOT_VERIFIED_ON = "2026-11-12";
+export const SCREENSHOT_VERIFIED_ON = "2026-11-13";
 
 /** Aspect ratio for the "At a glance" box: reduced integer ratio plus a localized decimal. */
 export function aspectRatio(width: number, height: number, locale: Locale): string {

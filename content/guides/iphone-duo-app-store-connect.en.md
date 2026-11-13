@@ -14,7 +14,9 @@ Prepare real captures of your app, export opaque PNG or JPEG files, then upload 
 
 ## Which sizes should you use?
 
-Apple allows **up to 10 screenshots per device size** in App Store Connect. In DuoShot, use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs).
+Apple allows **up to 10 screenshots per device size** in App Store Connect. In DuoShot, use outer only, inner only, or a selected mix. The ZIP’s screen folders describe dimensions. See [all screenshot specifications](/en/specs) and the per-device [iPhone Duo screenshot size guide](/en/guides/screenshot-size/iphone-duo).
+
+The iPhone Duo outer and inner displays go in the **iPhone Duo** slot. They are **separate** from the **iPhone with Dynamic Island (medium display)** slot — 1206 × 2622 or 1179 × 2556 — which App Store Connect still requires to submit an iPhone app. Duo screenshots are added alongside that required slot, not instead of it.
 
 | Display | Portrait pixels | App Store Connect slot | DuoShot access |
 | --- | --- | --- | --- |
@@ -38,3 +40,9 @@ Start from real app captures and check every composition against App Store Revie
 Review the [outer-screen dimensions](/en/1398x2034), [inner-screen dimensions](/en/2007x2853), [required 6.3″ format](/en/1206x2622) and [6.9″ format](/en/1320x2868). [Prepare your screenshots](/en/tool), or read the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator).
 
 The manual workflow below follows Apple’s [App Store asset management instructions](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-your-app-store-assets). DuoShot’s upload path remains untested.
+
+## Manual upload in App Store Connect
+
+Upload the files yourself from your app’s page in App Store Connect; DuoShot’s experimental App Store Connect connector has not been tested for Duo uploads, so this guide covers the manual path. Open your app, choose the version, and scroll to the screenshots.
+
+In Apple’s “Manage your App Store assets” instructions, the **Media Manager** handles screenshots and app previews for each device size and language; Apple says to select **View All Sizes** in the Media Manager to manage other device sizes. The **Asset Library** is where you upload new assets, and **Browse Assets** lets you reuse approved, compatible images from the Asset Library. Select the **iPhone Duo** display for your Duo files, the **6.3″** size for the required iPhone with Dynamic Island (medium display) screenshots, and the **6.9″** size for your 1320 × 2868 files. Drag the files into the matching size, then reorder them as needed.

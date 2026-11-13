@@ -4,7 +4,7 @@ description: "Every App Store screenshot size for iPhone Duo, iPhone, iPad, Mac,
 lang: en
 slug: app-store-screenshot-sizes
 alternate: /guides/app-store-screenshot-sizes
-updated: 2026-11-01
+updated: 2026-11-13
 published: 2026-10-16
 ---
 
@@ -12,7 +12,9 @@ published: 2026-10-16
 
 **Quick answer:** to submit an iPhone app, App Store Connect requires at least one screenshot for **iPhone with Dynamic Island (medium display)**, for example **1206 × 2622** pixels in portrait. iPad apps also need the **iPad 13-inch** size, for example **2064 × 2752**. iPhone Duo (Apple's foldable iPhone) uses **1398 × 2034** for the outer display and **2007 × 2853** for the inner display. Apple accepts up to **10 screenshots per device size**, as opaque PNG or JPEG files without an alpha channel.
 
-All sizes below come from [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), checked on November 1, 2026. Landscape sizes are the same numbers swapped. Download the [full table as CSV](/app-store-screenshot-sizes.csv).
+All sizes below come from [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), with the Apple pages checked November 13, 2026. Landscape sizes are the same numbers swapped. Download the [full table as CSV](/app-store-screenshot-sizes.csv).
+
+Jump to the [full specifications](/en/specs) or a size page: [1206 × 2622](/en/1206x2622) (required), [1320 × 2868](/en/1320x2868), [1398 × 2034](/en/1398x2034) (Duo outer) and [2007 × 2853](/en/2007x2853) (Duo inner).
 
 ## What is required, and what is optional?
 
@@ -37,7 +39,7 @@ iPhone Duo has two displays, so App Store Connect accepts two families of sizes 
 | Outer display | 1398 × 2034 | 2034 × 1398 |
 | Inner display | 2007 × 2853 | 2853 × 2007 |
 
-Apple announced on October 5, 2026 that iPhone Duo would be available to customers from October 23, 2026. In its [iPhone Duo developer news](https://developer.apple.com/news/?id=kkphp5qo), Apple states that, starting April 2027, apps and games submitted will need to include iPhone Duo screenshots. The specifications page words the condition precisely: screenshots will be required for any app using the iOS 27.1 SDK or later. Apps that submit Duo screenshots get a badge on their product page showing they are optimized for iPhone Duo.
+Apple announced on October 5, 2026 that iPhone Duo would be available to customers from October 23, 2026. Apple words the April 2027 requirement in two places, which we keep separate. The [iPhone Duo developer news](https://developer.apple.com/news/?id=kkphp5qo) of October 5, 2026 says: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo." The specifications page ties it to the SDK: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later." Apps that submit Duo screenshots get a badge on their product page showing they are optimized for iPhone Duo.
 
 The inner display folds in the middle. Keep headlines and important controls away from the fold line so they stay legible. See the [outer display page](/en/1398x2034), the [inner display page](/en/2007x2853) and the [manual upload guide](/en/guides/iphone-duo-app-store-connect).
 

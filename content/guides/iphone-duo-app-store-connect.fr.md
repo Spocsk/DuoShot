@@ -14,7 +14,9 @@ Préparez de vraies captures de votre app, exportez des fichiers PNG ou JPEG opa
 
 ## Quelles tailles utiliser ?
 
-Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store Connect. Dans DuoShot, choisissez l’externe seul, l’interne seul ou un mélange sélectionné. Les dossiers du ZIP indiquent les dimensions. Consultez [toutes les spécifications des captures](/specs).
+Apple autorise **jusqu’à 10 captures par taille d’appareil** dans App Store Connect. Dans DuoShot, choisissez l’externe seul, l’interne seul ou un mélange sélectionné. Les dossiers du ZIP indiquent les dimensions. Consultez [toutes les spécifications des captures](/specs) et le [guide des tailles iPhone Duo par appareil](/guides/screenshot-size/iphone-duo).
+
+Les écrans externe et interne de l’iPhone Duo vont dans l’emplacement **iPhone Duo**. Ils sont **distincts** de l’emplacement **iPhone avec Dynamic Island (écran moyen)** — 1206 × 2622 ou 1179 × 2556 — qu’App Store Connect exige toujours pour soumettre une app iPhone. Les captures Duo s’ajoutent à cet emplacement requis, elles ne le remplacent pas.
 
 | Écran | Pixels en portrait | Emplacement App Store Connect | Accès DuoShot |
 | --- | --- | --- | --- |
@@ -38,3 +40,9 @@ Partez de vraies captures de l’app et vérifiez chaque composition selon la r�
 Consultez les [dimensions externes](/1398x2034), les [dimensions internes](/2007x2853), le [format 6,3″ requis](/1206x2622) et le [format 6,9″](/1320x2868). [Préparez vos captures](/tool), ou lisez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator).
 
 La procédure manuelle ci-dessous suit les [instructions Apple de gestion des visuels App Store](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-your-app-store-assets). Le dépôt via DuoShot reste non testé.
+
+## Dépôt manuel dans App Store Connect
+
+Déposez vous-même les fichiers depuis la page de votre app dans App Store Connect ; le connecteur App Store Connect expérimental de DuoShot n’a pas été testé pour le dépôt Duo : ce guide décrit donc la voie manuelle. Ouvrez votre app, choisissez la version, puis faites défiler jusqu’aux captures.
+
+Dans les instructions Apple « Manage your App Store assets », le **Media Manager** gère l’emplacement des captures et aperçus pour chaque taille d’appareil et chaque langue ; Apple indique de sélectionner **View All Sizes** dans le Media Manager pour gérer les autres tailles d’appareil. L’**Asset Library** sert à déposer de nouveaux visuels, et **Browse Assets** permet de réutiliser des images approuvées et compatibles depuis l’Asset Library. Sélectionnez l’écran **iPhone Duo** pour vos fichiers Duo, la taille **6,3″** pour les captures iPhone avec Dynamic Island (écran moyen) requises, et la taille **6,9″** pour vos fichiers 1320 × 2868. Glissez les fichiers dans la taille correspondante, puis réordonnez-les si besoin.
