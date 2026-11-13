@@ -24,8 +24,14 @@ export type SizeSlots = {
   note: string;
 };
 
-/** Optional extra "Related" links, only on the 1206x2622 page (hrefs computed in SizePage). */
+/** Optional extra "Related" links (hrefs computed in SizePage). */
 export type SizeRelated = { duoGuide: string; checker: string; rejection: string };
+
+/** A verbatim Apple quote with its source label; several are listed, never merged. */
+export type TimelineQuote = { text: string; cite: string };
+
+/** Optional "April 2027" timeline block: Apple's two wordings, quoted separately. */
+export type SizeTimeline = { heading: string; intro: string; quotes: TimelineQuote[] };
 
 export type SizeEnrichment = {
   devices: { heading: string; body: string };
@@ -33,6 +39,7 @@ export type SizeEnrichment = {
   rejections: { heading: string; intro: string; items: string[] };
   slots?: SizeSlots;
   related?: SizeRelated;
+  timeline?: SizeTimeline;
 };
 
 const HEADINGS = {
@@ -46,7 +53,7 @@ function enrichment(
   orientationBody: string,
   rejectionsIntro: string,
   rejectionsItems: string[],
-  extra?: { slots?: SizeSlots; related?: SizeRelated },
+  extra?: { slots?: SizeSlots; related?: SizeRelated; timeline?: SizeTimeline },
 ): SizeEnrichment {
   const h = HEADINGS[locale];
   return {
@@ -84,7 +91,7 @@ const SLOTS_1206: Record<Locale, SizeSlots> = {
         status: "Apple : requis à partir d’avril 2027 pour les apps utilisant le SDK iOS 27.1 ou ultérieur",
       },
     ],
-    source: "Source : Apple, Screenshot specifications, vérifié le 12 novembre 2026. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.",
+    source: "Source : Apple, Screenshot specifications, vérifié le 13 novembre 2026. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.",
     note: "Un jeu 1206 × 2622 alimente aussi l’ancien emplacement Face ID (écran moyen), car Apple met à l’échelle depuis « iPhone with Dynamic Island (medium display) » quand cet emplacement est vide.",
   },
   en: {
@@ -112,15 +119,93 @@ const SLOTS_1206: Record<Locale, SizeSlots> = {
         status: "Apple: required from April 2027 for apps using the iOS 27.1 SDK or later",
       },
     ],
-    source: "Source: Apple, Screenshot specifications, checked November 12, 2026. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.",
+    source: "Source: Apple, Screenshot specifications, checked November 13, 2026. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.",
     note: "A 1206 × 2622 set also feeds the older Face ID medium-display slot, because Apple scales from Dynamic Island (medium display) when that slot is empty.",
   },
 };
 
-/** Extra "Related" link labels for the 1206x2622 page; hrefs are built in SizePage. */
+/** Extra "Related" link labels for the Duo pages; hrefs are built in SizePage. */
 const RELATED_1206: Record<Locale, SizeRelated> = {
   fr: { duoGuide: "Taille des captures iPhone Duo", checker: "Vérifier une capture iPhone Duo", rejection: "Quoi vérifier avant la revue App Store" },
   en: { duoGuide: "iPhone Duo screenshot size", checker: "Check an iPhone Duo screenshot", rejection: "What to check before App Store review" },
+};
+
+/**
+ * The iPhone Duo comparison table for the outer (1398 × 2034) and inner (2007 × 2853) pages. It lists
+ * both Duo display sizes and — on a SEPARATE row — the still-required iPhone with Dynamic Island
+ * (medium display) group, so the page never implies Duo screenshots replace that required set.
+ * `emphasize` bolds the size the current page is about. Grounded verbatim in Apple's specifications.
+ */
+function duoSlots(locale: Locale, emphasize: "outer" | "inner"): SizeSlots {
+  if (locale === "fr") {
+    const duoSizes: SlotSizes = [
+      { text: "Externe : 1398 × 2034 (2034 × 1398)", strong: emphasize === "outer" },
+      { text: "Interne : 2007 × 2853 (2853 × 2007)", strong: emphasize === "inner" },
+    ];
+    return {
+      heading: "Tailles iPhone Duo et emplacement requis distinct (spécifications Apple)",
+      columns: ["Groupe App Store Connect (nom Apple)", "Tailles acceptées, portrait (paysage)", "Statut sur la page d’Apple"],
+      rows: [
+        {
+          group: "iPhone Duo (écran externe ou écran interne)",
+          sizes: duoSizes,
+          status: "Apple : requis à partir d’avril 2027 pour les apps utilisant le SDK iOS 27.1 ou ultérieur ; Apple liste les deux écrans sans dire qu’il faut fournir les deux",
+        },
+        {
+          group: "« iPhone with Dynamic Island (medium display) » — emplacement distinct, toujours requis",
+          sizes: [{ text: "1179 × 2556 (2556 × 1179) · 1206 × 2622 (2622 × 1206)" }],
+          status: "Requis : au moins une capture pour soumettre une app iPhone",
+        },
+      ],
+      source: "Source : Apple, Screenshot specifications, vérifié le 13 novembre 2026. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.",
+      note: "Les tailles externe et interne de l’iPhone Duo forment un groupe distinct du groupe « iPhone with Dynamic Island (medium display) » requis : déposer des captures Duo ne remplit pas cet emplacement requis.",
+    };
+  }
+  const duoSizes: SlotSizes = [
+    { text: "Outer: 1398 × 2034 (2034 × 1398)", strong: emphasize === "outer" },
+    { text: "Inner: 2007 × 2853 (2853 × 2007)", strong: emphasize === "inner" },
+  ];
+  return {
+    heading: "iPhone Duo sizes and the separate required slot (Apple specifications)",
+    columns: ["App Store Connect group (Apple name)", "Accepted sizes, portrait (landscape)", "Status on Apple’s page"],
+    rows: [
+      {
+        group: "iPhone Duo (outer or inner display)",
+        sizes: duoSizes,
+        status: "Apple: required from April 2027 for apps using the iOS 27.1 SDK or later; Apple lists both displays without saying you must provide both",
+      },
+      {
+        group: "iPhone with Dynamic Island (medium display) — separate group, still required",
+        sizes: [{ text: "1179 × 2556 (2556 × 1179) · 1206 × 2622 (2622 × 1206)" }],
+        status: "Required: at least one screenshot to submit an iPhone app",
+      },
+    ],
+    source: "Source: Apple, Screenshot specifications, checked November 13, 2026. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.",
+    note: "The iPhone Duo outer and inner sizes are a separate group from the required iPhone with Dynamic Island (medium display): submitting Duo screenshots does not fill that required slot.",
+  };
+}
+
+/**
+ * Apple words the April 2027 requirement in two places. We quote both VERBATIM and never merge them:
+ * the specifications page ties it to the iOS 27.1 SDK; the October 5, 2026 developer news to submissions.
+ */
+const DUO_TIMELINE: Record<Locale, SizeTimeline> = {
+  fr: {
+    heading: "Calendrier : avril 2027",
+    intro: "Apple formule l’échéance d’avril 2027 à deux endroits, différemment. Les deux citations ci-dessous sont reproduites telles quelles, sans être fusionnées :",
+    quotes: [
+      { text: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.", cite: "Apple, Screenshot specifications" },
+      { text: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.", cite: "Apple, actualité développeurs iPhone Duo, 5 octobre 2026" },
+    ],
+  },
+  en: {
+    heading: "April 2027 timeline",
+    intro: "Apple words the April 2027 deadline in two places, differently. Both quotes below are reproduced as-is, not merged:",
+    quotes: [
+      { text: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.", cite: "Apple, Screenshot specifications" },
+      { text: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.", cite: "Apple, iPhone Duo developer news, October 5, 2026" },
+    ],
+  },
 };
 
 const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = {
@@ -179,7 +264,10 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
         "Mauvaise taille : déposez 1398 × 2034 pixels en portrait (ou 2034 × 1398 en paysage) pour l’écran externe. D’autres dimensions sont refusées.",
         "Transparence ou canal alpha : les images ne peuvent pas comporter de canal alpha ni de transparence. Exportez un fond plein.",
         "Mauvais format : utilisez le PNG ou le JPEG ; les autres formats sont rejetés.",
-      ]),
+        "Mauvais écran : 2007 × 2853 correspond à l’écran interne, pas à l’écran externe. Ne mélangez pas un fichier interne avec les tailles de l’écran externe.",
+        "Mauvais ratio : une capture 1206 × 2622 étirée en 1398 × 2034 est déformée, car ces deux formats n’ont pas les mêmes proportions. Recadrez ou refaites la capture, n’étirez pas.",
+      ],
+      { slots: duoSlots("fr", "outer"), related: RELATED_1206.fr, timeline: DUO_TIMELINE.fr }),
     en: enrichment("en",
       "This size is the outer display of the iPhone Duo, Apple’s foldable iPhone (closed). From April 2027, iPhone Duo screenshots are required for apps built with the iOS 27.1 SDK or later; submitting Duo screenshots shows an “optimized for iPhone Duo” badge.",
       "In portrait, export 1398 × 2034 pixels; in landscape, 2034 × 1398 pixels. Show your app on the closed outer display.",
@@ -188,7 +276,10 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
         "Wrong size: upload 1398 × 2034 pixels in portrait (or 2034 × 1398 in landscape) for the outer display. Other dimensions are rejected.",
         "Transparency or alpha channel: images can’t include an alpha channel or transparency. Export a solid background.",
         "Wrong format: use PNG or JPEG; other formats are rejected.",
-      ]),
+        "Wrong display: 2007 × 2853 is the inner display, not the outer display. Don’t mix an inner-display file in with the outer-display sizes.",
+        "Wrong aspect ratio: a 1206 × 2622 screenshot stretched to 1398 × 2034 is distorted, because the two sizes have different proportions. Recrop or redo the screenshot instead of stretching it.",
+      ],
+      { slots: duoSlots("en", "outer"), related: RELATED_1206.en, timeline: DUO_TIMELINE.en }),
   },
   "2007x2853": {
     fr: enrichment("fr",
@@ -199,7 +290,10 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
         "Mauvaise taille : déposez 2007 × 2853 pixels en portrait (ou 2853 × 2007 en paysage), la taille de capture App Store Connect pour l’écran interne. D’autres dimensions sont refusées.",
         "Transparence ou canal alpha : aplatissez le fond ; aucun canal alpha ni transparence n’est accepté.",
         "Mauvais format : exportez en PNG ou JPEG uniquement.",
-      ]),
+        "Mauvais écran : 2007 × 2853 est l’écran interne ; 1398 × 2034 correspond à l’écran externe, pas à l’écran interne. Ne déposez pas un fichier externe parmi les tailles internes.",
+        "Mauvais ratio : une capture 1206 × 2622 étirée en 2007 × 2853 est déformée, car ces deux formats n’ont pas les mêmes proportions. Recadrez ou refaites la capture, n’étirez pas.",
+      ],
+      { slots: duoSlots("fr", "inner"), related: RELATED_1206.fr, timeline: DUO_TIMELINE.fr }),
     en: enrichment("en",
       "This size is the inner display of the iPhone Duo (open). From April 2027, iPhone Duo screenshots are required for apps built with the iOS 27.1 SDK or later; submitting Duo screenshots shows an “optimized for iPhone Duo” badge.",
       "In portrait, export 2007 × 2853 pixels; in landscape, 2853 × 2007 pixels. Show your app’s expanded layout on the inner display.",
@@ -208,7 +302,10 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
         "Wrong size: upload 2007 × 2853 pixels in portrait (or 2853 × 2007 in landscape), the App Store Connect screenshot size for the inner display. Other dimensions are rejected.",
         "Transparency or alpha channel: flatten the background; no alpha channel or transparency is accepted.",
         "Wrong format: export PNG or JPEG only.",
-      ]),
+        "Wrong display: 2007 × 2853 is the inner display; 1398 × 2034 is the outer display, not the inner one. Don’t upload an outer-display file in with the inner-display sizes.",
+        "Wrong aspect ratio: a 1206 × 2622 screenshot stretched to 2007 × 2853 is distorted, because the two sizes have different proportions. Recrop or redo the screenshot instead of stretching it.",
+      ],
+      { slots: duoSlots("en", "inner"), related: RELATED_1206.en, timeline: DUO_TIMELINE.en }),
   },
 };
 

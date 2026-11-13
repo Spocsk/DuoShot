@@ -55,7 +55,7 @@ describe("size page enrichment", () => {
       expect(html).toContain(enrich.devices.heading);
       expect(html).toContain(enrich.orientation.heading);
       expect(html).toContain(enrich.rejections.heading);
-      expect(enrich.rejections.items).toHaveLength(size === "1206x2622" ? 5 : 3);
+      expect(enrich.rejections.items).toHaveLength(size === "1320x2868" ? 3 : 5);
       // The three rejection causes: wrong size, transparency/alpha channel, wrong (PNG/JPEG) format.
       const rejections = enrich.rejections.items.join(" ");
       expect(rejections).toMatch(locale === "fr" ? /canal alpha|transparence/i : /alpha channel|transparen/i);
@@ -88,7 +88,7 @@ describe("size page enrichment", () => {
     expect(html).toContain(slots.heading);
     for (const row of slots.rows) expect(html).toContain(row.group);
     expect(html).toContain(slots.source);
-    expect(html).toContain(locale === "fr" ? "vérifié le 12 novembre 2026" : "checked November 12, 2026");
+    expect(html).toContain(locale === "fr" ? "vérifié le 13 novembre 2026" : "checked November 13, 2026");
     // The table ships only on the 1206x2622 page.
     const other = renderToStaticMarkup(createElement(SizePage, { locale, size: "1320x2868" }));
     expect(sizeEnrichment(locale, "1320x2868").slots).toBeUndefined();
@@ -118,6 +118,71 @@ describe("size page enrichment", () => {
     expect(sizeEnrichment("en", "1206x2622").devices.body).not.toContain("scales the large-display ones");
   });
 
+  it.each(["1398x2034", "2007x2853"] as const)("renders the Duo slots table with the separate required medium-display row on %s", (size) => {
+    for (const locale of ["fr", "en"] as const) {
+      const slots = sizeEnrichment(locale, size).slots!;
+      expect(slots).toBeTruthy();
+      expect(slots.rows).toHaveLength(2);
+      // Exactly one row is the single merged iPhone Duo row (outer + inner together, never two Duo rows).
+      const duoRows = slots.rows.filter((row) => row.group.toLowerCase().includes("iphone duo"));
+      expect(duoRows).toHaveLength(1);
+      // The second row is the still-required, SEPARATE iPhone with Dynamic Island (medium display) group.
+      expect(slots.rows[1].group.toLowerCase()).toContain("medium display");
+      expect(slots.rows[1].group.toLowerCase()).toMatch(locale === "fr" ? /requis|distinct/ : /required|separate/);
+      expect(slots.rows[1].sizes.map((part) => part.text).join(" ")).toContain("1179 × 2556");
+      const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
+      expect(html).toContain(slots.heading);
+      for (const row of slots.rows) expect(html).toContain(row.group);
+      expect(html).toContain(locale === "fr" ? "vérifié le 13 novembre 2026" : "checked November 13, 2026");
+      // The emphasized size is the page's own display size.
+      const emphasized = slots.rows.flatMap((row) => row.sizes).find((part) => part.strong)!;
+      expect(emphasized.text).toContain(size === "1398x2034" ? "1398 × 2034" : "2007 × 2853");
+      // Never the ambiguous "Duo slot" phrasing the specs guide test also forbids.
+      expect(html).not.toMatch(/Duo slot|emplacement Duo|emplacement iPhone Duo/i);
+      // The French enrichment never uses the word "puits" (replaced by "emplacement").
+      if (locale === "fr") {
+        const frText = [slots.heading, slots.source, slots.note, ...slots.rows.flatMap((row) => [row.group, row.status, ...row.sizes.map((part) => part.text)])].join(" ");
+        expect(frText).not.toContain("puits");
+      }
+    }
+  });
+
+  it.each(["1398x2034", "2007x2853"] as const)("quotes both April 2027 wordings separately, verbatim, on %s", (size) => {
+    for (const locale of ["fr", "en"] as const) {
+      const timeline = sizeEnrichment(locale, size).timeline!;
+      expect(timeline.quotes).toHaveLength(2);
+      const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
+      expect(html).toContain("Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.");
+      expect(html).toContain("Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.");
+      // The two wordings are never fused into one sentence.
+      expect(html).not.toContain("SDK or later and any apps or games");
+    }
+  });
+
+  it.each(["1398x2034", "2007x2853"] as const)("adds the Duo guide, checker and rejection links on %s", (size) => {
+    for (const locale of ["fr", "en"] as const) {
+      const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
+      expect(html).toContain(`href="${localizedPath(locale, deviceGuidePath("iphone-duo"))}"`);
+      expect(html).toContain(`href="${localizedPath(locale, SCREENSHOT_CHECKER_PATH)}"`);
+      expect(html).toContain(`href="${rejectionPath(locale)}"`);
+    }
+  });
+
+  it.each(["1398x2034", "2007x2853"] as const)("gives %s a FAQ (incl. April 2027 and the separate required slot) mirrored in the JSON-LD", (size) => {
+    for (const locale of ["fr", "en"] as const) {
+      const faq = sizeFaq(locale, size);
+      expect(faq.length).toBeGreaterThanOrEqual(5);
+      // The April 2027 and medium-display-separate questions are present.
+      const questions = faq.map((item) => item.q).join(" ").toLowerCase();
+      expect(questions).toMatch(locale === "fr" ? /avril 2027/ : /april 2027/);
+      expect(questions).toMatch(locale === "fr" ? /écran moyen|medium display/ : /medium display/);
+      const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
+      const faqNode = jsonLdFromHtml(html)["@graph"].find((node: { "@type": string }) => node["@type"] === "FAQPage");
+      expect(faqNode.mainEntity.map((entity: { name: string }) => entity.name)).toEqual(faq.map((item) => item.q));
+      expect(faqNode.mainEntity.map((entity: { acceptedAnswer: { text: string } }) => entity.acceptedAnswer.text)).toEqual(faq.map((item) => item.a));
+    }
+  });
+
   it("never claims both iPhone Duo sizes are required", () => {
     for (const locale of ["fr", "en"] as const) {
       for (const size of SCREENSHOT_SIZES) {
@@ -126,6 +191,10 @@ describe("size page enrichment", () => {
         expect(text).not.toContain("les deux tailles");
         expect(text).not.toContain("both sizes");
         expect(text).not.toContain("both duo sizes");
+        // The whole rendered page (slots table, timeline, FAQ included) never says both are required.
+        const html = renderToStaticMarkup(createElement(SizePage, { locale, size })).toLowerCase();
+        expect(html).not.toMatch(/both (iphone )?duo (sizes|screens|displays) (are )?required/);
+        expect(html).not.toMatch(/les deux (tailles|écrans) duo (sont )?(requis|obligatoires)/);
       }
     }
   });

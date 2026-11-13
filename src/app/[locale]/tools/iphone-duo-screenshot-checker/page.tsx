@@ -8,6 +8,7 @@ import { JsonLd } from "@/lib/json-ld";
 import { pageMetadata } from "@/lib/seo";
 import { CHECKER_SPECS, SCREENSHOT_CHECKER_PATH } from "@/lib/screenshot-checker";
 import { screenshotCheckerCopy } from "@/lib/screenshot-checker-copy";
+import { deviceGuidePath } from "@/lib/devices";
 import { localizedPath, toolPath } from "@/lib/site";
 import { formatInches } from "@/lib/specs";
 import { pageLocale, type LocaleParams } from "../../params";
@@ -50,6 +51,7 @@ export default async function Page({ params }: LocaleParams) {
         <p className="mt-4 flex flex-wrap gap-4">
           <a className="ds-link" href="https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications">{t("specs_read_connect_specifications")}</a>
           <Link className="ds-link" href={localizedPath(locale, "/specs")}>{t("specs_iphone_duo_screenshot_sizes")}</Link>
+          <Link className="ds-link" href={localizedPath(locale, deviceGuidePath("iphone-duo"))}>{locale === "fr" ? "Taille des captures iPhone Duo" : "iPhone Duo screenshot size"}</Link>
         </p>
       </section>
       <Button as="link" variant="primary" href={toolPath(locale)} className="mt-8 max-w-full whitespace-normal! text-center">{copy.cta}</Button>

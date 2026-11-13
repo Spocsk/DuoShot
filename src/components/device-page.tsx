@@ -16,6 +16,7 @@ import {
   deviceGuidePath,
 } from "@/lib/devices";
 import { devicePageCopy, orientationLabel } from "@/lib/device-page-copy";
+import { iphoneDuoGuideExtra } from "@/lib/iphone-duo-guide";
 
 const LABELS = {
   fr: {
@@ -57,6 +58,7 @@ export function DevicePage({ locale, device }: { locale: Locale; device: Device 
   const copy = devicePageCopy(locale, device);
   const path = deviceGuidePath(device.slug);
   const neighbors = device.neighbors.map(deviceBySlug).filter((entry): entry is Device => Boolean(entry));
+  const duo = device.slug === "iphone-duo" ? iphoneDuoGuideExtra(locale) : null;
   return <div className="flex min-h-full flex-col">
     <JsonLd
       locale={locale}
@@ -100,6 +102,84 @@ export function DevicePage({ locale, device }: { locale: Locale; device: Device 
         <h2 id="device-requirement" className="font-display text-3xl">{l.requirement}</h2>
         <p className="mt-4">{device.requirement[locale]}</p>
       </section>
+
+      {duo && <>
+        <section className="mt-10" aria-labelledby="duo-separate">
+          <h2 id="duo-separate" className="font-display text-3xl">{duo.separate.heading}</h2>
+          <p className="mt-4">{duo.separate.body}</p>
+        </section>
+
+        <section className="mt-10" aria-labelledby="duo-reuse">
+          <h2 id="duo-reuse" className="font-display text-3xl">{duo.reuse.heading}</h2>
+          <p className="mt-4">{duo.reuse.intro}</p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[var(--line)]">
+                  {duo.reuse.table.columns.map((col) => <th key={col} scope="col" className="py-2 pr-4 align-bottom font-semibold">{col}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {duo.reuse.table.rows.map((row) => <tr key={row[0]} className="border-b border-[var(--line)] align-top">
+                  <th scope="row" className="py-2 pr-4 font-normal">{row[0]}</th>
+                  <td className="py-2 pr-4 font-semibold">{row[1]}</td>
+                  <td className="py-2">{row[2]}</td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4">{duo.reuse.flatten}</p>
+        </section>
+
+        <section className="mt-10" aria-labelledby="duo-ratios">
+          <h2 id="duo-ratios" className="font-display text-3xl">{duo.ratios.heading}</h2>
+          <p className="mt-4">{duo.ratios.intro}</p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[var(--line)]">
+                  <th scope="col" className="py-2 pr-4 font-semibold">{l.colSize}</th>
+                  <th scope="col" className="py-2 pr-4 font-semibold">{locale === "fr" ? "Ratio (calculé)" : "Ratio (computed)"}</th>
+                  <th scope="col" className="py-2 font-semibold">{l.group}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {duo.ratios.rows.map((row) => <tr key={row.size} className="border-b border-[var(--line)]">
+                  <td className="py-2 pr-4 font-mono">{row.size}</td>
+                  <td className="py-2 pr-4 font-mono">≈ {row.ratio}</td>
+                  <td className="py-2">{row.label}</td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-sm text-[var(--muted)]">{duo.ratios.note}</p>
+        </section>
+
+        <section className="mt-10" aria-labelledby="duo-timeline">
+          <h2 id="duo-timeline" className="font-display text-3xl">{duo.timeline.heading}</h2>
+          <p className="mt-4">{duo.timeline.intro}</p>
+          <div className="mt-4 space-y-4">
+            {duo.timeline.quotes.map((quote) => <blockquote key={quote.text} className="border-l-2 border-[var(--line)] pl-4">
+              <p>“{quote.text}”</p>
+              <cite className="ds-label mt-1 block not-italic">{quote.cite}</cite>
+            </blockquote>)}
+          </div>
+        </section>
+
+        <section className="mt-10" aria-labelledby="duo-limits">
+          <h2 id="duo-limits" className="font-display text-3xl">{duo.limits.heading}</h2>
+          <ul className="mt-4 list-disc space-y-2 pl-5">
+            {duo.limits.items.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </section>
+
+        <section className="mt-10" aria-labelledby="duo-links">
+          <h2 id="duo-links" className="font-display text-3xl">{duo.links.heading}</h2>
+          <ul className="mt-4 space-y-3">
+            {duo.links.items.map((link) => <li key={link.href}><Link href={link.href} className="ds-link">{link.label}</Link></li>)}
+          </ul>
+        </section>
+      </>}
 
       <section className="mt-10" aria-labelledby="device-errors">
         <h2 id="device-errors" className="font-display text-3xl">{l.errors}</h2>

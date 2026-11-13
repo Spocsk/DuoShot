@@ -326,7 +326,7 @@ describe("page-specific structured data", () => {
         const graph = jsonLdGraph(locale, { path, article: { ...copy, dateModified: SCREENSHOT_VERIFIED_ON } })["@graph"];
         const url = `https://duoshot.site${localizedPath(locale, path)}`;
         expect(graph.map((node) => node["@type"])).toEqual(["TechArticle"]);
-        expect(graph[0]).toMatchObject({ headline: copy.title, description: copy.description, url, mainEntityOfPage: url, inLanguage: locale, dateModified: "2026-11-12" });
+        expect(graph[0]).toMatchObject({ headline: copy.title, description: copy.description, url, mainEntityOfPage: url, inLanguage: locale, dateModified: SCREENSHOT_VERIFIED_ON });
       }
     }
   });

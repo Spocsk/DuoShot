@@ -20,31 +20,63 @@ const DUO_REQUIRED = {
   en: "iPhone Duo screenshots will be required from April 2027 for apps built with the iOS 27.1 SDK or later. DuoShot lets you choose the outer display only, the inner display only, or a mix.",
 } as const;
 
+/** The two Apple wordings of the April 2027 deadline, quoted verbatim and kept separate. */
+const DUO_APRIL_2027 = {
+  fr: {
+    q: "Que dit exactement Apple sur l’échéance d’avril 2027 ?",
+    a: "Apple la formule à deux endroits. Les spécifications des captures indiquent : « Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later. » L’actualité développeurs iPhone Duo du 5 octobre 2026 indique : « Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo. »",
+  },
+  en: {
+    q: "What exactly does Apple say about the April 2027 deadline?",
+    a: "Apple words it in two places. The screenshot specifications say: “Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.” The iPhone Duo developer news of October 5, 2026 says: “Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.”",
+  },
+} as const;
+
+/** Duo screenshots sit alongside the still-required medium-display slot; they never replace it. */
+const DUO_MEDIUM_SEPARATE = {
+  fr: {
+    q: "Les captures Duo remplacent-elles le groupe iPhone avec Dynamic Island (écran moyen) requis ?",
+    a: "Non. Le groupe « iPhone with Dynamic Island (medium display) » — 1206 × 2622 ou 1179 × 2556 — est un groupe distinct qu’App Store Connect exige toujours pour soumettre une app iPhone. Les captures iPhone Duo s’ajoutent à ce groupe, elles ne le remplacent pas.",
+  },
+  en: {
+    q: "Do Duo screenshots replace the required iPhone with Dynamic Island (medium display) group?",
+    a: "No. The “iPhone with Dynamic Island (medium display)” group — 1206 × 2622 or 1179 × 2556 — is a separate group that App Store Connect still requires to submit an iPhone app. iPhone Duo screenshots are added alongside that group, not instead of it.",
+  },
+} as const;
+
 const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
   "1398x2034": {
     fr: [
-      { q: "1398x2034 correspond-il à l’écran externe ou interne de l’iPhone Duo ?", a: "C’est l’écran externe de l’iPhone Duo (fermé). Utilisez 1398 × 2034 pixels en portrait, ou 2034 × 1398 en paysage, pour App Store Connect." },
+      { q: "1398x2034 correspond-il à l’écran externe ou interne de l’iPhone Duo ?", a: "C’est l’écran externe de l’iPhone Duo (fermé). Utilisez 1398 × 2034 pixels en portrait, ou 2034 × 1398 en paysage, pour App Store Connect. L’écran interne utilise 2007 × 2853." },
       { q: "Combien de captures puis-je déposer à cette taille ?", a: `${COUNT.fr} Dans DuoShot, choisissez l’écran externe uniquement, l’écran interne uniquement ou un mix.` },
       { q: "Les captures iPhone Duo sont-elles obligatoires ?", a: DUO_REQUIRED.fr },
+      DUO_APRIL_2027.fr,
+      DUO_MEDIUM_SEPARATE.fr,
     ],
     en: [
-      { q: "Is 1398x2034 the iPhone Duo outer or inner display?", a: "It is the iPhone Duo outer display (closed). Use 1398 × 2034 pixels in portrait, or 2034 × 1398 in landscape, for App Store Connect." },
+      { q: "Is 1398x2034 the iPhone Duo outer or inner display?", a: "It is the iPhone Duo outer display (closed). Use 1398 × 2034 pixels in portrait, or 2034 × 1398 in landscape, for App Store Connect. The inner display uses 2007 × 2853." },
       { q: "How many screenshots can I upload at this size?", a: `${COUNT.en} In DuoShot, choose the outer display only, the inner display only, or a mix.` },
       { q: "Are iPhone Duo screenshots required?", a: DUO_REQUIRED.en },
+      DUO_APRIL_2027.en,
+      DUO_MEDIUM_SEPARATE.en,
     ],
   },
   "2007x2853": {
     fr: [
-      { q: "2007x2853 correspond-il à l’écran externe ou interne de l’iPhone Duo ?", a: "C’est l’écran interne de l’iPhone Duo (ouvert). Utilisez 2007 × 2853 pixels en portrait, ou 2853 × 2007 en paysage, pour App Store Connect." },
+      { q: "2007x2853 correspond-il à l’écran externe ou interne de l’iPhone Duo ?", a: "C’est l’écran interne de l’iPhone Duo (ouvert). Utilisez 2007 × 2853 pixels en portrait, ou 2853 × 2007 en paysage, pour App Store Connect. L’écran externe utilise 1398 × 2034." },
       { q: "Pourquoi 2007 × 2853 est-il plus grand que la dalle interne de 1878 × 2670 ?", a: "La dalle interne affiche 1878 × 2670 pixels, mais la taille de capture App Store Connect en portrait est de 2007 × 2853 pixels, plus grande que la dalle. Exportez vos fichiers à la taille App Store Connect, pas à la résolution native de la dalle." },
       { q: "Combien de captures puis-je déposer à cette taille ?", a: `${COUNT.fr} Dans DuoShot, choisissez l’écran externe uniquement, l’écran interne uniquement ou un mix.` },
       { q: "Les captures iPhone Duo sont-elles obligatoires ?", a: DUO_REQUIRED.fr },
+      DUO_APRIL_2027.fr,
+      DUO_MEDIUM_SEPARATE.fr,
     ],
     en: [
-      { q: "Is 2007x2853 the iPhone Duo outer or inner display?", a: "It is the iPhone Duo inner display (open). Use 2007 × 2853 pixels in portrait, or 2853 × 2007 in landscape, for App Store Connect." },
+      { q: "Is 2007x2853 the iPhone Duo outer or inner display?", a: "It is the iPhone Duo inner display (open). Use 2007 × 2853 pixels in portrait, or 2853 × 2007 in landscape, for App Store Connect. The outer display uses 1398 × 2034." },
       { q: "Why is 2007 × 2853 larger than the 1878 × 2670 inner panel?", a: "The physical inner panel is 1878 × 2670 pixels, but the portrait App Store Connect screenshot size is 2007 × 2853 pixels, larger than the panel. Export your files at the App Store Connect size, not the panel's native resolution." },
       { q: "How many screenshots can I upload at this size?", a: `${COUNT.en} In DuoShot, choose the outer display only, the inner display only, or a mix.` },
       { q: "Are iPhone Duo screenshots required?", a: DUO_REQUIRED.en },
+      DUO_APRIL_2027.en,
+      DUO_MEDIUM_SEPARATE.en,
     ],
   },
   "1206x2622": {
