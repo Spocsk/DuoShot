@@ -563,7 +563,7 @@ export const en: Messages = {
   specs_outer_display_panel_portrait: "For the outer display, the panel and portrait screenshot share the same dimensions: {outerPortrait} pixels. Resizing does not create an adapted layout: your screenshots should show how your app actually looks on each display.",
   specs_apple_tech_specs_displays: "Apple tech specs: outer display and inner display",
   specs_apple_connect_screenshot_dimensions: "Apple: Connect screenshot dimensions",
-  specs_additional_iphone_sizes: "Optional iPhone {size69} sizes",
+  specs_additional_iphone_sizes: "iPhone {size69} sizes (large display)",
   specs_these_formats_belong_iphone: "These formats belong to the iPhone {size69} slot in Connect. iPhone with Dynamic Island (medium display, 6.3\") required, included in the free trial. Additional 6.9″ export in DuoShot is available with Pass, Indie and Studio.",
   specs_iphone_6_9_inch: "iPhone 6.9-inch slot screenshot sizes",
   specs_iphone_duo_screenshot_questions: "iPhone Duo screenshot questions",

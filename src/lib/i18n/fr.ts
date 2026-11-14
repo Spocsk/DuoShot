@@ -566,7 +566,7 @@ export const fr = {
   specs_outer_display_panel_portrait: "Pour l’écran externe, la dalle et la capture en portrait partagent les mêmes dimensions : {outerPortrait} pixels. Un redimensionnement ne crée pas une interface adaptée : vos captures doivent montrer votre app telle qu’elle s’affiche sur chaque écran.",
   specs_apple_tech_specs_displays: "Fiche technique Apple : écran externe et écran interne",
   specs_apple_connect_screenshot_dimensions: "Apple : dimensions des captures Connect",
-  specs_additional_iphone_sizes: "Formats iPhone {size69} optionnels",
+  specs_additional_iphone_sizes: "Formats iPhone {size69} (large display)",
   specs_these_formats_belong_iphone: "Ces formats concernent l’emplacement iPhone {size69} dans Connect. iPhone Dynamic Island (écran moyen, 6,3″) requis, inclus dans l’essai gratuit. L’export supplémentaire en 6,9″ dans DuoShot est disponible avec Pass, Indie et Studio.",
   specs_iphone_6_9_inch: "Formats de l’emplacement iPhone 6,9 pouces",
   specs_iphone_duo_screenshot_questions: "Questions sur les captures iPhone Duo",

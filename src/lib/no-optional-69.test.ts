@@ -4,6 +4,7 @@ import { fr } from "./i18n/fr";
 import { SCREENSHOT_SIZES } from "./screenshot-pages";
 import { sizeFaq } from "./size-faq";
 import { SPECS_FAQ } from "./screenshot-copy";
+import { specsEnrichmentStrings } from "./specs-enrichment";
 import { directAnswer, type DirectAnswerPage } from "./direct-answers";
 import type { Locale } from "./specs";
 
@@ -56,10 +57,12 @@ function optionalNear69(text: string): boolean {
 function collectCopy(): Array<{ label: string; text: string }> {
   const entries: Array<{ label: string; text: string }> = [];
   for (const [locale, dict] of [["en", en], ["fr", fr]] as const) {
+    const size69 = locale === "fr" ? "6,9″" : "6.9″";
     for (const [key, value] of Object.entries(dict)) {
       if (typeof value !== "string") continue;
       if (IGNORED_I18N_KEYS.has(key)) continue;
-      entries.push({ label: `i18n ${locale}.${key}`, text: value });
+      const text = value.replaceAll("{size69}", size69);
+      entries.push({ label: `i18n ${locale}.${key}`, text });
     }
   }
   for (const locale of LOCALES) {
@@ -72,6 +75,9 @@ function collectCopy(): Array<{ label: string; text: string }> {
     for (const item of SPECS_FAQ[locale]) {
       entries.push({ label: `SPECS_FAQ ${locale} q`, text: item.q });
       entries.push({ label: `SPECS_FAQ ${locale} a`, text: item.a });
+    }
+    for (const text of specsEnrichmentStrings(locale)) {
+      entries.push({ label: `SPECS_ENRICHMENT ${locale}`, text });
     }
     for (const page of DIRECT_ANSWER_PAGES) {
       entries.push({ label: `directAnswer ${locale}/${page}`, text: directAnswer(locale, page).text });
