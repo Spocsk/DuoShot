@@ -8,7 +8,9 @@ import { appStoreDisclaimer233, formatInches, SIZE_SPECS, specRowDetail, type Lo
 import { FaqList } from "@/components/faq-list";
 import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { INNER_PORTRAIT, OUTER_PORTRAIT, screenshotDimensions, SPECS_FAQ } from "@/lib/screenshot-copy";
-import { localizedPath, toolPath } from "@/lib/site";
+import { localizedPath, rejectionPath, toolPath } from "@/lib/site";
+import { deviceGuidePath } from "@/lib/devices";
+import { specsEnrichment, type MistakeItem } from "@/lib/specs-enrichment";
 import { SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SPECS_PAGE_COPY, sizePageCopy } from "@/lib/screenshot-pages";
 import { getTranslator } from "@/lib/i18n";
 import { appStoreConnectGuide, ASC_GUIDE_PATH, comparisonGuide, COMPARISON_GUIDE_PATH, sizesGuide, SIZES_GUIDE_PATH } from "@/lib/guides";
@@ -44,11 +46,18 @@ function SpecsTable({ locale, specs, caption }: { locale: Locale; specs: SizeSpe
   </div>;
 }
 
+function MistakeText({ locale, item }: { locale: Locale; item: MistakeItem }) {
+  if (!item.link) return <>{item.before}</>;
+  const href = item.link.target === "rejection" ? rejectionPath(locale) : "#safe-area-fold";
+  return <>{item.before}<a className="ds-link" href={href}>{item.link.label}</a>{item.after}</>;
+}
+
 export function SpecsPage({ locale }: { locale: Locale }) {
   const { t, tf } = getTranslator(locale);
   const faq = SPECS_FAQ[locale];
   const answer = directAnswer(locale, "specs");
   const size69 = formatInches(SIZE_SPECS.find((spec) => spec.slot === "iphone-69")!.inches, locale);
+  const enrichment = specsEnrichment(locale);
   return (
     <div className="flex min-h-full flex-col">
       <JsonLd locale={locale} path="/specs" faq={faq} article={{ ...SPECS_PAGE_COPY[locale], dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer.text }} />
@@ -73,6 +82,9 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot === "duo-outer" || spec.slot === "duo-inner")} caption={t("specs_iphone_duo_portrait_landscape")} />
           <p className="mt-4 text-sm text-[var(--muted)]">{t("specs_png_jpeg_without_alpha")}{" "}<a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{t("specs_read_connect_specifications")}</a></p>
           <p className="mt-4 text-sm text-[var(--muted)]">{t("duo_landscape_first_warning")}</p>
+          <p className="mt-4 text-sm text-[var(--muted)]" data-testid="specs-source-line">{enrichment.source.before}<a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{enrichment.source.linkLabel}</a>{enrichment.source.after}</p>
+          <p className="mt-4 text-sm text-[var(--muted)]" data-testid="specs-duo-badge">{enrichment.badge}</p>
+          <p className="mt-4 text-sm text-[var(--muted)]" data-testid="specs-scaling-rule">{enrichment.scaling}</p>
         </section>
         <section className="mt-10" aria-labelledby="size-guides">
           <h2 id="size-guides" className="font-display text-3xl">{t("size_related_heading")}</h2>
@@ -82,6 +94,8 @@ export function SpecsPage({ locale }: { locale: Locale }) {
             <li><Link className="ds-link" href={localizedPath(locale, COMPARISON_GUIDE_PATH)}>{comparisonGuide(locale).title}</Link></li>
             <li><Link className="ds-link" href={localizedPath(locale, ASC_GUIDE_PATH)}>{appStoreConnectGuide(locale).title}</Link></li>
             <li><Link className="ds-link" href={localizedPath(locale, SIZES_GUIDE_PATH)}>{sizesGuide(locale).title}</Link></li>
+            <li><Link className="ds-link" href={localizedPath(locale, deviceGuidePath("iphone-duo"))}>{enrichment.related.deviceGuide}</Link></li>
+            <li><Link className="ds-link" href={rejectionPath(locale)}>{enrichment.related.rejection}</Link></li>
             <li><Link className="ds-link" href={localizedPath(locale, comparisonPath("duoshot-vs-appscreens"))}>{competitorComparison(locale, "duoshot-vs-appscreens")!.title}</Link></li>
             <li><Link className="ds-link" href={localizedPath(locale, ALTERNATIVES_BASE_PATH)}>{ALTERNATIVES_HUB_COPY[locale].title}</Link></li>
           </ul>
@@ -100,6 +114,12 @@ export function SpecsPage({ locale }: { locale: Locale }) {
           <h2 id="iphone-69-sizes" className="font-display text-3xl">{tf("specs_additional_iphone_sizes", { size69 })}</h2>
           <p className="mt-4 text-[var(--muted)]">{t("specs_iphone_69_body")}</p>
           <SpecsTable locale={locale} specs={SIZE_SPECS.filter((spec) => spec.slot === "iphone-69")} caption={t("specs_iphone_6_9_inch")} />
+        </section>
+        <section className="mt-12" aria-labelledby="duo-mistakes">
+          <h2 id="duo-mistakes" className="font-display text-3xl">{enrichment.mistakes.heading}</h2>
+          <ol className="mt-4 list-decimal space-y-3 pl-5 text-[var(--muted)]">
+            {enrichment.mistakes.items.map((item, index) => <li key={index}><MistakeText locale={locale} item={item} /></li>)}
+          </ol>
         </section>
         <section className="mt-12">
           <h2 className="font-display text-3xl">{t("specs_iphone_duo_screenshot_questions")}</h2>

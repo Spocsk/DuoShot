@@ -1,5 +1,6 @@
 import { DEVICE_SLUGS, deviceGuidePath } from "../../src/lib/devices";
 import { SCREENSHOT_VERIFIED_ON } from "../../src/lib/screenshot-pages";
+import { SPECS_SOURCE_CHECKED_ON, formatCheckedOn } from "../../src/lib/specs-enrichment";
 
 // Wait for hydration (React tags the node with its props) before clicking, else the navigation is lost in CI.
 function clickHydrated(selector: string) {
@@ -156,6 +157,13 @@ describe("SEO screenshot pages", () => {
       });
       cy.get(".t-acc button").first().click().should("have.attr", "aria-expanded", "true");
       cy.get(".t-acc p").first().should("be.visible");
+    });
+
+    it(`enriches the specs page with a dated source and a 7-item mistakes list in ${locale}`, () => {
+      visit(`${prefix}/specs`);
+      cy.get('section[aria-labelledby="duo-mistakes"] h2').should("have.length", 1);
+      cy.get('section[aria-labelledby="duo-mistakes"] ol > li').should("have.length", 7);
+      cy.get('[data-testid="specs-source-line"]').should("contain", formatCheckedOn(locale, SPECS_SOURCE_CHECKED_ON));
     });
 
     it(`links the home to factual specs and size pages in ${locale}`, () => {
