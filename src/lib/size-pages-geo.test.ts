@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aspectRatio, SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, sizePageCopy } from "./screenshot-pages";
+import { aspectRatio, DUO_SIZES_VERIFIED_ON, SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, sizePageCopy } from "./screenshot-pages";
 import { sizeFaq } from "./size-faq";
 import { jsonLdGraph } from "./json-ld";
 import { MAX_IMAGES, SPECS_VERSION_DATE } from "./specs";
@@ -10,7 +10,9 @@ describe("size page summary box data", () => {
     // The size pages' content was last verified on SCREENSHOT_VERIFIED_ON; the Apple specs were
     // re-checked (and SPECS_VERSION_DATE bumped) on 2026-11-13 without changing these sizes.
     expect(SCREENSHOT_VERIFIED_ON <= SPECS_VERSION_DATE).toBe(true);
-    for (const date of [SCREENSHOT_VERIFIED_ON, SPECS_VERSION_DATE]) {
+    // The Duo pages were re-verified against Apple later, so their date is no earlier than the baseline.
+    expect(DUO_SIZES_VERIFIED_ON >= SCREENSHOT_VERIFIED_ON).toBe(true);
+    for (const date of [SCREENSHOT_VERIFIED_ON, DUO_SIZES_VERIFIED_ON, SPECS_VERSION_DATE]) {
       expect(Number.isNaN(Date.parse(date))).toBe(false);
     }
   });

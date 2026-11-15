@@ -4,6 +4,13 @@ import { SIZE_SPECS, type Locale } from "./specs";
 export const SCREENSHOT_SIZES = ["1398x2034", "2007x2853", "1206x2622", "1320x2868"] as const;
 export type ScreenshotSize = typeof SCREENSHOT_SIZES[number];
 export const SCREENSHOT_VERIFIED_ON = "2026-11-13";
+/** The iPhone Duo size pages (1398x2034, 2007x2853) were re-verified against Apple later than the rest. */
+export const DUO_SIZES_VERIFIED_ON = "2026-11-15";
+
+/** "Verified on" date for a size page: the Duo pages carry DUO_SIZES_VERIFIED_ON, the rest SCREENSHOT_VERIFIED_ON. */
+export function sizeVerifiedOn(size: ScreenshotSize): string {
+  return size === "1398x2034" || size === "2007x2853" ? DUO_SIZES_VERIFIED_ON : SCREENSHOT_VERIFIED_ON;
+}
 
 /** Aspect ratio for the "At a glance" box: reduced integer ratio plus a localized decimal. */
 export function aspectRatio(width: number, height: number, locale: Locale): string {

@@ -1,5 +1,5 @@
 import { DEVICE_SLUGS, deviceGuidePath } from "../../src/lib/devices";
-import { SCREENSHOT_VERIFIED_ON } from "../../src/lib/screenshot-pages";
+import { SCREENSHOT_VERIFIED_ON, sizeVerifiedOn } from "../../src/lib/screenshot-pages";
 import { SPECS_SOURCE_CHECKED_ON, formatCheckedOn } from "../../src/lib/specs-enrichment";
 
 // Wait for hydration (React tags the node with its props) before clicking, else the navigation is lost in CI.
@@ -220,7 +220,7 @@ describe("SEO screenshot pages", () => {
           .and("contain", locale === "en" ? "At a glance" : "En bref")
           .and("contain", locale === "en" ? "Aspect ratio" : "Rapport d’affichage")
           .and("contain", locale === "en" ? "Verified on" : "Vérifié le")
-          .and("contain", SCREENSHOT_VERIFIED_ON);
+          .and("contain", sizeVerifiedOn(size as "1398x2034" | "2007x2853" | "1206x2622" | "1320x2868"));
         cy.get('section[aria-labelledby="size-faq"] .t-acc').its("length").should("be.greaterThan", 1);
         if (size === "1398x2034" || size === "2007x2853") {
           cy.get("main").should("contain", locale === "en"

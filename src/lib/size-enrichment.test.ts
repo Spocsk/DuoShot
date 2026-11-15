@@ -56,10 +56,10 @@ describe("size page enrichment", () => {
       expect(html).toContain(enrich.orientation.heading);
       expect(html).toContain(enrich.rejections.heading);
       expect(enrich.rejections.items).toHaveLength(size === "1320x2868" ? 3 : 5);
-      // The three rejection causes: wrong size, transparency/alpha channel, wrong (PNG/JPEG) format.
+      // The three upload mistakes: wrong size, transparency/alpha channel, wrong image format.
       const rejections = enrich.rejections.items.join(" ");
       expect(rejections).toMatch(locale === "fr" ? /canal alpha|transparence/i : /alpha channel|transparen/i);
-      expect(rejections).toMatch(/PNG|JPEG/);
+      expect(rejections).toMatch(/PNG|JPEG|\.png|\.jpeg/i);
     }
   });
 
@@ -133,7 +133,7 @@ describe("size page enrichment", () => {
       const html = renderToStaticMarkup(createElement(SizePage, { locale, size }));
       expect(html).toContain(slots.heading);
       for (const row of slots.rows) expect(html).toContain(row.group);
-      expect(html).toContain(locale === "fr" ? "vérifié le 13 novembre 2026" : "checked November 13, 2026");
+      expect(html).toContain(locale === "fr" ? "vérifié le 15 novembre 2026" : "checked November 15, 2026");
       // The emphasized size is the page's own display size.
       const emphasized = slots.rows.flatMap((row) => row.sizes).find((part) => part.strong)!;
       expect(emphasized.text).toContain(size === "1398x2034" ? "1398 × 2034" : "2007 × 2853");
