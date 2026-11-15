@@ -1,5 +1,10 @@
 import type { Locale } from "./specs";
-import type { ScreenshotSize } from "./screenshot-pages";
+import { DUO_SIZES_VERIFIED_ON, type ScreenshotSize } from "./screenshot-pages";
+import { formatCheckedOn } from "./specs-enrichment";
+
+/** Apple's verbatim badge sentence from the Screenshot specifications page, kept in English in both locales. */
+const APPLE_DUO_BADGE_QUOTE =
+  "When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is made for iPhone Duo.";
 
 /*
  * Per-size, per-locale enrichment rendered by SizePage alongside the FAQ: the devices an App Store
@@ -43,8 +48,8 @@ export type SizeEnrichment = {
 };
 
 const HEADINGS = {
-  fr: { devices: "Appareils concernés", orientation: "Orientation : portrait ou paysage", rejections: "Erreurs de rejet fréquentes" },
-  en: { devices: "Supported devices", orientation: "Orientation: portrait or landscape", rejections: "Common rejection errors" },
+  fr: { devices: "Appareils concernés", orientation: "Orientation : portrait ou paysage", rejections: "Erreurs de dépôt fréquentes" },
+  en: { devices: "Supported devices", orientation: "Orientation: portrait or landscape", rejections: "Common upload mistakes" },
 } as const;
 
 function enrichment(
@@ -157,7 +162,7 @@ function duoSlots(locale: Locale, emphasize: "outer" | "inner"): SizeSlots {
           status: "Requis : au moins une capture pour soumettre une app iPhone",
         },
       ],
-      source: "Source : Apple, Screenshot specifications, vérifié le 13 novembre 2026. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.",
+      source: `Source : Apple, Screenshot specifications, vérifié le ${formatCheckedOn("fr", DUO_SIZES_VERIFIED_ON)}. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.`,
       note: "Les tailles externe et interne de l’iPhone Duo forment un groupe distinct du groupe « iPhone with Dynamic Island (medium display) » requis : déposer des captures Duo ne remplit pas cet emplacement requis.",
     };
   }
@@ -180,7 +185,7 @@ function duoSlots(locale: Locale, emphasize: "outer" | "inner"): SizeSlots {
         status: "Required: at least one screenshot to submit an iPhone app",
       },
     ],
-    source: "Source: Apple, Screenshot specifications, checked November 13, 2026. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.",
+    source: `Source: Apple, Screenshot specifications, checked ${formatCheckedOn("en", DUO_SIZES_VERIFIED_ON)}. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.`,
     note: "The iPhone Duo outer and inner sizes are a separate group from the required iPhone with Dynamic Island (medium display): submitting Duo screenshots does not fill that required slot.",
   };
 }
@@ -257,25 +262,25 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
   },
   "1398x2034": {
     fr: enrichment("fr",
-      "Cette taille correspond à l’écran externe de l’iPhone Duo, le téléphone pliable d’Apple (fermé). À partir d’avril 2027, les captures iPhone Duo sont requises pour les apps compilées avec le SDK iOS 27.1 ou ultérieur ; déposer des captures Duo affiche le badge « optimisé pour iPhone Duo ».",
+      `Cette taille correspond à l’écran externe de l’iPhone Duo, le téléphone pliable d’Apple (fermé). À partir d’avril 2027, les captures iPhone Duo sont requises pour les apps compilées avec le SDK iOS 27.1 ou ultérieur ; déposer des captures Duo affiche un badge indiquant que votre app est conçue pour l’iPhone Duo. Apple : « ${APPLE_DUO_BADGE_QUOTE} »`,
       "En portrait, exportez 1398 × 2034 pixels ; en paysage, 2034 × 1398 pixels. Montrez votre app sur l’écran externe fermé.",
-      "Les captures de l’écran externe sont souvent rejetées pour ces raisons :",
+      "Avant de déposer vos captures de l’écran externe, écartez ces erreurs :",
       [
-        "Mauvaise taille : déposez 1398 × 2034 pixels en portrait (ou 2034 × 1398 en paysage) pour l’écran externe. D’autres dimensions sont refusées.",
+        "Mauvaise taille : déposez 1398 × 2034 pixels en portrait (ou 2034 × 1398 en paysage) pour l’écran externe. Apple ne liste que ces deux dimensions pour l’écran externe.",
         "Transparence ou canal alpha : les images ne peuvent pas comporter de canal alpha ni de transparence. Exportez un fond plein.",
-        "Mauvais format : utilisez le PNG ou le JPEG ; les autres formats sont rejetés.",
+        "Mauvais format : Apple liste .jpeg, .jpg et .png.",
         "Mauvais écran : 2007 × 2853 correspond à l’écran interne, pas à l’écran externe. Ne mélangez pas un fichier interne avec les tailles de l’écran externe.",
         "Mauvais ratio : une capture 1206 × 2622 étirée en 1398 × 2034 est déformée, car ces deux formats n’ont pas les mêmes proportions. Recadrez ou refaites la capture, n’étirez pas.",
       ],
       { slots: duoSlots("fr", "outer"), related: RELATED_1206.fr, timeline: DUO_TIMELINE.fr }),
     en: enrichment("en",
-      "This size is the outer display of the iPhone Duo, Apple’s foldable iPhone (closed). From April 2027, iPhone Duo screenshots are required for apps built with the iOS 27.1 SDK or later; submitting Duo screenshots shows an “optimized for iPhone Duo” badge.",
+      `This size is the outer display of the iPhone Duo, Apple’s foldable iPhone (closed). From April 2027, iPhone Duo screenshots are required for apps built with the iOS 27.1 SDK or later; Apple: “${APPLE_DUO_BADGE_QUOTE}”`,
       "In portrait, export 1398 × 2034 pixels; in landscape, 2034 × 1398 pixels. Show your app on the closed outer display.",
-      "Outer-display screenshots are often rejected for these reasons:",
+      "Before uploading outer-display screenshots, rule out these mistakes:",
       [
-        "Wrong size: upload 1398 × 2034 pixels in portrait (or 2034 × 1398 in landscape) for the outer display. Other dimensions are rejected.",
+        "Wrong size: upload 1398 × 2034 pixels in portrait (or 2034 × 1398 in landscape) for the outer display. Apple lists only these two dimensions for the outer display.",
         "Transparency or alpha channel: images can’t include an alpha channel or transparency. Export a solid background.",
-        "Wrong format: use PNG or JPEG; other formats are rejected.",
+        "Wrong format: Apple lists .jpeg, .jpg and .png.",
         "Wrong display: 2007 × 2853 is the inner display, not the outer display. Don’t mix an inner-display file in with the outer-display sizes.",
         "Wrong aspect ratio: a 1206 × 2622 screenshot stretched to 1398 × 2034 is distorted, because the two sizes have different proportions. Recrop or redo the screenshot instead of stretching it.",
       ],
@@ -283,25 +288,25 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
   },
   "2007x2853": {
     fr: enrichment("fr",
-      "Cette taille correspond à l’écran interne de l’iPhone Duo (ouvert). À partir d’avril 2027, les captures iPhone Duo sont requises pour les apps compilées avec le SDK iOS 27.1 ou ultérieur ; déposer des captures Duo affiche le badge « optimisé pour iPhone Duo ».",
+      `Cette taille correspond à l’écran interne de l’iPhone Duo (ouvert). À partir d’avril 2027, les captures iPhone Duo sont requises pour les apps compilées avec le SDK iOS 27.1 ou ultérieur ; déposer des captures Duo affiche un badge indiquant que votre app est conçue pour l’iPhone Duo. Apple : « ${APPLE_DUO_BADGE_QUOTE} »`,
       "En portrait, exportez 2007 × 2853 pixels ; en paysage, 2853 × 2007 pixels. Montrez l’interface déployée de votre app sur l’écran interne.",
-      "Pour l’écran interne, surveillez ces causes fréquentes de rejet :",
+      "Avant de déposer vos captures de l’écran interne, écartez ces erreurs :",
       [
-        "Mauvaise taille : déposez 2007 × 2853 pixels en portrait (ou 2853 × 2007 en paysage), la taille de capture App Store Connect pour l’écran interne. D’autres dimensions sont refusées.",
-        "Transparence ou canal alpha : aplatissez le fond ; aucun canal alpha ni transparence n’est accepté.",
-        "Mauvais format : exportez en PNG ou JPEG uniquement.",
+        "Mauvaise taille : déposez 2007 × 2853 pixels en portrait (ou 2853 × 2007 en paysage), la taille de capture App Store Connect pour l’écran interne. Apple ne liste que ces deux dimensions pour l’écran interne.",
+        "Transparence ou canal alpha : aplatissez le fond ; Apple indique que les images ne peuvent pas comporter de canal alpha ni de transparence.",
+        "Mauvais format : Apple liste .jpeg, .jpg et .png.",
         "Mauvais écran : 2007 × 2853 est l’écran interne ; 1398 × 2034 correspond à l’écran externe, pas à l’écran interne. Ne déposez pas un fichier externe parmi les tailles internes.",
         "Mauvais ratio : une capture 1206 × 2622 étirée en 2007 × 2853 est déformée, car ces deux formats n’ont pas les mêmes proportions. Recadrez ou refaites la capture, n’étirez pas.",
       ],
       { slots: duoSlots("fr", "inner"), related: RELATED_1206.fr, timeline: DUO_TIMELINE.fr }),
     en: enrichment("en",
-      "This size is the inner display of the iPhone Duo (open). From April 2027, iPhone Duo screenshots are required for apps built with the iOS 27.1 SDK or later; submitting Duo screenshots shows an “optimized for iPhone Duo” badge.",
+      `This size is the inner display of the iPhone Duo (open). From April 2027, iPhone Duo screenshots are required for apps built with the iOS 27.1 SDK or later; Apple: “${APPLE_DUO_BADGE_QUOTE}”`,
       "In portrait, export 2007 × 2853 pixels; in landscape, 2853 × 2007 pixels. Show your app’s expanded layout on the inner display.",
-      "For the inner display, watch for these common rejection causes:",
+      "Before uploading inner-display screenshots, rule out these mistakes:",
       [
-        "Wrong size: upload 2007 × 2853 pixels in portrait (or 2853 × 2007 in landscape), the App Store Connect screenshot size for the inner display. Other dimensions are rejected.",
-        "Transparency or alpha channel: flatten the background; no alpha channel or transparency is accepted.",
-        "Wrong format: export PNG or JPEG only.",
+        "Wrong size: upload 2007 × 2853 pixels in portrait (or 2853 × 2007 in landscape), the App Store Connect screenshot size for the inner display. Apple lists only these two dimensions for the inner display.",
+        "Transparency or alpha channel: flatten the background; Apple says images can’t include alpha channels or transparencies.",
+        "Wrong format: Apple lists .jpeg, .jpg and .png.",
         "Wrong display: 2007 × 2853 is the inner display; 1398 × 2034 is the outer display, not the inner one. Don’t upload an outer-display file in with the inner-display sizes.",
         "Wrong aspect ratio: a 1206 × 2622 screenshot stretched to 2007 × 2853 is distorted, because the two sizes have different proportions. Recrop or redo the screenshot instead of stretching it.",
       ],

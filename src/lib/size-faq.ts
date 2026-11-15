@@ -44,6 +44,18 @@ const DUO_MEDIUM_SEPARATE = {
   },
 } as const;
 
+/** Apple has no scaling note for iPhone Duo, unlike other iPhone groups — so no other size is scaled to Duo. */
+const DUO_NO_SCALING = {
+  fr: {
+    q: "App Store Connect met-il à l’échelle une autre taille iPhone vers l’iPhone Duo ?",
+    a: "Les spécifications d’Apple ne le disent pas. Pour plusieurs autres groupes iPhone, Apple ajoute une note comme « If screenshots with the accepted sizes aren't provided, scaled screenshots for iPhone with Face ID (large display) are used. » L’entrée iPhone Duo n’a pas de note de ce type. Exportez la taille Duo exacte que vous déposez : 1398 × 2034 pour l’écran externe ou 2007 × 2853 pour l’écran interne (inversées en paysage).",
+  },
+  en: {
+    q: "Will App Store Connect scale another iPhone size to iPhone Duo?",
+    a: "Apple’s specifications don’t say so. For several other iPhone display groups, Apple adds a note such as “If screenshots with the accepted sizes aren't provided, scaled screenshots for iPhone with Face ID (large display) are used.” The iPhone Duo entry has no such note. Export the exact Duo size you upload: 1398 × 2034 for the outer display or 2007 × 2853 for the inner display (swapped in landscape).",
+  },
+} as const;
+
 const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
   "1398x2034": {
     fr: [
@@ -52,6 +64,7 @@ const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
       { q: "Les captures iPhone Duo sont-elles obligatoires ?", a: DUO_REQUIRED.fr },
       DUO_APRIL_2027.fr,
       DUO_MEDIUM_SEPARATE.fr,
+      DUO_NO_SCALING.fr,
     ],
     en: [
       { q: "Is 1398x2034 the iPhone Duo outer or inner display?", a: "It is the iPhone Duo outer display (closed). Use 1398 × 2034 pixels in portrait, or 2034 × 1398 in landscape, for App Store Connect. The inner display uses 2007 × 2853." },
@@ -59,6 +72,7 @@ const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
       { q: "Are iPhone Duo screenshots required?", a: DUO_REQUIRED.en },
       DUO_APRIL_2027.en,
       DUO_MEDIUM_SEPARATE.en,
+      DUO_NO_SCALING.en,
     ],
   },
   "2007x2853": {
@@ -69,6 +83,7 @@ const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
       { q: "Les captures iPhone Duo sont-elles obligatoires ?", a: DUO_REQUIRED.fr },
       DUO_APRIL_2027.fr,
       DUO_MEDIUM_SEPARATE.fr,
+      DUO_NO_SCALING.fr,
     ],
     en: [
       { q: "Is 2007x2853 the iPhone Duo outer or inner display?", a: "It is the iPhone Duo inner display (open). Use 2007 × 2853 pixels in portrait, or 2853 × 2007 in landscape, for App Store Connect. The outer display uses 1398 × 2034." },
@@ -77,6 +92,7 @@ const SIZE_FAQ: Record<ScreenshotSize, Record<Locale, FaqItem[]>> = {
       { q: "Are iPhone Duo screenshots required?", a: DUO_REQUIRED.en },
       DUO_APRIL_2027.en,
       DUO_MEDIUM_SEPARATE.en,
+      DUO_NO_SCALING.en,
     ],
   },
   "1206x2622": {

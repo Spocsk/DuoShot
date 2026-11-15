@@ -6,7 +6,7 @@ import { FaqList } from "@/components/faq-list";
 import { JsonLd } from "@/lib/json-ld";
 import { getTranslator } from "@/lib/i18n";
 import { MAX_IMAGES, type Locale } from "@/lib/specs";
-import { aspectRatio, SCREENSHOT_VERIFIED_ON, sizePageCopy, type ScreenshotSize } from "@/lib/screenshot-pages";
+import { aspectRatio, sizePageCopy, sizeVerifiedOn, type ScreenshotSize } from "@/lib/screenshot-pages";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
 import { sizeFaq } from "@/lib/size-faq";
 import { sizeEnrichment } from "@/lib/size-enrichment";
@@ -29,11 +29,12 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
   const enrich = sizeEnrichment(locale, size);
   const guide = appStoreConnectGuide(locale);
   const status = size === "1206x2622" ? t("specs_required_iphone_sizes") : size === "1320x2868" ? t("size_status_optional") : t("size_status_duo");
+  const verifiedOn = sizeVerifiedOn(size);
   return <div className="flex min-h-full flex-col">
-    <JsonLd locale={locale} path={path} faq={faq} article={{ ...copy, dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer.text }} />
+    <JsonLd locale={locale} path={path} faq={faq} article={{ ...copy, dateModified: verifiedOn, abstract: answer.text }} />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
-      <p className="ds-label">{tf("specs_verified_on", { date: SCREENSHOT_VERIFIED_ON })}</p>
+      <p className="ds-label">{tf("specs_verified_on", { date: verifiedOn })}</p>
       <h1 className="font-display mt-3 text-4xl sm:text-5xl">{copy.title}</h1>
       <DirectAnswer answer={answer} />
       <p className="mt-4 text-lg">{copy.intro}</p>
@@ -45,7 +46,7 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
           <div><dt className="ds-label">{t("size_summary_ratio")}</dt><dd className="font-mono text-lg">{aspectRatio(copy.portrait.width, copy.portrait.height, locale)}</dd></div>
           <div><dt className="ds-label">{t("size_summary_count")}</dt><dd>{tf("size_summary_count_detail", { max: MAX_IMAGES })}</dd></div>
           <div className="sm:col-span-2"><dt className="ds-label">{t("size_summary_status")}</dt><dd>{status}</dd></div>
-          <div><dt className="ds-label">{t("size_summary_verified")}</dt><dd className="font-mono">{SCREENSHOT_VERIFIED_ON}</dd></div>
+          <div><dt className="ds-label">{t("size_summary_verified")}</dt><dd className="font-mono">{verifiedOn}</dd></div>
         </dl>
         <a href={APPLE_SCREENSHOT_SOURCE} className="ds-link mt-4 inline-block">{t("specs_read_connect_specifications")}</a>
       </section>
