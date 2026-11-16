@@ -1,4 +1,5 @@
 import type { Locale } from "./specs";
+import { ALPHA, BADGE } from "./iphone-duo-guide";
 
 /*
  * Single source of truth for the programmatic /guides/screenshot-size/<device> pages.
@@ -51,6 +52,8 @@ export type Device = {
 };
 
 export const DEVICE_VERIFIED_ON = "2026-11-03";
+/** The iPhone Duo device guide is re-checked against Apple on its own cadence, ahead of the shared date. */
+export const IPHONE_DUO_GUIDE_VERIFIED_ON = "2026-11-16";
 export const SCREENSHOT_SIZE_BASE_PATH = "/guides/screenshot-size";
 
 /** The per-device screenshot-size hub: the index page every /guides/screenshot-size/<device> sits under. */
@@ -72,14 +75,14 @@ const watchNote = (series: string): LocalizedText => ({ fr: series, en: series }
 
 const BASE_ERRORS = {
   fr: [
-    "Mauvaises dimensions en pixels : un fichier qui ne correspond pas exactement à l’une des tailles acceptées est refusé.",
-    "Canal alpha ou transparence : les captures ne peuvent pas comporter de canal alpha ni de zones transparentes ; exportez une image opaque.",
+    "Mauvaises dimensions en pixels : utilisez exactement l’une des tailles acceptées listées ci-dessus ; Apple ne liste pas d’autres tailles pour ce groupe d’affichage.",
+    `Canal alpha ou transparence : Apple indique « ${ALPHA} » Exportez une image opaque.`,
     "Format non pris en charge : App Store Connect n’accepte que les fichiers PNG, JPG ou JPEG.",
     "Trop de captures : vous pouvez déposer jusqu’à 10 captures par taille d’appareil.",
   ],
   en: [
-    "Wrong pixel dimensions: a file that does not match one of the accepted sizes exactly is rejected.",
-    "Alpha channel or transparency: screenshots can’t include an alpha channel or transparent areas; export an opaque image.",
+    "Wrong pixel dimensions: use one of the accepted sizes listed above exactly; Apple lists no other sizes for this display group.",
+    `Alpha channel or transparency: Apple states “${ALPHA}” Export an opaque image.`,
     "Unsupported format: App Store Connect accepts only PNG, JPG or JPEG files.",
     "Too many screenshots: you can upload up to 10 screenshots per device size.",
   ],
@@ -108,8 +111,8 @@ const DUO: Group = {
   group: { fr: "iPhone Duo", en: "iPhone Duo" },
   sizes: [p(1398, 2034, OUTER), l(2034, 1398, OUTER), p(2007, 2853, INNER), l(2853, 2007, INNER)],
   requirement: {
-    fr: "App Store Connect accepte les tailles de l’écran externe et de l’écran interne de l’iPhone Duo. À partir d’avril 2027, les captures seront exigées pour toute app utilisant le SDK iOS 27.1 ou ultérieur. Lorsque vous déposez des captures iPhone Duo, votre page produit App Store affiche un badge indiquant que votre app est optimisée pour l’iPhone Duo.",
-    en: "App Store Connect accepts the iPhone Duo outer and inner display sizes. Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later. When you submit iPhone Duo screenshots, your App Store product page shows a badge letting people know your app is optimized for iPhone Duo.",
+    fr: `App Store Connect accepte les tailles de l’écran externe et de l’écran interne de l’iPhone Duo. À partir d’avril 2027, les captures seront exigées pour toute app utilisant le SDK iOS 27.1 ou ultérieur. Lorsque vous déposez des captures iPhone Duo, votre page produit App Store affiche un badge indiquant que votre app est conçue pour l’iPhone Duo. Apple : « ${BADGE} »`,
+    en: `App Store Connect accepts the iPhone Duo outer and inner display sizes. Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later. Apple: “${BADGE}”`,
   },
   errors: BASE_ERRORS,
   generatorSize: "1398x2034",
@@ -335,6 +338,11 @@ export const DEVICE_SLUGS: string[] = DEVICES.map((device) => device.slug);
 
 export function deviceBySlug(slug: string): Device | undefined {
   return DEVICES.find((device) => device.slug === slug);
+}
+
+/** The verification date shown on a device guide: the iPhone Duo guide carries its own, newer date. */
+export function deviceVerifiedOn(device: Pick<Device, "slug">): string {
+  return device.slug === "iphone-duo" ? IPHONE_DUO_GUIDE_VERIFIED_ON : DEVICE_VERIFIED_ON;
 }
 
 /** Display name used in headings and links; appends the display size when Apple names collide. */

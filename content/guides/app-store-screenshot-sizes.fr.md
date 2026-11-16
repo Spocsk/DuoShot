@@ -39,7 +39,7 @@ L’iPhone Duo a deux écrans : App Store Connect accepte donc deux familles de 
 | Écran externe | 1398 × 2034 | 2034 × 1398 |
 | Écran interne | 2007 × 2853 | 2853 × 2007 |
 
-Le 5 octobre 2026, Apple a annoncé que l’iPhone Duo serait disponible à partir du 23 octobre 2026. Apple formule l’échéance d’avril 2027 à deux endroits, que nous gardons distincts. Son [actualité développeurs sur l’iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo) du 5 octobre 2026 indique : « Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo. » La page des spécifications la rattache au SDK : « Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later. » Les apps qui fournissent des captures Duo affichent un badge sur leur page produit indiquant qu’elles sont optimisées pour l’iPhone Duo.
+Le 5 octobre 2026, Apple a annoncé que l’iPhone Duo serait disponible à partir du 23 octobre 2026. Apple formule l’échéance d’avril 2027 à deux endroits, que nous gardons distincts. Son [actualité développeurs sur l’iPhone Duo](https://developer.apple.com/news/?id=kkphp5qo) du 5 octobre 2026 indique : « Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo. » La page des spécifications la rattache au SDK : « Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later. » Apple indique aussi : « When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is made for iPhone Duo. »
 
 L’écran interne se plie en son milieu. Éloignez les titres et les commandes importantes de la pliure pour qu’ils restent lisibles. Voir la [page de l’écran externe](/1398x2034), la [page de l’écran interne](/2007x2853) et le [guide de dépôt manuel](/guides/iphone-duo-app-store-connect).
 
@@ -76,8 +76,8 @@ Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store
 ## Les règles de format qui bloquent le dépôt
 
 - Les fichiers doivent être en `.png`, `.jpg` ou `.jpeg`.
-- Les images ne peuvent contenir ni canal alpha ni transparence. Un PNG exporté avec transparence est refusé même si les pixels semblent opaques.
-- Les dimensions doivent correspondre exactement à une taille acceptée. Un pixel d’écart suffit à un refus.
+- Apple indique : « Images can’t include alpha channels or transparencies. » Exportez un PNG opaque ou un JPEG.
+- Les dimensions doivent correspondre exactement à une taille acceptée : Apple ne liste que ces tailles, et une capture décalée d’un pixel n’en fait pas partie.
 - Chaque emplacement accepte de 1 à 10 captures.
 - Le contenu doit respecter les règles de validation de l’App Store : les captures doivent montrer l’app en usage, c’est pourquoi DuoShot part de vos vraies captures.
 

@@ -32,14 +32,28 @@ const RATIO_ROWS = [
   { size: "1320 × 2868", ratio: "0,460", label: { fr: "grand écran 6,9″", en: "6.9″ large display" } },
 ] as const;
 
+/*
+ * Verbatim Apple quotes from the Screenshot specifications page (and the iPhone Duo developer news),
+ * re-read 2026-11-16. Exported so the devices data, the device-page copy and the sizes-guide copy all
+ * reuse the exact same wording instead of paraphrasing or retyping it.
+ */
+export const BADGE =
+  "When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is made for iPhone Duo.";
+export const SPECS_APRIL =
+  "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.";
+export const NEWS_APRIL =
+  "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.";
+export const ALPHA = "Images can’t include alpha channels or transparencies.";
+export const REQUIRED = "iPhone: At least one screenshot for iPhone with Dynamic Island (medium display).";
+
 const APRIL_2027 = {
   fr: [
-    { text: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.", cite: "Apple, Screenshot specifications" },
-    { text: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.", cite: "Apple, actualité développeurs iPhone Duo, 5 octobre 2026" },
+    { text: SPECS_APRIL, cite: "Apple, Screenshot specifications" },
+    { text: NEWS_APRIL, cite: "Apple, actualité développeurs iPhone Duo, 5 octobre 2026" },
   ],
   en: [
-    { text: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later.", cite: "Apple, Screenshot specifications" },
-    { text: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo.", cite: "Apple, iPhone Duo developer news, October 5, 2026" },
+    { text: SPECS_APRIL, cite: "Apple, Screenshot specifications" },
+    { text: NEWS_APRIL, cite: "Apple, iPhone Duo developer news, October 5, 2026" },
   ],
 } as const;
 
@@ -81,7 +95,7 @@ export function iphoneDuoGuideExtra(locale: Locale): IphoneDuoGuideExtra {
             ["Une capture dont la mise en page ne survit pas à un recadrage (texte coupé, composition différente)", "Refaire", "Recapturez à la taille Duo ; n’agrandissez pas une image plus petite."],
           ],
         },
-        flatten: "Aplatissez la transparence : App Store Connect refuse les PNG comportant un canal alpha, même si les pixels semblent opaques.",
+        flatten: "Aplatissez la transparence : Apple indique que les images ne peuvent pas comporter de canal alpha ni de transparence. Exportez un PNG opaque ou un JPEG.",
       },
       ratios: {
         heading: "Ratios largeur ÷ hauteur (calculés)",
@@ -121,7 +135,7 @@ export function iphoneDuoGuideExtra(locale: Locale): IphoneDuoGuideExtra {
           ["A shot whose layout can’t survive a crop (text cut off, different composition)", "Redo", "Recapture at the Duo size; don’t upscale a smaller image."],
         ],
       },
-      flatten: "Flatten transparency: App Store Connect rejects PNGs with an alpha channel, even when the pixels look opaque.",
+      flatten: "Flatten transparency: Apple states that images can’t include alpha channels or transparencies. Export an opaque PNG or a JPEG.",
     },
     ratios: {
       heading: "Width ÷ height ratios (computed)",

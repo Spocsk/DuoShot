@@ -3,6 +3,7 @@ import type { Device, DeviceSize } from "./devices";
 import { deviceDisplayName, deviceGuidePath, SCREENSHOT_SIZE_HUB } from "./devices";
 import type { FaqItem } from "./screenshot-copy";
 import { screenshotDimensions } from "./screenshot-copy";
+import { NEWS_APRIL, REQUIRED, SPECS_APRIL } from "./iphone-duo-guide";
 
 /*
  * Visible copy, FAQ and JSON-LD breadcrumb for the /guides/screenshot-size/<device> pages,
@@ -74,9 +75,17 @@ function faqItems(locale: Locale, device: Device, answer: string): FaqItem[] {
       ];
 
   if (device.slug === "iphone-duo") {
-    items.push(locale === "fr"
-      ? { q: "Quand les captures iPhone Duo deviendront-elles obligatoires ?", a: "À partir d’avril 2027, les captures iPhone Duo seront exigées pour toute app utilisant le SDK iOS 27.1 ou ultérieur." }
-      : { q: "When will iPhone Duo screenshots become required?", a: "Starting in April 2027, iPhone Duo screenshots will be required for any app using the iOS 27.1 SDK or later." });
+    items.push(...(locale === "fr"
+      ? [
+          { q: "Quand les captures iPhone Duo deviendront-elles obligatoires ?", a: `Apple le formule à deux endroits. Ses spécifications des captures indiquent : « ${SPECS_APRIL} » Son actualité développeurs iPhone Duo du 5 octobre 2026 indique : « ${NEWS_APRIL} »` },
+          { q: "App Store Connect met-il mes captures à l’échelle vers les tailles iPhone Duo ?", a: "Les spécifications des captures d’Apple ne comportent aucune note de mise à l’échelle pour le groupe iPhone Duo. Pour les autres groupes, Apple ajoute une note ; pour l’écran moyen, elle indique : « If screenshots with the accepted sizes aren't provided, scaled screenshots for iPhone with Face ID (large display) are used. » Préparez vos captures directement aux tailles iPhone Duo : 1398 × 2034 pour l’écran externe ou 2007 × 2853 pour l’écran interne (inversées en paysage)." },
+          { q: "Les captures iPhone Duo remplacent-elles les captures écran moyen requises ?", a: `Non. La liste des tailles d’appareil requises d’Apple indique : « ${REQUIRED} » Ce groupe accepte 1206 × 2622 ou 1179 × 2556 en portrait. L’iPhone Duo est un groupe distinct dans les spécifications d’Apple.` },
+        ]
+      : [
+          { q: "When will iPhone Duo screenshots become required?", a: `Apple words it in two places. Its Screenshot specifications say: “${SPECS_APRIL}” Its iPhone Duo developer news of October 5, 2026 says: “${NEWS_APRIL}”` },
+          { q: "Will App Store Connect scale my screenshots to iPhone Duo sizes?", a: "Apple’s Screenshot specifications include no scaling note for the iPhone Duo group. For other groups, Apple adds a note; for medium display it reads: “If screenshots with the accepted sizes aren't provided, scaled screenshots for iPhone with Face ID (large display) are used.” Prepare iPhone Duo screenshots at the Duo sizes directly: 1398 × 2034 for the outer display or 2007 × 2853 for the inner display (swapped in landscape)." },
+          { q: "Do iPhone Duo screenshots replace the required medium display screenshots?", a: `No. Apple’s required device sizes list says: “${REQUIRED}” That group accepts 1206 × 2622 or 1179 × 2556 in portrait. iPhone Duo is a separate group in Apple’s specifications.` },
+        ]));
   } else if (device.platform === "watch") {
     items.push(locale === "fr"
       ? { q: "Dois-je utiliser la même taille Apple Watch pour chaque langue ?", a: "Oui. Utilisez la même taille de capture Apple Watch de façon cohérente dans toutes les localisations." }
@@ -120,8 +129,8 @@ export function devicePageCopy(locale: Locale, device: Device): DevicePageCopy {
     ? `Captures App Store ${titleName} : générateur`
     : `${titleName}: App Store screenshot size`;
   const description = locale === "fr"
-    ? `Taille de capture App Store pour ${name} (${VERIFIED_YEAR}) : tailles acceptées, obligation et erreurs de rejet fréquentes.`
-    : `App Store screenshot size for ${name} (${VERIFIED_YEAR}): accepted sizes, requirement and common rejection errors.`;
+    ? `Taille de capture App Store pour ${name} (${VERIFIED_YEAR}) : tailles acceptées, obligation et erreurs de dépôt fréquentes.`
+    : `App Store screenshot size for ${name} (${VERIFIED_YEAR}): accepted sizes, requirement and common upload mistakes.`;
   return {
     h1,
     title,

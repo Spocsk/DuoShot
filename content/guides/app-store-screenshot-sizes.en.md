@@ -39,7 +39,7 @@ iPhone Duo has two displays, so App Store Connect accepts two families of sizes 
 | Outer display | 1398 × 2034 | 2034 × 1398 |
 | Inner display | 2007 × 2853 | 2853 × 2007 |
 
-Apple announced on October 5, 2026 that iPhone Duo would be available to customers from October 23, 2026. Apple words the April 2027 requirement in two places, which we keep separate. The [iPhone Duo developer news](https://developer.apple.com/news/?id=kkphp5qo) of October 5, 2026 says: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo." The specifications page ties it to the SDK: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later." Apps that submit Duo screenshots get a badge on their product page showing they are optimized for iPhone Duo.
+Apple announced on October 5, 2026 that iPhone Duo would be available to customers from October 23, 2026. Apple words the April 2027 requirement in two places, which we keep separate. The [iPhone Duo developer news](https://developer.apple.com/news/?id=kkphp5qo) of October 5, 2026 says: "Starting April 2027, any apps or games submitted will need to include screenshots for iPhone Duo." The specifications page ties it to the SDK: "Starting in April 2027, screenshots will be required for any app using the iOS 27.1 SDK or later." Apple also says: "When you submit iPhone Duo screenshots in App Store Connect, your App Store product page will display a badge to let people know your app is made for iPhone Duo."
 
 The inner display folds in the middle. Keep headlines and important controls away from the fold line so they stay legible. See the [outer display page](/en/1398x2034), the [inner display page](/en/2007x2853) and the [manual upload guide](/en/guides/iphone-duo-app-store-connect).
 
@@ -76,8 +76,8 @@ If you skip the large Dynamic Island slot, App Store Connect falls back to scale
 ## Format rules that cause upload errors
 
 - Files must be `.png`, `.jpg` or `.jpeg`.
-- Images can't include alpha channels or transparency. A PNG exported with transparency is refused even when the pixels look opaque.
-- Dimensions must match one accepted size exactly. A screenshot that is one pixel off is refused.
+- Apple states: "Images can’t include alpha channels or transparencies." Export an opaque PNG or a JPEG.
+- Dimensions must match one accepted size exactly: Apple lists only those sizes, so a screenshot that is one pixel off is not one of them.
 - Each slot takes between 1 and 10 screenshots.
 - Content must follow the App Store Review Guidelines: screenshots should show the app in use, which is why DuoShot starts from your real captures.
 
