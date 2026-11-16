@@ -16,8 +16,8 @@ const DEVICE_INDEX_HEADING = {
 } as const;
 
 const DEVICE_INDEX_INTRO = {
-  fr: "Une page dédiée par appareil, avec les tailles acceptées par App Store Connect pour son groupe d’affichage, l’obligation et les erreurs de rejet fréquentes.",
-  en: "A dedicated page per device, with the sizes App Store Connect accepts for its display group, the requirement and the common rejection errors.",
+  fr: "Une page dédiée par appareil, avec les tailles acceptées par App Store Connect pour son groupe d’affichage, l’obligation et les erreurs de dépôt fréquentes.",
+  en: "A dedicated page per device, with the sizes App Store Connect accepts for its display group, the requirement and common upload mistakes.",
 } as const;
 
 export async function generateMetadata({ params }: LocaleParams) {

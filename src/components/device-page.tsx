@@ -14,20 +14,21 @@ import {
   deviceBySlug,
   deviceDisplayName,
   deviceGuidePath,
+  deviceVerifiedOn,
 } from "@/lib/devices";
 import { devicePageCopy, orientationLabel } from "@/lib/device-page-copy";
 import { iphoneDuoGuideExtra } from "@/lib/iphone-duo-guide";
 
 const LABELS = {
   fr: {
-    verified: `Vérifié le ${DEVICE_VERIFIED_ON}`,
+    verified: (date: string) => `Vérifié le ${date}`,
     group: "Groupe d’affichage",
     sizes: "Tailles acceptées",
     colSize: "Taille (pixels)",
     colOrientation: "Orientation",
     requirement: "Obligation et notes",
-    errors: "Erreurs de rejet fréquentes",
-    errorsIntro: "Avant de déposer vos captures, écartez ces causes fréquentes de rejet :",
+    errors: "Erreurs de dépôt fréquentes",
+    errorsIntro: "Avant de déposer vos captures, vérifiez ces erreurs fréquentes :",
     faq: "FAQ",
     related: "Pages liées",
     hub: "Toutes les tailles de captures App Store",
@@ -36,14 +37,14 @@ const LABELS = {
     generator: (size: string) => `Ouvrir la page de taille ${size}`,
   },
   en: {
-    verified: `Verified on ${DEVICE_VERIFIED_ON}`,
+    verified: (date: string) => `Verified on ${date}`,
     group: "Display group",
     sizes: "Accepted sizes",
     colSize: "Size (pixels)",
     colOrientation: "Orientation",
     requirement: "Requirement and notes",
-    errors: "Common rejection errors",
-    errorsIntro: "Before you upload your screenshots, rule out these common rejection causes:",
+    errors: "Common upload mistakes",
+    errorsIntro: "Before you upload your screenshots, check these common mistakes:",
     faq: "FAQ",
     related: "Related pages",
     hub: "All App Store screenshot sizes",
@@ -65,11 +66,11 @@ export function DevicePage({ locale, device }: { locale: Locale; device: Device 
       path={path}
       faq={copy.faq}
       breadcrumb={copy.breadcrumb}
-      article={{ title: copy.h1, description: copy.description, datePublished: DEVICE_VERIFIED_ON, dateModified: DEVICE_VERIFIED_ON, author: "person", abstract: copy.answer }}
+      article={{ title: copy.h1, description: copy.description, datePublished: DEVICE_VERIFIED_ON, dateModified: deviceVerifiedOn(device), author: "person", abstract: copy.answer }}
     />
     <SiteHeader locale={locale} path={path} />
     <main id="main" className="mx-auto w-full max-w-4xl px-5 py-12">
-      <p className="ds-label">{l.verified}</p>
+      <p className="ds-label">{l.verified(deviceVerifiedOn(device))}</p>
       <h1 className="font-display mt-3 text-4xl sm:text-5xl">{copy.h1}</h1>
       <p className="mt-4 text-lg">{copy.answer}</p>
       <p className="ds-label mt-6">{l.group} : {device.group[locale]}</p>
