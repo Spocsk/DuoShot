@@ -4,7 +4,7 @@ description: "Toutes les tailles de captures App Store pour iPhone Duo, iPhone, 
 lang: fr
 slug: app-store-screenshot-sizes
 alternate: /guides/app-store-screenshot-sizes
-updated: 2026-11-13
+updated: 2026-11-18
 published: 2026-10-16
 ---
 
@@ -12,17 +12,18 @@ published: 2026-10-16
 
 **Réponse rapide :** pour soumettre une app iPhone, App Store Connect exige au moins une capture pour l’**iPhone avec Dynamic Island (écran moyen)**, par exemple **1206 × 2622** pixels en portrait. Les apps iPad ont aussi besoin de la taille **iPad 13 pouces**, par exemple **2064 × 2752**. L’iPhone Duo (l’iPhone pliable d’Apple) utilise **1398 × 2034** pour l’écran externe et **2007 × 2853** pour l’écran interne. Apple accepte jusqu’à **10 captures par taille d’appareil**, en PNG ou JPEG opaques, sans canal alpha.
 
-Toutes les tailles ci-dessous viennent des [spécifications de captures d’Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), pages Apple vérifiées le 13 novembre 2026. En paysage, il suffit d’inverser les dimensions. Téléchargez le [tableau complet en CSV](/app-store-screenshot-sizes.csv).
+Toutes les tailles ci-dessous viennent des [spécifications de captures d’Apple](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), pages Apple vérifiées le 18 novembre 2026. En paysage, il suffit d’inverser les dimensions. Téléchargez le [tableau complet en CSV](/app-store-screenshot-sizes.csv).
 
 Accès rapide aux [spécifications complètes](/specs) ou à une page de taille : [1206 × 2622](/1206x2622) (requise), [1320 × 2868](/1320x2868), [1398 × 2034](/1398x2034) (écran externe Duo) et [2007 × 2853](/2007x2853) (écran interne Duo).
 
 ## Qu’est-ce qui est requis, et qu’est-ce qui est optionnel ?
 
-Pour une app iPhone ou iPad, App Store Connect n’exige que deux tailles : l’iPhone avec Dynamic Island (écran moyen) et, si l’app tourne sur iPad, l’écran iPad 13 pouces. Les apps Mac, Apple TV, Apple Vision Pro et Apple Watch ont chacune leur propre taille requise. Toutes les autres tailles iPhone et iPad sont optionnelles, car App Store Connect réduit vos captures pour les appareils plus petits quand l’interface est identique.
+Pour une app iPhone ou iPad, App Store Connect n’exige que deux tailles : l’iPhone avec Dynamic Island (écran moyen) et, si l’app tourne sur iPad, l’écran iPad 13 pouces. Les apps Mac, Apple TV, Apple Vision Pro et Apple Watch ont chacune leur propre taille requise. Apple marque un autre emplacement iPhone comme conditionnel : l’iPhone avec Face ID (grand écran) est « Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided ». Pour les autres tailles, Apple indique : « If your app’s user interface is consistent across multiple device sizes and localizations, you only need to provide screenshots for the highest required resolution. App Store Connect automatically scales them down for smaller device sizes. »
 
 | Emplacement | Requis ? | Tailles portrait acceptées |
 | --- | --- | --- |
 | iPhone avec Dynamic Island (écran moyen) | Requis pour les apps iPhone | 1206 × 2622, 1179 × 2556 |
+| iPhone avec Face ID (grand écran) | Apple : « Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided » | 1284 × 2778, 1242 × 2688 |
 | iPad écran 13″ | Requis si l’app tourne sur iPad | 2064 × 2752, 2048 × 2732 |
 | iPhone Duo | Requis à partir d’avril 2027 pour les apps utilisant le SDK iOS 27.1 ou ultérieur | 1398 × 2034 (externe), 2007 × 2853 (interne) |
 | Mac | Requis pour les apps Mac | 1280 × 800, 1440 × 900, 2560 × 1600, 2880 × 1800 (paysage, 16:10) |
@@ -54,7 +55,7 @@ L’écran interne se plie en son milieu. Éloignez les titres et les commandes 
 | Bouton principal, grand écran | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
 | Bouton principal, écran moyen | iPhone SE (3e, 2e gén.), 8, 7, 6s, 6 | 750 × 1334 |
 
-Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store Connect utilise des captures réduites de l’emplacement Face ID grand écran, et inversement. En pratique, la plupart des équipes déposent le jeu **1206 × 2622** requis et, en option, un jeu **1320 × 2868**. Voir la [page 1206 × 2622](/1206x2622) et la [page 1320 × 2868](/1320x2868).
+Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store Connect utilise des captures réduites de l’emplacement Face ID grand écran, et inversement. Déposer le jeu **1206 × 2622** requis plus un jeu **1320 × 2868** (Dynamic Island, grand écran) remplit aussi la condition Face ID grand écran, car Apple n’exige cet emplacement que si les captures Dynamic Island (grand écran) ne sont pas fournies. Voir la [page 1206 × 2622](/1206x2622) et la [page 1320 × 2868](/1320x2868).
 
 ## Tailles des captures iPad
 
@@ -62,7 +63,7 @@ Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store
 | --- | --- | --- |
 | Écran 13″ (requis pour les apps iPad) | iPad Pro (M5, M4), iPad Pro (6e, 5e, 4e, 3e, 1re gén.), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
 | Écran 12,9″ | iPad Pro (2e gén.) | 2048 × 2732 |
-| Écran 11″ | iPad Pro (M5, M4), iPad Pro (4e, 3e, 2e, 1re gén.), iPad Air (M4, M3, M2), iPad Air (5e, 4e gén.), iPad (A16), iPad (10e gén.), iPad mini (A20 Pro, A17 Pro), iPad mini (6e gén.) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
+| Écran 11″ | iPad Pro (M5, M4), iPad Pro (4e, 3e, 2e, 1re gén.), iPad Air (M4, M3, M2), iPad Air (5e, 4e gén.), iPad (A16), iPad (10e gén.), iPad mini (A20 Pro, A17 Pro), iPad mini (6e gén.) | 1488 × 2266, 1512 × 2316, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
 | Écran 10,5″ | iPad Pro, iPad Air (3e gén.), iPad (9e, 8e, 7e gén.) | 1668 × 2224 |
 | Écran 9,7″ | iPad Pro, iPad Air, iPad Air 2, iPad (6e, 5e, 4e, 3e gén.), iPad mini (5e gén.), iPad mini 4 | 1536 × 2048, 768 × 1024 (et versions sans barre d’état) |
 
@@ -71,21 +72,24 @@ Si vous ne remplissez pas l’emplacement grand écran Dynamic Island, App Store
 - **Mac :** au choix 1280 × 800, 1440 × 900, 2560 × 1600 ou 2880 × 1800, toutes en 16:10.
 - **Apple TV :** 1920 × 1080 ou 3840 × 2160.
 - **Apple Vision Pro :** 3840 × 2160.
-- **Apple Watch :** au choix 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE 3, SE 2, SE) ou 312 × 390 (Series 3, 2, 1). Gardez la même taille Watch pour toutes les langues.
+- **Apple Watch :** au choix 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE 3, SE 2, SE) ou 312 × 390 (Series 3, 2, 1). Apple précise : « You must use the same screenshot size for Apple Watch consistently across all localizations for the app ».
 
 ## Les règles de format qui bloquent le dépôt
 
 - Les fichiers doivent être en `.png`, `.jpg` ou `.jpeg`.
 - Apple indique : « Images can’t include alpha channels or transparencies. » Exportez un PNG opaque ou un JPEG.
 - Les dimensions doivent correspondre exactement à une taille acceptée : Apple ne liste que ces tailles, et une capture décalée d’un pixel n’en fait pas partie.
+- En paysage, ce sont les mêmes tailles avec largeur et hauteur inversées (par exemple 2622 × 1206) ; Apple les liste comme des tailles acceptées à part.
+- Si votre app prend en charge iPadOS, les tailles requises par Apple incluent : « iPad (if your app supports iPadOS): At least one screenshot for iPad 13-inch display. » Les tailles 13″ acceptées en portrait sont 2064 × 2752 et 2048 × 2732.
+- Apple Watch : utilisez une seule taille pour toutes les langues (voir la note d’Apple plus haut).
 - Chaque emplacement accepte de 1 à 10 captures.
 - Le contenu doit respecter les règles de validation de l’App Store : les captures doivent montrer l’app en usage, c’est pourquoi DuoShot part de vos vraies captures.
 
-Notre [vérificateur gratuit](/tools/iphone-duo-screenshot-checker) contrôle les dimensions et la transparence dans votre navigateur, sans envoyer de fichier. Si Apple a déjà rejeté vos captures, lisez le [décodeur de rejet](/rejet).
+Notre [vérificateur gratuit](/tools/iphone-duo-screenshot-checker) contrôle les dimensions et la transparence dans votre navigateur, sans envoyer de fichier. Avant de soumettre, lisez [quoi vérifier avant la revue App Store](/rejet).
 
 ## La place de DuoShot
 
-DuoShot exporte des captures sans cadre pour les écrans externe et interne de l’iPhone Duo, la taille 6,3″ requise et la taille 6,9″, dans un seul ZIP. L’essai gratuit comprend 2 ZIP HD avec les captures Duo et la taille 6,3″ requise. Le format 6,9″ est disponible avec Pass, Indie et Studio. DuoShot ne couvre pas aujourd’hui les tailles iPad, Mac, Apple TV, Vision Pro ni Watch. Pour d’autres outils, consultez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator).
+DuoShot exporte des captures sans cadre pour les écrans externe et interne de l’iPhone Duo, la taille 6,3″ requise et la taille 6,9″, dans un seul ZIP. L’essai gratuit comprend 2 ZIP HD avec les captures Duo et la taille 6,3″ requise. Le format 6,9″ est disponible avec Pass, Indie et Studio. DuoShot ne couvre pas aujourd’hui les tailles iPad, Mac, Apple TV, Vision Pro ni Watch. Pour d’autres outils, consultez le [comparatif des générateurs de captures](/guides/best-app-store-screenshot-generator) ou le [tableau comparatif](/comparatif).
 
 iOS 27 ajoute des [creative assets](/guides/app-store-creative-assets) — un bandeau de fiche et un visuel de résultats de recherche — au-dessus de vos captures ; ils sont distincts et ne changent pas les tailles présentées ici.
 

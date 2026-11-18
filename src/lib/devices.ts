@@ -5,7 +5,7 @@ import { ALPHA, BADGE } from "./iphone-duo-guide";
  * Single source of truth for the programmatic /guides/screenshot-size/<device> pages.
  *
  * Every device name, display-group name and pixel size is copied verbatim from Apple's
- * screenshot specifications (docs/sources/apple-screenshot-specifications-2026-11-03.txt).
+ * screenshot specifications (docs/sources/apple-screenshot-specifications-2026-11-18.txt).
  * Apple publishes one list of accepted sizes per DISPLAY GROUP, not per device: each device
  * here carries the full list of accepted sizes for its group, and the copy says
  * "App Store Connect accepts these sizes for the <group> group". We never claim a resolution
@@ -202,7 +202,7 @@ const IPAD_11: Group = {
   platform: "ipad",
   group: { fr: "iPad écran 11 pouces", en: "iPad 11-inch display" },
   displaySize: '11"',
-  sizes: [p(1488, 2266), l(2266, 1488), p(1668, 2420), l(2420, 1668), p(1668, 2388), l(2388, 1668), p(1640, 2360), l(2360, 1640)],
+  sizes: [p(1488, 2266), l(2266, 1488), p(1512, 2316), l(2316, 1512), p(1668, 2420), l(2420, 1668), p(1668, 2388), l(2388, 1668), p(1640, 2360), l(2360, 1640)],
   requirement: {
     fr: "Apple ne liste pas ce groupe parmi les tailles requises. Si vous ne fournissez pas de captures aux tailles acceptées, App Store Connect utilise des captures mises à l’échelle du groupe écran 13 pouces.",
     en: "Apple doesn’t list this group among the required sizes. If you don’t provide screenshots at the accepted sizes, App Store Connect uses scaled screenshots from the 13-inch display group.",
