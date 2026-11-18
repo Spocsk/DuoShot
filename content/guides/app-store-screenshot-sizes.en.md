@@ -4,7 +4,7 @@ description: "Every App Store screenshot size for iPhone Duo, iPhone, iPad, Mac,
 lang: en
 slug: app-store-screenshot-sizes
 alternate: /guides/app-store-screenshot-sizes
-updated: 2026-11-13
+updated: 2026-11-18
 published: 2026-10-16
 ---
 
@@ -12,17 +12,18 @@ published: 2026-10-16
 
 **Quick answer:** to submit an iPhone app, App Store Connect requires at least one screenshot for **iPhone with Dynamic Island (medium display)**, for example **1206 × 2622** pixels in portrait. iPad apps also need the **iPad 13-inch** size, for example **2064 × 2752**. iPhone Duo (Apple's foldable iPhone) uses **1398 × 2034** for the outer display and **2007 × 2853** for the inner display. Apple accepts up to **10 screenshots per device size**, as opaque PNG or JPEG files without an alpha channel.
 
-All sizes below come from [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), with the Apple pages checked November 13, 2026. Landscape sizes are the same numbers swapped. Download the [full table as CSV](/app-store-screenshot-sizes.csv).
+All sizes below come from [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/), with the Apple pages checked November 18, 2026. Landscape sizes are the same numbers swapped. Download the [full table as CSV](/app-store-screenshot-sizes.csv).
 
 Jump to the [full specifications](/en/specs) or a size page: [1206 × 2622](/en/1206x2622) (required), [1320 × 2868](/en/1320x2868), [1398 × 2034](/en/1398x2034) (Duo outer) and [2007 × 2853](/en/2007x2853) (Duo inner).
 
 ## What is required, and what is optional?
 
-For an iPhone or iPad app, App Store Connect requires only two sizes: iPhone with Dynamic Island (medium display) and, if the app runs on iPad, the iPad 13-inch display. Mac, Apple TV, Apple Vision Pro and Apple Watch apps each have their own required size. Every other iPhone and iPad size is optional, because App Store Connect scales your screenshots down for smaller devices when the interface is the same.
+For an iPhone or iPad app, App Store Connect requires only two sizes: iPhone with Dynamic Island (medium display) and, if the app runs on iPad, the iPad 13-inch display. Mac, Apple TV, Apple Vision Pro and Apple Watch apps each have their own required size. Apple marks one more iPhone slot as conditional: iPhone with Face ID (large display) is “Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided”. For the other sizes, Apple says: “If your app’s user interface is consistent across multiple device sizes and localizations, you only need to provide screenshots for the highest required resolution. App Store Connect automatically scales them down for smaller device sizes.”
 
 | Slot | Required? | Portrait sizes accepted |
 | --- | --- | --- |
 | iPhone with Dynamic Island (medium display) | Required for iPhone apps | 1206 × 2622, 1179 × 2556 |
+| iPhone with Face ID (large display) | Required if app runs on iPhone and screenshots for iPhone with Dynamic Island (large display) aren't provided | 1284 × 2778, 1242 × 2688 |
 | iPad 13" display | Required if the app runs on iPad | 2064 × 2752, 2048 × 2732 |
 | iPhone Duo | Required from April 2027 for apps using the iOS 27.1 SDK or later | 1398 × 2034 (outer), 2007 × 2853 (inner) |
 | Mac | Required for Mac apps | 1280 × 800, 1440 × 900, 2560 × 1600, 2880 × 1800 (landscape, 16:10) |
@@ -54,7 +55,7 @@ The inner display folds in the middle. Keep headlines and important controls awa
 | Home Button, large display | iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus | 1242 × 2208 |
 | Home Button, medium display | iPhone SE (3rd, 2nd gen), 8, 7, 6s, 6 | 750 × 1334 |
 
-If you skip the large Dynamic Island slot, App Store Connect falls back to scaled screenshots from the Face ID large display slot, and the reverse also applies. In practice most teams upload the required **1206 × 2622** set and often also a **1320 × 2868** set. See the [1206 × 2622 page](/en/1206x2622) and the [1320 × 2868 page](/en/1320x2868).
+If you skip the large Dynamic Island slot, App Store Connect falls back to scaled screenshots from the Face ID large display slot, and the reverse also applies. Uploading the required **1206 × 2622** set plus a **1320 × 2868** set (Dynamic Island, large display) also meets the Face ID large display condition, because Apple only requires that slot when Dynamic Island (large display) screenshots aren't provided. See the [1206 × 2622 page](/en/1206x2622) and the [1320 × 2868 page](/en/1320x2868).
 
 ## iPad screenshot sizes
 
@@ -62,7 +63,7 @@ If you skip the large Dynamic Island slot, App Store Connect falls back to scale
 | --- | --- | --- |
 | 13" display (required for iPad apps) | iPad Pro (M5, M4), iPad Pro (6th, 5th, 4th, 3rd, 1st gen), iPad Air (M4, M3, M2) | 2064 × 2752, 2048 × 2732 |
 | 12.9" display | iPad Pro (2nd gen) | 2048 × 2732 |
-| 11" display | iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen) | 1488 × 2266, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
+| 11" display | iPad Pro (M5, M4), iPad Pro (4th, 3rd, 2nd, 1st gen), iPad Air (M4, M3, M2), iPad Air (5th, 4th gen), iPad (A16), iPad (10th gen), iPad mini (A20 Pro, A17 Pro), iPad mini (6th gen) | 1488 × 2266, 1512 × 2316, 1668 × 2420, 1668 × 2388, 1640 × 2360 |
 | 10.5" display | iPad Pro, iPad Air (3rd gen), iPad (9th, 8th, 7th gen) | 1668 × 2224 |
 | 9.7" display | iPad Pro, iPad Air, iPad Air 2, iPad (6th, 5th, 4th, 3rd gen), iPad mini (5th gen), iPad mini 4 | 1536 × 2048, 768 × 1024 (and versions without status bar) |
 
@@ -71,21 +72,24 @@ If you skip the large Dynamic Island slot, App Store Connect falls back to scale
 - **Mac:** one of 1280 × 800, 1440 × 900, 2560 × 1600 or 2880 × 1800, all 16:10.
 - **Apple TV:** 1920 × 1080 or 3840 × 2160.
 - **Apple Vision Pro:** 3840 × 2160.
-- **Apple Watch:** one of 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE 3, SE 2, SE) or 312 × 390 (Series 3, 2, 1). Use the same Watch size across all localizations.
+- **Apple Watch:** one of 422 × 514 (Ultra 4, Ultra 3), 410 × 502 (Ultra 2, Ultra), 416 × 496 (Series 12, 11, 10), 396 × 484 (Series 9, 8, 7), 368 × 448 (Series 6, 5, 4, SE 3, SE 2, SE) or 312 × 390 (Series 3, 2, 1). Apple notes: “You must use the same screenshot size for Apple Watch consistently across all localizations for the app”.
 
 ## Format rules that cause upload errors
 
 - Files must be `.png`, `.jpg` or `.jpeg`.
 - Apple states: "Images can’t include alpha channels or transparencies." Export an opaque PNG or a JPEG.
 - Dimensions must match one accepted size exactly: Apple lists only those sizes, so a screenshot that is one pixel off is not one of them.
+- Landscape files are the same sizes with width and height swapped (for example 2622 × 1206); Apple lists them as separate accepted sizes.
+- If your app supports iPadOS, Apple's required sizes include: “iPad (if your app supports iPadOS): At least one screenshot for iPad 13-inch display.” The accepted 13" portrait sizes are 2064 × 2752 and 2048 × 2732.
+- Apple Watch: use one size consistently across all localizations (see Apple's note above).
 - Each slot takes between 1 and 10 screenshots.
 - Content must follow the App Store Review Guidelines: screenshots should show the app in use, which is why DuoShot starts from your real captures.
 
-Our [free screenshot checker](/en/tools/iphone-duo-screenshot-checker) validates dimensions and transparency in your browser without uploading files. If Apple already rejected your screenshots, read the [rejection decoder](/en/rejection).
+Our [free screenshot checker](/en/tools/iphone-duo-screenshot-checker) validates dimensions and transparency in your browser without uploading files. Before you submit, read [what to check before App Store review](/en/rejection).
 
 ## How DuoShot fits in
 
-DuoShot exports frameless screenshots for the iPhone Duo outer and inner displays, the required 6.3" size and the 6.9" size, in one ZIP. The free trial includes 2 HD ZIPs with Duo captures and the required 6.3" size. The 6.9" format is available with Pass, Indie and Studio. DuoShot does not cover iPad, Mac, Apple TV, Vision Pro or Watch sizes today. For other tools, see the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator).
+DuoShot exports frameless screenshots for the iPhone Duo outer and inner displays, the required 6.3" size and the 6.9" size, in one ZIP. The free trial includes 2 HD ZIPs with Duo captures and the required 6.3" size. The 6.9" format is available with Pass, Indie and Studio. DuoShot does not cover iPad, Mac, Apple TV, Vision Pro or Watch sizes today. For other tools, see the [screenshot generator comparison](/en/guides/best-app-store-screenshot-generator) or the [side-by-side comparison table](/en/compare).
 
 iOS 27 adds [creative assets](/en/guides/app-store-creative-assets) — a product page header and a search results image — above your screenshots; they're separate and don't change the sizes here.
 

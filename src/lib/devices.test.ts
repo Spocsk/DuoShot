@@ -6,7 +6,7 @@ import { devicePageCopy } from "./device-page-copy";
 import { SCREENSHOT_SIZES } from "./screenshot-pages";
 
 const SOURCE = readFileSync(
-  path.join(process.cwd(), "docs/sources/apple-screenshot-specifications-2026-11-03.txt"),
+  path.join(process.cwd(), "docs/sources/apple-screenshot-specifications-2026-11-18.txt"),
   "utf8",
 );
 
@@ -55,6 +55,12 @@ describe("DEVICES data", () => {
         expect(NORMALIZED_SOURCE, `${device.slug} ${candidate}`).toContain(candidate);
       }
     }
+  });
+
+  it("includes the iPad 11-inch 1512 × 2316 size in portrait and landscape", () => {
+    const ipad11 = deviceBySlug("ipad-pro-11")!;
+    expect(ipad11.sizes).toContainEqual(expect.objectContaining({ width: 1512, height: 2316, orientation: "portrait" }));
+    expect(ipad11.sizes).toContainEqual(expect.objectContaining({ width: 2316, height: 1512, orientation: "landscape" }));
   });
 
   it("lists exactly the four iPhone Duo sizes", () => {
