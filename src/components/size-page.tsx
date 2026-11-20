@@ -9,13 +9,13 @@ import { MAX_IMAGES, type Locale } from "@/lib/specs";
 import { aspectRatio, sizePageCopy, sizeVerifiedOn, type ScreenshotSize } from "@/lib/screenshot-pages";
 import { screenshotDimensions } from "@/lib/screenshot-copy";
 import { sizeFaq } from "@/lib/size-faq";
-import { sizeEnrichment } from "@/lib/size-enrichment";
+import { MEDIUM_DISPLAY_DEVICE_SLUGS, sizeEnrichment } from "@/lib/size-enrichment";
 import { APPLE_DEVICE_SOURCE, APPLE_SCREENSHOT_SOURCE } from "@/lib/apple-screenshot-status";
 import { appStoreConnectGuide, ASC_GUIDE_PATH, sizesGuide, SIZES_GUIDE_PATH } from "@/lib/guides";
 import { comparisonPath, competitorComparison } from "@/lib/comparisons";
 import { ALTERNATIVES_BASE_PATH, ALTERNATIVES_HUB_COPY } from "@/lib/alternatives";
 import { localizedPath, rejectionPath, toolPath } from "@/lib/site";
-import { deviceGuidePath } from "@/lib/devices";
+import { deviceBySlug, deviceDisplayName, deviceGuidePath } from "@/lib/devices";
 import { SCREENSHOT_CHECKER_PATH } from "@/lib/screenshot-checker";
 import { directAnswer } from "@/lib/direct-answers";
 import { DirectAnswer } from "./direct-answer";
@@ -71,6 +71,16 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         <p className="mt-4 text-sm"><a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{enrich.slots.source}</a></p>
         <p className="mt-2 text-sm text-[var(--muted)]">{enrich.slots.note}</p>
       </section>}
+      {enrich.scaling && <section className="mt-10" aria-labelledby="size-scaling">
+        <h2 id="size-scaling" className="font-display text-3xl">{enrich.scaling.heading}</h2>
+        <p className="mt-4">{enrich.scaling.intro}</p>
+        <blockquote className="mt-4 border-l-2 border-[var(--line)] pl-4">
+          <p>“{enrich.scaling.quote}”</p>
+          <cite className="ds-label mt-1 block not-italic">{enrich.scaling.cite}</cite>
+        </blockquote>
+        <p className="mt-4">{enrich.scaling.body}</p>
+        <p className="mt-4 text-sm"><a href={APPLE_SCREENSHOT_SOURCE} className="ds-link">{t("specs_read_connect_specifications")}</a></p>
+      </section>}
       {enrich.timeline && <section className="mt-10" aria-labelledby="size-timeline">
         <h2 id="size-timeline" className="font-display text-3xl">{enrich.timeline.heading}</h2>
         <p className="mt-4">{enrich.timeline.intro}</p>
@@ -87,6 +97,15 @@ export function SizePage({ locale, size }: { locale: Locale; size: ScreenshotSiz
         <p className="mt-4">{enrich.devices.body}</p>
         <h3 className="font-display mt-6 text-xl">{enrich.orientation.heading}</h3>
         <p className="mt-2">{enrich.orientation.body}</p>
+        {enrich.deviceLinks && <>
+          <h3 className="font-display mt-6 text-xl">{enrich.deviceLinks.heading}</h3>
+          <p className="mt-2">{enrich.deviceLinks.intro}</p>
+          <ul className="mt-2 list-disc space-y-2 pl-5">
+            {MEDIUM_DISPLAY_DEVICE_SLUGS.map((slug) => <li key={slug}>
+              <Link href={localizedPath(locale, deviceGuidePath(slug))} className="ds-link">{deviceDisplayName(deviceBySlug(slug)!)}</Link>
+            </li>)}
+          </ul>
+        </>}
       </section>
       <section className="mt-10">
         <h2 className="font-display text-3xl">{t("size_file_heading")}</h2>

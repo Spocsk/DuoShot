@@ -6,9 +6,12 @@ export type ScreenshotSize = typeof SCREENSHOT_SIZES[number];
 export const SCREENSHOT_VERIFIED_ON = "2026-11-13";
 /** The iPhone Duo size pages (1398x2034, 2007x2853) were re-verified against Apple later than the rest. */
 export const DUO_SIZES_VERIFIED_ON = "2026-11-15";
+/** The 1206 × 2622 page was re-verified against Apple on its own cadence, ahead of the shared baseline. */
+export const SIZE_1206_VERIFIED_ON = "2026-11-20";
 
-/** "Verified on" date for a size page: the Duo pages carry DUO_SIZES_VERIFIED_ON, the rest SCREENSHOT_VERIFIED_ON. */
+/** "Verified on" date for a size page: 1206x2622 and the Duo pages carry their own dates, the rest SCREENSHOT_VERIFIED_ON. */
 export function sizeVerifiedOn(size: ScreenshotSize): string {
+  if (size === "1206x2622") return SIZE_1206_VERIFIED_ON;
   return size === "1398x2034" || size === "2007x2853" ? DUO_SIZES_VERIFIED_ON : SCREENSHOT_VERIFIED_ON;
 }
 

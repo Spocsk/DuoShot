@@ -1,5 +1,5 @@
 import type { Locale } from "./specs";
-import { DUO_SIZES_VERIFIED_ON, type ScreenshotSize } from "./screenshot-pages";
+import { DUO_SIZES_VERIFIED_ON, SIZE_1206_VERIFIED_ON, type ScreenshotSize } from "./screenshot-pages";
 import { formatCheckedOn } from "./specs-enrichment";
 
 /** Apple's verbatim badge sentence from the Screenshot specifications page, kept in English in both locales. */
@@ -38,11 +38,19 @@ export type TimelineQuote = { text: string; cite: string };
 /** Optional "April 2027" timeline block: Apple's two wordings, quoted separately. */
 export type SizeTimeline = { heading: string; intro: string; quotes: TimelineQuote[] };
 
+/** Optional "Display scaling" block, only on 1206x2622: Apple's scaling rule quoted verbatim plus how the set satisfies the required slot. */
+export type SizeScaling = { heading: string; intro: string; quote: string; cite: string; body: string };
+
+/** Optional device-page links block, only on 1206x2622: the models Apple lists in the medium-display group. */
+export type SizeDeviceLinks = { heading: string; intro: string };
+
 export type SizeEnrichment = {
   devices: { heading: string; body: string };
   orientation: { heading: string; body: string };
   rejections: { heading: string; intro: string; items: string[] };
   slots?: SizeSlots;
+  scaling?: SizeScaling;
+  deviceLinks?: SizeDeviceLinks;
   related?: SizeRelated;
   timeline?: SizeTimeline;
 };
@@ -58,7 +66,7 @@ function enrichment(
   orientationBody: string,
   rejectionsIntro: string,
   rejectionsItems: string[],
-  extra?: { slots?: SizeSlots; related?: SizeRelated; timeline?: SizeTimeline },
+  extra?: { slots?: SizeSlots; scaling?: SizeScaling; deviceLinks?: SizeDeviceLinks; related?: SizeRelated; timeline?: SizeTimeline },
 ): SizeEnrichment {
   const h = HEADINGS[locale];
   return {
@@ -96,7 +104,7 @@ const SLOTS_1206: Record<Locale, SizeSlots> = {
         status: "Apple : requis à partir d’avril 2027 pour les apps utilisant le SDK iOS 27.1 ou ultérieur",
       },
     ],
-    source: "Source : Apple, Screenshot specifications, vérifié le 13 novembre 2026. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.",
+    source: `Source : Apple, Screenshot specifications, vérifié le ${formatCheckedOn("fr", SIZE_1206_VERIFIED_ON)}. Formats : .jpeg, .jpg ou .png, 1 à 10 captures par taille d’appareil, sans canal alpha ni transparence.`,
     note: "Un jeu 1206 × 2622 alimente aussi l’ancien emplacement Face ID (écran moyen), car Apple met à l’échelle depuis « iPhone with Dynamic Island (medium display) » quand cet emplacement est vide.",
   },
   en: {
@@ -124,7 +132,7 @@ const SLOTS_1206: Record<Locale, SizeSlots> = {
         status: "Apple: required from April 2027 for apps using the iOS 27.1 SDK or later",
       },
     ],
-    source: "Source: Apple, Screenshot specifications, checked November 13, 2026. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.",
+    source: `Source: Apple, Screenshot specifications, checked ${formatCheckedOn("en", SIZE_1206_VERIFIED_ON)}. Formats: .jpeg, .jpg or .png, 1 to 10 screenshots per device size, no alpha channels or transparencies.`,
     note: "A 1206 × 2622 set also feeds the older Face ID medium-display slot, because Apple scales from Dynamic Island (medium display) when that slot is empty.",
   },
 };
@@ -133,6 +141,47 @@ const SLOTS_1206: Record<Locale, SizeSlots> = {
 const RELATED_1206: Record<Locale, SizeRelated> = {
   fr: { duoGuide: "Taille des captures iPhone Duo", checker: "Vérifier une capture iPhone Duo", rejection: "Quoi vérifier avant la revue App Store" },
   en: { duoGuide: "iPhone Duo screenshot size", checker: "Check an iPhone Duo screenshot", rejection: "What to check before App Store review" },
+};
+
+/** Apple's display-scaling rule, quoted verbatim in both locales, plus how a 1206 × 2622 set satisfies the required iPhone slot. */
+const SCALING_1206: Record<Locale, SizeScaling> = {
+  fr: {
+    heading: "Mise à l’échelle des captures (Display scaling, Apple)",
+    intro: "Les Screenshot specifications d’Apple indiquent :",
+    quote: "If your app’s user interface is consistent across multiple device sizes and localizations, you only need to provide screenshots for the highest required resolution. App Store Connect automatically scales them down for smaller device sizes.",
+    cite: "Apple, Screenshot specifications",
+    body: "Pour l’iPhone, la liste « Required device sizes » d’Apple nomme « At least one screenshot for iPhone with Dynamic Island (medium display). » Ce groupe accepte 1206 × 2622 ou 1179 × 2556 en portrait (et leurs paysages) : un jeu en 1206 × 2622 y répond.",
+  },
+  en: {
+    heading: "Display scaling (Apple)",
+    intro: "Apple’s Screenshot specifications say:",
+    quote: "If your app’s user interface is consistent across multiple device sizes and localizations, you only need to provide screenshots for the highest required resolution. App Store Connect automatically scales them down for smaller device sizes.",
+    cite: "Apple, Screenshot specifications",
+    body: "For iPhone, Apple’s “Required device sizes” list names “At least one screenshot for iPhone with Dynamic Island (medium display).” That group accepts 1206 × 2622 or 1179 × 2556 in portrait (and their landscapes), so a 1206 × 2622 set meets it.",
+  },
+};
+
+/** The models Apple lists under "iPhone with Dynamic Island (medium display)" that have a device guide page (no iphone-14-pro page). */
+export const MEDIUM_DISPLAY_DEVICE_SLUGS = [
+  "iphone-18-pro",
+  "iphone-17-pro",
+  "iphone-17",
+  "iphone-16-pro",
+  "iphone-16",
+  "iphone-15-pro",
+  "iphone-15",
+] as const;
+
+/** Device-page link block for the 1206 × 2622 page; the links themselves are built in SizePage from MEDIUM_DISPLAY_DEVICE_SLUGS. */
+const DEVICE_LINKS_1206: Record<Locale, SizeDeviceLinks> = {
+  fr: {
+    heading: "Taille des captures par appareil (écran moyen)",
+    intro: "Pages appareil des modèles qu’Apple liste dans ce groupe :",
+  },
+  en: {
+    heading: "Screenshot size by device (medium display)",
+    intro: "Device pages for the models Apple lists in this group:",
+  },
 };
 
 /**
@@ -225,8 +274,9 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
         "Mauvais format : Apple n’accepte que .jpeg, .jpg ou .png.",
         "Mauvais emplacement : un fichier 1320 × 2868 appartient à « iPhone with Dynamic Island (large display) », et 1398 × 2034 ou 2007 × 2853 à « iPhone Duo ». Aucun ne remplit l’emplacement « medium display » requis.",
         "Orientation inversée ou un pixel de travers : 2622 × 1206 est la taille paysage, et 1206 × 2621 ou 1205 × 2622 ne figure pas sur la liste d’Apple. Vérifiez le nombre exact de pixels avant le dépôt. Sur un Mac, « sips -g pixelWidth -g pixelHeight -g hasAlpha fichier.png » affiche la taille et le canal alpha.",
+        "Réduction proportionnelle depuis une taille iPhone plus grande : 1320 × 2868 ramené à 1206 px de large donne 1206 × 2620 (2 px de moins que 2622), et 1290 × 2796 ramené à 1179 px de large donne 1179 × 2555 (1 px de moins que 2556). Aucune de ces tailles ne figure sur la liste d’Apple pour ce groupe. Exportez directement en 1206 × 2622, ou complétez ou recadrez jusqu’à la taille exacte.",
       ],
-      { slots: SLOTS_1206.fr, related: RELATED_1206.fr }),
+      { slots: SLOTS_1206.fr, scaling: SCALING_1206.fr, deviceLinks: DEVICE_LINKS_1206.fr, related: RELATED_1206.fr }),
     en: enrichment("en",
       "This size targets App Store Connect’s “iPhone with Dynamic Island (medium display)” group: iPhone 18 Pro, 17 Pro, 17, 16 Pro, 16, 15 Pro, 15 and 14 Pro. The group accepts 1206 × 2622 or 1179 × 2556 pixels in portrait (and their landscapes). App Store Connect requires at least one screenshot in this group to submit an iPhone app. Apple’s note for the group says that if the accepted sizes aren’t provided, scaled screenshots for iPhone with Face ID (large display) are used.",
       "In portrait, export 1206 × 2622 pixels; in landscape, 2622 × 1206 pixels. Keep one consistent orientation across the whole set for this slot.",
@@ -237,8 +287,9 @@ const SIZE_ENRICHMENT: Record<ScreenshotSize, Record<Locale, SizeEnrichment>> = 
         "Wrong format: Apple accepts only .jpeg, .jpg or .png.",
         "Wrong slot: a 1320 × 2868 file belongs to iPhone with Dynamic Island (large display), and 1398 × 2034 or 2007 × 2853 to iPhone Duo. Neither fills the required medium-display slot.",
         "Swapped orientation or one pixel off: 2622 × 1206 is the landscape size, and 1206 × 2621 or 1205 × 2622 is not on Apple’s list. Check the exact pixel count before uploading. On a Mac, “sips -g pixelWidth -g pixelHeight -g hasAlpha file.png” shows size and alpha.",
+        "Straight downscale from a larger iPhone size: resizing 1320 × 2868 to 1206 px wide gives 1206 × 2620 (2 px short of 2622), and resizing 1290 × 2796 to 1179 px wide gives 1179 × 2555 (1 px short of 2556). Neither is on Apple’s list for this group. Export natively at 1206 × 2622, or pad or crop to the exact size.",
       ],
-      { slots: SLOTS_1206.en, related: RELATED_1206.en }),
+      { slots: SLOTS_1206.en, scaling: SCALING_1206.en, deviceLinks: DEVICE_LINKS_1206.en, related: RELATED_1206.en }),
   },
   "1320x2868": {
     fr: enrichment("fr",

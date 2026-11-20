@@ -5,7 +5,7 @@ import { ALPHA, BADGE } from "./iphone-duo-guide";
  * Single source of truth for the programmatic /guides/screenshot-size/<device> pages.
  *
  * Every device name, display-group name and pixel size is copied verbatim from Apple's
- * screenshot specifications (docs/sources/apple-screenshot-specifications-2026-11-18.txt).
+ * screenshot specifications (docs/sources/apple-screenshot-specifications-2026-11-20.txt).
  * Apple publishes one list of accepted sizes per DISPLAY GROUP, not per device: each device
  * here carries the full list of accepted sizes for its group, and the copy says
  * "App Store Connect accepts these sizes for the <group> group". We never claim a resolution

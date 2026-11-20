@@ -2,8 +2,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { SizePage } from "@/components/size-page";
-import { SCREENSHOT_SIZES, sizePageCopy } from "./screenshot-pages";
+import { SCREENSHOT_SIZES, SIZE_1206_VERIFIED_ON, sizePageCopy } from "./screenshot-pages";
 import { sizeEnrichment } from "./size-enrichment";
+import { formatCheckedOn } from "./specs-enrichment";
 import { sizeFaq } from "./size-faq";
 import { ASC_GUIDE_PATH, appStoreConnectGuide } from "./guides";
 import { localizedPath, rejectionPath } from "./site";
@@ -55,7 +56,7 @@ describe("size page enrichment", () => {
       expect(html).toContain(enrich.devices.heading);
       expect(html).toContain(enrich.orientation.heading);
       expect(html).toContain(enrich.rejections.heading);
-      expect(enrich.rejections.items).toHaveLength(size === "1320x2868" ? 3 : 5);
+      expect(enrich.rejections.items).toHaveLength(size === "1320x2868" ? 3 : size === "1206x2622" ? 6 : 5);
       // The three upload mistakes: wrong size, transparency/alpha channel, wrong image format.
       const rejections = enrich.rejections.items.join(" ");
       expect(rejections).toMatch(locale === "fr" ? /canal alpha|transparence/i : /alpha channel|transparen/i);
@@ -88,7 +89,10 @@ describe("size page enrichment", () => {
     expect(html).toContain(slots.heading);
     for (const row of slots.rows) expect(html).toContain(row.group);
     expect(html).toContain(slots.source);
-    expect(html).toContain(locale === "fr" ? "vérifié le 13 novembre 2026" : "checked November 13, 2026");
+    expect(html).toContain(locale === "fr"
+      ? `vérifié le ${formatCheckedOn("fr", SIZE_1206_VERIFIED_ON)}`
+      : `checked ${formatCheckedOn("en", SIZE_1206_VERIFIED_ON)}`);
+    expect(html).not.toContain(locale === "fr" ? "13 novembre 2026" : "November 13, 2026");
     // The table ships only on the 1206x2622 page.
     const other = renderToStaticMarkup(createElement(SizePage, { locale, size: "1320x2868" }));
     expect(sizeEnrichment(locale, "1320x2868").slots).toBeUndefined();
@@ -105,9 +109,9 @@ describe("size page enrichment", () => {
     expect(rejectionPath(locale)).toBe(locale === "en" ? "/en/rejection" : "/rejet");
   });
 
-  it.each(["fr", "en"] as const)("gives the 1206x2622 FAQ six questions mirrored in the JSON-LD in %s", (locale) => {
+  it.each(["fr", "en"] as const)("gives the 1206x2622 FAQ eight questions mirrored in the JSON-LD in %s", (locale) => {
     const faq = sizeFaq(locale, "1206x2622");
-    expect(faq).toHaveLength(6);
+    expect(faq).toHaveLength(8);
     const html = renderToStaticMarkup(createElement(SizePage, { locale, size: "1206x2622" }));
     const faqNode = jsonLdFromHtml(html)["@graph"].find((node: { "@type": string }) => node["@type"] === "FAQPage");
     expect(faqNode.mainEntity.map((entity: { name: string }) => entity.name)).toEqual(faq.map((item) => item.q));
