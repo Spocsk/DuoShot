@@ -1,4 +1,4 @@
-Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/ (retrieved 2026-11-18)
+Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/ (retrieved 2026-11-20)
 
 Screenshot specifications
 You must include at least one screenshot and can upload up to 10 screenshots per device size in .jpeg, .jpg, or .png formats, with the following specifications. All screenshots must adhere to the App Store Review Guidelines before you submit them for review.

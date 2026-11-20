@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aspectRatio, DUO_SIZES_VERIFIED_ON, SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, sizePageCopy } from "./screenshot-pages";
+import { aspectRatio, DUO_SIZES_VERIFIED_ON, SCREENSHOT_SIZES, SCREENSHOT_VERIFIED_ON, SIZE_1206_VERIFIED_ON, sizePageCopy, sizeVerifiedOn } from "./screenshot-pages";
 import { sizeFaq } from "./size-faq";
 import { jsonLdGraph } from "./json-ld";
 import { MAX_IMAGES, SPECS_VERSION_DATE } from "./specs";
@@ -12,9 +12,18 @@ describe("size page summary box data", () => {
     expect(SCREENSHOT_VERIFIED_ON <= SPECS_VERSION_DATE).toBe(true);
     // The Duo pages were re-verified against Apple later, so their date is no earlier than the baseline.
     expect(DUO_SIZES_VERIFIED_ON >= SCREENSHOT_VERIFIED_ON).toBe(true);
-    for (const date of [SCREENSHOT_VERIFIED_ON, DUO_SIZES_VERIFIED_ON, SPECS_VERSION_DATE]) {
+    // The 1206 × 2622 page was re-verified on its own cadence, no earlier than the baseline.
+    expect(SIZE_1206_VERIFIED_ON >= SCREENSHOT_VERIFIED_ON).toBe(true);
+    for (const date of [SCREENSHOT_VERIFIED_ON, DUO_SIZES_VERIFIED_ON, SIZE_1206_VERIFIED_ON, SPECS_VERSION_DATE]) {
       expect(Number.isNaN(Date.parse(date))).toBe(false);
     }
+  });
+
+  it("routes each size page to its own verification date", () => {
+    expect(sizeVerifiedOn("1206x2622")).toBe(SIZE_1206_VERIFIED_ON);
+    expect(sizeVerifiedOn("1398x2034")).toBe(DUO_SIZES_VERIFIED_ON);
+    expect(sizeVerifiedOn("2007x2853")).toBe(DUO_SIZES_VERIFIED_ON);
+    expect(sizeVerifiedOn("1320x2868")).toBe(SCREENSHOT_VERIFIED_ON);
   });
 
   it.each([

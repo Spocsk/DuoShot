@@ -6,7 +6,7 @@ import { devicePageCopy } from "./device-page-copy";
 import { SCREENSHOT_SIZES } from "./screenshot-pages";
 
 const SOURCE = readFileSync(
-  path.join(process.cwd(), "docs/sources/apple-screenshot-specifications-2026-11-18.txt"),
+  path.join(process.cwd(), "docs/sources/apple-screenshot-specifications-2026-11-20.txt"),
   "utf8",
 );
 

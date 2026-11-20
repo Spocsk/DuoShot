@@ -15,7 +15,7 @@ import { getMessages, getTranslator } from "./i18n";
 import { SiteJsonLd, jsonLdGraph, siteJsonLdGraph } from "./json-ld";
 import { REJECTION_PAGE_COPY } from "./marketing-copy";
 import { CHECKOUT_CATALOG, FREE_EXPORTS, PASS30 } from "./plans";
-import { SCREENSHOT_VERIFIED_ON, sizePageCopy } from "./screenshot-pages";
+import { SCREENSHOT_VERIFIED_ON, sizePageCopy, sizeVerifiedOn } from "./screenshot-pages";
 import { sizeFaq } from "./size-faq";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
@@ -125,7 +125,7 @@ describe.each(["fr", "en"] as const)("%s direct answers", (locale) => {
     // The structured data now carries the abstract reused from the direct answer, alongside the FAQPage.
     expect(schemaNodes(html)).toEqual(jsonLdGraph(locale, {
       path: `/${size}`, faq: sizeFaq(locale, size),
-      article: { ...sizePageCopy(locale, size), dateModified: SCREENSHOT_VERIFIED_ON, abstract: answer.text },
+      article: { ...sizePageCopy(locale, size), dateModified: sizeVerifiedOn(size), abstract: answer.text },
     })["@graph"]);
   });
 
