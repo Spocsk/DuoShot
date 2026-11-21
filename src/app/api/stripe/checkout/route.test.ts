@@ -271,6 +271,27 @@ describe("POST /api/stripe/checkout", () => {
       expect(params).not.toHaveProperty("discounts");
     });
 
+    it("requests an invoice for the one-time pass but not for subscriptions", async () => {
+      vi.mocked(createServerSupabase).mockResolvedValue(workspace());
+      vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");
+      const create = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test/session" });
+      stripeWith(create);
+      expect((await POST(request("pass30"))).status).toBe(200);
+      expect(create.mock.calls[0][0]).toEqual(expect.objectContaining({
+        mode: "payment",
+        invoice_creation: { enabled: true },
+      }));
+      // The receipt/invoice e-mail rides on the Stripe Customer (set from user.email in
+      // stripe-customer.ts) once invoice_creation is on, so the payment does not force a
+      // receipt_email of its own — overriding it here would change a live payment flow.
+      expect(create.mock.calls[0][0].payment_intent_data).not.toHaveProperty("receipt_email");
+
+      create.mockClear();
+      expect((await POST(request("indie_monthly"))).status).toBe(200);
+      expect(create.mock.calls[0][0]).toEqual(expect.objectContaining({ mode: "subscription" }));
+      expect(create.mock.calls[0][0]).not.toHaveProperty("invoice_creation");
+    });
+
     it("keeps subscriptions in subscription mode when the pass is configured", async () => {
       vi.mocked(createServerSupabase).mockResolvedValue(workspace());
       vi.stubEnv("STRIPE_PRICE_PASS30", "price_pass30");

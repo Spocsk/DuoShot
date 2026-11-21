@@ -105,7 +105,7 @@ async function checkout(request: Request) {
   };
   const session = await stripe.checkout.sessions.create({
     ...(oneTime
-      ? { mode: ONE_TIME_CATALOG[selectedKind].mode, payment_intent_data: { metadata } }
+      ? { mode: ONE_TIME_CATALOG[selectedKind].mode, payment_intent_data: { metadata }, invoice_creation: { enabled: true } }
       : { mode: "subscription" as const, subscription_data: { metadata } }),
     integration_identifier: `duoshot-checkout-${createHash("sha256").update(attempt.attempt_id).digest("hex").slice(0, 8).replace(/[0-9a-f]/g, (char) => String.fromCharCode(97 + parseInt(char, 16)))}`,
     expires_at: Math.floor(Date.parse(attempt.expires_at) / 1000),
