@@ -5,7 +5,7 @@ import sitemap from "@/app/sitemap";
 import { COMPARISONS, competitorComparison, comparisonPath } from "./comparisons";
 import { comparisonGuide } from "./guides";
 import { shouldSkipLocaleRewrite } from "./locale";
-import { absoluteUrl, localizedPath } from "./site";
+import { absoluteUrl, localizedPath, rejectionPath } from "./site";
 
 vi.mock("@/components/site-chrome", () => ({ SiteHeader: () => null, SiteFooter: () => null }));
 
@@ -44,7 +44,10 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
       expect(firstMention).toBeLessThan(guide.body.indexOf("\n## "));
       expect(guide.body.slice(firstMention).startsWith(duoDefinition)).toBe(true);
       expect(html).toContain(duoDefinition.replace("'", "&#x27;"));
-      expect(guide.body).not.toMatch(/\$|£|\b(?:USD|GBP|coupon|discount|remise|réduction)\b/i);
+      // DuoShot stays EUR-only with no discounts; the AppScreens page may quote their USD plan prices.
+      expect(guide.body).not.toMatch(slug === "duoshot-vs-appscreens"
+        ? /£|\b(?:USD|GBP|coupon|discount|remise|réduction)\b/i
+        : /\$|£|\b(?:USD|GBP|coupon|discount|remise|réduction)\b/i);
       for (const size of ["1398 × 2034", "2007 × 2853", "1206 × 2622", "1320 × 2868"]) expect(html).toContain(size);
       for (const label of locale === "fr" ? ["écran externe : 1398 × 2034", "écran interne : 2007 × 2853"] : ["outer display: 1398 × 2034", "inner display: 2007 × 2853"]) expect(html).toContain(label);
       expect(html).not.toMatch(/(?:5[,.]4|7[,.]6)[″"]/);
@@ -57,7 +60,8 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
         expect(html).toContain(`href="${localizedPath(locale, path)}"`);
       }
       const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
-      expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(["TechArticle"]);
+      // Only the enriched AppScreens page emits a FAQPage alongside the TechArticle.
+      expect(graph.map((node: { "@type": string }) => node["@type"])).toEqual(slug === "duoshot-vs-appscreens" ? ["TechArticle", "FAQPage"] : ["TechArticle"]);
       expect(graph[0]).toMatchObject({ headline: guide.title, description: guide.description, inLanguage: locale, dateModified: COMPARISONS.find((entry) => entry.slug === slug)!.checked, url: absoluteUrl(localizedPath(locale, comparisonPath(slug))), author: { "@type": "Person", name: "Dylan Couto de Oliveira" }, publisher: { "@id": `${absoluteUrl("/")}#organization` } });
       // Generated comparison pages have no published date in data, so datePublished is omitted.
       expect(graph[0]).not.toHaveProperty("datePublished");
@@ -113,6 +117,58 @@ describe.each(["fr", "en"] as const)("%s competitor comparisons", (locale) => {
     ];
     for (const fact of facts) expect(html).toContain(fact);
     expect(html).toContain('href="https://anaxkg.com/en/store-connect-studio"');
+  });
+
+  it("enriches AppScreens with the 2026-11-13 date, a sourced table, required links and a FAQ that matches its JSON-LD, without superlatives", async () => {
+    const slug = "duoshot-vs-appscreens";
+    const guide = competitorComparison(locale, slug)!;
+    const html = renderToStaticMarkup(await ComparisonPage({ params: Promise.resolve({ locale, slug }) }));
+
+    // Verification date bumped to 2026-11-13 and shown on the page.
+    expect(COMPARISONS.find((entry) => entry.slug === slug)!.checked).toBe("2026-11-13");
+    expect(html).toContain(locale === "fr" ? "13 novembre 2026" : "November 13, 2026");
+
+    // Sourced comparison rows and the required Apple slot, from the AppScreens site reviewed 2026-11-13.
+    const facts = locale === "fr" ? [
+      "Point de départ",
+      "Leur menu cite iPhone Duo ; leur tableau de tarifs le réserve aux abonnements",
+      "Envoi direct vers les stores, indiqué pour les offres payantes",
+      "App Store et Google Play, plus d’autres préréglages",
+      "Free, Pro 99 $/an, Scale 180 $/an",
+      "iPhone with Dynamic Island (medium display)",
+    ] : [
+      "Starting point",
+      "Their menu lists iPhone Duo; their pricing table marks it as subscription-only",
+      "Direct upload to the stores, stated for paid plans",
+      "App Store and Google Play, plus other presets",
+      "Free, Pro $99/year, Scale $180/year",
+      "iPhone with Dynamic Island (medium display)",
+    ];
+    for (const fact of facts) expect(html).toContain(fact);
+    expect(html).toContain('href="https://appscreens.com/pricing"');
+
+    // Every reference link the brief requires, localized and present.
+    for (const path of ["/1206x2622", "/1398x2034", "/2007x2853", "/guides/app-store-screenshot-sizes", "/guides/screenshot-size/iphone-duo", "/tools/iphone-duo-screenshot-checker"]) {
+      expect(html).toContain(`href="${localizedPath(locale, path)}"`);
+    }
+    expect(html).toContain(`href="${rejectionPath(locale)}"`);
+
+    // FAQPage JSON-LD is identical to the visible FAQ text.
+    const graph = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)![1])["@graph"];
+    const faqNode = graph.find((node: { "@type": string }) => node["@type"] === "FAQPage");
+    expect(guide.faq!.length).toBeGreaterThanOrEqual(3);
+    expect(faqNode.mainEntity).toHaveLength(guide.faq!.length);
+    const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+    faqNode.mainEntity.forEach((entry: { name: string; acceptedAnswer: { text: string } }, index: number) => {
+      expect(entry.name).toBe(guide.faq![index].q);
+      expect(entry.acceptedAnswer.text).toBe(guide.faq![index].a);
+      expect(html).toContain(escape(guide.faq![index].q));
+      expect(html).toContain(escape(guide.faq![index].a));
+    });
+
+    // No superlatives or "better than" framing (link URLs stripped so the guide slug does not count).
+    const prose = guide.body.replace(/\]\([^)]*\)/g, "]");
+    expect(prose).not.toMatch(/\b(?:best|better|meilleur|meilleure|supérieur|supérieure)\b/i);
   });
 });
 
